@@ -1,6 +1,0 @@
-@BinDays.Api_HostAddress = http://localhost:5042
-
-GET {{BinDays.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
