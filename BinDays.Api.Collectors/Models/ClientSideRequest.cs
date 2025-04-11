@@ -8,6 +8,11 @@ namespace BinDays.Api.Collectors.Models
     internal sealed class ClientSideRequest
     {
         /// <summary>
+        /// Gets the request id, used for determining the next client-side request (if required).
+        /// </summary>
+        required public int RequestId { get; init; }
+
+        /// <summary>
         /// Gets the URL of the request.
         /// </summary>
         required public string Url { get; init; }

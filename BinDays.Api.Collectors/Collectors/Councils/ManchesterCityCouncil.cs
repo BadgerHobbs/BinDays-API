@@ -18,29 +18,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
         public override string GovUkId => "manchester";
 
         /// <inheritdoc/>
-        public ClientSideRequest GetPostcodeAddressesClientSideRequest(string postcode)
-        {
-            throw new NotImplementedException("GetPostcodeAddressesClientSideRequest not implemented.");
-        }
-
-        /// <inheritdoc/>
-        public async Task<ReadOnlyCollection<Address>> GetPostcodeAddresses(ClientSideResponse clientSideResponse)
+        public async Task<GetAddressesResponse> GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
         {
             await Task.FromResult(string.Empty);
-            throw new NotImplementedException("GetPostcodeAddresses not implemented.");
+            throw new NotImplementedException("GetAddresses not implemented.");
         }
 
         /// <inheritdoc/>
-        public ClientSideRequest GetAddressBinDaysClientSideRequest(Address address)
-        {
-            throw new NotImplementedException("GetAddressBinDaysClientSideRequest not implemented.");
-        }
-
-        /// <inheritdoc/>
-        public async Task<ReadOnlyCollection<BinDay>> GetAddressBinDays(ClientSideResponse clientSideResponse)
+        public async Task<GetBinDaysResponse> GetBinDays(Address address, ClientSideResponse? clientSideResponse)
         {
             await Task.FromResult(string.Empty);
-            throw new NotImplementedException("GetPostcodeAddresses not implemented.");
+            throw new NotImplementedException("GetBinDays not implemented.");
         }
     }
 }

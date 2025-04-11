@@ -8,6 +8,11 @@ namespace BinDays.Api.Collectors.Models
     internal sealed class ClientSideResponse
     {
         /// <summary>
+        /// Gets the request id, used for determining the next client-side request (if required).
+        /// </summary>
+        required public int RequestId { get; init; }
+
+        /// <summary>
         /// Gets the HTTP status code of the response.
         /// </summary>
         required public int StatusCode { get; init; }
