@@ -29,17 +29,31 @@ namespace BinDays.Api.Collectors.Collectors
         public Uri GovUkUrl { get; }
 
         /// <summary>
-        /// Gets the addresses for a given postcode.
+        /// Gets the client side request for a given postcode.
         /// </summary>
         /// <param name="postcode">The postcode to search for.</param>
-        /// <returns>A read only collection of addresses.</returns>
-        public Task<ReadOnlyCollection<Address>> GetPostcodeAddresses( string postcode);
+        /// <returns>The client side request.</returns>
+        public ClientSideRequest GetPostcodeAddressesClientSideRequest(string postcode);
 
         /// <summary>
-        /// Gets the bin days for a given address.
+        /// Gets the addresses for a given postcode client-side response.
+        /// </summary>
+        /// <param name="clientSideResponse">The client side response.</param>
+        /// <returns>A read only collection of addresses.</returns>
+        public Task<ReadOnlyCollection<Address>> GetPostcodeAddresses(ClientSideResponse clientSideResponse);
+
+        /// <summary>
+        /// Gets the client side request for a given address.
         /// </summary>
         /// <param name="address">The address to search for.</param>
+        /// <returns>The client side request.</returns>
+        public ClientSideRequest GetAddressBinDaysClientSideRequest(Address address);
+
+        /// <summary>
+        /// Gets the bin days for a given address client-side response.
+        /// </summary>
+        /// <param name="clientSideResponse">The client side response.</param>
         /// <returns>A read only collection of bin days.</returns>
-        public Task<ReadOnlyCollection<BinDay>> GetAddressBinDays(Address address);
+        public Task<ReadOnlyCollection<BinDay>> GetAddressBinDays(ClientSideResponse clientSideResponse);
     }
 }
