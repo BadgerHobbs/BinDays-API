@@ -7,7 +7,7 @@
 	/// This response can either contain the next client-side request to be made,
 	/// or the final collector found.
 	/// </summary>
-	internal sealed class GetCollectorResponse
+	public sealed class GetCollectorResponse
 	{
 		/// <summary>
 		/// Gets the next client-side request to be made, if further requests are required.
