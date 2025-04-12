@@ -11,7 +11,7 @@ namespace BinDays.Api.Collectors.Services
         /// <summary>
         /// The list of collectors acquired via dependency injection.
         /// </summary>
-        private readonly ReadOnlyCollection<ICollector> _collectors;
+        private readonly ReadOnlyCollection<ICollector> collectors;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CollectorService"/> class.
@@ -19,7 +19,7 @@ namespace BinDays.Api.Collectors.Services
         /// <param name="collectors">The collectors.</param>
         public CollectorService(IEnumerable<ICollector> collectors)
         {
-            this._collectors = new ReadOnlyCollection<ICollector>([..collectors]);
+            this.collectors = new ReadOnlyCollection<ICollector>([..collectors]);
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace BinDays.Api.Collectors.Services
         /// <returns>The collectors.</returns>
         public ReadOnlyCollection<ICollector> GetCollectors()
         {
-            return this._collectors;
+            return this.collectors;
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace BinDays.Api.Collectors.Services
         /// <returns>The collector.</returns>
         public ICollector GetCollector(string govUkId)
         {
-            return this._collectors.Where(collector => collector.GovUkId == govUkId).Single();
+            return this.collectors.Where(collector => collector.GovUkId == govUkId).Single();
         }
     }
 }
