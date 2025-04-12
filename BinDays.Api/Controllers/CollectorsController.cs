@@ -14,7 +14,7 @@
 		/// <summary>
 		/// Service for returning specific or all collectors.
 		/// </summary>
-		private readonly ICollectorService collectorService;
+		private readonly CollectorService collectorService;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CollectorsController"/> class.
