@@ -5,7 +5,7 @@ namespace BinDays.Api.Collectors.Models
     /// <summary>
     /// Model which represents an bin for a given collector.
     /// </summary>
-    internal sealed class Bin
+    public sealed class Bin
     {
         /// <summary>
         /// Gets bin name.
