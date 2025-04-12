@@ -16,7 +16,15 @@ namespace BinDays.Api.Initialisation
         public static void ConfigureContainer(ContainerBuilder builder)
         {
             // Register implementations of ICollector
-            builder.RegisterType<ICollector>().AsImplementedInterfaces();
+            var collectorsAssembly = typeof(ICollector).Assembly;
+
+            // Find types that are assignable to ICollector
+            // Exclude the interface itself and any abstract base classes
+            // Register them as ICollector
+            builder.RegisterAssemblyTypes(collectorsAssembly)
+                .AssignableTo<ICollector>()
+                .Where(t => t.IsInterface == false && t.IsAbstract == false)
+                .As<ICollector>();
 
             // Register collector service.
             builder.RegisterType<CollectorService>();

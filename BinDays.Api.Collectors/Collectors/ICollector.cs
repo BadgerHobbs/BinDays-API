@@ -1,6 +1,5 @@
 namespace BinDays.Api.Collectors.Collectors
 {
-    using System.Collections.ObjectModel;
     using BinDays.Api.Collectors.Models;
 
     /// <summary>
