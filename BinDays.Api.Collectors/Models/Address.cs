@@ -3,7 +3,7 @@ namespace BinDays.Api.Collectors.Models
     /// <summary>
     /// Model which represents an address for a given collector.
     /// </summary>
-    internal sealed class Address
+    public sealed class Address
     {
         /// <summary>
         /// Gets address property.

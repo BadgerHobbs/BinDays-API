@@ -1,8 +1,13 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Use Autofac as the service provider factory
+builder.Host.UseServiceProviderFactory(new Autofac.Extensions.DependencyInjection.AutofacServiceProviderFactory());
+
+// Register services directly with Autofac using the ConfigureContainer method
+builder.Host.ConfigureContainer<Autofac.ContainerBuilder>(BinDays.Api.Initialisation.DependencyInjection.ConfigureContainer);
 
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

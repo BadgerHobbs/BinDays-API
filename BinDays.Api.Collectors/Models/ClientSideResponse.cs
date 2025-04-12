@@ -5,7 +5,7 @@ namespace BinDays.Api.Collectors.Models
     /// <summary>
     /// Model which represents a HTTP response from a request executed client-side.
     /// </summary>
-    internal sealed class ClientSideResponse
+    public sealed class ClientSideResponse
     {
         /// <summary>
         /// Gets the request id, used for determining the next client-side request (if required).

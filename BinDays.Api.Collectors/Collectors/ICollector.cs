@@ -6,7 +6,7 @@ namespace BinDays.Api.Collectors.Collectors
     /// <summary>
     /// Interface for a collector.
     /// </summary>
-    internal interface ICollector
+    public interface ICollector
     {
         /// <summary>
         /// Gets the name of the collector.

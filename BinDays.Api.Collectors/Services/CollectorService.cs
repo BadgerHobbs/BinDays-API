@@ -10,7 +10,7 @@ namespace BinDays.Api.Collectors.Services
     /// Initializes a new instance of the <see cref="CollectorService"/> class.
     /// </remarks>
     /// <param name="collectors">The collectors.</param>
-    internal sealed class CollectorService(IEnumerable<ICollector> collectors)
+    public sealed class CollectorService(IEnumerable<ICollector> collectors)
     {
         /// <summary>
         /// The list of collectors acquired via dependency injection.
