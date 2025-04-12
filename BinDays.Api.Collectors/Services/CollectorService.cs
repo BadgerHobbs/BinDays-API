@@ -6,21 +6,16 @@ namespace BinDays.Api.Collectors.Services
     /// <summary>
     /// Service for returning specific or all collectors.
     /// </summary>
-    internal sealed class CollectorService
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="CollectorService"/> class.
+    /// </remarks>
+    /// <param name="collectors">The collectors.</param>
+    internal sealed class CollectorService(IEnumerable<ICollector> collectors)
     {
         /// <summary>
         /// The list of collectors acquired via dependency injection.
         /// </summary>
-        private readonly ReadOnlyCollection<ICollector> collectors;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CollectorService"/> class.
-        /// </summary>
-        /// <param name="collectors">The collectors.</param>
-        public CollectorService(IEnumerable<ICollector> collectors)
-        {
-            this.collectors = new ReadOnlyCollection<ICollector>([..collectors]);
-        }
+        private readonly ReadOnlyCollection<ICollector> collectors = new([.. collectors]);
 
         /// <summary>
         /// Gets the collectors.
