@@ -8,6 +8,8 @@ nupkg/
 # Visual Studio Code
 .vscode/*
 !.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
 
 # Rider
 .idea/
