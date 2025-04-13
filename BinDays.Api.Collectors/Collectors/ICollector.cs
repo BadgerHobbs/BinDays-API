@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors
 		/// <param name="postcode">The postcode to search for.</param>
 		/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
 		/// <returns>The response containing either the next client-side request to make or the addresses.</returns>
-		public Task<GetAddressesResponse> GetAddresses(string postcode, ClientSideResponse? clientSideResponse);
+		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse);
 
 		/// <summary>
 		/// Gets the bin collection days for a given address, potentially requiring multiple steps via client-side responses.
@@ -41,6 +41,6 @@ namespace BinDays.Api.Collectors.Collectors
 		/// <param name="address">The address to get bin days for.</param>
 		/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
 		/// <returns>The response containing either the next client-side request to make or the bin days.</returns>
-		public Task<GetBinDaysResponse> GetBinDays(Address address, ClientSideResponse? clientSideResponse);
+		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse);
 	}
 }

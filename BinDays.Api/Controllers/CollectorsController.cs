@@ -49,5 +49,32 @@
 		{
 			return GovUkCollectorBase.GetCollector(collectorService, postcode, clientSideResponse);
 		}
+
+		[HttpPost]
+		[Route("/{govUkId}/addresses")]
+		public GetAddressesResponse GetAddresses(string govUkId, string postcode, [FromBody] ClientSideResponse? clientSideResponse)
+		{
+			// Get the collector from the service using the gov.uk identifier.
+			ICollector collector = collectorService.GetCollector(govUkId);
+
+			return collector.GetAddresses(postcode, clientSideResponse);
+		}
+
+		[HttpPost]
+		[Route("/{govUkId}/bin-days")]
+		public GetBinDaysResponse GetBinDays(string govUkId, string postcode, string uid, [FromBody] ClientSideResponse? clientSideResponse)
+		{
+			// Create address object from query parameters
+			var address = new Address()
+			{
+				Postcode = postcode,
+				Uid = uid
+			};
+
+			// Get the collector from the service using the gov.uk identifier.
+			ICollector collector = collectorService.GetCollector(govUkId);
+
+			return collector.GetBinDays(address, clientSideResponse);
+		}
 	}
 }

@@ -33,7 +33,6 @@ namespace BinDays.Api.Collectors.Collectors
 		/// <returns>The response containing either the next client-side request to make or the collector.</returns>
 		public static GetCollectorResponse GetCollector(CollectorService collectorService, string postcode, ClientSideResponse? clientSideResponse)
 		{
-
 			if (clientSideResponse?.RequestId == 1)
 			{
 				// Get collector gov.uk id from response header
@@ -61,7 +60,7 @@ namespace BinDays.Api.Collectors.Collectors
 					Url = GovUkBaseUrl,
 					Method = "POST",
 					Headers = [],
-					Body = requestBody
+					Body = requestBody,
 				};
 
 				var getCollectorResponse = new GetCollectorResponse()
