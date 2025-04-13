@@ -7,3 +7,17 @@ Run via CLI at address [http://localhost:5042](http://localhost:5042)
 ```bash
 dotnet run --project BinDays.Api\BinDays.Api.csproj
 ```
+
+Docker build
+```bash
+docker build -t bindays-api -f ./BinDays.Api/Dockerfile .
+```
+
+Docker run
+```bash
+docker run -d \
+    --name bindays-api \
+    -p 9976:8080 \
+    --restart on-failure \
+    bindays-api
+```
