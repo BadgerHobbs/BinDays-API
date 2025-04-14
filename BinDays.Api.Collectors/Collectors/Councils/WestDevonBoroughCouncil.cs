@@ -254,10 +254,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get matching bin types from the service using the keys
 					var binTypes = this.binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
 
-					// Parse the date (e.g. Tuesday, 15 April 2025) to date only
+					// Parse the date (e.g. 'tomorrow, Tuesday, 15 April 2025') to date only
 					var date = DateTime.ParseExact(
-						collectionDate,
-						"dddd, dd MMMM yyyy",
+						collectionDate.Split(",").Last().Trim(),
+						"dd MMMM yyyy",
 						CultureInfo.InvariantCulture,
 						DateTimeStyles.None
 					);
