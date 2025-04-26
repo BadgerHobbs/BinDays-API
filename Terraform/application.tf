@@ -39,6 +39,8 @@ resource "null_resource" "bindays_api" {
 
     inline = [
       "apt update",
+      "apt upgrade -y",
+      "apt autoremove -y",
       "apt install -y docker.io",
       "docker login -u ${var.ghcr_username} -p ${var.ghcr_access_token} ghcr.io/${var.ghcr_username}",
       "docker pull ghcr.io/${var.ghcr_username}/${var.docker_image}",
