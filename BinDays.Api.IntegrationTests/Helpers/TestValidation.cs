@@ -2,11 +2,11 @@ namespace BinDays.Api.IntegrationTests.Helpers
 {
 	using BinDays.Api.Collectors.Collectors;
 	using BinDays.Api.Collectors.Models;
+	using Xunit;
 
 	/// <summary>
-	/// Provides common validation helper methods for collector integration tests, using TestContext for logging.
+	/// Provides common validation helper methods for collector integration tests, using xUnit Asserts.
 	/// </summary>
-	// Renamed Class
 	internal static class TestValidation
 	{
 		/// <summary>
@@ -20,9 +20,9 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			Type expectedType,
 			string expectedGovUkId)
 		{
-			Assert.IsNotNull(collector, "Collector should not be null.");
-			Assert.IsInstanceOfType(collector, expectedType, $"Collector should be of type {expectedType.Name}.");
-			Assert.AreEqual(expectedGovUkId, collector.GovUkId, "Collector GovUkId does not match.");
+			Assert.NotNull(collector);
+			Assert.IsType(expectedType, collector);
+			Assert.Equal(expectedGovUkId, collector.GovUkId);
 		}
 
 		/// <summary>
@@ -40,19 +40,19 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			bool ensureUidPresent = true,
 			string? expectedUidToContain = null)
 		{
-			Assert.IsNotNull(addresses, "Addresses collection should not be null.");
-			Assert.IsTrue(addresses.Count >= expectedMinCount, $"Should retrieve at least {expectedMinCount} address(es). Found {addresses.Count}.");
+			Assert.NotNull(addresses);
+			Assert.True(addresses.Count >= expectedMinCount, $"Should retrieve at least {expectedMinCount} address(es). Found {addresses.Count}.");
 
 			if (ensureUidPresent)
 			{
-				Assert.IsTrue(addresses.All(a => !string.IsNullOrWhiteSpace(a.Uid)), "All addresses should have a non-whitespace Uid.");
+				Assert.True(addresses.All(a => !string.IsNullOrWhiteSpace(a.Uid)), "All addresses should have a non-whitespace Uid.");
 			}
 
-			Assert.IsTrue(addresses.All(a => expectedPostcode.Equals(a.Postcode, StringComparison.OrdinalIgnoreCase)), "All addresses should have the correct postcode.");
+			Assert.True(addresses.All(a => expectedPostcode.Equals(a.Postcode, StringComparison.OrdinalIgnoreCase)), "All addresses should have the correct postcode.");
 
 			if (!string.IsNullOrWhiteSpace(expectedUidToContain))
 			{
-				Assert.IsTrue(addresses.Any(a => expectedUidToContain.Equals(a.Uid, StringComparison.OrdinalIgnoreCase)), $"Expected Uid '{expectedUidToContain}' not found in results.");
+				Assert.True(addresses.Any(a => expectedUidToContain.Equals(a.Uid, StringComparison.OrdinalIgnoreCase)), $"Expected Uid '{expectedUidToContain}' not found in results.");
 			}
 		}
 
@@ -69,18 +69,18 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			bool ensureBinsPresent = true,
 			bool ensureFutureDates = true)
 		{
-			Assert.IsNotNull(binDays, "BinDays collection should not be null.");
-			Assert.IsTrue(binDays.Count >= expectedMinCount, $"Should retrieve at least {expectedMinCount} bin day(s). Found {binDays.Count}.");
+			Assert.NotNull(binDays);
+			Assert.True(binDays.Count >= expectedMinCount, $"Should retrieve at least {expectedMinCount} bin day(s). Found {binDays.Count}.");
 
 			if (ensureBinsPresent)
 			{
-				Assert.IsTrue(binDays.All(bd => bd.Bins != null && bd.Bins.Count > 0), "All bin days should have at least one bin type associated.");
+				Assert.True(binDays.All(bd => bd.Bins != null && bd.Bins.Count > 0), "All bin days should have at least one bin type associated.");
 			}
 
 			if (ensureFutureDates)
 			{
 				DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
-				Assert.IsTrue(binDays.All(bd => bd.Date >= today), "All bin dates should be today or in the future.");
+				Assert.True(binDays.All(bd => bd.Date >= today), "All bin dates should be today or in the future.");
 			}
 		}
 	}

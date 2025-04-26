@@ -3,9 +3,10 @@ namespace BinDays.Api.IntegrationTests.Helpers
     using System.Text;
     using BinDays.Api.Collectors.Collectors;
     using BinDays.Api.Collectors.Models;
+    using Xunit.Abstractions;
 
     /// <summary>
-    /// Provides helper methods for formatting and writing test output summaries.
+    /// Provides helper methods for formatting and writing test output summaries using ITestOutputHelper.
     /// </summary>
     internal static class TestOutput
     {
@@ -17,14 +18,14 @@ namespace BinDays.Api.IntegrationTests.Helpers
         private static readonly string TopBottomBorder = new('=', BorderWidth);
 
         /// <summary>
-        /// Writes a formatted summary of the test results to the TestContext output.
+        /// Writes a formatted summary of the test results to the xUnit test output.
         /// </summary>
-        /// <param name="testContext">The TestContext for the current test execution.</param>
+        /// <param name="outputHelper">The ITestOutputHelper for the current test execution.</param>
         /// <param name="collector">The collector instance used in the test.</param>
         /// <param name="addresses">The list of addresses retrieved.</param>
         /// <param name="binDays">The list of bin days retrieved.</param>
         public static void WriteTestSummary(
-            TestContext testContext,
+            ITestOutputHelper outputHelper,
             ICollector collector,
             IReadOnlyCollection<Address> addresses,
             IReadOnlyCollection<BinDay> binDays)
@@ -37,7 +38,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
             AppendBinDayDetails(summaryBuilder, binDays);
             AppendSummaryFooter(summaryBuilder);
 
-            testContext.WriteLine(summaryBuilder.ToString());
+            outputHelper.WriteLine(summaryBuilder.ToString());
         }
 
         /// <summary>
@@ -181,7 +182,6 @@ namespace BinDays.Api.IntegrationTests.Helpers
         private static void AppendSummaryFooter(StringBuilder summaryBuilder)
         {
             summaryBuilder.AppendLine(TopBottomBorder);
-            summaryBuilder.AppendLine();
         }
 
         /// <summary>

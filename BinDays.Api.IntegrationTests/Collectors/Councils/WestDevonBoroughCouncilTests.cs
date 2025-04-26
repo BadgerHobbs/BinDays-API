@@ -4,18 +4,26 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
     using BinDays.Api.IntegrationTests.Helpers;
     using BinDays.Api.Collectors.Services;
 	using BinDays.Api.Collectors.Collectors;
+    using Xunit;
+    using Xunit.Abstractions;
+    using System.Threading.Tasks;
+    using System.Linq;
 
-	[TestClass]
     public class WestDevonBoroughCouncilTests
     {
         private readonly IntegrationTestClient _client = new();
         private static readonly ICollector _collector = new WestDevonBoroughCouncil();
         private readonly CollectorService _collectorService = new([_collector]);
         private const string _postcode = "EX20 1ZF";
+        
+        private readonly ITestOutputHelper _outputHelper;
 
-        public TestContext TestContext { get; set; } = null!;
+        public WestDevonBoroughCouncilTests(ITestOutputHelper outputHelper)
+        {
+            _outputHelper = outputHelper;
+        }
 
-        [TestMethod]
+        [Fact]
         public async Task GetBinDaysTest()
         {
             // Step 1: Get Collector
@@ -45,7 +53,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 
             // Step 4: Output Summary
             TestOutput.WriteTestSummary(
-                this.TestContext,
+                _outputHelper,
                 collector,
                 addresses,
                 binDays
