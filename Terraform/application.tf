@@ -15,7 +15,25 @@ resource "digitalocean_droplet" "bindays_api" {
   region = "fra1"
   size   = "s-1vcpu-512mb-10gb"
   image  = "debian-12-x64"
-  ssh_keys = [ digitalocean_ssh_key.bindays_api.id ]
+  ssh_keys = [digitalocean_ssh_key.bindays_api.id]
+
+  # Provisioner to run initial setup and install Docker
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "root"
+      private_key = file("~/.ssh/id_rsa")
+      host        = self.ipv4_address
+    }
+
+    inline = [
+      "apt update",
+      "apt upgrade -y",
+      "apt autoremove -y",
+      "apt install -y docker.io",
+      "(crontab -l 2>/dev/null; echo '0 3 * * * apt update && apt upgrade -y && apt autoremove -y') | crontab -",
+    ]
+  }
 
   depends_on = [
     digitalocean_ssh_key.bindays_api
@@ -38,10 +56,6 @@ resource "null_resource" "bindays_api" {
     }
 
     inline = [
-      "apt update",
-      "apt upgrade -y",
-      "apt autoremove -y",
-      "apt install -y docker.io",
       "docker login -u ${var.ghcr_username} -p ${var.ghcr_access_token} ghcr.io/${var.ghcr_username}",
       "docker pull ghcr.io/${var.ghcr_username}/${var.docker_image}",
       "docker rm bindays-api -f",
