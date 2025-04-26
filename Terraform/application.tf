@@ -22,7 +22,7 @@ resource "digitalocean_droplet" "bindays_api" {
     connection {
       type        = "ssh"
       user        = "root"
-      private_key = file("~/.ssh/id_rsa")
+      private_key = file("~/.ssh/id_rsa.pub")
       host        = self.ipv4_address
     }
 
@@ -34,4 +34,8 @@ resource "digitalocean_droplet" "bindays_api" {
       "docker run -d --restart always -p 80:8080 ghcr.io/${var.ghcr_username}/${var.docker_image}"
     ]
   }
+
+  depends_on = [
+    digitalocean_ssh_key.bindays_api
+  ]
 }
