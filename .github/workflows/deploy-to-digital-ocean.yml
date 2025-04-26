@@ -30,11 +30,17 @@ jobs:
           github_token: ${{ secrets.gh_access_token }}
         continue-on-error: true
 
-      - name: Add SSH key
+      - name: Add Public SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.ssh_key }}" > ~/.ssh/id_rsa.pub
+          echo "${{ secrets.ssh_public_key }}" > ~/.ssh/id_rsa.pub
           chmod 600 ~/.ssh/id_rsa.pub
+
+      - name: Add Private SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ssh_private_key }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
 
       - name: Configure Terraform
         uses: hashicorp/setup-terraform@v2

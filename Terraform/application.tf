@@ -22,7 +22,7 @@ resource "digitalocean_droplet" "bindays_api" {
     connection {
       type        = "ssh"
       user        = "root"
-      private_key = file("~/.ssh/id_rsa.pub")
+      private_key = file("~/.ssh/id_rsa")
       host        = self.ipv4_address
     }
 
