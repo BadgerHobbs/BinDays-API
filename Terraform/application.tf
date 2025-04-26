@@ -17,7 +17,6 @@ resource "digitalocean_droplet" "bindays_api" {
   image  = "debian-12-x64"
   ssh_keys = [digitalocean_ssh_key.bindays_api.id]
 
-  # Provisioner to run initial setup and install Docker
   provisioner "remote-exec" {
     connection {
       type        = "ssh"
@@ -29,8 +28,7 @@ resource "digitalocean_droplet" "bindays_api" {
     inline = [
       "apt update",
       "apt upgrade -y",
-      "apt install -y docker.io",
-      "(crontab -l 2>/dev/null; echo '0 3 * * * apt update && apt upgrade -y') | crontab -",
+      "apt install -y docker.io"
     ]
   }
 
