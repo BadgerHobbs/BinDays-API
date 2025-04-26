@@ -18,4 +18,4 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Run Integration Tests
-        run: dotnet test --configuration Release tests/BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+        run: dotnet test --configuration Release BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
