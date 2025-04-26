@@ -14,14 +14,14 @@ jobs:
       TF_VAR_do_access_token: ${{ secrets.DO_ACCESS_TOKEN }}
       TF_VAR_ghcr_username: ${{ secrets.GHCR_USERNAME }}
       TF_VAR_ghcr_access_token: ${{ secrets.GHCR_ACCESS_TOKEN }}
-      TF_VAR_docker_image: dgatdo-application:latest
+      TF_VAR_docker_image: bindays-api:latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
 
       - name: Download Encrypted Artifact & Decrypt Artifact
-        uses: badgerhobbs/terraform-state@v1
+        uses: badgerhobbs/terraform-state@v2
         with:
           encryption_key: ${{ secrets.encryption_key }}
           operation: download
@@ -51,7 +51,7 @@ jobs:
           terraform -chdir="./Terraform" apply -auto-approve
 
       - name: Encrypt Artifact & Upload Encrypted Artifact
-        uses: badgerhobbs/terraform-state@v1
+        uses: badgerhobbs/terraform-state@v2
         with:
           encryption_key: ${{ secrets.encryption_key }}
           operation: upload
