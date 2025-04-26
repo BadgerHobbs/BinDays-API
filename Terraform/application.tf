@@ -1,4 +1,3 @@
-
 # Configure the DigitalOcean Provider
 provider "digitalocean" {
   token = var.do_access_token
@@ -18,12 +17,24 @@ resource "digitalocean_droplet" "bindays_api" {
   image  = "debian-12-x64"
   ssh_keys = [ digitalocean_ssh_key.bindays_api.id ]
 
+  depends_on = [
+    digitalocean_ssh_key.bindays_api
+  ]
+}
+
+# A null resource is used here to trigger the Docker update process
+# when a specific value (the Docker image tag) changes.
+resource "null_resource" "bindays_api" {
+  triggers = {
+    docker_image_tag = var.docker_image
+  }
+
   provisioner "remote-exec" {
     connection {
       type        = "ssh"
       user        = "root"
       private_key = file("~/.ssh/id_rsa")
-      host        = self.ipv4_address
+      host        = digitalocean_droplet.bindays_api.ipv4_address
     }
 
     inline = [
@@ -37,6 +48,6 @@ resource "digitalocean_droplet" "bindays_api" {
   }
 
   depends_on = [
-    digitalocean_ssh_key.bindays_api
+    digitalocean_droplet.bindays_api
   ]
 }
