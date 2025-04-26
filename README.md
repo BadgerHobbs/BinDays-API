@@ -1,6 +1,6 @@
 # BinDays-API
 
-[![Build and Push Image](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml)
+[![Build and Push Image](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml) [![Deploy to DigitalOcean](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/deploy-to-digital-ocean.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/deploy-to-digital-ocean.yml)
 
 API for BinDays mobile app designed to provide configuration for and process responses from client-side requests.
 
