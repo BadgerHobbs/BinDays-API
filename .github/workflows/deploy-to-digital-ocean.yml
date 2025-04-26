@@ -27,7 +27,7 @@ jobs:
           operation: download
           location: artifact
           directory: ./Terraform
-          github_token: ${{ secrets.gh_access_token }}
+          github_token: ${{ secrets.ghcr_access_token }}
         continue-on-error: true
 
       - name: Add Public SSH Key
@@ -63,4 +63,4 @@ jobs:
           operation: upload
           location: artifact
           directory: ./Terraform
-          github_token: ${{ secrets.gh_access_token }}
+          github_token: ${{ secrets.ghcr_access_token }}
