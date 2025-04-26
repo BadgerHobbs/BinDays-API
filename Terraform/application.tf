@@ -13,7 +13,7 @@ resource "digitalocean_ssh_key" "bindays_api" {
 # Configure the DigitalOcean Droplet
 resource "digitalocean_droplet" "bindays_api" {
   name   = "bindays-api"
-  region = "lon1"
+  region = "fra1"
   size   = "s-1vcpu-512mb-10gb"
   image  = "debian-12-x64"
   ssh_keys = [ digitalocean_ssh_key.bindays_api.id ]
