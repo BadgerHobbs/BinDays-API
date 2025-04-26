@@ -10,11 +10,15 @@ jobs:
       TF_VAR_do_access_token: ${{ secrets.DO_ACCESS_TOKEN }}
       TF_VAR_ghcr_username: ${{ secrets.GHCR_USERNAME }}
       TF_VAR_ghcr_access_token: ${{ secrets.GHCR_ACCESS_TOKEN }}
-      TF_VAR_docker_image: dgatdo-application:latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
+
+      - name: Get Docker Image Version and Set TF_VAR_docker_image
+        run: |
+          VERSION=$(make version)
+          echo "TF_VAR_docker_image=bindays-api:$VERSION" >> $GITHUB_ENV
 
       - name: Download Encrypted Artifact & Decrypt Artifact
         uses: badgerhobbs/terraform-state@v1
