@@ -4,7 +4,6 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 	using BinDays.Api.Collectors.Collectors.Councils;
 	using BinDays.Api.Collectors.Services;
 	using BinDays.Api.IntegrationTests.Helpers;
-	using System.Linq;
 	using System.Threading.Tasks;
 	using Xunit;
 	using Xunit.Abstractions;
@@ -26,37 +25,12 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		[Fact]
 		public async Task GetBinDaysTest()
 		{
-			// Step 1: Get Collector
-			var collector = await TestSteps.GetCollectorAsync(
+			await TestSteps.EndToEnd(
 				_client,
 				_collectorService,
+				_collector,
 				_postcode,
-				_collector.GetType(),
-				_collector.GovUkId
-			);
-
-			// Step 2: Get Addresses
-			var addresses = await TestSteps.GetAddressesAsync(
-				_client,
-				collector,
-				_postcode
-			);
-
-			var selectedAddress = addresses.First();
-
-			// Step 3: Get Bin Days
-			var binDays = await TestSteps.GetBinDaysAsync(
-				_client,
-				collector,
-				selectedAddress
-			);
-
-			// Step 4: Output Summary
-			TestOutput.WriteTestSummary(
-				_outputHelper,
-				collector,
-				addresses,
-				binDays
+				_outputHelper
 			);
 		}
 	}
