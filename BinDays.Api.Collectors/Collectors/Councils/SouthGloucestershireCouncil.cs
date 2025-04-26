@@ -32,19 +32,19 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Name = "Recycling",
 				Colour = "Green",
 				Keys = new List<string>() { "C", "R" }.AsReadOnly(),
-            },
+			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = "Grey",
 				Keys = new List<string>() { "C", "R" }.AsReadOnly(),
-            },
+			},
 			new()
 			{
 				Name = "General Waste",
 				Colour = "Black",
 				Keys = new List<string>() { "R" }.AsReadOnly(),
-            },
+			},
 		}.AsReadOnly();
 
 		/// <inheritdoc/>
@@ -145,9 +145,9 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				// Parse response content as JSON object (within an array)
 				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-                
-                // Get the first element which contains the collection data
-				var rawBinDaysObject = jsonDoc.RootElement[0]; 
+
+				// Get the first element which contains the collection data
+				var rawBinDaysObject = jsonDoc.RootElement[0];
 
 				// Iterate through each property (collection type and date)
 				foreach (var property in rawBinDaysObject.EnumerateObject())

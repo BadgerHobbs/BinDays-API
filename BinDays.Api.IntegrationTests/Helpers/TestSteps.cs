@@ -1,8 +1,8 @@
 namespace BinDays.Api.IntegrationTests.Helpers
 {
-    using BinDays.Api.Collectors.Collectors;
-    using BinDays.Api.Collectors.Models;
-    using BinDays.Api.Collectors.Services;
+	using BinDays.Api.Collectors.Collectors;
+	using BinDays.Api.Collectors.Models;
+	using BinDays.Api.Collectors.Services;
 
 	/// <summary>
 	/// Provides static helper methods for executing common integration test steps.
@@ -39,7 +39,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				expectedCollectorType,
 				expectedGovUkId
 			);
-			
+
 			return collector;
 		}
 
@@ -69,7 +69,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				expectedPostcode: postcode,
 				ensureUidPresent: true
 			);
-			
+
 			return addresses;
 		}
 
@@ -99,7 +99,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				ensureBinsPresent: true,
 				ensureFutureDates: true
 			);
-			
+
 			return binDays;
 		}
 	}

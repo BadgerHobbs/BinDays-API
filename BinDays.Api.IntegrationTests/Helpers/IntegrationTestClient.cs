@@ -83,7 +83,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		{
 			using var httpRequest = new HttpRequestMessage(new HttpMethod(request.Method), request.Url);
 			var headersToSend = new Dictionary<string, string>(request.Headers, StringComparer.OrdinalIgnoreCase);
-			
+
 			if (!string.IsNullOrEmpty(request.Body))
 			{
 				string mediaTypeOnly = "application/octet-stream";
