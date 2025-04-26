@@ -12,7 +12,7 @@ build: build-bindays-api
 
 .PHONY: build-bindays-api
 build-bindays-api:
-	docker build -t bindays-api:${COMMIT_HASH} -f BinDays.Api/Dockerfile bindays-api
+	docker build -t bindays-api:${COMMIT_HASH} -f BinDays.Api/Dockerfile .
 	docker tag bindays-api:$(COMMIT_HASH) bindays-api:latest
 
 # Push Docker images
