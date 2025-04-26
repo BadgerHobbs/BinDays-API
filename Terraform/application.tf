@@ -31,7 +31,8 @@ resource "digitalocean_droplet" "bindays_api" {
       "apt install -y docker.io",
       "docker login -u ${var.ghcr_username} -p ${var.ghcr_access_token} ghcr.io/${var.ghcr_username}",
       "docker pull ghcr.io/${var.ghcr_username}/${var.docker_image}",
-      "docker run -d --restart always -p 80:8080 ghcr.io/${var.ghcr_username}/${var.docker_image}"
+      "docker rm bindays-api -f",
+      "docker run -d --name bindays-api --restart always -p 80:8080 ghcr.io/${var.ghcr_username}/${var.docker_image}"
     ]
   }
 
