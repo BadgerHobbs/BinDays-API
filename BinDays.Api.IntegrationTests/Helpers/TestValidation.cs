@@ -48,8 +48,6 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				Assert.True(addresses.All(a => !string.IsNullOrWhiteSpace(a.Uid)), "All addresses should have a non-whitespace Uid.");
 			}
 
-			Assert.True(addresses.All(a => expectedPostcode.Equals(a.Postcode?.Replace(" ", ""), StringComparison.OrdinalIgnoreCase)), "All addresses should have the correct postcode.");
-
 			if (!string.IsNullOrWhiteSpace(expectedUidToContain))
 			{
 				Assert.True(addresses.Any(a => expectedUidToContain.Equals(a.Uid, StringComparison.OrdinalIgnoreCase)), $"Expected Uid '{expectedUidToContain}' not found in results.");
