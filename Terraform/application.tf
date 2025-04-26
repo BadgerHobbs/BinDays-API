@@ -29,9 +29,8 @@ resource "digitalocean_droplet" "bindays_api" {
     inline = [
       "apt update",
       "apt upgrade -y",
-      "apt autoremove -y",
       "apt install -y docker.io",
-      "(crontab -l 2>/dev/null; echo '0 3 * * * apt update && apt upgrade -y && apt autoremove -y') | crontab -",
+      "(crontab -l 2>/dev/null; echo '0 3 * * * apt update && apt upgrade -y') | crontab -",
     ]
   }
 
