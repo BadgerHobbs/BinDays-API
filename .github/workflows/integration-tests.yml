@@ -1,0 +1,21 @@
+name: Integration Tests
+on:
+  schedule:
+    # Runs at 00:00 UTC every day to keep state up to date
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  integration_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run Integration Tests
+        run: dotnet test --configuration Release tests/BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
