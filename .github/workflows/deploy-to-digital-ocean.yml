@@ -30,11 +30,11 @@ jobs:
           github_token: ${{ secrets.gh_access_token }}
         continue-on-error: true
 
-      - name: Add SSH key to known hosts
+      - name: Add SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.ssh_key }}" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          echo "${{ secrets.ssh_key }}" > ~/.ssh/id_rsa.pub
+          chmod 600 ~/.ssh/id_rsa.pub
 
       - name: Configure Terraform
         uses: hashicorp/setup-terraform@v2
