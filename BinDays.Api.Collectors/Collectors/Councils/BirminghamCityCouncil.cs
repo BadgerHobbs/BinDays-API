@@ -83,7 +83,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = "https://www.birmingham.gov.uk/xfp/form/619",
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
-						{"user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0"},
+						{"user-agent", Constants.UserAgent},
 					},
 					Body = string.Empty,
 				};
@@ -114,7 +114,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				});
 
 				var requestHeaders = new Dictionary<string, string>() {
-					{"user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0"},
+					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 				};
 
@@ -147,7 +147,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				{
 					var uid = rawAddress.Groups["uid"].Value;
 
-					// Exclude placeholder/invalid options based on their typical values
+					// Exclude placeholder/invalid options
 					if (uid == "-1" || uid == "111111")
 					{
 						continue;
@@ -191,7 +191,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = "https://www.birmingham.gov.uk/xfp/form/619",
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
-						{"user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0"},
+						{"user-agent", Constants.UserAgent},
 					},
 					Body = string.Empty,
 				};
@@ -223,7 +223,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				});
 
 				var requestHeaders = new Dictionary<string, string>() {
-					{"user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0"},
+					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 				};
 
@@ -260,7 +260,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get the day number from the collection date
 					var dayNumber = int.Parse(CollectionDateRegex().Match(collectionDate).Groups["day"].Value);
 
-					var year = DateTime.Now.Year;
 					var date = new DateOnly(
 						DateTime.Now.Year,
 						DateTime.Now.Month,

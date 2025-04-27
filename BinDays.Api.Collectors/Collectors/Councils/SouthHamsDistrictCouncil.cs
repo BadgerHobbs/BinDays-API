@@ -1,3 +1,6 @@
+// This file was converted from the legacy dart implementation using AI.
+// TODO: Manually review and improve this file.
+
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
