@@ -194,7 +194,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var datePart = dateString.Split(',').Last().Trim();
 
 					// Strip the st|nd|rd|th from the date part
-                    datePart = CollectionDateRegex().Replace(datePart, "");
+					datePart = CollectionDateRegex().Replace(datePart, "");
 
 					// Remove double spaces
 					datePart = DoubleSpaceRegex().Replace(datePart, " ");
