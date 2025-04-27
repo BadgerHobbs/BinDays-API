@@ -8,6 +8,9 @@ builder.Host.ConfigureContainer<Autofac.ContainerBuilder>(BinDays.Api.Initialisa
 
 builder.Services.AddControllers();
 
+// Health check for monitoring
+builder.Services.AddHealthChecks();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -26,5 +29,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHealthChecks("/status");
 
 app.Run();
