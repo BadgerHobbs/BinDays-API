@@ -199,7 +199,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 
 			// Throw exception for invalid request
-			throw new InvalidOperationException($"Invalid client-side request for GetAddresses. RequestId: {clientSideResponse?.RequestId}");
+			throw new InvalidOperationException("Invalid client-side request for GetAddresses. RequestId: {clientSideResponse?.RequestId}");
 		}
 
 		/// <inheritdoc/>
@@ -396,7 +396,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 
 			// Throw exception for invalid request
-			throw new InvalidOperationException($"Invalid client-side request for GetBinDays. RequestId: {clientSideResponse?.RequestId}");
+			throw new InvalidOperationException("Invalid client-side request for GetBinDays. RequestId: {clientSideResponse?.RequestId}");
 		}
 
 		/// <summary>

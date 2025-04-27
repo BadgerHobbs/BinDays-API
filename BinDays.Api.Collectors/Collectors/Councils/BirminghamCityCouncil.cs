@@ -175,7 +175,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 
 			// Throw exception for invalid request
-			throw new InvalidOperationException($"Invalid client-side request.");
+			throw new InvalidOperationException("Invalid client-side request.");
 		}
 
 		/// <inheritdoc/>
@@ -298,7 +298,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 
 			// Throw exception for invalid request
-			throw new InvalidOperationException($"Invalid client-side request.");
+			throw new InvalidOperationException("Invalid client-side request.");
 		}
 	}
 }
