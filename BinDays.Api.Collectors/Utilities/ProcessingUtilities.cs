@@ -2,13 +2,20 @@ namespace BinDays.Api.Collectors.Utilities
 {
 	using BinDays.Api.Collectors.Models;
 	using System.Collections.ObjectModel;
+	using System.Text.RegularExpressions;
 	using System.Web;
 
 	/// <summary>
 	/// Provides utility methods for processing data.
 	/// </summary>
-	internal static class ProcessingUtilities
+	internal static partial class ProcessingUtilities
 	{
+		/// <summary>
+		/// Regex to parse set-cookies.
+		/// </summary>
+		[GeneratedRegex(@"(?:^|,)\s*([^=;\s]+=[^;]+)")]
+		private static partial Regex CookieRegex();
+
 		/// <summary>
 		/// Converts a dictionary of string key-value pairs into a URL-encoded form data string.
 		/// </summary>
@@ -62,6 +69,32 @@ namespace BinDays.Api.Collectors.Utilities
 			}
 
 			return mergedBinDays.AsReadOnly();
+		}
+
+		/// <summary>
+		/// Parses a 'Set-Cookie' header string and extracts the cookie key-value pairs
+		/// suitable for use in a 'Cookie' request header.
+		/// </summary>
+		/// <param name="setCookieHeader">The raw 'Set-Cookie' header string containing one or more cookie definitions.</param>
+		/// <returns>A string containing the cookie key-value pairs (e.g., "key1=value1; key2=value2")
+		/// ready for use in a 'Cookie' request header, or an empty string if the input is null or empty.</returns>
+		public static string ParseSetCookieHeaderForRequestCookie(string setCookieHeader)
+		{
+			if (string.IsNullOrWhiteSpace(setCookieHeader))
+			{
+				return string.Empty;
+			}
+
+			var matches = CookieRegex().Matches(setCookieHeader);
+
+			var cookieValues = matches
+				.Cast<Match>()
+				.Select(m => m.Groups[1].Value.Trim())
+				.Where(cv => !string.IsNullOrWhiteSpace(cv))
+				.ToList();
+
+
+			return string.Join("; ", cookieValues);
 		}
 	}
 }
