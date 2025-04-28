@@ -4,6 +4,7 @@
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
+	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
@@ -83,6 +84,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Step 2: Get Addresses using Session ID and Postcode
 			else if (clientSideResponse.RequestId == 1)
 			{
+				// Get set-cookies from response
+				var setCookies = clientSideResponse.Headers["set-cookie"];
+				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
+
 				// Extract Session ID from Step 1 response content
 				var sessionIdMatch = SessionIdRegex().Match(clientSideResponse.Content);
 				if (!sessionIdMatch.Success)
@@ -134,7 +139,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"content-type", "application/json; charset=UTF-8"}, // Assuming JSON based on body structure
-                };
+					{"cookie", requestCookies},
+				};
 
 				var clientSideRequest = new ClientSideRequest()
 				{
@@ -232,6 +238,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Step 2: Get Bin Days using Session ID and UPRN
 			else if (clientSideResponse.RequestId == 1)
 			{
+				// Get set-cookies from response
+				var setCookies = clientSideResponse.Headers["set-cookie"];
+				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
+
 				// Extract Session ID from Step 1 response content
 				var sessionIdMatch = SessionIdRegex().Match(clientSideResponse.Content);
 				if (!sessionIdMatch.Success)
@@ -339,6 +349,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"content-type", "application/json; charset=UTF-8"},
+					{"cookie", requestCookies},
 				};
 
 				var clientSideRequest = new ClientSideRequest()
