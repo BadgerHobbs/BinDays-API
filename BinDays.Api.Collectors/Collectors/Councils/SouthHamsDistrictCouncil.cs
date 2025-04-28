@@ -98,6 +98,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			else if (clientSideResponse?.RequestId == 1)
 			{
+				// Get set-cookies from response
+				var setCookies = clientSideResponse.Headers["set-cookie"];
+				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
+
 				// Get session id from response content
 				var sessionId = GetSessionId(clientSideResponse.Content);
 
@@ -113,6 +117,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
 					{"origin", "https://waste.southhams.gov.uk"},
 					{"referer", "https://waste.southhams.gov.uk/"},
+					{"cookie", requestCookies},
 				};
 
 				var clientSideRequest = new ClientSideRequest()
@@ -200,6 +205,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting bin days
 			else if (clientSideResponse?.RequestId == 1)
 			{
+				// Get set-cookies from response
+				var setCookies = clientSideResponse.Headers["set-cookie"];
+				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
+
 				// Get session id from response content
 				var sessionId = GetSessionId(clientSideResponse.Content);
 
@@ -215,6 +224,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
 					{"origin", "https://waste.southhams.gov.uk"},
 					{"referer", "https://waste.southhams.gov.uk/"},
+					{"cookie", requestCookies},
 				};
 
 				var clientSideRequest = new ClientSideRequest()
