@@ -2,6 +2,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 {
 	using BinDays.Api.Collectors.Models;
 	using System.Linq;
+	using System.Net;
 	using System.Net.Http;
 	using System.Text;
 
@@ -19,7 +20,9 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		{
 			var httpClientHandler = new HttpClientHandler
 			{
-				AllowAutoRedirect = false
+				AllowAutoRedirect = false,
+				UseCookies = false,
+				CookieContainer = new CookieContainer(),
 			};
 			_httpClient = new HttpClient(httpClientHandler);
 		}
