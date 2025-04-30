@@ -269,7 +269,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// If the day number is less then today, it is next month
 					if (dayNumber < DateTime.Now.Day)
 					{
-						date.AddMonths(1);
+						date = date.AddMonths(1);
 					}
 
 					// Get matching bin types from the service using the keys
@@ -284,6 +284,9 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					binDays.Add(binDay);
 				}
+
+				// Filter out bin days in the past
+				binDays = [.. ProcessingUtilities.GetFutureBinDays(binDays)];
 
 				// Merge the bin days
 				binDays = [.. ProcessingUtilities.MergeBinDays(binDays)];

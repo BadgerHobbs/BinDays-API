@@ -248,7 +248,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <returns>A read-only collection of future BinDay objects parsed from the HTML.</returns>
 		private ReadOnlyCollection<BinDay> ParseBinDaysFromHtml(string htmlContent, Address address)
 		{
-			var aggregatedBinDays = new Dictionary<DateOnly, List<Bin>>();
+			var binDays = new List<BinDay>();
 			var today = DateOnly.FromDateTime(DateTime.Today);
 
 			// Find all collection event details using regex
@@ -264,7 +264,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Try parsing the date string (e.g., "Wednesday 16 April, 2025")
 					if (!DateTime.TryParseExact(rawBinDayDate, "dddd d MMMM, yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDateTime))
 					{
-						continue;
+						continue; // Skip if date parsing fails
 					}
 					var collectionDate = DateOnly.FromDateTime(parsedDateTime);
 
@@ -278,37 +278,31 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var matchedBins = this.binTypes.Where(bin =>
 						bin.Keys.Any(key => rawBinType.Contains(key, StringComparison.OrdinalIgnoreCase)));
 
-					// Aggregate bins by date
+					// Create a BinDay for each matched bin type
 					foreach (var binType in matchedBins)
 					{
-						if (!aggregatedBinDays.TryGetValue(collectionDate, out var binsForDate))
+						var binDay = new BinDay()
 						{
-							binsForDate = [];
-							aggregatedBinDays[collectionDate] = binsForDate;
-						}
-
-						// Add bin type if it's not already in the list for this date
-						if (!binsForDate.Any(b => b.Name == binType.Name && b.Colour == binType.Colour))
-						{
-							binsForDate.Add(binType);
-						}
+							Date = collectionDate,
+							Address = address,
+							// Create a read-only list containing just this one bin
+							Bins = new List<Bin>() { binType }.AsReadOnly()
+						};
+						binDays.Add(binDay);
 					}
 				}
 			}
 
-			// Create BinDay objects from the aggregated data, ordered by date
-			// The filtering for future dates happens before aggregation, so no extra filtering needed here.
-			var binDays = aggregatedBinDays
-				.Select(kvp => new BinDay()
-				{
-					Date = kvp.Key,
-					Address = address,
-					Bins = kvp.Value.AsReadOnly()
-				})
-				.OrderBy(bd => bd.Date)
-				.ToList();
+			// Filter out any bin days that might still be in the past (redundant due to check above, but safe)
+			// Note: ProcessingUtilities.GetFutureBinDays expects IEnumerable<BinDay>
+			var futureBinDays = ProcessingUtilities.GetFutureBinDays(binDays);
 
-			return binDays.AsReadOnly();
+			// Merge bin days that occur on the same date
+			// Note: ProcessingUtilities.MergeBinDays expects IEnumerable<BinDay>
+			var mergedBinDays = ProcessingUtilities.MergeBinDays(futureBinDays);
+
+			// Return the final list, ordered by date
+			return mergedBinDays.OrderBy(bd => bd.Date).ToList().AsReadOnly();
 		}
 	}
 }

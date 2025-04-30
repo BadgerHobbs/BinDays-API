@@ -225,7 +225,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				// Merge bin days if multiple types are collected on the same date
+				// Filter out bin days in the past
+				binDays = [.. ProcessingUtilities.GetFutureBinDays(binDays)];
+
+				// Merge bin days that fall on the same date
 				binDays = [.. ProcessingUtilities.MergeBinDays(binDays)];
 
 				var getBinDaysResponse = new GetBinDaysResponse()

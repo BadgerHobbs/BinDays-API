@@ -4,6 +4,7 @@
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
+	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
@@ -198,13 +199,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				var aggregatedBinDays = new Dictionary<DateOnly, List<Bin>>();
-
 				// Parse response content as JSON object
 				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 				var rawBinDaysObject = jsonDoc.RootElement;
 
 				// Iterate through each property (collection type key and date value)
+				var binDays = new List<BinDay>();
 				foreach (var property in rawBinDaysObject.EnumerateObject())
 				{
 					var dateKey = property.Name;
@@ -234,33 +234,21 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Find all matching bin types based on the date key
 					var matchedBins = this.binTypes.Where(bin => bin.Keys.Contains(dateKey));
 
-					// Aggregate bins by date
-					foreach (var binType in matchedBins)
+					var binDay = new BinDay()
 					{
-						if (!aggregatedBinDays.TryGetValue(collectionDate, out var binsForDate))
-						{
-							binsForDate = [];
-							aggregatedBinDays[collectionDate] = binsForDate;
-						}
+						Date = collectionDate,
+						Address = address,
+						Bins = matchedBins.ToList().AsReadOnly()
+					};
 
-						// Add bin type if it's not already in the list for this date
-						if (!binsForDate.Any(b => b.Name == binType.Name && b.Colour == binType.Colour))
-						{
-							binsForDate.Add(binType);
-						}
-					}
+					binDays.Add(binDay);
 				}
 
-				// Create BinDay objects from the aggregated data, ordered by date
-				var binDays = aggregatedBinDays
-					.Select(kvp => new BinDay()
-					{
-						Date = kvp.Key,
-						Address = address,
-						Bins = kvp.Value.AsReadOnly()
-					})
-					.OrderBy(bd => bd.Date)
-					.ToList();
+				// Filter out bin days in the past
+				binDays = [.. ProcessingUtilities.GetFutureBinDays(binDays)];
+
+				// Merge the bin days
+				binDays = [.. ProcessingUtilities.MergeBinDays(binDays)];
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{

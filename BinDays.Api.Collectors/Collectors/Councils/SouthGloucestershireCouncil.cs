@@ -4,6 +4,7 @@
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
+	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
@@ -144,63 +145,74 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				var aggregatedBinDays = new Dictionary<DateOnly, List<Bin>>();
+				var binDays = new List<BinDay>(); // Initialize the list directly
 
 				// Parse response content as JSON object (within an array)
 				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
 				// Get the first element which contains the collection data
+				// Add null checks for robustness
+				if (jsonDoc.RootElement.ValueKind != JsonValueKind.Array || jsonDoc.RootElement.GetArrayLength() == 0)
+				{
+					// Handle empty or unexpected response format
+					return new GetBinDaysResponse()
+					{
+						BinDays = new List<BinDay>().AsReadOnly(), // Return empty list
+						NextClientSideRequest = null
+					};
+				}
 				var rawBinDaysObject = jsonDoc.RootElement[0];
 
 				// Iterate through each property (collection type and date)
 				foreach (var property in rawBinDaysObject.EnumerateObject())
 				{
-					var dateString = property.Value.GetString()!;
+					var dateString = property.Value.GetString();
 
 					// Try parsing the date string (e.g., "15/04/2025")
-					if (!DateOnly.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var collectionDate))
+					if (string.IsNullOrEmpty(dateString) || !DateOnly.TryParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var collectionDate))
 					{
-						// Skip if date parsing fails
+						// Skip if date parsing fails or date string is null/empty
 						continue;
 					}
 
 					// Get the collection code (e.g., "C1", "R2") and extract the type character
 					var collectionCode = property.Name;
+					if (string.IsNullOrEmpty(collectionCode)) continue; // Skip if property name is empty
 					var typeChar = collectionCode[0].ToString();
 
 					// Find matching bin types based on the type character in their keys
-					var matchedBins = this.binTypes.Where(bin => bin.Keys.Contains(typeChar));
+					var matchedBins = this.binTypes.Where(bin => bin.Keys.Contains(typeChar)).ToList(); // Materialize the list
 
-					// Aggregate bins by date
-					foreach (var binType in matchedBins)
+					// If no matching bins found for this type character, skip
+					if (!matchedBins.Any())
 					{
-						if (!aggregatedBinDays.TryGetValue(collectionDate, out var binsForDate))
-						{
-							binsForDate = [];
-							aggregatedBinDays[collectionDate] = binsForDate;
-						}
-
-						// Add bin type if it's not already in the list for this date
-						if (!binsForDate.Any(b => b.Name == binType.Name && b.Colour == binType.Colour))
-						{
-							binsForDate.Add(binType);
-						}
+						continue;
 					}
+
+					// Create a BinDay for this specific date and the matched bins
+					var binDay = new BinDay()
+					{
+						Date = collectionDate,
+						Address = address,
+						// Ensure we create a new read-only list for this BinDay
+						Bins = matchedBins.AsReadOnly()
+					};
+
+					binDays.Add(binDay);
 				}
 
-				// Create BinDay objects from the aggregated data, ordered by date
-				var binDays = aggregatedBinDays
-					.Select(kvp => new BinDay()
-					{
-						Date = kvp.Key,
-						Address = address,
-						Bins = kvp.Value.AsReadOnly()
-					})
-					.OrderBy(bd => bd.Date)
-					.ToList();
+				// Filter out bin days in the past
+				binDays = [.. ProcessingUtilities.GetFutureBinDays(binDays)];
+
+				// Merge bin days that fall on the same date
+				binDays = [.. ProcessingUtilities.MergeBinDays(binDays)];
+
+				// Order the final list by date
+				binDays = binDays.OrderBy(bd => bd.Date).ToList();
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
+					// Assign the processed, read-only list
 					BinDays = binDays.AsReadOnly(),
 					NextClientSideRequest = null
 				};

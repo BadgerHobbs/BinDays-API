@@ -196,7 +196,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				var aggregatedBinDays = new Dictionary<DateOnly, List<Bin>>();
+				var binDays = new List<BinDay>(); // Initialize the list directly
 
 				// Parse response content as JSON object
 				var responseJson = JsonSerializer.Deserialize<JsonObject>(clientSideResponse.Content)!;
@@ -222,8 +222,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var matchedBins = this.binTypes.Where(bin =>
 						bin.Keys.Any(key => containerName.Contains(key, StringComparison.OrdinalIgnoreCase)));
 
+					// If no matching bins found for this container, skip
+					if (!matchedBins.Any())
+					{
+						continue;
+					}
+
 					// Try parsing the date string (e.g., "2025-04-15T00:00:00")
-					// Dart used "y-M-dTh:m:s", C# uses "o" round-trip or specific format
 					if (!DateTime.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.None, out var collectionDateTime))
 					{
 						// Skip if date parsing fails
@@ -231,33 +236,23 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 					var collectionDate = DateOnly.FromDateTime(collectionDateTime);
 
-					// Aggregate bins by date
-					foreach (var binType in matchedBins)
+					// Create a BinDay for this specific date and the matched bins
+					var binDay = new BinDay()
 					{
-						if (!aggregatedBinDays.TryGetValue(collectionDate, out var binsForDate))
-						{
-							binsForDate = [];
-							aggregatedBinDays[collectionDate] = binsForDate;
-						}
+						Date = collectionDate,
+						Address = address,
+						// Ensure we create a new list and make it read-only for this BinDay
+						Bins = matchedBins.ToList().AsReadOnly()
+					};
 
-						// Add bin type if it's not already in the list for this date
-						if (!binsForDate.Any(b => b.Name == binType.Name && b.Colour == binType.Colour))
-						{
-							binsForDate.Add(binType);
-						}
-					}
+					binDays.Add(binDay);
 				}
 
-				// Create BinDay objects from the aggregated data, ordered by date
-				var binDays = aggregatedBinDays
-					.Select(kvp => new BinDay()
-					{
-						Date = kvp.Key,
-						Address = address,
-						Bins = kvp.Value.AsReadOnly()
-					})
-					.OrderBy(bd => bd.Date)
-					.ToList();
+				// Filter out bin days in the past
+				binDays = [.. ProcessingUtilities.GetFutureBinDays(binDays)];
+
+				// Merge bin days that fall on the same date
+				binDays = [.. ProcessingUtilities.MergeBinDays(binDays)];
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
