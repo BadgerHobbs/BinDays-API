@@ -1,6 +1,7 @@
 namespace BinDays.Api.Collectors.Utilities
 {
 	using BinDays.Api.Collectors.Models;
+	using System;
 	using System.Collections.ObjectModel;
 	using System.Text.RegularExpressions;
 	using System.Web;
@@ -69,6 +70,26 @@ namespace BinDays.Api.Collectors.Utilities
 			}
 
 			return mergedBinDays.AsReadOnly();
+		}
+
+		/// <summary>
+		/// Filters a collection of BinDay objects to only include those with dates in the future.
+		/// </summary>
+		/// <param name="binDays">The collection of BinDay objects to filter.</param>
+		/// <returns>A read-only collection of BinDay objects with dates in the future.</returns>
+		public static ReadOnlyCollection<BinDay> GetFutureBinDays(IEnumerable<BinDay> binDays)
+		{
+			var futureBinDays = new List<BinDay>();
+			var today = DateOnly.FromDateTime(DateTime.Now);
+
+			foreach (var binDay in binDays)
+			{
+				if (binDay.Date >= today)
+				{
+					futureBinDays.Add(binDay);
+				}
+			}
+			return futureBinDays.AsReadOnly();
 		}
 
 		/// <summary>
