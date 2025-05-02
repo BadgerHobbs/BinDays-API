@@ -268,7 +268,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDateString = dateMatch.Groups[1].Value;
 
 					// Get matching bin types from the service using the keys
-					var matchedBinTypes = this.binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
+					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
 
 					// Parse the date (e.g. 'Tuesday, 15 April 2025') to date only
 					// The legacy code splits by ',' and takes the last part.

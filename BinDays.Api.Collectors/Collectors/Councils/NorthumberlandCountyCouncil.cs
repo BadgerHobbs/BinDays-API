@@ -278,7 +278,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						var hexColor = rawMonthBinCollection.Groups["Color"].Value;
 
 						// Get matching bin types from the type using the keys
-						var matchedBinTypes = this.binTypes.Where(x => x.Keys.Any(y => hexColor.Contains(y)));
+						var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => hexColor.Contains(y)));
 
 						var binDay = new BinDay()
 						{

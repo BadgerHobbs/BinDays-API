@@ -255,7 +255,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var binTypes = this.binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
 
 					// Parse the date (e.g. 'tomorrow, Tuesday, 15 April 2025') to date only
-					var date = DateTime.ParseExact(
+					var date = DateOnly.ParseExact(
 						collectionDate.Split(",").Last().Trim(),
 						"dd MMMM yyyy",
 						CultureInfo.InvariantCulture,
@@ -264,7 +264,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					var binDay = new BinDay()
 					{
-						Date = DateOnly.FromDateTime(date),
+						Date = date,
 						Address = address,
 						Bins = binTypes.ToList().AsReadOnly()
 					};

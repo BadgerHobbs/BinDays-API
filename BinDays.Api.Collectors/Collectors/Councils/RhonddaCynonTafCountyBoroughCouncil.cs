@@ -208,7 +208,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Find matching bin types
-					var matchedBins = this.binTypes
+					var matchedBins = binTypes
 						.Where(bin => bin.Keys.Any(key => binTypeText.Contains(key.ToLowerInvariant())))
 						.ToList();
 

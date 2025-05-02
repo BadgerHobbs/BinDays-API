@@ -29,7 +29,7 @@ namespace BinDays.Api.Collectors.Services
 		/// <returns>The collectors.</returns>
 		public ReadOnlyCollection<ICollector> GetCollectors()
 		{
-			return this.collectors;
+			return collectors;
 		}
 
 		/// <summary>
@@ -39,7 +39,7 @@ namespace BinDays.Api.Collectors.Services
 		/// <returns>The collector.</returns>
 		public ICollector GetCollector(string govUkId)
 		{
-			return this.collectors.Where(collector => collector.GovUkId == govUkId).Single();
+			return collectors.Where(collector => collector.GovUkId == govUkId).Single();
 		}
 	}
 }

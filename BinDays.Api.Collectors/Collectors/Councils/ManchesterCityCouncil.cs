@@ -337,7 +337,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var binData = responseJson["data"]!.AsObject();
 
 				// Iterate through defined bin types
-				foreach (var binType in this.binTypes)
+				foreach (var binType in binTypes)
 				{
 					// Assuming one key per bin type based on legacy code and current structure
 					var binTypeKey = binType.Keys.FirstOrDefault();

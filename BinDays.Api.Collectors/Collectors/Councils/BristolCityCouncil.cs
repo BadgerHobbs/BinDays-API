@@ -219,7 +219,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var dateString = collectionArray[0]!["nextCollectionDate"]!.GetValue<string>();
 
 					// Find matching bin types based on the container name containing a key (case-insensitive)
-					var matchedBins = this.binTypes.Where(bin =>
+					var matchedBins = binTypes.Where(bin =>
 						bin.Keys.Any(key => containerName.Contains(key, StringComparison.OrdinalIgnoreCase)));
 
 					// If no matching bins found for this container, skip

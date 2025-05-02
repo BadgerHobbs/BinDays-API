@@ -35,6 +35,6 @@ namespace BinDays.Api.Collectors.Models
 		/// <summary>
 		/// Gets a value indicating whether the request was successful.
 		/// </summary>
-		public bool IsSuccessStatusCode => this.StatusCode >= 200 && this.StatusCode <= 299;
+		public bool IsSuccessStatusCode => StatusCode >= 200 && StatusCode <= 299;
 	}
 }

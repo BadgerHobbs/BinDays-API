@@ -34,7 +34,7 @@
 		[Route("/collectors")]
 		public IEnumerable<ICollector> GetCollectors()
 		{
-			return this.collectorService.GetCollectors();
+			return collectorService.GetCollectors();
 		}
 
 		/// <summary>

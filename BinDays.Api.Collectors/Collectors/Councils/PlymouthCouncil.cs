@@ -400,7 +400,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDate = DateOnly.FromDateTime(dateTime);
 
 					// Find matching bin types based on the round type in their keys
-					var matchedBins = this.binTypes.Where(bin => bin.Keys.Contains(roundType)).ToList(); // Get the list of matched bins
+					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(roundType)).ToList(); // Get the list of matched bins
 
 					// If no matching bins found for this round type, skip
 					if (!matchedBins.Any())

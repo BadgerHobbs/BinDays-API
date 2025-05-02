@@ -22,7 +22,7 @@ namespace BinDays.Api.Collectors.Collectors
 		/// <summary>
 		/// Gets the gov.uk url of the collector.
 		/// </summary>
-		public virtual Uri GovUkUrl => new($"{GovUkBaseUrl}/{this.GovUkId}");
+		public virtual Uri GovUkUrl => new($"{GovUkBaseUrl}/{GovUkId}");
 
 		/// <summary>
 		/// Gets the collector for a given postcode, potentially requiring multiple steps via client-side responses.

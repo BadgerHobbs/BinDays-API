@@ -273,7 +273,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 
 					// Get matching bin types from the service using the keys
-					var matchedBinTypes = this.binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
+					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
 
 					var binDay = new BinDay()
 					{

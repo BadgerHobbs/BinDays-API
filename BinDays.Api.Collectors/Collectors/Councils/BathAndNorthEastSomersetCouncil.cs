@@ -1,6 +1,3 @@
-// This file was converted from the legacy dart implementation using AI.
-// TODO: Manually review and improve this file.
-
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
@@ -41,7 +38,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "Food Waste",
 				Colour = "Grey",
-				Keys = new List<string>() { "foodNextDate" }.AsReadOnly(),
+				Keys = new List<string>() { "recyclingNextDate" }.AsReadOnly(),
 			},
 			new()
 			{
@@ -71,7 +68,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			if (clientSideResponse == null)
 			{
-				var requestUrl = $"https://www.bathnes.gov.uk/webapi/api/AddressesAPI/v2/search/{Uri.EscapeDataString(postcode)}/150/true";
+				var requestUrl = $"https://www.bathnes.gov.uk/webapi/api/AddressesAPI/v2/search/{postcode}/150/true";
 
 				var clientSideRequest = new ClientSideRequest()
 				{
@@ -101,61 +98,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Iterate through each address json, and create a new address object
 				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
 				{
-					string? fullAddressStr = addressElement.TryGetProperty("full_Address", out var fullAddressProp) ? fullAddressProp.GetString() : null;
-					string? streetNameStr = addressElement.TryGetProperty("street_Name", out var streetNameProp) ? streetNameProp.GetString() : null;
-					string? townStr = addressElement.TryGetProperty("town", out var townProp) ? townProp.GetString() : null;
-					string? uprnStr = addressElement.TryGetProperty("uprn", out var uprnProp) ? uprnProp.ToString() : null; // UPRN might be number or string
+					string? property = addressElement.GetProperty("full_Address").ToString();
+					string? uprn = addressElement.GetProperty("uprn").ToString().Split('.').First();
 
-					string? property = null;
-					string? street = streetNameStr?.Trim();
-					string? town = townStr?.Trim();
-					string? uid = uprnStr?.Split('.')[0]; // Match Dart's uid extraction (removes potential decimals)
-
-					if (!string.IsNullOrWhiteSpace(fullAddressStr))
+					var address = new Address()
 					{
-						fullAddressStr = fullAddressStr.Trim();
-						if (!string.IsNullOrWhiteSpace(streetNameStr))
-						{
-							streetNameStr = streetNameStr.Trim();
-							// Find the street name within the full address to extract the property part
-							int index = fullAddressStr.IndexOf(streetNameStr, StringComparison.OrdinalIgnoreCase);
-							if (index > 0) // Found street name, and it's not at the very beginning
-							{
-								property = fullAddressStr[..index].TrimEnd([' ', ',']); // Trim trailing space/comma
-							}
-							else if (index == -1) // Street name not found in full address
-							{
-								// Fallback: use the full address as the property if street name isn't found within it
-								property = fullAddressStr;
-							}
-							// If index is 0, property remains null (address starts with street)
-						}
-						else // Street name is null/empty
-						{
-							// Fallback: use the full address as property if street name is missing
-							property = fullAddressStr;
-						}
-					}
-
-					// Ensure property isn't just whitespace
-					if (string.IsNullOrWhiteSpace(property))
-					{
-						property = null;
-					}
-
-					// Only add address if UID is present
-					if (!string.IsNullOrEmpty(uid))
-					{
-						var address = new Address()
-						{
-							Property = property,
-							Street = street,
-							Town = town,
-							Postcode = postcode,
-							Uid = uid,
-						};
-						addresses.Add(address);
-					}
+						Property = property?.Trim(),
+						Street = string.Empty,
+						Town = string.Empty,
+						Postcode = postcode,
+						Uid = uprn,
+					};
+					addresses.Add(address);
 				}
 
 				var getAddressesResponse = new GetAddressesResponse()
@@ -203,45 +157,31 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 				var rawBinDaysObject = jsonDoc.RootElement;
 
-				// Iterate through each property (collection type key and date value)
+				// Iterate through all bin type keys and get associated collection date
 				var binDays = new List<BinDay>();
-				foreach (var property in rawBinDaysObject.EnumerateObject())
+				foreach (var binType in binTypes)
 				{
-					var dateKey = property.Name;
-					string? dateValue = null;
-
-					// Check the type of the JSON value before getting it as a string
-					if (property.Value.ValueKind == JsonValueKind.String)
+					foreach (var key in binType.Keys)
 					{
-						dateValue = property.Value.GetString();
+						var collectionDate = rawBinDaysObject.GetProperty(key).ToString();
+
+						// Parse the date (e.g., "2024-07-29T00:00:00")
+						var date = DateOnly.ParseExact(
+							collectionDate,
+							"yyyy-MM-ddTHH:mm:ss",
+							CultureInfo.InvariantCulture,
+							DateTimeStyles.None
+						);
+
+						var binDay = new BinDay()
+						{
+							Date = date,
+							Address = address,
+							Bins = new List<Bin>() { binType }.AsReadOnly(),
+						};
+
+						binDays.Add(binDay);
 					}
-
-					// Skip if date value is null, empty, or wasn't a string
-					if (string.IsNullOrEmpty(dateValue))
-					{
-						continue;
-					}
-
-					// Try parsing the date string (e.g., "2024-07-29T00:00:00")
-					// We only care about the date part.
-					if (!DateTime.TryParseExact(dateValue, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var collectionDateTime))
-					{
-						// Skip if date parsing fails
-						continue;
-					}
-					var collectionDate = DateOnly.FromDateTime(collectionDateTime);
-
-					// Find all matching bin types based on the date key
-					var matchedBins = this.binTypes.Where(bin => bin.Keys.Contains(dateKey));
-
-					var binDay = new BinDay()
-					{
-						Date = collectionDate,
-						Address = address,
-						Bins = matchedBins.ToList().AsReadOnly()
-					};
-
-					binDays.Add(binDay);
 				}
 
 				// Filter out bin days in the past
