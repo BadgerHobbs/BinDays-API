@@ -166,7 +166,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Find all matching bin types based on the date key
-					var matchedBins = this.binTypes.Where(bin => bin.Keys.Contains(rawBinDay.Name));
+					var matchedBins = this.binTypes.Where(bin => bin.Keys.Contains(rawBinDay.Name[0].ToString()));
 
 					var binDay = new BinDay()
 					{
