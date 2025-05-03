@@ -1,6 +1,3 @@
-// This file was converted from the legacy dart implementation using AI.
-// TODO: Manually review and improve this file.
-
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
@@ -9,8 +6,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
 	using System.Globalization;
-	using System.Linq;
-	using System.Text.Json;
 	using System.Text.Json.Nodes;
 
 	/// <summary>
@@ -26,11 +21,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 		/// <inheritdoc/>
 		public override string GovUkId => "manchester";
-
-		/// <summary>
-		/// Base URL for the Verint API.
-		/// </summary>
-		private const string ApiBaseUrl = "https://manchester.form.uk.empro.verintcloudservices.com/api";
 
 		/// <summary>
 		/// The list of bin types for this collector.
@@ -72,7 +62,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 1,
-					Url = $"{ApiBaseUrl}/citizen?archived=Y&preview=false&locale=en",
+					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/citizen?archived=Y&preview=false&locale=en",
 					Method = "GET",
 					Headers = [],
 					Body = string.Empty,
@@ -90,7 +80,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse?.RequestId == 1)
 			{
 				// Get authorization token from response header
-				var authToken = GetAuthorizationToken(clientSideResponse);
+				var authToken = clientSideResponse.Headers["Authorization"];
 
 				// Prepare client-side request body as JSON
 				var requestBody = new JsonObject
@@ -98,28 +88,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					["name"] = "sr_bin_coll_day_checker",
 					["data"] = new JsonObject
 					{
-						["addressnumber"] = "",
-						["streetname"] = "",
 						["postcode"] = postcode,
 					},
-					["email"] = "",
-					["caseid"] = "",
-					["xref"] = "",
-					["xref1"] = "",
-					["xref2"] = ""
 				};
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"Authorization", authToken},
-					{"content-type", "application/json"},
-					{"Origin", "https://manchester.portal.uk.empro.verintcloudservices.com"}, // Added Origin as per Dart example
-                    {"Referer", "https://manchester.portal.uk.empro.verintcloudservices.com/"} // Added Referer as per Dart example
-                };
+				};
 
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 2,
-					Url = $"{ApiBaseUrl}/custom?action=widget-property-search&actionedby=location_search_property&loadform=true&access=citizen&locale=en",
+					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/custom?action=widget-property-search&actionedby=location_search_property&loadform=true&access=citizen&locale=en",
 					Method = "POST",
 					Headers = requestHeaders,
 					Body = requestBody.ToJsonString(),
@@ -144,50 +124,20 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (var addressNode in addressesJson)
 				{
-					if (addressNode == null) continue;
-
-					string uid = addressNode["value"]!.GetValue<string>();
-					string label = addressNode["label"]!.GetValue<string>(); // e.g., "1 Example Street, Town, Postcode"
-
-					// Basic parsing of label - assumes format like "Property Street, Town, Postcode" or "Property Street, Postcode"
-					var parts = label.Split(',');
-					string propertyAndStreet = parts[0].Trim();
-					string town = parts.Length > 2 ? parts[1].Trim() : string.Empty; // Take middle part as town if available
-
-					// Attempt to split property number/name from street (simple split based on first space after a potential number)
-					string property = propertyAndStreet;
-					string street = string.Empty;
-					int firstSpaceIndex = propertyAndStreet.IndexOf(' ');
-					if (firstSpaceIndex > 0)
-					{
-						// Check if the first part is numeric (or contains a number) to decide split point
-						bool firstPartIsNumeric = propertyAndStreet.Take(firstSpaceIndex).Any(char.IsDigit);
-						if (firstPartIsNumeric)
-						{
-							property = propertyAndStreet.Substring(0, firstSpaceIndex);
-							street = propertyAndStreet.Substring(firstSpaceIndex + 1);
-						}
-						// Else, keep the whole first part as property if it looks like a name (e.g., "Flat 1", "The Cottage")
-						// This logic is simplified compared to the Dart version's iterative approach but covers common cases.
-					}
-
+					string uid = addressNode!["value"]!.GetValue<string>();
+					string property = addressNode["label"]!.GetValue<string>();
 
 					var address = new Address()
 					{
 						Property = property.Trim(),
-						Street = street.Trim(),
-						Town = town,
+						Street = string.Empty,
+						Town = string.Empty,
 						Postcode = postcode,
-						Uid = uid, // This is the object_id used later
+						Uid = uid,
 					};
 
 					addresses.Add(address);
 				}
-
-				// Sort addresses (basic sort by string representation for consistency with Dart)
-				// A more robust sort would parse numbers properly.
-				addresses = addresses.OrderBy(a => a.ToString()).ToList();
-
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
@@ -199,7 +149,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 
 			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request for GetAddresses. RequestId: {clientSideResponse?.RequestId}");
+			throw new InvalidOperationException("Invalid client-side request.");
 		}
 
 		/// <inheritdoc/>
@@ -211,7 +161,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 1,
-					Url = $"{ApiBaseUrl}/citizen?archived=Y&preview=false&locale=en",
+					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/citizen?archived=Y&preview=false&locale=en",
 					Method = "GET",
 					Headers = [],
 					Body = string.Empty,
@@ -229,7 +179,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse?.RequestId == 1)
 			{
 				// Get authorization token from response header
-				var authToken = GetAuthorizationToken(clientSideResponse);
+				var authToken = clientSideResponse.Headers["Authorization"];
 
 				// Prepare client-side request body as JSON
 				var requestBody = new JsonObject
@@ -237,26 +187,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					["name"] = "sr_bin_coll_day_checker",
 					["data"] = new JsonObject
 					{
-						["object_id"] = address.Uid // Uid from GetAddresses is the object_id
+						["object_id"] = address.Uid
 					},
-					["email"] = "",
-					["caseid"] = "",
-					["xref"] = "",
-					["xref1"] = "",
-					["xref2"] = ""
 				};
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"Authorization", authToken},
-					{"content-type", "application/json"},
-					{"Origin", "https://manchester.portal.uk.empro.verintcloudservices.com"},
-					{"Referer", "https://manchester.portal.uk.empro.verintcloudservices.com/"}
 				};
 
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 2,
-					Url = $"{ApiBaseUrl}/custom?action=retrieve-property&actionedby=_KDF_optionSelected&loadform=true&access=citizen&locale=en",
+					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/custom?action=retrieve-property&actionedby=_KDF_optionSelected&loadform=true&access=citizen&locale=en",
 					Method = "POST",
 					Headers = requestHeaders,
 					Body = requestBody.ToJsonString(),
@@ -273,15 +215,15 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting bin collection dates
 			else if (clientSideResponse?.RequestId == 2)
 			{
-				// Get authorization token from response header (it should be passed back by the client)
-				var authToken = GetAuthorizationToken(clientSideResponse);
+				// Get authorization token from response header
+				var authToken = clientSideResponse.Headers["Authorization"];
 
 				// Parse response to get UPRN
 				var responseJson = JsonNode.Parse(clientSideResponse.Content)!.AsObject();
 				var uprn = responseJson["data"]!["UPRN"]!.GetValue<string>();
 
 				// Calculate date range
-				var now = DateTime.UtcNow; // Use UtcNow for consistency if needed, or DateTime.Now for local time
+				var now = DateTime.UtcNow;
 				var threeMonthsAhead = now.AddDays(90);
 				var formattedNow = now.ToString("yyyy-MM-dd");
 				var formattedThreeMonthsAhead = threeMonthsAhead.ToString("yyyy-MM-dd");
@@ -296,24 +238,16 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						["nextCollectionFromDate"] = formattedNow,
 						["nextCollectionToDate"] = formattedThreeMonthsAhead
 					},
-					["email"] = "",
-					["caseid"] = "",
-					["xref"] = "",
-					["xref1"] = "",
-					["xref2"] = ""
 				};
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"Authorization", authToken},
-					{"content-type", "application/json"},
-					{"Origin", "https://manchester.portal.uk.empro.verintcloudservices.com"},
-					{"Referer", "https://manchester.portal.uk.empro.verintcloudservices.com/"}
 				};
 
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 3,
-					Url = $"{ApiBaseUrl}/custom?action=bin_checker-get_bin_col_info&actionedby=_KDF_custom&loadform=true&access=citizen&locale=en",
+					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/custom?action=bin_checker-get_bin_col_info&actionedby=_KDF_custom&loadform=true&access=citizen&locale=en",
 					Method = "POST",
 					Headers = requestHeaders,
 					Body = requestBody.ToJsonString(),
@@ -330,45 +264,39 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process bin days from response
 			else if (clientSideResponse?.RequestId == 3)
 			{
-				var binDays = new List<BinDay>(); // Initialize the list directly
-
 				// Parse response content as JSON object
 				var responseJson = JsonNode.Parse(clientSideResponse.Content)!.AsObject();
 				var binData = responseJson["data"]!.AsObject();
 
 				// Iterate through defined bin types
+				var binDays = new List<BinDay>();
 				foreach (var binType in binTypes)
 				{
-					// Assuming one key per bin type based on legacy code and current structure
-					var binTypeKey = binType.Keys.FirstOrDefault();
-					if (string.IsNullOrEmpty(binTypeKey)) continue; // Skip if no key defined
-
-					// Check if the key exists in the response data and has a value
-					if (binData.ContainsKey(binTypeKey) && binData[binTypeKey] is JsonValue dateValue && dateValue.TryGetValue<string>(out var dateString) && !string.IsNullOrWhiteSpace(dateString))
+					foreach (var key in binType.Keys)
 					{
 						// Split the date string (e.g., "15/04/2025 00:00:00;\n13/05/2025 00:00:00")
-						var rawDates = dateString.Split(new[] { ";\n", ";" }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+						var rawDates = binData[key]!
+							.ToString()
+							.Split([";\n", ";"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 						foreach (var rawDate in rawDates)
 						{
 							// Parse the date string (e.g., "15/04/2025 00:00:00")
-							// Format seems consistent as dd/MM/yyyy HH:mm:ss
-							if (DateTime.TryParseExact(rawDate, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var collectionDateTime))
+							var date = DateOnly.ParseExact(
+								rawDate,
+								"dd/MM/yyyy HH:mm:ss",
+								CultureInfo.InvariantCulture,
+								DateTimeStyles.None
+							);
+
+							var binDay = new BinDay()
 							{
-								var collectionDate = DateOnly.FromDateTime(collectionDateTime);
+								Date = date,
+								Address = address,
+								Bins = new List<Bin> { binType }.AsReadOnly()
+							};
 
-								// Create a BinDay for this specific date and bin type
-								var binDay = new BinDay()
-								{
-									Date = collectionDate,
-									Address = address,
-									// Create a list containing only the current bin type and make it read-only
-									Bins = new List<Bin> { binType }.AsReadOnly()
-								};
-
-								binDays.Add(binDay);
-							}
-							// Optional: Log or handle parsing errors if needed
+							binDays.Add(binDay);
 						}
 					}
 				}
@@ -379,12 +307,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Merge bin days that fall on the same date
 				binDays = [.. ProcessingUtilities.MergeBinDays(binDays)];
 
-				// Order the final list by date
-				binDays = binDays.OrderBy(bd => bd.Date).ToList();
-
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					// Assign the processed, read-only list
 					BinDays = binDays.AsReadOnly(),
 					NextClientSideRequest = null
 				};
@@ -393,29 +317,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 
 			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request for GetBinDays. RequestId: {clientSideResponse?.RequestId}");
-		}
-
-		/// <summary>
-		/// Retrieves the Authorization token from the client-side response headers.
-		/// </summary>
-		/// <param name="clientSideResponse">The client-side response.</param>
-		/// <returns>The Authorization token.</returns>
-		/// <exception cref="InvalidOperationException">Thrown if the Authorization header is missing.</exception>
-		private static string GetAuthorizationToken(ClientSideResponse clientSideResponse)
-		{
-			if (clientSideResponse.Headers.TryGetValue("authorization", out var token))
-			{
-				return token;
-			}
-
-			// Check lower-case version as well, header names might be inconsistent casing
-			if (clientSideResponse.Headers.TryGetValue("Authorization", out var tokenCaps))
-			{
-				return tokenCaps;
-			}
-
-			throw new InvalidOperationException("Authorization token not found in response headers.");
+			throw new InvalidOperationException("Invalid client-side request.");
 		}
 	}
 }
