@@ -1,6 +1,3 @@
-// This file was converted from the legacy dart implementation using AI.
-// TODO: Manually review and improve this file.
-
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
@@ -186,7 +183,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var getBinDaysResponse = new GetBinDaysResponse()
 					{
 						BinDays = currentMonthBinDays,
-						NextClientSideRequest = null // No further requests needed
+						NextClientSideRequest = null
 					};
 					return getBinDaysResponse;
 				}
@@ -204,7 +201,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					var clientSideRequest = new ClientSideRequest()
 					{
-						RequestId = 2, // Set ID for the next step
+						RequestId = 2,
 						Url = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList",
 						Method = "POST",
 						Headers = new Dictionary<string, string>() {
@@ -256,49 +253,37 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 			foreach (Match match in matches.Cast<Match>())
 			{
-				if (match.Groups.Count == 3)
+				var rawBinType = match.Groups[1].Value.Trim();
+				var rawBinDayDate = match.Groups[2].Value.Trim();
+
+				// Parsing the date string (e.g., "Wednesday 16 April, 2025")
+				var date = DateOnly.ParseExact(
+					rawBinDayDate,
+					"dddd d MMMM, yyyy",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+
+				// Find matching bin types based on the description (case-insensitive)
+				var matchedBins = binTypes.Where(bin =>
+					bin.Keys.Any(key => rawBinType.Contains(key, StringComparison.OrdinalIgnoreCase)));
+
+				foreach (var binType in matchedBins)
 				{
-					var rawBinType = match.Groups[1].Value.Trim();
-					var rawBinDayDate = match.Groups[2].Value.Trim();
-
-					// Try parsing the date string (e.g., "Wednesday 16 April, 2025")
-					if (!DateTime.TryParseExact(rawBinDayDate, "dddd d MMMM, yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDateTime))
+					var binDay = new BinDay()
 					{
-						continue; // Skip if date parsing fails
-					}
-					var collectionDate = DateOnly.FromDateTime(parsedDateTime);
-
-					// Only process dates that are today or in the future
-					if (collectionDate < today)
-					{
-						continue;
-					}
-
-					// Find matching bin types based on the description (case-insensitive)
-					var matchedBins = binTypes.Where(bin =>
-						bin.Keys.Any(key => rawBinType.Contains(key, StringComparison.OrdinalIgnoreCase)));
-
-					// Create a BinDay for each matched bin type
-					foreach (var binType in matchedBins)
-					{
-						var binDay = new BinDay()
-						{
-							Date = collectionDate,
-							Address = address,
-							// Create a read-only list containing just this one bin
-							Bins = new List<Bin>() { binType }.AsReadOnly()
-						};
-						binDays.Add(binDay);
-					}
+						Date = date,
+						Address = address,
+						Bins = new List<Bin>() { binType }.AsReadOnly()
+					};
+					binDays.Add(binDay);
 				}
 			}
 
-			// Filter out any bin days that might still be in the past (redundant due to check above, but safe)
-			// Note: ProcessingUtilities.GetFutureBinDays expects IEnumerable<BinDay>
+			// Filter out any bin days that might still be in the past
 			var futureBinDays = ProcessingUtilities.GetFutureBinDays(binDays);
 
 			// Merge bin days that occur on the same date
-			// Note: ProcessingUtilities.MergeBinDays expects IEnumerable<BinDay>
 			var mergedBinDays = ProcessingUtilities.MergeBinDays(futureBinDays);
 
 			// Return the final list, ordered by date
