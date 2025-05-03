@@ -23,6 +23,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		public override string GovUkId => "leeds";
 
 		/// <summary>
+		/// The API subscription key required for Leeds City Council API requests.
+		/// </summary>
+		private const string ApiSubscriptionKey = "ad8dd80444fe45fcad376f82cf9a5ab4";
+
+		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
 		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
@@ -61,7 +66,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
-						{"Ocp-Apim-Subscription-Key","ad8dd80444fe45fcad376f82cf9a5ab4"}
+						{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey}
 					},
 					Body = string.Empty,
 				};
@@ -126,7 +131,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
-						{"Ocp-Apim-Subscription-Key","ad8dd80444fe45fcad376f82cf9a5ab4"}
+						{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey}
 					},
 					Body = string.Empty,
 				};
