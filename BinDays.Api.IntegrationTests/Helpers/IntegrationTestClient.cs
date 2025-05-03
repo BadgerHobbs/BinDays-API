@@ -114,10 +114,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			{
 				if (!httpRequest.Headers.TryAddWithoutValidation(header.Key, header.Value))
 				{
-					if (httpRequest.Content != null)
-					{
-						httpRequest.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
-					}
+					httpRequest.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value);
 				}
 			}
 
