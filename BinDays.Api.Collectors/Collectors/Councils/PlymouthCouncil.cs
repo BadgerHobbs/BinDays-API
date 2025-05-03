@@ -1,6 +1,3 @@
-// This file was converted from the legacy dart implementation using AI.
-// TODO: Manually review and improve this file.
-
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
@@ -53,7 +50,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Black", // Note: Legacy Dart says Black, website might differ but stick to legacy
+				Colour = "Black",
 				Keys = new List<string>() { "GA", "OR" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -89,19 +86,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Extract Session ID from Step 1 response content
-				var sessionIdMatch = SessionIdRegex().Match(clientSideResponse.Content);
-				if (!sessionIdMatch.Success)
-				{
-					throw new InvalidOperationException("Could not extract session ID from initial page load.");
-				}
-				var sessionId = sessionIdMatch.Groups[1].Value;
+				var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare request body as a JSON string
 				var requestBodyObject = new
 				{
 					formValues = new
 					{
-						Section1 = new // Renamed from "Section 1" to be a valid C# identifier
+						Section1 = new
 						{
 							postcode_search = new
 							{
@@ -114,31 +106,16 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 								value = postcode,
 								path = "root/addressDetails/postcode_search",
 								valid = true,
-								totals = "",
-								suffix = "",
-								prefix = "",
-								summary = "",
-								hidden = false,
-								_hidden = false,
-								isSummary = false,
-								staticMap = false,
-								isMandatory = false,
-								isRepeatable = false,
-								currencyPrefix = "",
-								decimalPlaces = "",
-								hash = ""
 							}
 						}
 					}
 				};
-				var requestBody = JsonSerializer.Serialize(requestBodyObject, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+				var requestBody = JsonSerializer.Serialize(requestBodyObject);
 
-				// Prepare query parameters
-				var queryParams = $"?api=RunLookup&id=560d5266e930f&sid={sessionId}";
-				var requestUrl = $"https://plymouth-self.achieveservice.com/apibroker/{queryParams}";
+				var requestUrl = $"https://plymouth-self.achieveservice.com/apibroker/?api=RunLookup&id=560d5266e930f&sid={sessionId}";
 
 				var requestHeaders = new Dictionary<string, string>() {
-					{"content-type", "application/json; charset=UTF-8"}, // Assuming JSON based on body structure
+					{"content-type", "application/json; charset=UTF-8"},
 					{"cookie", requestCookies},
 				};
 
@@ -162,23 +139,21 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Step 3: Process Addresses from Response
 			else if (clientSideResponse.RequestId == 2)
 			{
-				var addresses = new List<Address>();
-
 				// Parse response content as JSON object
 				var responseJson = JsonDocument.Parse(clientSideResponse.Content).RootElement;
 				var rawAddresses = responseJson.GetProperty("integration").GetProperty("transformed").GetProperty("rows_data");
 
 				// Iterate through each address object
+				var addresses = new List<Address>();
 				foreach (var property in rawAddresses.EnumerateObject())
 				{
 					var addressData = property.Value;
 
-					string flat = addressData.TryGetProperty("flat", out var flatElement) ? flatElement.GetString() ?? "" : "";
-					string house = addressData.TryGetProperty("house", out var houseElement) ? houseElement.GetString() ?? "" : "";
-					string street = addressData.TryGetProperty("street", out var streetElement) ? streetElement.GetString() ?? "" : "";
-					string town = addressData.TryGetProperty("town", out var townElement) ? townElement.GetString() ?? "" : "";
-					string responsePostcode = addressData.TryGetProperty("postcode", out var postcodeElement) ? postcodeElement.GetString() ?? "" : "";
-					string uprn = addressData.TryGetProperty("uprn", out var uprnElement) ? uprnElement.GetString() ?? "" : "";
+					string flat = addressData.GetProperty("flat").ToString();
+					string house = addressData.GetProperty("house").ToString();
+					string street = addressData.GetProperty("street").ToString();
+					string town = addressData.GetProperty("town").ToString();
+					string uprn = addressData.GetProperty("uprn").ToString();
 
 					// Combine flat and house for property, ensuring no double spaces
 					string addressProperty = $"{flat} {house}".Trim().Replace("  ", " ");
@@ -188,16 +163,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						Property = addressProperty,
 						Street = street.Trim(),
 						Town = town.Trim(),
-						Postcode = responsePostcode.Trim(), // Use postcode from response
+						Postcode = postcode,
 						Uid = uprn,
 					};
 
 					addresses.Add(address);
 				}
-
-				// Note: Sorting logic from Dart is complex and potentially fragile.
-				// Standard string sorting is generally sufficient unless specific numeric sorting is required.
-				// addresses = addresses.OrderBy(a => a.Street).ThenBy(a => a.Property).ToList(); // Example basic sort
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
@@ -243,19 +214,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Extract Session ID from Step 1 response content
-				var sessionIdMatch = SessionIdRegex().Match(clientSideResponse.Content);
-				if (!sessionIdMatch.Success)
-				{
-					throw new InvalidOperationException("Could not extract session ID from initial page load.");
-				}
-				var sessionId = sessionIdMatch.Groups[1].Value;
+				var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare request body as a JSON string
 				var requestBodyObject = new
 				{
 					formValues = new
 					{
-						Section1 = new // Renamed from "Section 1"
+						Section1 = new
 						{
 							number1 = new
 							{
@@ -265,24 +231,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 								value_changed = true,
 								section_id = "AF-Section-e3363624-b9e6-4086-8bf2-ff38d6cd36e2",
 								label = "UPRN",
-								value_label = "",
-								hasOther = false,
 								value = address.Uid,
 								path = "root/number1",
-								valid = "",
-								totals = "",
-								suffix = "",
-								prefix = "",
-								summary = "",
-								hidden = false,
-								_hidden = true,
-								isSummary = false,
-								staticMap = false,
-								isMandatory = false,
-								isRepeatable = false,
-								currencyPrefix = "",
-								decimalPlaces = "",
-								hash = ""
 							},
 							lastncoll = new
 							{
@@ -293,23 +243,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 								section_id = "AF-Section-e3363624-b9e6-4086-8bf2-ff38d6cd36e2",
 								label = "lastncoll",
 								value_label = "",
-								hasOther = false,
-								value = "0", // Hardcoded as per legacy
+								value = "0",
 								path = "root/lastncoll",
-								valid = "",
-								totals = "",
-								suffix = "",
-								prefix = "",
-								summary = "",
-								hidden = false,
-								_hidden = true,
-								isSummary = false,
-								staticMap = false,
-								isMandatory = false,
-								isRepeatable = false,
-								currencyPrefix = "",
-								decimalPlaces = "",
-								hash = ""
 							},
 							nextncoll = new
 							{
@@ -319,33 +254,15 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 								value_changed = true,
 								section_id = "AF-Section-e3363624-b9e6-4086-8bf2-ff38d6cd36e2",
 								label = "nextncoll",
-								value_label = "",
-								hasOther = false,
-								value = "8", // Hardcoded as per legacy
+								value = "8",
 								path = "root/nextncoll",
-								valid = "",
-								totals = "",
-								suffix = "",
-								prefix = "",
-								summary = "",
-								hidden = false,
-								_hidden = true,
-								isSummary = false,
-								staticMap = false,
-								isMandatory = false,
-								isRepeatable = false,
-								currencyPrefix = "",
-								decimalPlaces = "",
-								hash = ""
 							}
 						}
 					}
 				};
-				var requestBody = JsonSerializer.Serialize(requestBodyObject, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+				var requestBody = JsonSerializer.Serialize(requestBodyObject);
 
-				// Prepare query parameters
-				var queryParams = $"?api=RunLookup&id=5c99439d85f83&sid={sessionId}";
-				var requestUrl = $"https://plymouth-self.achieveservice.com/apibroker/{queryParams}";
+				var requestUrl = $"https://plymouth-self.achieveservice.com/apibroker/?api=RunLookup&id=5c99439d85f83&sid={sessionId}";
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"content-type", "application/json; charset=UTF-8"},
@@ -372,48 +289,34 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Step 3: Process Bin Days from Response
 			else if (clientSideResponse.RequestId == 2)
 			{
-				var binDays = new List<BinDay>(); // Initialize the list directly
-
 				// Parse response content as JSON object
 				var responseJson = JsonDocument.Parse(clientSideResponse.Content).RootElement;
 				var rawBinDays = responseJson.GetProperty("integration").GetProperty("transformed").GetProperty("rows_data");
 
 				// Iterate through each collection entry
+				var binDays = new List<BinDay>();
 				foreach (var property in rawBinDays.EnumerateObject())
 				{
 					var binDayData = property.Value;
 
-					string? dateString = binDayData.TryGetProperty("Date", out var dateElement) ? dateElement.GetString() : null;
-					string? roundType = binDayData.TryGetProperty("Round_Type", out var roundTypeElement) ? roundTypeElement.GetString() : null;
+					string? dateString = binDayData.GetProperty("Date").ToString();
+					string? roundType = binDayData.GetProperty("Round_Type").ToString();
 
-					if (string.IsNullOrEmpty(dateString) || string.IsNullOrEmpty(roundType))
-					{
-						continue; // Skip if essential data is missing
-					}
-
-					// Try parsing the date string (assuming ISO 8601 format based on Dart's DateTime.parse)
-					// Using AssumeUniversal | AdjustToUniversal to handle potential timezone info correctly
-					if (!DateTime.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var dateTime))
-					{
-						continue; // Skip if date parsing fails
-					}
-					var collectionDate = DateOnly.FromDateTime(dateTime);
+					// Parse date (e.g. '2025-05-07T00:00:00')
+					var date = DateOnly.ParseExact(
+						dateString,
+						"yyyy-MM-ddTHH:mm:ss",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					);
 
 					// Find matching bin types based on the round type in their keys
-					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(roundType)).ToList(); // Get the list of matched bins
+					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(roundType)).ToList();
 
-					// If no matching bins found for this round type, skip
-					if (!matchedBins.Any())
-					{
-						continue;
-					}
-
-					// Create a BinDay for this specific date and the matched bins
 					var binDay = new BinDay()
 					{
-						Date = collectionDate,
+						Date = date,
 						Address = address,
-						// Ensure we create a new read-only list for this BinDay
 						Bins = matchedBins.AsReadOnly()
 					};
 
@@ -426,12 +329,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Merge bin days that fall on the same date
 				binDays = [.. ProcessingUtilities.MergeBinDays(binDays)];
 
-				// Order the final list by date
-				binDays = binDays.OrderBy(bd => bd.Date).ToList();
-
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					// Assign the processed, read-only list
 					BinDays = binDays.AsReadOnly(),
 					NextClientSideRequest = null
 				};
