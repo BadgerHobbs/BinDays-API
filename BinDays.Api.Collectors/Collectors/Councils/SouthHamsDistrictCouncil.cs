@@ -1,6 +1,3 @@
-// This file was converted from the legacy dart implementation using AI.
-// TODO: Manually review and improve this file.
-
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
@@ -103,7 +100,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Get session id from response content
-				var sessionId = GetSessionId(clientSideResponse.Content);
+				var sessionId = SessionTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
@@ -115,8 +112,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestHeaders = new Dictionary<string, string>() {
 					{"x-requested-with", "XMLHttpRequest"},
 					{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
-					{"origin", "https://waste.southhams.gov.uk"},
-					{"referer", "https://waste.southhams.gov.uk/"},
 					{"cookie", requestCookies},
 				};
 
@@ -155,7 +150,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					var address = new Address()
 					{
-						Property = fullAddress, // Dart logic extracts property and street, but keeping it simple as per instructions
+						Property = fullAddress,
 						Street = string.Empty,
 						Town = string.Empty,
 						Postcode = postcode,
@@ -210,7 +205,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Get session id from response content
-				var sessionId = GetSessionId(clientSideResponse.Content);
+				var sessionId = SessionTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
@@ -222,8 +217,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestHeaders = new Dictionary<string, string>() {
 					{"x-requested-with", "XMLHttpRequest"},
 					{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
-					{"origin", "https://waste.southhams.gov.uk"},
-					{"referer", "https://waste.southhams.gov.uk/"},
 					{"cookie", requestCookies},
 				};
 
@@ -259,11 +252,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var serviceMatch = ServiceRegex().Match(binDayHtml![0]!.ToString());
 					var dateMatch = DateRegex().Match(binDayHtml![0]!.ToString());
 
-					if (!serviceMatch.Success || !dateMatch.Success)
-					{
-						continue; // Skip if regex fails to find service or date
-					}
-
 					var service = serviceMatch.Groups[1].Value;
 					var collectionDateString = dateMatch.Groups[1].Value;
 
@@ -271,21 +259,16 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
 
 					// Parse the date (e.g. 'Tuesday, 15 April 2025') to date only
-					// The legacy code splits by ',' and takes the last part.
-					var datePart = collectionDateString.Split(",").Last().Trim();
-					if (!DateTime.TryParseExact(
-						datePart,
-						"d MMMM yyyy", // Legacy format from Dart code
+					var date = DateOnly.ParseExact(
+						collectionDateString,
+						"dddd, d MMMM yyyy",
 						CultureInfo.InvariantCulture,
-						DateTimeStyles.None,
-						out var date))
-					{
-						continue; // Skip if date parsing fails
-					}
+						DateTimeStyles.None
+					);
 
 					var binDay = new BinDay()
 					{
-						Date = DateOnly.FromDateTime(date),
+						Date = date,
 						Address = address,
 						Bins = matchedBinTypes.ToList().AsReadOnly()
 					};
@@ -310,23 +293,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 			// Throw exception for invalid request
 			throw new InvalidOperationException("Invalid client-side request.");
-		}
-
-		/// <summary>
-		/// Retrieves the session ID from the HTML content.
-		/// </summary>
-		/// <param name="htmlContent">The HTML content of the page.</param>
-		/// <returns>The session ID.</returns>
-		/// <exception cref="InvalidOperationException">Thrown if the session token cannot be found.</exception>
-		private static string GetSessionId(string htmlContent)
-		{
-			var match = SessionTokenRegex().Match(htmlContent);
-			if (match.Success)
-			{
-				return match.Groups[1].Value;
-			}
-
-			throw new InvalidOperationException("Could not extract session token from initial page load.");
 		}
 	}
 }
