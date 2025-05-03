@@ -1,6 +1,3 @@
-// This file was converted from the legacy dart implementation using AI.
-// TODO: Manually review and improve this file.
-
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
@@ -87,7 +84,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			if (clientSideResponse == null)
 			{
-				var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?&Postcode={Uri.EscapeDataString(postcode)}";
+				var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?&Postcode={postcode}";
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"user-agent", Constants.UserAgent},
@@ -155,7 +152,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				// Use live URL as per legacy implementation, not base website URL
-				var requestUrl = $"https://live-rctcbc.cloud.contensis.com/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?uprn={Uri.EscapeDataString(address.Uid!)}";
+				var requestUrl = $"https://live-rctcbc.cloud.contensis.com/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?uprn={address.Uid!}";
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"user-agent", Constants.UserAgent},
