@@ -33,24 +33,8 @@ namespace BinDays.Api.Collectors.Collectors
 		/// <returns>The response containing either the next client-side request to make or the collector.</returns>
 		public static GetCollectorResponse GetCollector(CollectorService collectorService, string postcode, ClientSideResponse? clientSideResponse)
 		{
-			if (clientSideResponse?.RequestId == 1)
-			{
-				// Get collector gov.uk id from response header
-				var govUkId = clientSideResponse.Headers["location"].Split("/").Last().Trim();
-
-				// Get collector with matching gov.uk id
-				var collector = collectorService.GetCollector(govUkId);
-
-				// Build response, no next client-side request required
-				var getCollectorResponse = new GetCollectorResponse()
-				{
-					Collector = collector,
-					NextClientSideRequest = null
-				};
-
-				return getCollectorResponse;
-			}
-			else
+			// Prepare client-side request for getting collector
+			if (clientSideResponse == null)
 			{
 				// Prepare client-side request
 				var requestBody = JsonSerializer.Serialize(new { postcode });
@@ -71,6 +55,27 @@ namespace BinDays.Api.Collectors.Collectors
 
 				return getCollectorResponse;
 			}
+			// Process collector from response
+			else if (clientSideResponse.RequestId == 1)
+			{
+				// Get collector gov.uk id from response header
+				var govUkId = clientSideResponse.Headers["location"].Split("/").Last().Trim();
+
+				// Get collector with matching gov.uk id
+				var collector = collectorService.GetCollector(govUkId);
+
+				// Build response, no next client-side request required
+				var getCollectorResponse = new GetCollectorResponse()
+				{
+					Collector = collector,
+					NextClientSideRequest = null
+				};
+
+				return getCollectorResponse;
+			}
+
+			// Throw exception for invalid request
+			throw new InvalidOperationException("Invalid client-side request.");
 		}
 	}
 }
