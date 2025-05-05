@@ -32,8 +32,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// Regex for the bin days from the table rows.
 		/// </summary>
-		[GeneratedRegex(@"<tr>\s*<th scope=""row"">(?<collection>[^<]+)</th>.*?<td.*?>\s*(?<date>\w+\s+\d{1,2}\s+\w+\s+\d{4})\s*</td>")]
+		[GeneratedRegex(@"(?s)<div class=""bin-collection-listing-row.*?<h2.*?>(?<collection>.*?)</h2>.*?<p><strong>Next collection:</strong>\s*(?<date>.*?)</p>")]
 		private static partial Regex BinDaysRegex();
+
+		/// <summary>
+		/// Regex for removing the st|nd|rd|th from the date part
+		/// </summary>
+		[GeneratedRegex(@"(?<=\d)(st|nd|rd|th)")]
+		private static partial Regex CollectionDateRegex();
 
 		/// <summary>
 		/// The list of bin types for this collector.
@@ -48,9 +54,9 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			},
 			new()
 			{
-				Name = "Refuse",
+				Name = "Rubbish",
 				Colour = "Grey",
-				Keys = new List<string>() { "Refuse" }.AsReadOnly(),
+				Keys = new List<string>() { "General rubbish" }.AsReadOnly(),
 			},
 			new()
 			{
@@ -164,10 +170,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collection = rawBinDay.Groups["collection"].Value;
 					var collectionDate = rawBinDay.Groups["date"].Value;
 
-					// Parse the date (e.g. 'Friday 02 May 2025')
+					// Remove the st|nd|rd|th from the date part (e.g. '16th')
+					collectionDate = CollectionDateRegex().Replace(collectionDate, "");
+
+					// Parse the date (e.g. 'Friday 16 May')
 					var date = DateOnly.ParseExact(
 						collectionDate,
-						"dddd d MMMM yyyy",
+						"dddd d MMMM",
 						CultureInfo.InvariantCulture,
 						DateTimeStyles.None
 					);
