@@ -22,7 +22,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 			_outputHelper = outputHelper;
 		}
 
-		[Fact(Skip = "Temporarily disabled due to site changes.")]
+		[Fact]
 		public async Task GetBinDaysTest()
 		{
 			await TestSteps.EndToEnd(
