@@ -151,8 +151,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var binDays = new List<BinDay>();
 				foreach (var rawBinDay in rawBinDaysObject.EnumerateObject())
 				{
-					// Skip if name is 'CalendarName'
-					if (rawBinDay.Name == "CalendarName")
+					// Skip if name is 'CalendarName' or if date is empty
+					if (rawBinDay.Name == "CalendarName" || rawBinDay.Value.GetString() == string.Empty)
 					{
 						continue;
 					}
