@@ -80,7 +80,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse?.RequestId == 1)
 			{
 				// Get authorization token from response header
-				var authToken = clientSideResponse.Headers["Authorization"];
+				var authToken = clientSideResponse.Headers["authorization"];
 
 				// Prepare client-side request body as JSON
 				var requestBody = new JsonObject
@@ -179,7 +179,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse?.RequestId == 1)
 			{
 				// Get authorization token from response header
-				var authToken = clientSideResponse.Headers["Authorization"];
+				var authToken = clientSideResponse.Headers["authorization"];
 
 				// Prepare client-side request body as JSON
 				var requestBody = new JsonObject
@@ -216,7 +216,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse?.RequestId == 2)
 			{
 				// Get authorization token from response header
-				var authToken = clientSideResponse.Headers["Authorization"];
+				var authToken = clientSideResponse.Headers["authorization"];
 
 				// Parse response to get UPRN
 				var responseJson = JsonNode.Parse(clientSideResponse.Content)!.AsObject();
