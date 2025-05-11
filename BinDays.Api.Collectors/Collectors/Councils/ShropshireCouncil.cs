@@ -97,7 +97,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse.RequestId == 1)
 			{
 				// Get set-cookies from response
-				var setCookies = clientSideResponse.Headers["Set-Cookie"];
+				var setCookies = clientSideResponse.Headers["set-cookie"];
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Prepare client-side request
@@ -113,6 +113,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = "https://bins.shropshire.gov.uk/property/",
 					Method = "POST",
 					Headers = new Dictionary<string, string>() {
+						{"user-agent", Constants.UserAgent},
 						{"content-type", "application/x-www-form-urlencoded"},
 						{"cookie", requestCookies},
 					},
@@ -182,7 +183,9 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://bins.shropshire.gov.uk/",
 					Method = "GET",
-					Headers = [],
+					Headers = new Dictionary<string, string>() {
+						{"user-agent", Constants.UserAgent},
+					},
 					Body = string.Empty,
 				};
 
@@ -198,7 +201,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse.RequestId == 1)
 			{
 				// Get set-cookies from response
-				var setCookies = clientSideResponse.Headers["Set-Cookie"];
+				var setCookies = clientSideResponse.Headers["set-cookie"];
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				var requestUrl = $"https://bins.shropshire.gov.uk/property/{address.Uid}";
@@ -209,6 +212,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
+						{"user-agent", Constants.UserAgent},
 						{"cookie", requestCookies},
 					},
 					Body = string.Empty,
