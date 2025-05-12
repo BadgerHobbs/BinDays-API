@@ -1,8 +1,8 @@
 # BinDays-API
 
-[![Integration Tests](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/integration-tests.yml) [![Build and Push Image](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml) [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](https://opensource.org/licenses/AGPL-3.0)
+[![Integration Tests](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/integration-tests.yml) [![Build and Push Image](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml) [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](LICENSE)
 
-![d2(4)](https://github.com/user-attachments/assets/8a7d9784-08fe-4946-a58e-3ed36fedc54b)
+![d2](https://github.com/user-attachments/assets/bf4dde68-eb07-4470-a713-fd878f941956)
 
 ## FAQs
 
