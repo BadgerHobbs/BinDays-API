@@ -32,7 +32,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// Regex for the bin days from the table rows.
 		/// </summary>
-		[GeneratedRegex(@"(?s)<div class=""bin-collection-listing-row.*?<h2.*?>(?<collection>.*?)</h2>.*?<p><strong>Next collection:</strong>\s*(?<date>.*?)</p>")]
+		[GeneratedRegex(@"(?s)<div class=""bin-collection-listing-row.*?<h2.*?>(?<collection>.*?)</h2>.*?<p><strong>Next collection.*?</strong>\s*(?<date>.*?)</p>")]
 		private static partial Regex BinDaysRegex();
 
 		/// <summary>
@@ -168,30 +168,34 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				foreach (Match rawBinDay in rawBinDays)
 				{
 					var collection = rawBinDay.Groups["collection"].Value;
-					var collectionDate = rawBinDay.Groups["date"].Value;
 
 					// Remove the st|nd|rd|th from the date part (e.g. '16th')
-					collectionDate = CollectionDateRegex().Replace(collectionDate, "");
+					var collectionDates = CollectionDateRegex()
+						.Replace(rawBinDay.Groups["date"].Value, "")
+						.Split(',');
 
-					// Parse the date (e.g. 'Friday 16 May')
-					var date = DateOnly.ParseExact(
-						collectionDate,
-						"dddd d MMMM",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					// Get matching bin types from the collection using the keys
-					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => collection.Contains(y)));
-
-					var binDay = new BinDay()
+					foreach (var collectionDate in collectionDates)
 					{
-						Date = date,
-						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
-					};
+						// Parse the date (e.g. 'Friday 16 May')
+						var date = DateOnly.ParseExact(
+							collectionDate.Trim(),
+							"dddd d MMMM",
+							CultureInfo.InvariantCulture,
+							DateTimeStyles.None
+						);
 
-					binDays.Add(binDay);
+						// Get matching bin types from the collection using the keys
+						var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => collection.Contains(y)));
+
+						var binDay = new BinDay()
+						{
+							Date = date,
+							Address = address,
+							Bins = matchedBinTypes.ToList().AsReadOnly()
+						};
+
+						binDays.Add(binDay);
+					}
 				}
 
 				// Filter out bin days in the past
