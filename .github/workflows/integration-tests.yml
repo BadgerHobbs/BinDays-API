@@ -1,4 +1,4 @@
-name: Integration Tests with Retry
+name: Integration Tests
 
 on:
   schedule:
