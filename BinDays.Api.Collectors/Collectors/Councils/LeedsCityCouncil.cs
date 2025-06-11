@@ -157,6 +157,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					string type = binDayElement.GetProperty("type").GetString()!;
 					string dateString = binDayElement.GetProperty("date").GetString()!;
 
+					// Skip if type 'unknown'
+					if (type == "Unknown")
+					{
+						continue;
+					}
+
 					// Parse the date 
 					var date = DateOnly.ParseExact(
 						dateString,
