@@ -8,6 +8,9 @@ builder.Host.ConfigureContainer<Autofac.ContainerBuilder>(BinDays.Api.Initialisa
 
 builder.Services.AddControllers();
 
+// Add memory caching for responses
+builder.Services.AddMemoryCache();
+
 // Health check for monitoring
 builder.Services.AddHealthChecks();
 

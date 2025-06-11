@@ -5,6 +5,7 @@
 	using BinDays.Api.Collectors.Services;
 	using Microsoft.AspNetCore.Mvc;
 	using Microsoft.Extensions.Logging;
+	using Microsoft.Extensions.Caching.Memory;
 	using Microsoft.AspNetCore.Http;
 
 	/// <summary>
@@ -25,14 +26,20 @@
 		private readonly ILogger<CollectorsController> _logger;
 
 		/// <summary>
+		/// Memory cache for storing responses.
+		/// </summary>
+		private readonly IMemoryCache _cache;
+
+		/// <summary>
 		/// Initializes a new instance of the <see cref="CollectorsController"/> class.
 		/// </summary>
 		/// <param name="collectorService">Service for retrieving collector information.</param>
 		/// <param name="logger">Logger for the controller.</param>
-		public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger)
+		public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IMemoryCache cache)
 		{
 			_collectorService = collectorService;
 			_logger = logger;
+			_cache = cache;
 		}
 
 		/// <summary>
@@ -65,9 +72,23 @@
 		[Route("/collector")]
 		public IActionResult GetCollector(string postcode, [FromBody] ClientSideResponse? clientSideResponse)
 		{
+			string cacheKey = $"collector-{postcode}";
+			if (_cache.TryGetValue(cacheKey, out GetCollectorResponse? cachedResult))
+			{
+				return Ok(cachedResult);
+			}
+
 			try
 			{
 				var result = GovUkCollectorBase.GetCollector(_collectorService, postcode, clientSideResponse);
+
+				// Cache result if successful and no next client-side request
+				if (result.NextClientSideRequest == null && result.Collector != null)
+				{
+					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
+					_cache.Set(cacheKey, result, cacheEntryOptions);
+				}
+
 				return Ok(result);
 			}
 			catch (Exception ex)
@@ -88,10 +109,24 @@
 		[Route("/{govUkId}/addresses")]
 		public IActionResult GetAddresses(string govUkId, string postcode, [FromBody] ClientSideResponse? clientSideResponse)
 		{
+			string cacheKey = $"addresses-{govUkId}-{postcode}";
+			if (_cache.TryGetValue(cacheKey, out GetAddressesResponse? cachedResult))
+			{
+				return Ok(cachedResult);
+			}
+
 			try
 			{
 				ICollector collector = _collectorService.GetCollector(govUkId);
 				var result = collector.GetAddresses(postcode, clientSideResponse);
+
+				// Cache result if successful and no next client-side request
+				if (result.NextClientSideRequest == null && result.Addresses != null)
+				{
+					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
+					_cache.Set(cacheKey, result, cacheEntryOptions);
+				}
+
 				return Ok(result);
 			}
 			catch (Exception ex)
@@ -113,6 +148,12 @@
 		[Route("/{govUkId}/bin-days")]
 		public IActionResult GetBinDays(string govUkId, string postcode, string uid, [FromBody] ClientSideResponse? clientSideResponse)
 		{
+			string cacheKey = $"bin-days-{govUkId}-{postcode}-{uid}";
+			if (_cache.TryGetValue(cacheKey, out GetBinDaysResponse? cachedResult))
+			{
+				return Ok(cachedResult);
+			}
+
 			try
 			{
 				var address = new Address()
@@ -123,6 +164,14 @@
 
 				ICollector collector = _collectorService.GetCollector(govUkId);
 				var result = collector.GetBinDays(address, clientSideResponse);
+
+				// Cache result if successful and no next client-side request
+				if (result.NextClientSideRequest == null && result.BinDays != null)
+				{
+					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
+					_cache.Set(cacheKey, result, cacheEntryOptions);
+				}
+
 				return Ok(result);
 			}
 			catch (Exception ex)
