@@ -20,5 +20,6 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      # Filter IP-Blocked Collector Tests
       - name: Run Integration Tests
-        run: dotnet test --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+        run: dotnet test --filter "FullyQualifiedName!~TeignbridgeDistrictCouncilTests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
