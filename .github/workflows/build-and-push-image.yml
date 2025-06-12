@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - BinDays.Api/**
+      - BinDays.Api.Collectors/**
 
 jobs:
   build-and-push-bindays-api:
