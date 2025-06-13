@@ -1,5 +1,6 @@
 ﻿namespace BinDays.Api.Controllers
 {
+	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Collectors;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;
@@ -105,6 +106,11 @@
 
 				return Ok(result);
 			}
+			catch (CollectorNotFoundException ex)
+			{
+				_logger.LogWarning(ex, "No supported collector found for Postcode: {Postcode}.", postcode);
+				return NotFound("No supported collector found for the specified postcode.");
+			}
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "An unexpected error occurred while retrieving collector for postcode: {Postcode}.", postcode);
@@ -145,6 +151,11 @@
 				}
 
 				return Ok(result);
+			}
+			catch (CollectorNotFoundException ex)
+			{
+				_logger.LogWarning(ex, "No supported collector found for Gov.uk ID: {GovUkId}.", govUkId);
+				return NotFound("No supported collector found for the specified Gov.uk ID.");
 			}
 			catch (Exception ex)
 			{
@@ -193,6 +204,11 @@
 				}
 
 				return Ok(result);
+			}
+			catch (CollectorNotFoundException ex)
+			{
+				_logger.LogWarning(ex, "No supported collector found for Gov.uk ID: {GovUkId}.", govUkId);
+				return NotFound("No supported collector found for the specified Gov.uk ID.");
 			}
 			catch (Exception ex)
 			{

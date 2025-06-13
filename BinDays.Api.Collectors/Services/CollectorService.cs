@@ -1,5 +1,6 @@
 namespace BinDays.Api.Collectors.Services
 {
+	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Collectors;
 	using System.Collections.ObjectModel;
 
@@ -36,10 +37,12 @@ namespace BinDays.Api.Collectors.Services
 		/// Gets the collector for a given gov.uk identifier.        
 		/// </summary>
 		/// <param name="govUkId">The gov.uk identifier.</param>
-		/// <returns>The collector.</returns>
+		/// <returns>The collector if found.</returns>
+		/// <exception cref="CollectorNotFoundException">Thrown when no collector matches the given govUkId.</exception>
 		public ICollector GetCollector(string govUkId)
 		{
-			return collectors.Where(collector => collector.GovUkId == govUkId).Single();
+			var collector = collectors.SingleOrDefault(collector => collector.GovUkId == govUkId);
+			return collector ?? throw new CollectorNotFoundException(govUkId);
 		}
 	}
 }
