@@ -43,6 +43,16 @@
 		}
 
 		/// <summary>
+		/// Formats a postcode string for use in a cache key by converting it to uppercase and removing spaces.
+		/// </summary>
+		/// <param name="postcode">The postcode string to format.</param>
+		/// <returns>The formatted postcode string for cache key usage.</returns>
+		private static string FormatPostcodeForCacheKey(string postcode)
+		{
+			return postcode.ToUpperInvariant().Replace(" ", string.Empty);
+		}
+
+		/// <summary>
 		/// Gets all the collectors.
 		/// </summary>
 		/// <returns>An enumerable collection of collectors or an error response.</returns>
@@ -72,7 +82,7 @@
 		[Route("/collector")]
 		public IActionResult GetCollector(string postcode, [FromBody] ClientSideResponse? clientSideResponse)
 		{
-			string cacheKey = $"collector-{postcode}";
+			string cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
 			if (_cache.TryGetValue(cacheKey, out GetCollectorResponse? cachedResult))
 			{
 				return Ok(cachedResult);
@@ -109,7 +119,7 @@
 		[Route("/{govUkId}/addresses")]
 		public IActionResult GetAddresses(string govUkId, string postcode, [FromBody] ClientSideResponse? clientSideResponse)
 		{
-			string cacheKey = $"addresses-{govUkId}-{postcode}";
+			string cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
 			if (_cache.TryGetValue(cacheKey, out GetAddressesResponse? cachedResult))
 			{
 				return Ok(cachedResult);
@@ -148,7 +158,7 @@
 		[Route("/{govUkId}/bin-days")]
 		public IActionResult GetBinDays(string govUkId, string postcode, string uid, [FromBody] ClientSideResponse? clientSideResponse)
 		{
-			string cacheKey = $"bin-days-{govUkId}-{postcode}-{uid}";
+			string cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
 			if (_cache.TryGetValue(cacheKey, out GetBinDaysResponse? cachedResult))
 			{
 				return Ok(cachedResult);
