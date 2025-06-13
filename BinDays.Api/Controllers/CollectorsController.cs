@@ -35,6 +35,7 @@
 		/// </summary>
 		/// <param name="collectorService">Service for retrieving collector information.</param>
 		/// <param name="logger">Logger for the controller.</param>
+		/// <param name="cache">Memory cache for storing responses.</param>
 		public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IMemoryCache cache)
 		{
 			_collectorService = collectorService;
@@ -75,6 +76,7 @@
 			string cacheKey = $"collector-{postcode}";
 			if (_cache.TryGetValue(cacheKey, out GetCollectorResponse? cachedResult))
 			{
+				_logger.LogInformation("Returning cached collector {CollectorName} for Postcode: {Postcode}.", cachedResult!.Collector!.Name, postcode);
 				return Ok(cachedResult);
 			}
 
@@ -85,6 +87,8 @@
 				// Cache result if successful and no next client-side request
 				if (result.NextClientSideRequest == null && result.Collector != null)
 				{
+					_logger.LogInformation("Successfully retrieved collector {CollectorName} for Postcode: {Postcode}.", result.Collector.Name, postcode);
+
 					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
 					_cache.Set(cacheKey, result, cacheEntryOptions);
 				}
@@ -112,6 +116,7 @@
 			string cacheKey = $"addresses-{govUkId}-{postcode}";
 			if (_cache.TryGetValue(cacheKey, out GetAddressesResponse? cachedResult))
 			{
+				_logger.LogInformation("Returning {AddressCount} cached addresses for Gov.uk ID: {GovUkId}, Postcode: {Postcode}.", cachedResult!.Addresses!.Count, govUkId, postcode);
 				return Ok(cachedResult);
 			}
 
@@ -123,6 +128,8 @@
 				// Cache result if successful and no next client-side request
 				if (result.NextClientSideRequest == null && result.Addresses != null)
 				{
+					_logger.LogInformation("Successfully retrieved {AddressCount} addresses for Gov.uk ID: {GovUkId}, Postcode: {Postcode}.", result.Addresses.Count, govUkId, postcode);
+
 					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
 					_cache.Set(cacheKey, result, cacheEntryOptions);
 				}
@@ -151,6 +158,7 @@
 			string cacheKey = $"bin-days-{govUkId}-{postcode}-{uid}";
 			if (_cache.TryGetValue(cacheKey, out GetBinDaysResponse? cachedResult))
 			{
+				_logger.LogInformation("Returning {BinDayCount} cached bin days for Gov.uk ID: {GovUkId}, Postcode: {Postcode}, UID: {Uid}.", cachedResult!.BinDays!.Count, govUkId, postcode, uid);
 				return Ok(cachedResult);
 			}
 
@@ -168,6 +176,8 @@
 				// Cache result if successful and no next client-side request
 				if (result.NextClientSideRequest == null && result.BinDays != null)
 				{
+					_logger.LogInformation("Successfully retrieved {BinDayCount} bin days for Gov.uk ID: {GovUkId}, Postcode: {Postcode}, UID: {Uid}.", result.BinDays.Count, govUkId, postcode, uid);
+
 					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
 					_cache.Set(cacheKey, result, cacheEntryOptions);
 				}
