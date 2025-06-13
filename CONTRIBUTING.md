@@ -198,3 +198,7 @@ docker run -d \
     -p 8080:8080 \
     ghcr.io/badgerhobbs/bindays-api:latest
 ```
+
+### Logging
+
+For additional logging, [Seq](https://datalust.co/seq) can be optionally configured. See the [official docs](https://docs.datalust.co/docs/microsoft-extensions-logging#json-configuration) for how configuration steps.
