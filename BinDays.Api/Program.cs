@@ -14,6 +14,12 @@ builder.Services.AddMemoryCache();
 // Health check for monitoring
 builder.Services.AddHealthChecks();
 
+// Configure Seq logging (optional)
+builder.Services.AddLogging(loggingBuilder =>
+{
+	loggingBuilder.AddSeq(builder.Configuration.GetSection("Seq"));
+});
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
