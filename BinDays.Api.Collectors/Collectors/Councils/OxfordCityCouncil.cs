@@ -29,13 +29,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
         {
             new()
             {
-                Name = "Refuse",
+                Name = "Rubbish",
                 Colour = "Green",
                 Keys = new List<string>() { "residual" }.AsReadOnly(),
             },
             new()
             {
-                Name = "Recycling",
+                Name = "Mixed Recycling",
                 Colour = "Blue",
                 Keys = new List<string>() { "recycling" }.AsReadOnly(),
             },
