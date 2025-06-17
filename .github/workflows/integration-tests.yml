@@ -7,9 +7,32 @@ on:
   workflow_dispatch:
 
 jobs:
-  integration_tests:
-    name: Integration Tests
+  discover_councils:
+    name: Discover Council Test Files
     runs-on: ubuntu-latest
+    outputs:
+      councils_json: ${{ steps.list_councils.outputs.councils_json }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: List council test file identifiers
+        id: list_councils
+        run: |
+          TARGET_DIR="BinDays.Api.IntegrationTests/Collectors/Councils"
+          cd "$TARGET_DIR" || exit 1
+          council_identifiers=$(ls *Tests.cs 2>/dev/null | sed 's/Tests\.cs$//' | jq -c --raw-input --slurp 'split("\n") | map(select(length > 0))')
+          echo "councils_json=$council_identifiers" >> $GITHUB_OUTPUT
+        shell: bash
+
+  run_council_tests:
+    name: Test ${{ matrix.council }}
+    needs: discover_councils
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        council: ${{ fromJson(needs.discover_councils.outputs.councils_json) }}
 
     steps:
       - name: Checkout code
@@ -20,6 +43,9 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      # Filter IP-Blocked Collector Tests
-      - name: Run Integration Tests
-        run: dotnet test --filter "FullyQualifiedName!~TeignbridgeDistrictCouncilTests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+      - name: Run Integration Tests for ${{ matrix.council }}
+        if: |
+          matrix.council != 'TeignbridgeDistrictCouncil'
+        run: |
+          echo "Running tests for ${{ matrix.council }}..."
+          dotnet test --filter "FullyQualifiedName~${{ matrix.council }}Tests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
