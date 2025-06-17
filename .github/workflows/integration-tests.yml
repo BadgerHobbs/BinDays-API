@@ -2,8 +2,8 @@ name: Integration Tests
 
 on:
   schedule:
-    # Runs at 03:00 UTC every day to test collectors
-    - cron: "0 3 * * *"
+    # Runs at 09:00 UTC every day to test collectors
+    - cron: "0 9 * * *"
   workflow_dispatch:
 
 jobs:
