@@ -73,6 +73,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = "Brown",
 				Keys = new List<string>() { "Refuse" }.AsReadOnly(),
 			},
+			new()
+			{
+				Name = "Garden Waste",
+				Colour = "Green",
+				Keys = new List<string>() { "Garden" }.AsReadOnly(),
+				Type = "Sack",
+			},
 		}.AsReadOnly();
 
 		/// <inheritdoc/>
