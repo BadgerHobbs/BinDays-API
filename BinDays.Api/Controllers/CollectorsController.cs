@@ -87,7 +87,7 @@
 			string cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
 			if (_cache.TryGetValue(cacheKey, out GetCollectorResponse? cachedResult))
 			{
-				_logger.LogInformation("Returning cached collector {CollectorName} for Postcode: {Postcode}.", cachedResult!.Collector!.Name, postcode);
+				_logger.LogInformation("Returning cached collector {CollectorName} for postcode: {Postcode}.", cachedResult!.Collector!.Name, postcode);
 				return Ok(cachedResult);
 			}
 
@@ -98,7 +98,7 @@
 				// Cache result if successful and no next client-side request
 				if (result.NextClientSideRequest == null && result.Collector != null)
 				{
-					_logger.LogInformation("Successfully retrieved collector {CollectorName} for Postcode: {Postcode}.", result.Collector.Name, postcode);
+					_logger.LogInformation("Successfully retrieved collector {CollectorName} for postcode: {Postcode}.", result.Collector.Name, postcode);
 
 					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
 					_cache.Set(cacheKey, result, cacheEntryOptions);
@@ -106,9 +106,14 @@
 
 				return Ok(result);
 			}
-			catch (CollectorNotFoundException ex)
-			{ 
-				_logger.LogWarning(ex, "No supported collector found for Gov.uk ID: {GovUkId}, Postcode: {Postcode}.", ex.GovUkId, postcode);
+			catch (GovUkIdNotFoundException ex)
+			{
+				_logger.LogWarning(ex, "No gov.uk ID found for postcode: {Postcode}.", postcode);
+				return NotFound("No collector found for the specified postcode.");
+			}
+			catch (SupportedCollectorNotFoundException ex)
+			{
+				_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.GovUkId, postcode);
 				return NotFound("No supported collector found for the specified postcode.");
 			}
 			catch (Exception ex)
@@ -119,9 +124,9 @@
 		}
 
 		/// <summary>
-		/// Gets addresses for a given Gov.uk ID and postcode.
+		/// Gets addresses for a given gov.uk ID and postcode.
 		/// </summary>
-		/// <param name="govUkId">The Gov.uk identifier for the collector.</param>
+		/// <param name="govUkId">The gov.uk identifier for the collector.</param>
 		/// <param name="postcode">The postcode to search addresses for.</param>
 		/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
 		/// <returns>A response containing addresses, or an error response.</returns>
@@ -132,7 +137,7 @@
 			string cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
 			if (_cache.TryGetValue(cacheKey, out GetAddressesResponse? cachedResult))
 			{
-				_logger.LogInformation("Returning {AddressCount} cached addresses for Gov.uk ID: {GovUkId}, Postcode: {Postcode}.", cachedResult!.Addresses!.Count, govUkId, postcode);
+				_logger.LogInformation("Returning {AddressCount} cached addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", cachedResult!.Addresses!.Count, govUkId, postcode);
 				return Ok(cachedResult);
 			}
 
@@ -144,7 +149,7 @@
 				// Cache result if successful and no next client-side request
 				if (result.NextClientSideRequest == null && result.Addresses != null)
 				{
-					_logger.LogInformation("Successfully retrieved {AddressCount} addresses for Gov.uk ID: {GovUkId}, Postcode: {Postcode}.", result.Addresses.Count, govUkId, postcode);
+					_logger.LogInformation("Successfully retrieved {AddressCount} addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", result.Addresses.Count, govUkId, postcode);
 
 					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
 					_cache.Set(cacheKey, result, cacheEntryOptions);
@@ -152,22 +157,22 @@
 
 				return Ok(result);
 			}
-			catch (CollectorNotFoundException ex)
+			catch (SupportedCollectorNotFoundException ex)
 			{
-				_logger.LogWarning(ex, "No supported collector found for Gov.uk ID: {GovUkId}.", govUkId);
-				return NotFound("No supported collector found for the specified Gov.uk ID.");
+				_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
+				return NotFound("No supported collector found for the specified gov.uk ID.");
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "An unexpected error occurred while retrieving addresses for Gov.uk ID: {GovUkId}, Postcode: {Postcode}.", govUkId, postcode);
+				_logger.LogError(ex, "An unexpected error occurred while retrieving addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
 				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching addresses. Please try again later.");
 			}
 		}
 
 		/// <summary>
-		/// Gets bin days for a given Gov.uk ID, postcode, and unique address identifier.
+		/// Gets bin days for a given gov.uk ID, postcode, and unique address identifier.
 		/// </summary>
-		/// <param name="govUkId">The Gov.uk identifier for the collector.</param>
+		/// <param name="govUkId">The gov.uk identifier for the collector.</param>
 		/// <param name="postcode">The postcode of the address.</param>
 		/// <param name="uid">The unique identifier of the address.</param>
 		/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
@@ -179,7 +184,7 @@
 			string cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
 			if (_cache.TryGetValue(cacheKey, out GetBinDaysResponse? cachedResult))
 			{
-				_logger.LogInformation("Returning {BinDayCount} cached bin days for Gov.uk ID: {GovUkId}, Postcode: {Postcode}, UID: {Uid}.", cachedResult!.BinDays!.Count, govUkId, postcode, uid);
+				_logger.LogInformation("Returning {BinDayCount} cached bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", cachedResult!.BinDays!.Count, govUkId, postcode, uid);
 				return Ok(cachedResult);
 			}
 
@@ -197,7 +202,7 @@
 				// Cache result if successful and no next client-side request
 				if (result.NextClientSideRequest == null && result.BinDays != null)
 				{
-					_logger.LogInformation("Successfully retrieved {BinDayCount} bin days for Gov.uk ID: {GovUkId}, Postcode: {Postcode}, UID: {Uid}.", result.BinDays.Count, govUkId, postcode, uid);
+					_logger.LogInformation("Successfully retrieved {BinDayCount} bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", result.BinDays.Count, govUkId, postcode, uid);
 
 					// Cache until the day after the first bin day, or for 1 day if no bin days are returned.
 					var firstBinDayDate = result.BinDays.FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
@@ -209,14 +214,14 @@
 
 				return Ok(result);
 			}
-			catch (CollectorNotFoundException ex)
+			catch (SupportedCollectorNotFoundException ex)
 			{
-				_logger.LogWarning(ex, "No supported collector found for Gov.uk ID: {GovUkId}.", govUkId);
-				return NotFound("No supported collector found for the specified Gov.uk ID.");
+				_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
+				return NotFound("No supported collector found for the specified gov.uk ID.");
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "An unexpected error occurred while retrieving bin days for Gov.uk ID: {GovUkId}, Postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+				_logger.LogError(ex, "An unexpected error occurred while retrieving bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
 				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching bin days. Please try again later.");
 			}
 		}

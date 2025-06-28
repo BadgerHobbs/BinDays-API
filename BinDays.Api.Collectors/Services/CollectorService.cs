@@ -38,11 +38,11 @@ namespace BinDays.Api.Collectors.Services
 		/// </summary>
 		/// <param name="govUkId">The gov.uk identifier.</param>
 		/// <returns>The collector if found.</returns>
-		/// <exception cref="CollectorNotFoundException">Thrown when no collector matches the given govUkId.</exception>
+		/// <exception cref="SupportedCollectorNotFoundException">Thrown when no collector matches the given govUkId.</exception>
 		public ICollector GetCollector(string govUkId)
 		{
 			var collector = collectors.SingleOrDefault(collector => collector.GovUkId == govUkId);
-			return collector ?? throw new CollectorNotFoundException(govUkId);
+			return collector ?? throw new SupportedCollectorNotFoundException(govUkId);
 		}
 	}
 }

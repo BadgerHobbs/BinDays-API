@@ -1,5 +1,6 @@
 namespace BinDays.Api.Collectors.Collectors
 {
+	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;
 	using System.Text.Json;
@@ -59,7 +60,11 @@ namespace BinDays.Api.Collectors.Collectors
 			else if (clientSideResponse.RequestId == 1)
 			{
 				// Get collector gov.uk id from response header
-				var govUkId = clientSideResponse.Headers["location"].Split("/").Last().Trim();
+				var govUkId = clientSideResponse.Headers.GetValueOrDefault("location")?.Split("/").Last().Trim();
+				if (govUkId == null)
+				{
+					throw new GovUkIdNotFoundException(postcode);
+				}
 
 				// Get collector with matching gov.uk id
 				var collector = collectorService.GetCollector(govUkId);
