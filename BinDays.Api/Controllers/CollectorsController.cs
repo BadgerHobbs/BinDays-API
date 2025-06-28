@@ -100,15 +100,15 @@
 				{
 					_logger.LogInformation("Successfully retrieved collector {CollectorName} for Postcode: {Postcode}.", result.Collector.Name, postcode);
 
-					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
+					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
 					_cache.Set(cacheKey, result, cacheEntryOptions);
 				}
 
 				return Ok(result);
 			}
 			catch (CollectorNotFoundException ex)
-			{
-				_logger.LogWarning(ex, "No supported collector found for Postcode: {Postcode}.", postcode);
+			{ 
+				_logger.LogWarning(ex, "No supported collector found for Gov.uk ID: {GovUkId}, Postcode: {Postcode}.", ex.GovUkId, postcode);
 				return NotFound("No supported collector found for the specified postcode.");
 			}
 			catch (Exception ex)
@@ -146,7 +146,7 @@
 				{
 					_logger.LogInformation("Successfully retrieved {AddressCount} addresses for Gov.uk ID: {GovUkId}, Postcode: {Postcode}.", result.Addresses.Count, govUkId, postcode);
 
-					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
+					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
 					_cache.Set(cacheKey, result, cacheEntryOptions);
 				}
 
@@ -199,7 +199,11 @@
 				{
 					_logger.LogInformation("Successfully retrieved {BinDayCount} bin days for Gov.uk ID: {GovUkId}, Postcode: {Postcode}, UID: {Uid}.", result.BinDays.Count, govUkId, postcode, uid);
 
-					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(1) };
+					// Cache until the day after the first bin day, or for 1 day if no bin days are returned.
+					var firstBinDayDate = result.BinDays.FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
+					var cacheExpiration = (firstBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
+
+					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
 					_cache.Set(cacheKey, result, cacheEntryOptions);
 				}
 

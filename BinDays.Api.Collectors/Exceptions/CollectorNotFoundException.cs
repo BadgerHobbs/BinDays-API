@@ -8,12 +8,18 @@ namespace BinDays.Api.Collectors.Exceptions
 	public class CollectorNotFoundException : Exception
 	{
 		/// <summary>
+		/// The Gov.uk identifier that was not found.
+		/// </summary>
+		public string GovUkId { get; }
+
+		/// <summary>
 		/// Initializes a new instance of the <see cref="CollectorNotFoundException"/> class.
 		/// </summary>
 		/// <param name="govUkId">The Gov.uk identifier that was not found.</param>
 		public CollectorNotFoundException(string govUkId)
 			: base($"No collector found with Gov.uk ID: {govUkId}")
 		{
+			GovUkId = govUkId;
 		}
 	}
 }
