@@ -186,20 +186,23 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var binTypeText = row.Groups["bintype"].Value.Trim().ToLowerInvariant();
 					var dateString = row.Groups["datestring"].Value.Trim();
 
-					// Extract the date part (e.g., "Tuesday 29th of April 2025")
+					// Extract the date part (e.g. "Tuesday 29th of April 2025")
 					// Assumes format like "x days' time, Day d[th] of Month yyyy" or just "Day d[th] of Month yyyy"
 					var datePart = dateString.Split(',').Last().Trim();
 
 					// Strip the st|nd|rd|th from the date part
 					datePart = CollectionDateRegex().Replace(datePart, "");
 
+					// Strip 'of' from the date part
+					datePart = datePart.Replace("of ", "");
+
 					// Remove double spaces
 					datePart = DoubleSpaceRegex().Replace(datePart, " ");
 
-					// Parse the date
+					// Parse the date (e.g. "Tuesday 8 July 2025")
 					var collectionDate = DateOnly.ParseExact(
 						datePart,
-						"dddd d 'of' MMMM yyyy",
+						"dddd d MMMM yyyy",
 						CultureInfo.InvariantCulture,
 						DateTimeStyles.None
 					);
