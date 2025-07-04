@@ -33,6 +33,8 @@ jobs:
       fail-fast: false
       matrix:
         council: ${{ fromJson(needs.discover_councils.outputs.councils_json) }}
+    env:
+      ALLOWED_TO_FAIL: '["TeignbridgeDistrictCouncil", "BuckinghamshireCouncil"]'
 
     steps:
       - name: Checkout code
@@ -44,8 +46,7 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Run Integration Tests for ${{ matrix.council }}
-        if: |
-          matrix.council != 'TeignbridgeDistrictCouncil'
+        continue-on-error: ${{ contains(fromJSON(env.ALLOWED_TO_FAIL), matrix.council) }}
         run: |
           echo "Running tests for ${{ matrix.council }}..."
           dotnet test --filter "FullyQualifiedName~${{ matrix.council }}Tests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
