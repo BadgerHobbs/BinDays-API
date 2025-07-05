@@ -28,7 +28,7 @@ jobs:
   run_council_tests:
     name: Test ${{ matrix.council }}
     needs: discover_councils
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
