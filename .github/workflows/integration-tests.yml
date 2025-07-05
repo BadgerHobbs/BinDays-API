@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       councils_json: ${{ steps.list_councils.outputs.councils_json }}
+    env:
+      EXCLUDED_COUNCILS: '["TeignbridgeDistrictCouncil"]'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,8 +23,9 @@ jobs:
         run: |
           TARGET_DIR="BinDays.Api.IntegrationTests/Collectors/Councils"
           cd "$TARGET_DIR" || exit 1
-          council_identifiers=$(ls *Tests.cs 2>/dev/null | sed 's/Tests\.cs$//' | jq -c --raw-input --slurp 'split("\n") | map(select(length > 0))')
-          echo "councils_json=$council_identifiers" >> $GITHUB_OUTPUT
+          all_councils=$(ls *Tests.cs 2>/dev/null | sed 's/Tests\.cs$//' | jq -c --raw-input --slurp 'split("\n") | map(select(length > 0))')
+          filtered_councils=$(echo "$all_councils" | jq -c --argjson excluded "$EXCLUDED_COUNCILS" '. - $excluded')
+          echo "councils_json=$filtered_councils" >> $GITHUB_OUTPUT
         shell: bash
 
   run_council_tests:
@@ -33,8 +36,6 @@ jobs:
       fail-fast: false
       matrix:
         council: ${{ fromJson(needs.discover_councils.outputs.councils_json) }}
-    env:
-      ALLOWED_TO_FAIL: '["TeignbridgeDistrictCouncil", "BuckinghamshireCouncil"]'
 
     steps:
       - name: Checkout code
@@ -46,7 +47,6 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Run Integration Tests for ${{ matrix.council }}
-        continue-on-error: ${{ contains(fromJSON(env.ALLOWED_TO_FAIL), matrix.council) }}
         run: |
           echo "Running tests for ${{ matrix.council }}..."
           dotnet test --filter "FullyQualifiedName~${{ matrix.council }}Tests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
