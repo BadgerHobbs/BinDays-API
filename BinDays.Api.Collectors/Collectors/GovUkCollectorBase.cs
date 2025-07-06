@@ -4,11 +4,12 @@ namespace BinDays.Api.Collectors.Collectors
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;
 	using System.Text.Json;
+	using System.Text.RegularExpressions;
 
 	/// <summary>
 	/// Abstract base class for a gov.uk collector.
 	/// </summary>
-	public abstract class GovUkCollectorBase
+	public abstract partial class GovUkCollectorBase
 	{
 		/// <summary>
 		/// Base url for gov.uk bin/rubbish collection days.
@@ -24,6 +25,12 @@ namespace BinDays.Api.Collectors.Collectors
 		/// Gets the gov.uk url of the collector.
 		/// </summary>
 		public virtual Uri GovUkUrl => new($"{GovUkBaseUrl}/{GovUkId}");
+
+		/// <summary>
+		/// Regex for the gov.uk ID from the html.
+		/// </summary>
+		[GeneratedRegex(@"value=""https://www.gov.uk/.*?/(?<GovUkId>[\w-]+)""")]
+		private static partial Regex GovUkIdRegex();
 
 		/// <summary>
 		/// Gets the collector for a given postcode, potentially requiring multiple steps via client-side responses.
@@ -59,8 +66,12 @@ namespace BinDays.Api.Collectors.Collectors
 			// Process collector from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				// Get collector gov.uk id from response header
+				// Try to get gov.uk ID from response header
 				var govUkId = clientSideResponse.Headers.GetValueOrDefault("location")?.Split("/").Last().Trim();
+
+				// If null, try to get gov.uk ID from response html
+				govUkId ??= GovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
+
 				if (govUkId == null)
 				{
 					throw new GovUkIdNotFoundException(postcode);

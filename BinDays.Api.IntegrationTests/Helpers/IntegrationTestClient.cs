@@ -126,14 +126,6 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				responseHeaders[header.Key] = string.Join(",", header.Value);
 			}
 
-			// Manually set Location header if missing
-			// This mimics the Dart Dio implementation where the location header is preserved in redirect.
-			var location = httpResponse.RequestMessage?.RequestUri?.Segments.Last();
-			if (location != null && !responseHeaders.ContainsKey("Location"))
-			{
-				responseHeaders["Location"] = location;
-			}
-
 			return new ClientSideResponse
 			{
 				RequestId = request.RequestId,
