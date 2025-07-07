@@ -5,7 +5,7 @@ namespace BinDays.Api.Collectors.Exceptions
     /// <summary>
     /// Exception thrown when no bin days are found for a given address.
     /// </summary>
-    public class BinDaysNotFoundException : Exception
+    public sealed class BinDaysNotFoundException : Exception
     {
         /// <summary>
         /// The gov.uk identifier for the collector.

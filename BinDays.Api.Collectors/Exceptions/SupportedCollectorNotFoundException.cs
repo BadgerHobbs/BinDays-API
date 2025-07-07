@@ -5,7 +5,7 @@ namespace BinDays.Api.Collectors.Exceptions
 	/// <summary>
 	/// Exception thrown when a supported collector is not found for a given identifier.
 	/// </summary>
-	public class SupportedCollectorNotFoundException : Exception
+	public sealed class SupportedCollectorNotFoundException : Exception
 	{
 		/// <summary>
 		/// The gov.uk identifier that was not found.

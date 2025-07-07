@@ -3,7 +3,7 @@ namespace BinDays.Api.Collectors.Utilities
 	/// <summary>
 	/// Provides constant values used throughout collector implementations.
 	/// </summary>
-	public static class Constants
+	internal static class Constants
 	{
 		/// <summary>
 		/// The user agent string used for HTTP requests.

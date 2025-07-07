@@ -5,7 +5,7 @@ namespace BinDays.Api.Collectors.Exceptions
     /// <summary>
     /// Exception thrown when no addresses are found for a given postcode and gov.uk ID.
     /// </summary>
-    public class AddressesNotFoundException : Exception
+    public sealed class AddressesNotFoundException : Exception
     {
         /// <summary>
         /// The gov.uk identifier for the collector.
@@ -15,7 +15,7 @@ namespace BinDays.Api.Collectors.Exceptions
         /// <summary>
         /// The postcode for which addresses were not found.
         /// </summary>
-        public string Postcode { get; } 
+        public string Postcode { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AddressesNotFoundException"/> class.

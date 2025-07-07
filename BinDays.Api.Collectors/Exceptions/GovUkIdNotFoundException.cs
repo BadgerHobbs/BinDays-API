@@ -5,7 +5,7 @@ namespace BinDays.Api.Collectors.Exceptions
 	/// <summary>
 	/// Exception thrown when a gov.uk ID is not found for a given postcode.
 	/// </summary>
-	public class GovUkIdNotFoundException : Exception
+	public sealed class GovUkIdNotFoundException : Exception
 	{
 		/// <summary>
 		/// The postcode that a gov.uk ID was not found for.

@@ -9,7 +9,7 @@ namespace BinDays.Api.Collectors.Collectors
 	/// <summary>
 	/// Abstract base class for a gov.uk collector.
 	/// </summary>
-	public abstract partial class GovUkCollectorBase
+	internal abstract partial class GovUkCollectorBase
 	{
 		/// <summary>
 		/// Base url for gov.uk bin/rubbish collection days.
