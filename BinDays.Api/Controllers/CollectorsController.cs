@@ -1,7 +1,6 @@
 ﻿namespace BinDays.Api.Controllers
 {
 	using BinDays.Api.Collectors.Exceptions;
-	using BinDays.Api.Collectors.Collectors;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;
 	using Microsoft.AspNetCore.Mvc;
@@ -13,7 +12,6 @@
 	/// API controller for managing collectors.
 	/// </summary>
 	[ApiController]
-	[Route("collectors")]
 	public class CollectorsController : ControllerBase
 	{
 		/// <summary>
