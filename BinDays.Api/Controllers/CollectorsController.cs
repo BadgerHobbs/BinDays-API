@@ -93,10 +93,10 @@
 
 			try
 			{
-				var result = GovUkCollectorBase.GetCollector(_collectorService, postcode, clientSideResponse);
+				var result = _collectorService.GetCollector(postcode, clientSideResponse);
 
 				// Cache result if successful and no next client-side request
-				if (result.NextClientSideRequest == null && result.Collector != null)
+				if (result.NextClientSideRequest == null)
 				{
 					_logger.LogInformation("Successfully retrieved collector {CollectorName} for postcode: {Postcode}.", result.Collector.Name, postcode);
 
@@ -143,11 +143,10 @@
 
 			try
 			{
-				ICollector collector = _collectorService.GetCollector(govUkId);
-				var result = collector.GetAddresses(postcode, clientSideResponse);
+				var result = _collectorService.GetAddresses(govUkId, postcode, clientSideResponse);
 
 				// Cache result if successful and no next client-side request
-				if (result.NextClientSideRequest == null && result.Addresses != null)
+				if (result.NextClientSideRequest == null)
 				{
 					_logger.LogInformation("Successfully retrieved {AddressCount} addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", result.Addresses.Count, govUkId, postcode);
 
@@ -161,6 +160,11 @@
 			{
 				_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
 				return NotFound("No supported collector found for the specified gov.uk ID.");
+			}
+			catch (AddressesNotFoundException ex)
+			{
+				_logger.LogWarning(ex, "No addresses found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
+				return NotFound("No addresses found for the specified postcode.");
 			}
 			catch (Exception ex)
 			{
@@ -196,11 +200,10 @@
 					Uid = uid
 				};
 
-				ICollector collector = _collectorService.GetCollector(govUkId);
-				var result = collector.GetBinDays(address, clientSideResponse);
+				var result = _collectorService.GetBinDays(govUkId, address, clientSideResponse);
 
 				// Cache result if successful and no next client-side request
-				if (result.NextClientSideRequest == null && result.BinDays != null)
+				if (result.NextClientSideRequest == null)
 				{
 					_logger.LogInformation("Successfully retrieved {BinDayCount} bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", result.BinDays.Count, govUkId, postcode, uid);
 
@@ -218,6 +221,11 @@
 			{
 				_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
 				return NotFound("No supported collector found for the specified gov.uk ID.");
+			}
+			catch (BinDaysNotFoundException ex)
+			{
+				_logger.LogWarning(ex, "No bin days found for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+				return NotFound("No bin days found for the specified address.");
 			}
 			catch (Exception ex)
 			{
