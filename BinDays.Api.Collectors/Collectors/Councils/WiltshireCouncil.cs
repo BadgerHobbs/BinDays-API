@@ -25,11 +25,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		public override string GovUkId => "wiltshire";
 
 		/// <summary>
-		/// Regex to extract bin collection event details from HTML.
-		/// It captures the bin type description from 'data-original-title' and the date string from 'data-original-datetext'.
+		/// Regex to extract the JSON model data from the script tag in the HTML response.
+		/// It captures the JSON object assigned to the 'modelData' variable.
 		/// </summary>
-		[GeneratedRegex("<a[^>]*?data-original-title=\"(.*?)\"[^>]*?data-original-datetext=\"(.*?)\"[^>]*?>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
-		private static partial Regex CollectionEventRegex();
+		[GeneratedRegex("modelData = (\\{.*?\\});", RegexOptions.Singleline)]
+		private static partial Regex ModelDataRegex();
 
 		/// <summary>
 		/// The list of bin types for this collector.
@@ -174,8 +174,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process current month's response. If no future data, request next month.
 			else if (clientSideResponse.RequestId == 1)
 			{
-				// Process the HTML content from the current month's response
-				var currentMonthBinDays = ParseBinDaysFromHtml(clientSideResponse.Content, address);
+				// Process the response content from the current month's response
+				var currentMonthBinDays = ParseBinDays(clientSideResponse.Content, address);
 
 				// If future collections were found in the current month, return them
 				if (currentMonthBinDays.Count > 0)
@@ -221,8 +221,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process next month's response
 			else if (clientSideResponse.RequestId == 2)
 			{
-				// Process the HTML content from the next month's response
-				var nextMonthBinDays = ParseBinDaysFromHtml(clientSideResponse.Content, address);
+				// Process the response content from the next month's response
+				var nextMonthBinDays = ParseBinDays(clientSideResponse.Content, address);
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
@@ -238,30 +238,31 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		}
 
 		/// <summary>
-		/// Parses bin day information from the provided HTML content, filtering for future dates.
+		/// Parses bin day information from the JSON model in the provided response content.
 		/// </summary>
-		/// <param name="htmlContent">The HTML string containing collection data.</param>
+		/// <param name="responseContent">The string containing the response data, including the model JSON.</param>
 		/// <param name="address">The address associated with these bin days.</param>
-		/// <returns>A read-only collection of future BinDay objects parsed from the HTML.</returns>
-		private ReadOnlyCollection<BinDay> ParseBinDaysFromHtml(string htmlContent, Address address)
+		/// <returns>A read-only collection of future BinDay objects parsed from the JSON.</returns>
+		private ReadOnlyCollection<BinDay> ParseBinDays(string responseContent, Address address)
 		{
 			var binDays = new List<BinDay>();
-			var today = DateOnly.FromDateTime(DateTime.Today);
 
-			// Find all collection event details using regex
-			var matches = CollectionEventRegex().Matches(htmlContent);
+			// Extract the JSON string from the response content using regex
+			var jsonMatch = ModelDataRegex().Match(responseContent);
+			var jsonContent = jsonMatch.Groups[1].Value;
 
-			foreach (Match match in matches.Cast<Match>())
+			// Parse the JSON and get the collection dates array
+			using var jsonDoc = JsonDocument.Parse(jsonContent);
+			var collectionDates = jsonDoc.RootElement.GetProperty("MonthCollectionDates");
+
+			foreach (var collection in collectionDates.EnumerateArray())
 			{
-				var rawBinType = match.Groups[1].Value.Trim();
-				var rawBinDayDate = match.Groups[2].Value.Trim();
+				var rawBinType = collection.GetProperty("RoundTypeName").GetString()!;
+				var rawBinDayDate = collection.GetProperty("DateString").GetString()!;
 
-				// Parsing the date string (e.g., "Wednesday 16 April, 2025")
-				var date = DateOnly.ParseExact(
-					rawBinDayDate,
-					"dddd d MMMM, yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
+				// Parsing the date string (e.g., "7/3/2025 12:00:00 AM")
+				var date = DateOnly.FromDateTime(
+					DateTime.Parse(rawBinDayDate, CultureInfo.InvariantCulture)
 				);
 
 				// Find matching bin types based on the description (case-insensitive)
@@ -287,7 +288,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			var mergedBinDays = ProcessingUtilities.MergeBinDays(futureBinDays);
 
 			// Return the final list, ordered by date
-			return mergedBinDays.OrderBy(bd => bd.Date).ToList().AsReadOnly();
+			return mergedBinDays;
 		}
 	}
 }
