@@ -14,8 +14,8 @@ If your issue is with council data, you are in the right place. For app or clien
 
 ## How to Contribute
 
-- **Bug Reports:** If a collector is broken, [**create a bug report**](https://github.com/BadgerHobbs/BinDays-API/issues/new?template=bug_report.md).
-- **Council Requests:** To request a new council, [**submit a council request**](https://github.com/BadgerHobbs/BinDays-API/issues/new?template=council_request.md).
+- **Bug Reports:** If a collector is broken, [**create a bug report**](https://github.com/BadgerHobbs/BinDays-API/issues/new?template=bug-report.md).
+- **Council Requests:** To request a new council, [**submit a council request**](https://github.com/BadgerHobbs/BinDays-API/issues/new?template=council-request.md).
 
 Search existing issues first to avoid duplicates.
 
