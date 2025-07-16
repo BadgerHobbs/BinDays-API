@@ -1,19 +1,37 @@
-# FAQs
+# Frequently Asked Questions
 
-Below are some frequently asked questions which you may have, please read through them before creating tickets or raising issues.
+Before creating a GitHub issue, read these FAQs.
 
-## I would like to request a new council is added
+## General
 
-Firstly, please check that both the council you seek to get added is not already supported, undergoing development, or already requested. Search the existing GitHub issues as this may be the case.
+**Q: What is this?**
 
-If there is no pre-existing issue for the specified council, please fill in the council request form, making sure to complete the template.
+A: It's the server-side part of the BinDays project. It provides the logic for getting bin collection times from UK councils.
 
-Please be aware that there is no guarantees that this council gets implemented and has long-term support.
+**Q: How is it different from other projects?**
 
-## I would like to report an issue with an existing council
+A: It doesn't scrape council websites from a server. It tells a client app what requests to make, so the requests come from a user's IP address. This avoids IP blocks and means council-specific logic can be updated without users needing to update their app.
 
-If you have found an issue with an existing council, please create a GitHub issue, making sure to complete the template.
+## For Users
 
-## I have suggestions or issues with the mobile app
+**Q: Can you add my council?**
 
-If you have suggestions or issues with the mobile app, please create an issue in the [BinDays-App](https://github.com/BadgerHobbs/BinDays-App) repository. This should be anything app specific, such as device or user-interface specific issues.
+A: Check the [**GitHub Issues**](https://github.com/BadgerHobbs/BinDays-API/issues) to see if it's already been requested. If not, submit a [**new council request**](https://github.com/BadgerHobbs/BinDays-API/issues/new?template=council_request.md).
+
+**Q: A council collector is broken.**
+
+A: File a [**bug report**](https://github.com/BadgerHobbs/BinDays-API/issues/new?template=bug_report.md). Include the council and postcode.
+
+**Q: I have a problem with the mobile app.**
+
+A: For app-specific issues, go to the [**BinDays-App repository**](https://github.com/BadgerHobbs/BinDays-App/issues).
+
+## For Developers
+
+**Q: How can I add a council?**
+
+A: Read the [**Contributing Guidelines**](CONTRIBUTING.md). It has instructions and code templates.
+
+**Q: Why not use Selenium?**
+
+A: To keep the API lightweight and fast. Direct HTTP requests are more efficient. It's more work upfront but more robust.

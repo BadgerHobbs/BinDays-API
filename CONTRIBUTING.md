@@ -1,46 +1,64 @@
-# Contributing
+# Contributing to BinDays-API
 
-## Too Long; Didn't Read.
+Contributions are welcome. This document provides guidelines for contributing.
 
-- Contributions are welcome.
-- New collectors should be implemented:
-  - In the same style as existing collectors.
-  - With an associated integration test.
-- Commit messages should be helpful.
-- Don't commit AI slop.
+## Project Structure
 
-## Overview
+The BinDays project is split into three repositories:
 
-The BinDays-API is a relatively simple ASP.Net Core API, with some basic endpoints which call the appropriate methods on the selected collector implementation. It is state-less and has no external dependencies, only providing the requests configuration and processing for the client.
+- **[BinDays-API](https://github.com/BadgerHobbs/BinDays-API):** (This repository) The back-end service that contains the logic for scraping council websites.
+- **[BinDays-Client](https://github.com/BadgerHobbs/BinDays-Client):** A Dart library that communicates with the API.
+- **[BinDays-App](https://github.com/BadgerHobbs/BinDays-App):** The Flutter mobile application that uses the Client.
 
-## Development
+If your issue is with council data, you are in the right place. For app or client issues, please visit the respective repository.
 
-The following section describes how to begin development with the BinDays-API. When developing the API, such as adding new councils, it is recommended to additionally validate with the BinDays-Client as the integration test client is not a perfect 1:1 match.
+## How to Contribute
 
-### Pre-Requisites
+- **Bug Reports:** If a collector is broken, [**create a bug report**](https://github.com/BadgerHobbs/BinDays-API/issues/new?template=bug_report.md).
+- **Council Requests:** To request a new council, [**submit a council request**](https://github.com/BadgerHobbs/BinDays-API/issues/new?template=council_request.md).
 
-To begin development on the BinDays-API, the following pre-requisites are required:
+Search existing issues first to avoid duplicates.
 
-- Visual Studio or VSCode
-- ASP.Net Core SDKs
+## Adding a New Council Collector
 
-### Adding a Council
+Adding new councils is the most common contribution. Each council website is different, so this requires reverse-engineering their web traffic.
 
-Unlike some other bin collection implementations available, the BinDays-API does not use browser simulation such as Selenium. This is primarily to both significantly improve performance and reduce the compute requirements.
+**Guiding Principles:**
 
-The added cost of this is that it makes implementing a new council more complex, especially when cookies and tokens are involved.
+- **No Browser Emulation:** Don't use tools like Selenium. Replicate the necessary HTTP requests directly.
+- **Follow Existing Patterns:** New collectors should follow the style of existing ones.
+- **Integration Tests are Required:** Every new collector needs an integration test.
 
-#### Existing Implementations
+### Development Workflow
 
-Before diving in to web scraping, reverse engineering, and beginning to write the implementation for you new council, take the time to look at the various existing implementations. These should be used as a template and reference when adding your own implementation.
+1.  **Prerequisites:**
 
-All collectors have associated integration tests, which you can use to debug and understand how they work and process the incoming responses from the client.
+    - .NET SDK
+    - An IDE like Visual Studio, Rider, or VSCode
 
-#### Collector Files
+2.  **Create Collector Files:**
 
-There are two files associated with each collector, the collector itself and the associated integration test. See templates for each below, once implemented the collector will automatically be available for use
+    - **Collector Class:** Create a `.cs` file in `BinDays.Api.Collectors/Collectors/Councils/`.
+    - **Integration Test:** Create a test file in `BinDays.Api.IntegrationTests/Collectors/Councils/`.
 
-##### Collector Implementation Template
+3.  **Implement the Collector:**
+
+    - Use your browser's developer tools to analyze the council website's network traffic for bin day lookups.
+    - Replicate these requests in your collector's `GetAddresses` and `GetBinDays` methods.
+    - Parse the HTML or JSON responses to get the required data.
+
+4.  **Write the Integration Test:**
+
+    - The test should verify that your collector can retrieve bin days for a test postcode.
+    - Use the `TestSteps.EndToEnd` helper.
+
+5.  **Run Tests:**
+    - Run tests from your IDE or the command line:
+      ```bash
+      dotnet test --filter "Name~MyNewCouncil"
+      ```
+
+### Collector Implementation Template
 
 ```c#
 namespace BinDays.Api.Collectors.Collectors.Councils
@@ -130,7 +148,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 }
 ```
 
-##### Collector Integration Test Template
+### Integration Test Template
 
 ```c#
 namespace BinDays.Api.IntegrationTests.Collectors.Councils
@@ -172,33 +190,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 }
 ```
 
-### Testing a Council
+## Code Style and Commits
 
-Once you have written your new council, you will want to test it, often it is unlikely it works first time due to the complexity of many councils.
-
-To do this, either run the tests via your editor such as Visual Studio or VSCode, or instead you can run the following command.
-
-```bash
-dotnet test --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj --filter MyNewCouncil
-```
-
-### Docker Deployment
-
-The BinDays-API is easy to deploy using Docker for testing and development. You can use the following command to build the container, or instead use the public image created automatically from this repository.
-
-```bash
-docker build -t bindays-api:latest .
-```
-
-You can deploy the public Docker image using the following command.
-
-```bash
-docker run -d \
-    --name bindays-api \
-    -p 8080:8080 \
-    ghcr.io/badgerhobbs/bindays-api:latest
-```
-
-### Logging
-
-For additional logging, [Seq](https://datalust.co/seq) can be optionally configured. See the [official docs](https://docs.datalust.co/docs/microsoft-extensions-logging#json-configuration) for how configuration steps.
+- **Code Style:** Match the existing C# conventions and formatting.
+- **Commit Messages:** Be descriptive. Explain what you changed and why.
