@@ -5,8 +5,9 @@
 	using BinDays.Api.Collectors.Services;
 	using Microsoft.AspNetCore.Mvc;
 	using Microsoft.Extensions.Logging;
-	using Microsoft.Extensions.Caching.Memory;
+	using Microsoft.Extensions.Caching.Distributed;
 	using Microsoft.AspNetCore.Http;
+	using Newtonsoft.Json;
 
 	/// <summary>
 	/// API controller for managing collectors.
@@ -25,17 +26,22 @@
 		private readonly ILogger<CollectorsController> _logger;
 
 		/// <summary>
-		/// Memory cache for storing responses.
+		/// Distributed cache for storing responses.
 		/// </summary>
-		private readonly IMemoryCache _cache;
+		private readonly IDistributedCache _cache;
+
+		private readonly JsonSerializerSettings _jsonSerializerSettings = new()
+		{
+			TypeNameHandling = TypeNameHandling.Auto,
+		};
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CollectorsController"/> class.
 		/// </summary>
 		/// <param name="collectorService">Service for retrieving collector information.</param>
 		/// <param name="logger">Logger for the controller.</param>
-		/// <param name="cache">Memory cache for storing responses.</param>
-		public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IMemoryCache cache)
+		/// <param name="cache">Distributed cache for storing responses.</param>
+		public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IDistributedCache cache)
 		{
 			_collectorService = collectorService;
 			_logger = logger;
@@ -82,11 +88,14 @@
 		[Route("/collector")]
 		public IActionResult GetCollector(string postcode, [FromBody] ClientSideResponse? clientSideResponse)
 		{
-			string cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
-			if (_cache.TryGetValue(cacheKey, out GetCollectorResponse? cachedResult))
+			var cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
+			var cachedResult = _cache.GetString(cacheKey);
+
+			if (cachedResult != null)
 			{
-				_logger.LogInformation("Returning cached collector {CollectorName} for postcode: {Postcode}.", cachedResult!.Collector!.Name, postcode);
-				return Ok(cachedResult);
+				var cachedResponse = JsonConvert.DeserializeObject<GetCollectorResponse>(cachedResult, _jsonSerializerSettings);
+				_logger.LogInformation("Returning cached collector {CollectorName} for postcode: {Postcode}.", cachedResponse!.Collector!.Name, postcode);
+				return Ok(cachedResponse);
 			}
 
 			try
@@ -98,8 +107,8 @@
 				{
 					_logger.LogInformation("Successfully retrieved collector {CollectorName} for postcode: {Postcode}.", result.Collector!.Name, postcode);
 
-					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
-					_cache.Set(cacheKey, result, cacheEntryOptions);
+					var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
+					_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
 				}
 
 				return Ok(result);
@@ -132,11 +141,14 @@
 		[Route("/{govUkId}/addresses")]
 		public IActionResult GetAddresses(string govUkId, string postcode, [FromBody] ClientSideResponse? clientSideResponse)
 		{
-			string cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
-			if (_cache.TryGetValue(cacheKey, out GetAddressesResponse? cachedResult))
+			var cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
+			var cachedResult = _cache.GetString(cacheKey);
+
+			if (cachedResult != null)
 			{
-				_logger.LogInformation("Returning {AddressCount} cached addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", cachedResult!.Addresses!.Count, govUkId, postcode);
-				return Ok(cachedResult);
+				var cachedResponse = JsonConvert.DeserializeObject<GetAddressesResponse>(cachedResult, _jsonSerializerSettings);
+				_logger.LogInformation("Returning {AddressCount} cached addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", cachedResponse!.Addresses!.Count, govUkId, postcode);
+				return Ok(cachedResponse);
 			}
 
 			try
@@ -148,8 +160,8 @@
 				{
 					_logger.LogInformation("Successfully retrieved {AddressCount} addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", result.Addresses!.Count, govUkId, postcode);
 
-					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
-					_cache.Set(cacheKey, result, cacheEntryOptions);
+					var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
+					_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
 				}
 
 				return Ok(result);
@@ -183,11 +195,14 @@
 		[Route("/{govUkId}/bin-days")]
 		public IActionResult GetBinDays(string govUkId, string postcode, string uid, [FromBody] ClientSideResponse? clientSideResponse)
 		{
-			string cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
-			if (_cache.TryGetValue(cacheKey, out GetBinDaysResponse? cachedResult))
+			var cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
+			var cachedResult = _cache.GetString(cacheKey);
+
+			if (cachedResult != null)
 			{
-				_logger.LogInformation("Returning {BinDayCount} cached bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", cachedResult!.BinDays!.Count, govUkId, postcode, uid);
-				return Ok(cachedResult);
+				var cachedResponse = JsonConvert.DeserializeObject<GetBinDaysResponse>(cachedResult, _jsonSerializerSettings);
+				_logger.LogInformation("Returning {BinDayCount} cached bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", cachedResponse!.BinDays!.Count, govUkId, postcode, uid);
+				return Ok(cachedResponse);
 			}
 
 			try
@@ -209,8 +224,8 @@
 					var firstBinDayDate = result.BinDays.FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
 					var cacheExpiration = (firstBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
 
-					var cacheEntryOptions = new MemoryCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
-					_cache.Set(cacheKey, result, cacheEntryOptions);
+					var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
+					_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
 				}
 
 				return Ok(result);

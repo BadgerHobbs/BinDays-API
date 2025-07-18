@@ -8,8 +8,19 @@ builder.Host.ConfigureContainer<Autofac.ContainerBuilder>(BinDays.Api.Initialisa
 
 builder.Services.AddControllers();
 
-// Add memory caching for responses
-builder.Services.AddMemoryCache();
+// Add caching for responses, either in-memory or Redis
+var redis = builder.Configuration.GetValue<string>("Redis");
+if (!string.IsNullOrEmpty(redis))
+{
+	builder.Services.AddStackExchangeRedisCache(options =>
+	{
+		options.Configuration = redis;
+	});
+}
+else
+{
+	builder.Services.AddDistributedMemoryCache();
+}
 
 // Health check for monitoring
 builder.Services.AddHealthChecks();
