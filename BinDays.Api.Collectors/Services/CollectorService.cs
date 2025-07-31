@@ -98,6 +98,12 @@ namespace BinDays.Api.Collectors.Services
 				throw new BinDaysNotFoundException(govUkId, address.Postcode!, address.Uid!);
 			}
 
+			// Validate that all bin days have at lease one bin
+			if (result.BinDays != null && result.BinDays.Any(x => x.Bins.Count == 0))
+			{
+				throw new BinDaysNotFoundException(govUkId, address.Postcode!, address.Uid!);
+			}
+
 			return result;
 		}
 	}
