@@ -90,7 +90,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var payload = new
 				{
 					P_POSTCODE = postcode,
-					P_LANG_CODE = CultureInfo.CurrentCulture.TwoLetterISOLanguageName.ToUpper(),
+					P_LANG_CODE = "EN",
 					P_CLIENT_ID = BucksClientId,
 					P_COUNCIL_ID = BucksCouncilId
 				};
@@ -156,7 +156,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					P_UPRN = address.Uid,
 					P_CLIENT_ID = BucksClientId,
 					P_COUNCIL_ID = BucksCouncilId,
-					P_LANG_CODE = CultureInfo.CurrentCulture.TwoLetterISOLanguageName.ToUpper(),
+					P_LANG_CODE = "EN"
 				};
 
 				var clientSideRequest = new ClientSideRequest()
