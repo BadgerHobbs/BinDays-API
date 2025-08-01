@@ -13,7 +13,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		private readonly IntegrationTestClient _client = new();
 		private static readonly ICollector _collector = new LeedsCityCouncil();
 		private readonly CollectorService _collectorService = new([_collector]);
-		private const string _postcode = "BD11 1JZ";
+		private const string _postcode = "BD11 1JY";
 
 		private readonly ITestOutputHelper _outputHelper;
 
