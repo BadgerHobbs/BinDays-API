@@ -267,10 +267,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
                     foreach (var collectionDate in collectionDates)
                     {
-                        // Parse the date (e.g. 'Thursday 19 June 2025')
+                        // Parse the date (e.g. 'Thursday 19 June 2025' or 'Thursday 04 Sep 2025')
                         var date = DateOnly.ParseExact(
                             collectionDate,
-                            "dddd dd MMMM yyyy",
+                            ["dddd dd MMMM yyyy", "dddd dd MMM yyyy"],
                             CultureInfo.InvariantCulture,
                             DateTimeStyles.None
                         );
