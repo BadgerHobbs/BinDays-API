@@ -44,7 +44,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "General Waste",
 				Colour = "Black",
-				Keys = new List<string>() { "R" }.AsReadOnly(),
+				Keys = new List<string>() { "C" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
 
