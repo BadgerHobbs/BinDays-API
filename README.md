@@ -58,3 +58,9 @@ To add a council, fix a bug, or improve the project, see the [**Contributing Gui
 ## License
 
 This project is licensed under the [AGPL-3.0 License](LICENSE).
+
+## Support
+
+If you find this project helpful, please consider supporting its development.
+
+[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=&slug=badgerhobbs&button_colour=FFDD00&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=ffffff)](https://www.buymeacoffee.com/badgerhobbs)
