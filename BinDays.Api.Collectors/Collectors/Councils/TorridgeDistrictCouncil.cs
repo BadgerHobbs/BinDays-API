@@ -240,7 +240,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
                     var match = BinScheduleRegex().Match(scheduleString!);
 
                     var binKey = match.Groups[1].Value.Trim();
-                    var datePart = match.Groups[2].Value.Trim();
+                    var datePart = match.Groups[2].Value.Split('(')[0].Trim();
 
                     // Skip if no date as optional garden waste
                     if (string.IsNullOrEmpty(datePart))
