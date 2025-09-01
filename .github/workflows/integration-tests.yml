@@ -17,7 +17,7 @@ jobs:
     outputs:
       councils_json: ${{ steps.list_councils.outputs.councils_json }}
     env:
-      EXCLUDED_COUNCILS: '["TeignbridgeDistrictCouncil"]'
+      EXCLUDED_COUNCILS: '["TeignbridgeDistrictCouncil", "SouthamptonCityCouncil"]'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
