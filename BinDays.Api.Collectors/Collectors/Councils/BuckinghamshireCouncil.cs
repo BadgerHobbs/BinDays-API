@@ -208,8 +208,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						Bins = matchedBins
 					});
 
-					// Process the following collection day
+					// Process the following collection day (if it exists)
 					var followingDayString = collectionItem.GetProperty("followingDay").GetString()!;
+					if (followingDayString == null)
+					{
+						continue;
+					}
+
 					var followingDate = DateOnly.ParseExact(
 						followingDayString,
 						"dd-MM-yyyy",
