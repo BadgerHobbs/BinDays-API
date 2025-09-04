@@ -17,7 +17,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		public string Name => "Northumberland County Council";
 
 		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.northumberland.gov.uk/Waste/Household-waste/Household-bin-collections/Bin-Calendars.aspx");
+		public Uri WebsiteUrl => new("https://bincollection.northumberland.gov.uk/postcode");
 
 		/// <inheritdoc/>
 		public override string GovUkId => "northumberland";
@@ -31,51 +31,45 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "General Waste",
 				Colour = "Green",
-				Keys = new List<string>() { "800068" }.AsReadOnly(),
+				Keys = new List<string>() { "General waste" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = "Brown",
-				Keys = new List<string>() { "FF7171" }.AsReadOnly(),
+				Keys = new List<string>() { "Garden waste" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = "Blue",
-				Keys = new List<string>() { "FECD00" }.AsReadOnly(),
+				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
 
 		/// <summary>
 		/// Regex for the csrf token values from input fields.
 		/// </summary>
-		[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__CMSCsrfToken[""'][^>]*?value=[""'](?<tokenValue>[^""']*)[""'][^>]*?/?>")]
+		[GeneratedRegex(@"<input[^>]*?name=""_csrf""[^>]*?value=""(?<tokenValue>[^""]*)""[^>]*?/?>")]
 		private static partial Regex CsrfTokenRegex();
-
-		/// <summary>
-		/// Regex for the viewstate token values from input fields.
-		/// </summary>
-		[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__VIEWSTATE[""'][^>]*?value=[""'](?<viewStateValue>[^""']*)[""'][^>]*?/?>")]
-		private static partial Regex ViewStateTokenRegex();
 
 		/// <summary>
 		/// Regex for the addresses from the elements.
 		/// </summary>
-		[GeneratedRegex(@"<a\s+id=""[^""]*AddPick(?<uprn>\d+)""[^>]*>(?<address>.*?)<\/a>")]
+		[GeneratedRegex(@"<option value=""(?<uprn>\d+)"">(?<address>.*?)<\/option>")]
 		private static partial Regex AddressesRegex();
 
 		/// <summary>
-		/// Regex for the bin collection months from the data table elements.
+		/// Regex for the bin collections from the data table elements.
 		/// </summary>
-		[GeneratedRegex(@"(?<MonthHtml>\<div style=""float: left; padding-right: 10px;"">[\s\S]*?\<td align=""center"" style=""width:70%;"">(?<MonthYear>[A-Za-z]+ \d{4})\<\/td>[\s\S]*?\<\/div>)")]
-		private static partial Regex BinCollectionMonthsRegex();
+		[GeneratedRegex(@"<tr class=""govuk-table__row"">\s*<th scope=""row"" class=""govuk-table__header"">(?<Date>[\d]+(?:st|nd|rd|th)? [A-Za-z]+)<\/th>\s*<td class=""govuk-table__cell"">.*?<\/td>\s*<td class=""govuk-table__cell"">(?<BinType>.*?)<\/td>\s*<\/tr>")]
+		private static partial Regex BinCollectionsRegex();
 
 		/// <summary>
-		/// Regex for the bin days from the collection string.
+		/// Regex for removing ordinal indicators from dates.
 		/// </summary>
-		[GeneratedRegex(@"\<td.*?style="".*?background-color:#(?<Color>[0-9A-Fa-f]{6});.*?"".*?>(?<Day>\d{1,2})\<\/td>")]
-		private static partial Regex MonthBinCollectionsRegex();
+		[GeneratedRegex(@"(st|nd|rd|th)")]
+		private static partial Regex OrdinalIndicatorsRegex();
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -87,7 +81,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 1,
-					Url = "https://www.northumberland.gov.uk/Waste/Household-waste/Household-bin-collections/Bin-Calendars.aspx",
+					Url = "https://bincollection.northumberland.gov.uk/postcode",
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
 						{"user-agent", Constants.UserAgent},
@@ -106,9 +100,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			else if (clientSideResponse.RequestId == 1)
 			{
-				// Get csrf token and viewstate from response
-				var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
-				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+				// Get csrf token from response
+				var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups["tokenValue"].Value;
 
 				// Get set-cookies from response
 				var setCookies = clientSideResponse.Headers["set-cookie"];
@@ -117,10 +110,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Prepare client-side request
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
 				{
-					{"__CMSCsrfToken", csrfToken},
-					{"__VIEWSTATE", viewState},
-					{"p$lt$ctl04$pageplaceholder$p$lt$ctl02$WasteCollectionCalendars$NCCAddressLookup$txtPostcode", postcode},
-					{"p$lt$ctl04$pageplaceholder$p$lt$ctl02$WasteCollectionCalendars$NCCAddressLookup$butLookup", "Lookup Address"},
+					{"_csrf", csrfToken},
+					{"postcode", postcode},
 				});
 
 				var requestHeaders = new Dictionary<string, string>() {
@@ -132,7 +123,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 2,
-					Url = "https://www.northumberland.gov.uk/Waste/Household-waste/Household-bin-collections/Bin-Calendars.aspx",
+					Url = "https://bincollection.northumberland.gov.uk/postcode",
 					Method = "POST",
 					Headers = requestHeaders,
 					Body = requestBody,
@@ -194,7 +185,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 1,
-					Url = "https://www.northumberland.gov.uk/Waste/Household-waste/Household-bin-collections/Bin-Calendars.aspx",
+					Url = "https://bincollection.northumberland.gov.uk/postcode",
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
 						{"user-agent", Constants.UserAgent},
@@ -213,9 +204,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting bin days
 			else if (clientSideResponse.RequestId == 1)
 			{
-				// Get csrf token and viewstate from response
-				var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
-				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+				// Get csrf token from response
+				var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups["tokenValue"].Value;
 
 				// Get set-cookies from response
 				var setCookies = clientSideResponse.Headers["set-cookie"];
@@ -224,12 +214,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Prepare client-side request
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
 				{
-					{"__CMSCsrfToken", csrfToken},
-					{"__VIEWSTATE", viewState},
-					{"p$lt$ctl04$pageplaceholder$p$lt$ctl02$WasteCollectionCalendars$NCCAddressLookup$txtPostcode", address.Postcode!},
-					{"p$lt$ctl04$pageplaceholder$p$lt$ctl02$WasteCollectionCalendars$ddCalendarSize", "12"},
-					{"p$lt$ctl04$pageplaceholder$p$lt$ctl02$WasteCollectionCalendars$butCalRefresh", "Refresh"},
-					{"p$lt$ctl04$pageplaceholder$p$lt$ctl02$WasteCollectionCalendars$hidU", address.Uid!},
+					{"_csrf", csrfToken},
+					{"address", address.Uid!},
 				});
 
 				var requestHeaders = new Dictionary<string, string>() {
@@ -241,7 +227,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 2,
-					Url = "https://www.northumberland.gov.uk/Waste/Household-waste/Household-bin-collections/Bin-Calendars.aspx",
+					Url = "https://bincollection.northumberland.gov.uk/address-select",
 					Method = "POST",
 					Headers = requestHeaders,
 					Body = requestBody,
@@ -258,42 +244,44 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 2)
 			{
-				// Get bin collection months from response
-				var rawBinCollectionMonths = BinCollectionMonthsRegex().Matches(clientSideResponse.Content)!;
+				// Get bin collections from response
+				var rawBinCollections = BinCollectionsRegex().Matches(clientSideResponse.Content)!;
 
-				// Iterate through each bin collection month, and create a new bin day object
+				// Iterate through each bin collection, and create a new bin day object
 				var binDays = new List<BinDay>();
-				foreach (Match rawBinCollectionMonth in rawBinCollectionMonths)
+				foreach (Match rawBinCollection in rawBinCollections)
 				{
-					var monthYear = rawBinCollectionMonth.Groups["MonthYear"].Value;
-					var monthHtml = rawBinCollectionMonth.Groups["MonthHtml"].Value;
+					var dateStr = rawBinCollection.Groups["Date"].Value;
+					var binTypeStr = rawBinCollection.Groups["BinType"].Value;
 
-					// Get bin dates from the collection
-					var rawMonthBinCollections = MonthBinCollectionsRegex().Matches(monthHtml);
+					// Remove ordinal indicators (st, nd, rd, th) from the date string
+					dateStr = OrdinalIndicatorsRegex().Replace(dateStr, "");
 
-					// Iterate through each bin date, and create a new bin day object
-					foreach (Match rawMonthBinCollection in rawMonthBinCollections)
+					// Parse the date
+					var date = DateOnly.ParseExact(
+						dateStr,
+						"d MMMM",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					);
+
+					// If the parsed date is in a month that has already passed this year, assume it's for next year
+					if (date.Month < DateTime.Now.Month)
 					{
-						var day = rawMonthBinCollection.Groups["Day"].Value;
-						var hexColor = rawMonthBinCollection.Groups["Color"].Value;
-
-						// Get matching bin types from the type using the keys
-						var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => hexColor.Contains(y)));
-
-						var binDay = new BinDay()
-						{
-							Date = DateOnly.ParseExact(
-								$"{monthYear} {day}",
-								"MMMM yyyy d",
-								CultureInfo.InvariantCulture,
-								DateTimeStyles.None
-							),
-							Address = address,
-							Bins = matchedBinTypes.ToList().AsReadOnly()
-						};
-
-						binDays.Add(binDay);
+						date = date.AddYears(1);
 					}
+
+					// Get matching bin types from the type using the keys
+					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => binTypeStr.Contains(y)));
+
+					var binDay = new BinDay()
+					{
+						Date = date,
+						Address = address,
+						Bins = matchedBinTypes.ToList().AsReadOnly()
+					};
+
+					binDays.Add(binDay);
 				}
 
 				// Filter out bin days in the past
