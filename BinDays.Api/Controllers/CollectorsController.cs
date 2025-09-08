@@ -220,9 +220,9 @@
 				{
 					_logger.LogInformation("Successfully retrieved {BinDayCount} bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", result.BinDays!.Count, govUkId, postcode, uid);
 
-					// Cache until the day after the first bin day, or for 1 day if no bin days are returned.
-					var firstBinDayDate = result.BinDays.FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
-					var cacheExpiration = (firstBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
+					// Cache until the day after the earliest bin day, or for 1 day if no bin days are returned.
+					var earliestBinDayDate = result.BinDays.OrderBy(binDay => binDay.Date).FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
+					var cacheExpiration = (earliestBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
 
 					var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
 					_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
