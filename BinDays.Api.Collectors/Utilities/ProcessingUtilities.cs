@@ -89,6 +89,10 @@ namespace BinDays.Api.Collectors.Utilities
 					futureBinDays.Add(binDay);
 				}
 			}
+
+			// Sort bin days in ascending order by date
+			futureBinDays.Sort((a, b) => a.Date.CompareTo(b.Date));
+
 			return futureBinDays.AsReadOnly();
 		}
 
