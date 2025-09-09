@@ -61,11 +61,13 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// <param name="expectedMinCount">The minimum number of bin days expected.</param>
 		/// <param name="ensureBinsPresent">If true, asserts that all bin days have associated bins.</param>
 		/// <param name="ensureFutureDates">If true, asserts that all bin days are today or in the future.</param>
+		/// <param name="ensureSortedByDate">If true, asserts that bin days are in ascending order by date.</param>
 		public static void ValidateBinDaysResult(
 			IReadOnlyCollection<BinDay>? binDays,
 			int expectedMinCount = 1,
 			bool ensureBinsPresent = true,
-			bool ensureFutureDates = true)
+			bool ensureFutureDates = true,
+			bool ensureSortedByDate = true)
 		{
 			Assert.NotNull(binDays);
 			Assert.True(binDays.Count >= expectedMinCount, $"Should retrieve at least {expectedMinCount} bin day(s). Found {binDays.Count}.");
@@ -79,6 +81,11 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			{
 				DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
 				Assert.True(binDays.All(bd => bd.Date >= today), "All bin dates should be today or in the future.");
+			}
+
+			if (ensureSortedByDate)
+			{
+				Assert.True(binDays.SequenceEqual(binDays.OrderBy(bd => bd.Date)), "Bin days should be in ascending order by date.");
 			}
 		}
 	}

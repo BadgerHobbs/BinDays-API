@@ -149,7 +149,8 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			TestValidation.ValidateBinDaysResult(
 				binDays,
 				ensureBinsPresent: true,
-				ensureFutureDates: true
+				ensureFutureDates: true,
+				ensureSortedByDate: true
 			);
 
 			return binDays;
