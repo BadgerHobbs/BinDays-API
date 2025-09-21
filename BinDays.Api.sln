@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinDays.Api.IntegrationTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinDays.Api.Collectors", "BinDays.Api.Collectors\BinDays.Api.Collectors.csproj", "{1E13A380-47F7-4641-B4CA-F5D1F8F1BFBA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BinDays.HarFilter", "BinDays.HarFilter\BinDays.HarFilter.csproj", "{2F4B6C8A-42F4-44A7-82C3-E0A7E5A6F4B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{1E13A380-47F7-4641-B4CA-F5D1F8F1BFBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E13A380-47F7-4641-B4CA-F5D1F8F1BFBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E13A380-47F7-4641-B4CA-F5D1F8F1BFBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F4B6C8A-42F4-44A7-82C3-E0A7E5A6F4B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F4B6C8A-42F4-44A7-82C3-E0A7E5A6F4B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F4B6C8A-42F4-44A7-82C3-E0A7E5A6F4B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F4B6C8A-42F4-44A7-82C3-E0A7E5A6F4B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

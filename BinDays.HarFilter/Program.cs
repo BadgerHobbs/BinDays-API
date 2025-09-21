@@ -1,5 +1,3 @@
-#r "nuget: System.Text.Json, 8.0.3"
-
 using System;
 using System.IO;
 using System.Text.Json;
@@ -9,7 +7,7 @@ using System.Linq;
 
 if (args.Length != 2)
 {
-    Console.WriteLine("Usage: dotnet script FilterHar.csx <input.har> <output.har>");
+    Console.WriteLine("Usage: BinDays.HarFilter <input.har> <output.har>");
     return;
 }
 

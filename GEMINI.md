@@ -21,29 +21,26 @@ This document provides instructions and guidelines for contributing to the BinDa
 
 ## Workflow for Adding a New Council Collector
 
-This repository includes custom Gemini CLI commands and a utility script to streamline the process of adding a new council collector.
+This repository includes custom Gemini CLI commands to streamline the process of adding a new council collector. The process is divided into two main steps.
 
-### Step 1: Fetch Collector Data
+### Step 1: Fetch and Filter Collector Data
 
-Use the `/fetch_collector_data` command to begin the process. This will generate a HAR file in the `tmp_collector_data` directory containing all network traffic from the user journey.
+Use the `/fetch_collector_data` command to begin the process. This single command automates the entire data gathering and preparation phase. It will:
+1.  Launch a browser and record all network traffic to a raw `requests.har` file.
+2.  Navigate the council website to capture the necessary interactions.
+3.  Automatically run a filtering tool to process the raw HAR file, producing a clean `filtered_requests.har` file containing only relevant data.
 
 **Example:** `/fetch_collector_data SW1A 0AA`
 
-### Step 2: Filter the HAR File
+### Step 2: Create the Collector
 
-The generated `requests.har` file contains a lot of irrelevant data (e.g., CSS, images). Run the `FilterHar.csx` script to remove this noise and create a smaller, more focused `filtered_requests.har` file.
-
-**Example:** `dotnet script scripts/FilterHar.csx tmp_collector_data/requests.har tmp_collector_data/filtered_requests.har`
-
-### Step 3: Create the Collector
-
-Once the filtered HAR file has been created, use the `/create_collector` command to generate the new collector class and integration test.
+Once the filtered data is ready, use the `/create_collector` command to generate the new collector class and integration test.
 
 **Example:** `/create_collector`
 
-This command will read the `filtered_requests.har` and `council_info.json` files to generate the necessary C# files. After the files are created, you may need to manually adjust the generated regular expressions in the collector class to ensure they correctly parse the data.
+This command will read the `filtered_requests.har` and `council_info.json` files from the `tmp_collector_data` directory to generate the necessary C# files. After the files are created, you may need to manually adjust the generated regular expressions in the collector class to ensure they correctly parse the data.
 
-### Step 4: Run the Integration Test
+### Step 3: Run the Integration Test
 
 Finally, run the newly created integration test to verify that the collector is working correctly.
 
