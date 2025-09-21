@@ -8,7 +8,7 @@ Your detailed workflow is as follows:
 
 1.  **Initial Government Website Investigation:**
     - Navigate to the UK government bin collection page (`https://www.gov.uk/rubbish-collection-day`) and enter the postcode `{{args}}`.
-    - Record the full council name, the `GovUkId` from the URL, and the link to the council's official website. Store this information in a file named `council_info.json`.
+    - Record the full council name, the `GovUkId` from the URL, and the link to the council's official website. Store this information in a file named `.collector_data/council_info.json`.
 
 2.  **Detailed Council Website Investigation:**
     - Navigate to the council website link you just recorded.
@@ -19,10 +19,10 @@ Your detailed workflow is as follows:
 
 3.  **Network Request Analysis and Saving:**
     - **This is the most critical step.** During the entire process above, you must meticulously record the network requests and their responses.
-    - Save the raw content of the initial page load request and response to `initial_page_load_request` and `initial_page_load_response` respectively.
+    - Save the raw content of the initial page load request and response to `.collector_data/initial_page_load_request` and `.collector_data/initial_page_load_response` respectively.
     - Focus on the specific requests used for:
         - Fetching the list of addresses after a postcode search.
         - Fetching the bin collection data after an address is selected.
-    - Save the raw content of the captured request and response for the address lookup to `address_request` and `address_response` respectively.
-    - Save the raw content of the captured request and response for the bin day lookup to `binday_request` and `binday_response` respectively.
+    - Save the raw content of the captured request and response for the address lookup to `.collector_data/address_request` and `.collector_data/address_response` respectively.
+    - Save the raw content of the captured request and response for the bin day lookup to `.collector_data/binday_request` and `.collector_data/binday_response` respectively.
 """
