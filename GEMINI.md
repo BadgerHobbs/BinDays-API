@@ -1,22 +1,25 @@
 # Project: BinDays API
 
-This document provides instructions and guidelines for contributing to the BinDays API, specifically for adding new council collectors.
+This document provides instructions and guidelines for contributing to the BinDays API. As an AI agent, you are expected to follow these instructions meticulously.
 
-## General Instructions:
+## General Instructions
 
 - Your primary task is to add support for a new council to the BinDays API.
 - You must follow the existing coding style, conventions, and architectural patterns.
 - All new collectors require a corresponding integration test.
-- All HTML parsing must be done using regular expressions, as is the convention in this repository.
 - **Do not modify core files.** Your changes should be limited to creating one new collector class and one new integration test file. Do not alter any other part of the existing codebase.
 
-## Guiding Principles
+## Coding Style & Conventions
 
-- **Reference Existing Work:** Before writing any code, thoroughly review the existing council implementations in `BinDays.Api.Collectors/Collectors/Councils/`. This is crucial for maintaining consistency and identifying reusable patterns. Many councils use similar back-end systems, so you may find an existing collector that is very close to what is needed for the new council.
-- **Use Playwright for Web Interaction:** All website interactions must be performed using the Playwright MCP server. Do not use direct HTTP request tools like `curl` or `view_text_website`. Your investigation should be based on browser automation with Playwright.
-- **Temporary Debugging:** You are encouraged to add temporary print/debug statements (e.g., `Console.WriteLine`) to your code to output HTML, JSON, or other data to understand the responses you are working with. However, you **must** remove all such temporary statements before you consider the task complete.
+- **HTML Parsing:** All HTML parsing must be done using regular expressions, as is the convention in this repository.
+- **Temporary Debugging:** You are encouraged to add temporary print/debug statements (e.g., `Console.WriteLine`) to your code to understand the data you are working with. However, you **must** remove all such temporary statements before you consider the task complete.
 
-## Workflow for Adding a New Council Collector:
+## Guiding Principles & Best Practices
+
+- **Reference Existing Work:** Before writing any code, thoroughly review the existing council implementations in `BinDays.Api.Collectors/Collectors/Councils/`. This is crucial for maintaining consistency and identifying reusable patterns.
+- **Use Playwright for Web Interaction:** All website interactions must be performed using the Playwright MCP server. Do not use direct HTTP request tools like `curl` or `view_text_website`. Your investigation must be based on browser automation with Playwright.
+
+## Workflow for Adding a New Council Collector
 
 This repository includes custom Gemini CLI commands to streamline the process of adding a new council collector.
 
@@ -24,7 +27,7 @@ This repository includes custom Gemini CLI commands to streamline the process of
 
 Use the `/fetch_collector_data` command to begin the process. You will need to provide a postcode for the new council area.
 
-Example: `/fetch_collector_data SW1A 0AA`
+**Example:** `/fetch_collector_data SW1A 0AA`
 
 This command will guide you through the process of:
 -   Navigating to the council's website.
@@ -42,7 +45,7 @@ The command will save the captured data into the following files in the root of 
 
 Once the data has been fetched, use the `/create_collector` command to generate the new collector files.
 
-Example: `/create_collector`
+**Example:** `/create_collector`
 
 This command will:
 -   Read the data files created in the previous step.
