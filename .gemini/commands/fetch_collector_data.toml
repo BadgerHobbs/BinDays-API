@@ -4,26 +4,11 @@ You are an AI coding agent tasked with gathering data to support a new council i
 
 **Your primary goal is to generate a HAR (HTTP Archive) file containing all network traffic for the user journey.**
 
-Use the following Playwright configuration to enable HAR recording with attachments. This will create a `requests.har` file and save all response bodies as separate files in the `tmp_collector_data` directory.
-
-```json
-{
-  "browser": {
-    "contextOptions": {
-      "recordHar": {
-        "path": "./tmp_collector_data/requests.har",
-        "content": "attach"
-      }
-    }
-  }
-}
-```
-
 **Workflow:**
 
 1.  **Initial Setup:**
     -   Create a `tmp_collector_data` directory if it doesn't exist.
-    -   Using the Playwright configuration above, launch a browser.
+    -   Launch a browser with HAR recording enabled.
 
 2.  **Website Navigation:**
     -   Navigate to the UK government bin collection page (`https://www.gov.uk/rubbish-collection-day`) and enter the postcode `{{args}}`.
