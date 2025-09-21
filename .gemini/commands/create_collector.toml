@@ -2,17 +2,17 @@ description="Creates a new council collector from a HAR file."
 prompt = """
 You are an AI coding agent tasked with implementing a new council collector for the BinDays API.
 
-**Your primary goal is to use the `requests.har` file and its associated data to implement the collector.**
+**Your primary goal is to use the `filtered_requests.har` file and its associated data to implement the collector.**
 
 The necessary files are located in the `tmp_collector_data` directory:
--   `requests.har`: The HAR file containing all network traffic.
+-   `filtered_requests.har`: A filtered HAR file containing only relevant network traffic.
 -   `council_info.json`: Contains the council's name, GovUkId, and website URL.
 -   A set of attachment files (e.g., `...json`, `...html`) containing the response bodies.
 
 **Workflow:**
 
 1.  **Analyze the HAR File:**
-    -   Read and parse the `tmp_collector_data/requests.har` file.
+    -   Read and parse the `tmp_collector_data/filtered_requests.har` file.
     -   Identify the specific network requests in the HAR `entries` that are responsible for:
         a.  Fetching the list of addresses.
         b.  Fetching the bin collection data.

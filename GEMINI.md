@@ -21,40 +21,29 @@ This document provides instructions and guidelines for contributing to the BinDa
 
 ## Workflow for Adding a New Council Collector
 
-This repository includes custom Gemini CLI commands to streamline the process of adding a new council collector.
+This repository includes custom Gemini CLI commands and a utility script to streamline the process of adding a new council collector.
 
 ### Step 1: Fetch Collector Data
 
-Use the `/fetch_collector_data` command to begin the process. You will need to provide a postcode for the new council area.
+Use the `/fetch_collector_data` command to begin the process. This will generate a HAR file in the `tmp_collector_data` directory containing all network traffic from the user journey.
 
 **Example:** `/fetch_collector_data SW1A 0AA`
 
-This command will guide you through the process of:
--   Navigating to the council's website.
--   Finding the bin collection schedule.
--   Capturing the necessary network requests for address and bin day lookups.
+### Step 2: Filter the HAR File
 
-The command will save the captured data into the following files in the root of the repository:
--   `council_info.json`
--   `address_request.json`
--   `address_response.json`
--   `binday_request.json`
--   `binday_response.json`
+The generated `requests.har` file contains a lot of irrelevant data (e.g., CSS, images). Run the `FilterHar.csx` script to remove this noise and create a smaller, more focused `filtered_requests.har` file.
 
-### Step 2: Create the Collector
+**Example:** `dotnet script scripts/FilterHar.csx tmp_collector_data/requests.har tmp_collector_data/filtered_requests.har`
 
-Once the data has been fetched, use the `/create_collector` command to generate the new collector files.
+### Step 3: Create the Collector
+
+Once the filtered HAR file has been created, use the `/create_collector` command to generate the new collector class and integration test.
 
 **Example:** `/create_collector`
 
-This command will:
--   Read the data files created in the previous step.
--   Generate a new C# collector class in `BinDays.Api.Collectors/Collectors/Councils/`.
--   Generate a new integration test class in `BinDays.Api.IntegrationTests/Collectors/Councils/`.
+This command will read the `filtered_requests.har` and `council_info.json` files to generate the necessary C# files. After the files are created, you may need to manually adjust the generated regular expressions in the collector class to ensure they correctly parse the data.
 
-After the files are created, you may need to manually adjust the generated regular expressions in the collector class to ensure they correctly parse the data from the saved responses.
-
-### Step 3: Run the Integration Test
+### Step 4: Run the Integration Test
 
 Finally, run the newly created integration test to verify that the collector is working correctly.
 
