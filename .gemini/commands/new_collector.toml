@@ -1,0 +1,14 @@
+description="Creates a new council collector, including an integration test."
+prompt = """
+You are an AI coding agent tasked with adding support to the BinDays API for a new council. The postcode to use for the investigation is: {{args}}
+
+Your primary instruction is to follow the principles and workflow detailed in the `GEMINI.md` file.
+
+Your process will be as follows:
+
+1.  **Analyze Existing Collectors:** Before doing anything else, review several existing council collectors in `BinDays.Api.Collectors/Collectors/Councils/` to understand the required coding patterns and conventions.
+2.  **Investigate with Playwright:** Use the Playwright MCP server to script the user journey on the council's website to find the bin collection data. Record the necessary network requests (URLs, headers, payloads) that you will need to replicate.
+3.  **Implement the Collector:** Create the new C# class, replicating the network requests you identified. You may use temporary debug statements to print response data, but you must remove them once your implementation is working.
+4.  **Implement the Test:** Create a new integration test that validates your collector.
+5.  **Verify and Finalize:** Run the test until it passes, ensuring all temporary debug code has been removed.
+"""
