@@ -1,14 +1,33 @@
 description="Creates a new council collector, including an integration test."
 prompt = """
-You are an AI coding agent tasked with adding support to the BinDays API for a new council. The postcode to use for the investigation is: {{args}}
+You are an AI coding agent tasked with adding support to the BinDays API for a new council. You must follow all principles and instructions in the `GEMINI.md` file.
 
-Your primary instruction is to follow the principles and workflow detailed in the `GEMINI.md` file.
+The postcode for this task is: **{{args}}**
 
-Your process will be as follows:
+Your detailed workflow is as follows:
 
-1.  **Analyze Existing Collectors:** Before doing anything else, review several existing council collectors in `BinDays.Api.Collectors/Collectors/Councils/` to understand the required coding patterns and conventions.
-2.  **Investigate with Playwright:** Use the Playwright MCP server to script the user journey on the council's website to find the bin collection data. Record the necessary network requests (URLs, headers, payloads) that you will need to replicate.
-3.  **Implement the Collector:** Create the new C# class, replicating the network requests you identified. You may use temporary debug statements to print response data, but you must remove them once your implementation is working.
-4.  **Implement the Test:** Create a new integration test that validates your collector.
-5.  **Verify and Finalize:** Run the test until it passes, ensuring all temporary debug code has been removed.
+1.  **Initial Government Website Investigation:**
+    - Navigate to the UK government bin collection page (`https://www.gov.uk/rubbish-collection-day`) and enter the postcode `{{args}}`.
+    - Record the full council name and the `GovUkId` from the URL for future reference.
+    - Note the link to the council's official website.
+
+2.  **Detailed Council Website Investigation:**
+    - Navigate to the council website link you just recorded.
+    - Find the bin or waste collection page.
+    - Script the process of entering the postcode and submitting the form.
+    - The website should return a list of addresses. Script the selection of the *first* address in the list.
+    - After selecting the address, the page should display the upcoming bin collections. Record the specific bin types (e.g., "Recycling", "General Waste") and their colours, as these will be needed for the implementation.
+
+3.  **Network Request Analysis:**
+    - **This is the most critical step.** During the entire process above, you must meticulously record the network requests and their responses.
+    - Focus on the specific requests used for:
+        - Fetching the list of addresses after a postcode search.
+        - Fetching the bin collection data after an address is selected.
+        - Any requests related to authentication (e.g., obtaining session cookies or API tokens).
+    - This data will be used to reverse-engineer the process.
+
+4.  **Implementation and Testing:**
+    - Using the data from your network analysis and by referencing existing collectors, implement the new council collector class in `BinDays.Api.Collectors/Collectors/Councils/`.
+    - Implement the corresponding integration test in `BinDays.Api.IntegrationTests/Collectors/Councils/`.
+    - Run the test and debug until it passes, ensuring you remove any temporary debug code.
 """
