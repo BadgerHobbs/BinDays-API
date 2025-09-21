@@ -27,18 +27,23 @@ try {
 
     const initialCount = har.log.entries.length;
 
-    const filteredEntries = har.log.entries.filter(entry => {
-        const mimeType = entry.response.content.mimeType;
-        if (!mimeType) {
-            return false;
-        }
-        for (const allowed of allowedMimeTypes) {
-            if (mimeType.startsWith(allowed)) {
-                return true;
+    const filteredEntries = har.log.entries
+        .filter(entry => {
+            const mimeType = entry.response.content.mimeType;
+            if (!mimeType) {
+                return false;
             }
-        }
-        return false;
-    });
+            for (const allowed of allowedMimeTypes) {
+                if (mimeType.startsWith(allowed)) {
+                    return true;
+                }
+            }
+            return false;
+        })
+        .map(entry => ({
+            request: entry.request,
+            response: entry.response
+        }));
 
     har.log.entries = filteredEntries;
 
