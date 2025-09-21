@@ -22,6 +22,6 @@ Your detailed workflow is as follows:
     - Focus on the specific requests used for:
         - Fetching the list of addresses after a postcode search.
         - Fetching the bin collection data after an address is selected.
-    - Save the captured request and response for the address lookup to `address_request.json` and `address_response.json` respectively.
-    - Save the captured request and response for the bin day lookup to `binday_request.json` and `binday_response.json` respectively.
+    - Save the raw content of the captured request and response for the address lookup to `address_request` and `address_response` respectively.
+    - Save the raw content of the captured request and response for the bin day lookup to `binday_request` and `binday_response` respectively.
 """
