@@ -19,6 +19,7 @@ Your detailed workflow is as follows:
 
 3.  **Network Request Analysis and Saving:**
     - **This is the most critical step.** During the entire process above, you must meticulously record the network requests and their responses.
+    - Save the raw content of the initial page load request and response to `initial_page_load_request` and `initial_page_load_response` respectively.
     - Focus on the specific requests used for:
         - Fetching the list of addresses after a postcode search.
         - Fetching the bin collection data after an address is selected.
