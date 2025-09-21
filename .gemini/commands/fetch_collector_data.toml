@@ -18,11 +18,8 @@ Your detailed workflow is as follows:
     - After selecting the address, the page should display the upcoming bin collections.
 
 3.  **Network Request Analysis and Saving:**
-    - **This is the most critical step.** During the entire process above, you must meticulously record the network requests and their responses.
-    - Save the raw content of the initial page load request and response to `.collector_data/initial_page_load_request` and `.collector_data/initial_page_load_response` respectively.
-    - Focus on the specific requests used for:
-        - Fetching the list of addresses after a postcode search.
-        - Fetching the bin collection data after an address is selected.
-    - Save the raw content of the captured request and response for the address lookup to `.collector_data/address_request` and `.collector_data/address_response` respectively.
-    - Save the raw content of the captured request and response for the bin day lookup to `.collector_data/binday_request` and `.collector_data/binday_response` respectively.
+    - **This is the most critical step.** During the entire process above, you must meticulously record the network requests and their responses and save them as HAR files.
+    - Save the captured network interaction for the initial page load as a HAR file named `.collector_data/initial_page_load.har`.
+    - Save the captured network interaction for the address lookup as a HAR file named `.collector_data/address_lookup.har`.
+    - Save the captured network interaction for the bin day lookup as a HAR file named `.collector_data/bin_day_lookup.har`.
 """
