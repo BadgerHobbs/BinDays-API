@@ -17,10 +17,8 @@ You are an AI coding agent tasked with gathering and preparing data to support a
     -   **Close the browser session** to ensure the raw `requests.har` file and its attachments are saved.
 
 2.  **Filter the HAR File:**
-    -   **As a final, automated step, you must execute the `BinDays.HarFilter` tool.**
-    -   Compile and run the `BinDays.HarFilter` console application.
-    -   Provide the path to the raw HAR file as the first argument (`tmp_collector_data/requests.har`).
-    -   Provide the path for the filtered output file as the second argument (`tmp_collector_data/filtered_requests.har`).
+    -   **As a final, automated step, you must execute the `filter-har.js` script using Node.js.**
+    -   Run the command: `node scripts/filter-har.js tmp_collector_data/requests.har tmp_collector_data/filtered_requests.har`
 
 Your task is complete once the `tmp_collector_data` directory contains the `filtered_requests.har` file.
 """
