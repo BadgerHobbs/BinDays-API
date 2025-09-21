@@ -18,26 +18,42 @@ This document provides instructions and guidelines for contributing to the BinDa
 
 ## Workflow for Adding a New Council Collector:
 
-1.  **Initial Research:**
-    - Using Playwright, navigate to the UK government's bin collection page: `https://www.gov.uk/rubbish-collection-day`.
-    - Enter the example postcode for the new council.
-    - Record the exact council name and the `GovUkId` from the resulting URL.
-2.  **Website Investigation (Playwright):**
-    - Follow the link to the council's official website.
-    - Using Playwright, script the user journey to find the bin collection schedule:
-        a. Navigate to the bin/waste collection page.
-        b. Enter the example postcode and search.
-        c. Select the first address from the results.
-        d. View the upcoming bin collection schedule.
-    - During this process, record the network requests made by the browser. Pay close attention to the specific requests that fetch address data and bin collection data. Note their URLs, headers, and payloads. This information is critical for implementation.
-3.  **Implementation:**
-    - Create a new C# class for the council in `BinDays.Api.Collectors/Collectors/Councils/`.
-    - The class must inherit from `GovUkCollectorBase` and implement `ICollector`.
-    - Use the captured HTTP request data to implement the `GetAddresses` and `GetBinDays` methods.
-4.  **Testing:**
-    - Create a new integration test file in `BinDays.Api.IntegrationTests/Collectors/Councils/`.
-    - The test must successfully retrieve bin collection data for the example postcode using the `TestSteps.EndToEnd` helper.
-    - Run the test and ensure it passes.
+This repository includes custom Gemini CLI commands to streamline the process of adding a new council collector.
+
+### Step 1: Fetch Collector Data
+
+Use the `/fetch_collector_data` command to begin the process. You will need to provide a postcode for the new council area.
+
+Example: `/fetch_collector_data SW1A 0AA`
+
+This command will guide you through the process of:
+-   Navigating to the council's website.
+-   Finding the bin collection schedule.
+-   Capturing the necessary network requests for address and bin day lookups.
+
+The command will save the captured data into the following files in the root of the repository:
+-   `council_info.json`
+-   `address_request.json`
+-   `address_response.json`
+-   `binday_request.json`
+-   `binday_response.json`
+
+### Step 2: Create the Collector
+
+Once the data has been fetched, use the `/create_collector` command to generate the new collector files.
+
+Example: `/create_collector`
+
+This command will:
+-   Read the data files created in the previous step.
+-   Generate a new C# collector class in `BinDays.Api.Collectors/Collectors/Councils/`.
+-   Generate a new integration test class in `BinDays.Api.IntegrationTests/Collectors/Councils/`.
+
+After the files are created, you may need to manually adjust the generated regular expressions in the collector class to ensure they correctly parse the data from the saved responses.
+
+### Step 3: Run the Integration Test
+
+Finally, run the newly created integration test to verify that the collector is working correctly.
 
 ## Collector Implementation Template:
 

@@ -1,0 +1,27 @@
+description="Fetches and saves the required data for a new council collector."
+prompt = """
+You are an AI coding agent tasked with the first step of adding support to the BinDays API for a new council: data gathering. You must follow all principles and instructions in the `GEMINI.md` file.
+
+The postcode for this task is: **{{args}}**
+
+Your detailed workflow is as follows:
+
+1.  **Initial Government Website Investigation:**
+    - Navigate to the UK government bin collection page (`https://www.gov.uk/rubbish-collection-day`) and enter the postcode `{{args}}`.
+    - Record the full council name, the `GovUkId` from the URL, and the link to the council's official website. Store this information in a file named `council_info.json`.
+
+2.  **Detailed Council Website Investigation:**
+    - Navigate to the council website link you just recorded.
+    - Find the bin or waste collection page.
+    - Script the process of entering the postcode and submitting the form.
+    - The website should return a list of addresses. Script the selection of the *first* address in the list.
+    - After selecting the address, the page should display the upcoming bin collections.
+
+3.  **Network Request Analysis and Saving:**
+    - **This is the most critical step.** During the entire process above, you must meticulously record the network requests and their responses.
+    - Focus on the specific requests used for:
+        - Fetching the list of addresses after a postcode search.
+        - Fetching the bin collection data after an address is selected.
+    - Save the captured request and response for the address lookup to `address_request.json` and `address_response.json` respectively.
+    - Save the captured request and response for the bin day lookup to `binday_request.json` and `binday_response.json` respectively.
+"""
