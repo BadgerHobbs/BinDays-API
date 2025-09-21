@@ -8,6 +8,7 @@ This document provides instructions and guidelines for contributing to the BinDa
 - You must follow the existing coding style, conventions, and architectural patterns.
 - All new collectors require a corresponding integration test.
 - All HTML parsing must be done using regular expressions, as is the convention in this repository.
+- **Do not modify core files.** Your changes should be limited to creating one new collector class and one new integration test file. Do not alter any other part of the existing codebase.
 
 ## Guiding Principles
 
