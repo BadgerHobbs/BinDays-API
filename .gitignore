@@ -42,4 +42,4 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
-.collector_data/
+tmp_collector_data/

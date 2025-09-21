@@ -1,25 +1,40 @@
-description="Fetches and saves the required data for a new council collector."
+description="Fetches and saves the required data for a new council collector using HAR recording."
 prompt = """
-You are an AI coding agent tasked with the first step of adding support to the BinDays API for a new council: data gathering. You must follow all principles and instructions in the `GEMINI.md` file.
+You are an AI coding agent tasked with gathering data to support a new council in the BinDays API.
 
-The postcode for this task is: **{{args}}**
+**Your primary goal is to generate a HAR (HTTP Archive) file containing all network traffic for the user journey.**
 
-Your detailed workflow is as follows:
+Use the following Playwright configuration to enable HAR recording with attachments. This will create a `requests.har` file and save all response bodies as separate files in the `tmp_collector_data` directory.
 
-1.  **Initial Government Website Investigation:**
-    - Navigate to the UK government bin collection page (`https://www.gov.uk/rubbish-collection-day`) and enter the postcode `{{args}}`.
-    - Record the full council name, the `GovUkId` from the URL, and the link to the council's official website. Store this information in a file named `.collector_data/council_info.json`.
+```json
+{
+  "browser": {
+    "contextOptions": {
+      "recordHar": {
+        "path": "./tmp_collector_data/requests.har",
+        "content": "attach"
+      }
+    }
+  }
+}
+```
 
-2.  **Detailed Council Website Investigation:**
-    - Navigate to the council website link you just recorded.
-    - Find the bin or waste collection page.
-    - Script the process of entering the postcode and submitting the form.
-    - The website should return a list of addresses. Script the selection of the *first* address in the list.
-    - After selecting the address, the page should display the upcoming bin collections.
+**Workflow:**
 
-3.  **Network Request Analysis and Saving:**
-    - **This is the most critical step.** During the entire process above, you must meticulously record the network requests and their responses and save them as HAR files.
-    - Save the captured network interaction for the initial page load as a HAR file named `.collector_data/initial_page_load.har`.
-    - Save the captured network interaction for the address lookup as a HAR file named `.collector_data/address_lookup.har`.
-    - Save the captured network interaction for the bin day lookup as a HAR file named `.collector_data/bin_day_lookup.har`.
+1.  **Initial Setup:**
+    -   Create a `tmp_collector_data` directory if it doesn't exist.
+    -   Using the Playwright configuration above, launch a browser.
+
+2.  **Website Navigation:**
+    -   Navigate to the UK government bin collection page (`https://www.gov.uk/rubbish-collection-day`) and enter the postcode `{{args}}`.
+    -   Follow the link to the specific council's website.
+    -   On the council's website, find the bin/waste collection page.
+    -   Script the process of entering the postcode and selecting the first address from the results.
+    -   Navigate to the page that displays the bin collection schedule.
+    -   Also, record the full council name, the `GovUkId` from the URL, and the link to the council's official website. Store this information in a file named `tmp_collector_data/council_info.json`.
+
+3.  **Finalize HAR Recording:**
+    -   **Crucially, you must close the browser session.** The `requests.har` file and its attachments are only written to disk when the browser context is closed.
+
+Your task is complete once the `tmp_collector_data` directory contains the `requests.har` file, the `council_info.json` file, and all the associated response body files.
 """
