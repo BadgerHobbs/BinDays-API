@@ -269,13 +269,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				// Filter out bin days in the past
-				binDays = [.. ProcessingUtilities.GetFutureBinDays(binDays)];
-
-				// Merge bin days that fall on the same date
-				binDays = [.. ProcessingUtilities.MergeBinDays(binDays)];
-
-				return new GetBinDaysResponse { BinDays = binDays.AsReadOnly(), NextClientSideRequest = null };
+				return new GetBinDaysResponse { BinDays = ProcessingUtilities.ProcessBinDays(binDays), NextClientSideRequest = null };
 			}
 
 			throw new InvalidOperationException("Invalid client-side request.");

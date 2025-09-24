@@ -281,14 +281,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				}
 			}
 
-			// Filter out any bin days that might still be in the past
-			var futureBinDays = ProcessingUtilities.GetFutureBinDays(binDays);
-
-			// Merge bin days that occur on the same date
-			var mergedBinDays = ProcessingUtilities.MergeBinDays(futureBinDays);
-
-			// Return the final list, ordered by date
-			return mergedBinDays;
+			return ProcessingUtilities.ProcessBinDays(binDays);
 		}
 	}
 }
