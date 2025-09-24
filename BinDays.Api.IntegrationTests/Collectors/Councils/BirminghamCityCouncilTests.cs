@@ -13,8 +13,6 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		private readonly IntegrationTestClient _client = new();
 		private static readonly ICollector _collector = new BirminghamCityCouncil();
 		private readonly CollectorService _collectorService = new([_collector]);
-		private const string _postcode = "B34 6BS";
-
 		private readonly ITestOutputHelper _outputHelper;
 
 		public BirminghamCityCouncilTests(ITestOutputHelper outputHelper)
@@ -22,14 +20,15 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 			_outputHelper = outputHelper;
 		}
 
-		[Fact]
-		public async Task GetBinDaysTest()
+		[Theory]
+		[InlineData("B34 6BS")]
+		public async Task GetBinDaysTest(string postcode)
 		{
 			await TestSteps.EndToEnd(
 				_client,
 				_collectorService,
 				_collector,
-				_postcode,
+				postcode,
 				_outputHelper
 			);
 		}

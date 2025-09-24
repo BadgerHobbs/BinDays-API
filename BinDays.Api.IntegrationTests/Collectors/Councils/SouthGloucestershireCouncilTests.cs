@@ -13,8 +13,6 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		private readonly IntegrationTestClient _client = new();
 		private static readonly ICollector _collector = new SouthGloucestershireCouncil();
 		private readonly CollectorService _collectorService = new([_collector]);
-		private const string _postcode = "BS16 7ES";
-
 		private readonly ITestOutputHelper _outputHelper;
 
 		public SouthGloucestershireCouncilTests(ITestOutputHelper outputHelper)
@@ -22,14 +20,15 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 			_outputHelper = outputHelper;
 		}
 
-		[Fact]
-		public async Task GetBinDaysTest()
+		[Theory]
+		[InlineData("BS16 7ES")]
+		public async Task GetBinDaysTest(string postcode)
 		{
 			await TestSteps.EndToEnd(
 				_client,
 				_collectorService,
 				_collector,
-				_postcode,
+				postcode,
 				_outputHelper
 			);
 		}

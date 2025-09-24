@@ -36,6 +36,22 @@ namespace BinDays.Api.Collectors.Utilities
 		}
 
 		/// <summary>
+		/// Processes a collection of BinDay objects by filtering for future dates and merging by date.
+		/// </summary>
+		/// <param name="binDays">The collection of BinDay objects to process.</param>
+		/// <returns>A read-only collection of processed BinDay objects.</returns>
+		public static ReadOnlyCollection<BinDay> ProcessBinDays(IEnumerable<BinDay> binDays)
+		{
+			// Filter out bin days in the past
+			var futureBinDays = GetFutureBinDays(binDays);
+
+			// Merge the bin days
+			var mergedBinDays = MergeBinDays(futureBinDays);
+
+			return mergedBinDays;
+		}
+
+		/// <summary>
 		/// Merges a collection of BinDay objects, combining those with the same date.
 		/// </summary>
 		/// <param name="binDays">The collection of BinDay objects to merge.</param>

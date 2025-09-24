@@ -275,13 +275,9 @@ namespace BinDays.Api.Collectors.Collectors.Councils
                     }
                 }
 
-                // Filter out bin days in the past and merge collections on the same day.
-                var futureBinDays = ProcessingUtilities.GetFutureBinDays(binDays);
-                var mergedBinDays = ProcessingUtilities.MergeBinDays(futureBinDays);
-
                 return new GetBinDaysResponse()
                 {
-                    BinDays = mergedBinDays,
+                    BinDays = ProcessingUtilities.ProcessBinDays(binDays),
                     NextClientSideRequest = null
                 };
             }
