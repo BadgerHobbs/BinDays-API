@@ -48,6 +48,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
                 Keys = new List<string>() { "Food waste collection" }.AsReadOnly(),
                 Type = "Caddy"
             },
+            new()
+            {
+                Name = "Garden Waste",
+                Colour = "Brown",
+                Keys = new List<string>() { "Garden waste collection" }.AsReadOnly(),
+            },
         }.AsReadOnly();
 
         /// <summary>
