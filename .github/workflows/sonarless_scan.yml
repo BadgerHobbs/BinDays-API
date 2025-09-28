@@ -12,5 +12,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Sonarless Scan
-        uses: gitricko/sonarless@v1.3
+      #- name: Sonarless Scan
+      #  uses: gitricko/sonarless@v1.3
+
+      - name: Scanwise Scan
+        uses: VIDADv1/scanwise@v1
