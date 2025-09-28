@@ -3,9 +3,6 @@ name: Sonarless Scan
 on:
   workflow_dispatch:
   push:
-    paths:
-      - BinDays.Api/**
-      - BinDays.Api.Collectors/**
 
 jobs:
   sonarless_scan:
