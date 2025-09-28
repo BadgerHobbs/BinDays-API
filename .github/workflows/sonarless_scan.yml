@@ -1,0 +1,19 @@
+name: Sonarless Scan
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - BinDays.Api/**
+      - BinDays.Api.Collectors/**
+
+jobs:
+  sonarless_scan:
+    name: Sonarless Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Sonarless Scan
+        uses: gitricko/sonarless@v1.3
