@@ -20,4 +20,5 @@ jobs:
         with:
           reports-scopes: '["overall", "new"]'
           reports-extensions: '["html", "md", "pdf"]'
+          reports-retention-days: '1'
 
