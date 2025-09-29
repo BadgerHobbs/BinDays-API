@@ -94,7 +94,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = string.Empty,
 				};
 
-				return new GetAddressesResponse { Addresses = null, NextClientSideRequest = clientSideRequest };
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					Addresses = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getAddressesResponse;
 			}
 			// Prepare client-side request for getting addresses
 			else if (clientSideResponse.RequestId == 1)
@@ -125,7 +131,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				return new GetAddressesResponse { Addresses = null, NextClientSideRequest = clientSideRequest };
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					Addresses = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getAddressesResponse;
 			}
 			// Process addresses from response
 			else if (clientSideResponse.RequestId == 2)
@@ -145,7 +157,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				return new GetAddressesResponse { Addresses = addresses.AsReadOnly(), NextClientSideRequest = null };
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					Addresses = addresses.AsReadOnly(),
+					NextClientSideRequest = null
+				};
+
+				return getAddressesResponse;
 			}
 
 			throw new InvalidOperationException("Invalid client-side request.");
@@ -168,7 +186,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = string.Empty,
 				};
 
-				return new GetBinDaysResponse { BinDays = null, NextClientSideRequest = clientSideRequest };
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getBinDaysResponse;
 			}
 			// Prepare client-side request to get the address selection page
 			else if (clientSideResponse.RequestId == 1)
@@ -199,7 +223,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				return new GetBinDaysResponse { BinDays = null, NextClientSideRequest = clientSideRequest };
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getBinDaysResponse;
 			}
 			// Prepare client-side request to get bin collection data
 			else if (clientSideResponse.RequestId == 2)
@@ -234,7 +264,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				return new GetBinDaysResponse { BinDays = null, NextClientSideRequest = clientSideRequest };
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getBinDaysResponse;
 			}
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 3)
@@ -269,7 +305,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				return new GetBinDaysResponse { BinDays = ProcessingUtilities.ProcessBinDays(binDays), NextClientSideRequest = null };
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+					NextClientSideRequest = null
+				};
+
+				return getBinDaysResponse;
 			}
 
 			throw new InvalidOperationException("Invalid client-side request.");
