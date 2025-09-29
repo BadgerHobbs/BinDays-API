@@ -84,12 +84,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		[GeneratedRegex(@"<td[^>]+>\s*<div[^>]+>\s*<div[^>]+>\s*(?<date>[^<]+).+?<td[^>]+>\s*<div[^>]+>\s*<div[^>]+>\s*(?<service>[^<]+)")]
 		private static partial Regex BinDaysRegex();
 
-		/// <summary>
-		/// Regex for the collection date format.
-		/// </summary>
-		[GeneratedRegex(@"\((?<day>\d+)(?:st|nd|rd|th)\)")]
-		private static partial Regex CollectionDateRegex();
-
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 		{
