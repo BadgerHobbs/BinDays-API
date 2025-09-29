@@ -1,0 +1,448 @@
+using System.Text.Json;
+
+namespace BinDays.Api.Collectors.Collectors.Councils
+{
+	using BinDays.Api.Collectors.Models;
+	using BinDays.Api.Collectors.Utilities;
+	using System;
+	using System.Collections.Generic;
+	using System.Collections.ObjectModel;
+	using System.Text.RegularExpressions;
+
+	/// <summary>
+	/// Collector implementation for New Forest District Council.
+	/// </summary>
+	internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICollector
+	{
+		/// <inheritdoc/>
+		public string Name => "New Forest District Council";
+
+		/// <inheritdoc/>
+		public Uri WebsiteUrl => new("https://www.newforest.gov.uk/bin-collection-days");
+
+		/// <inheritdoc/>
+		public override string GovUkId => "new-forest";
+
+		private string token = "";
+
+		private string cookie = "";
+
+		/// <summary>
+		/// The list of bin types for this collector.
+		/// </summary>
+		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		{
+			new()
+			{
+				Name = "Rubbish",
+				Colour = "Black",
+				Keys = new List<string>() { "General" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Recycling",
+				Colour = "Green",
+				Keys = new List<string>() { "Recycl" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Garden Waste",
+				Colour = "Brown",
+				Keys = new List<string>() { "Garden" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Food Waste",
+				Colour = "Brown",
+				Keys = new List<string>() { "Food" }.AsReadOnly(),
+				Type = "Caddy",
+			},
+			new()
+			{
+				Name = "Glass Recycling",
+				Colour = "Black",
+				Keys = new List<string>() { "Glass" }.AsReadOnly(),
+				Type = "Box",
+			},
+		}.AsReadOnly();
+
+		/// <summary>
+		/// Regex for the session token value from an input field.
+		/// </summary>
+		[GeneratedRegex(@"FIND_MY_BIN_BAR.eb\?ebz=([^'""]+)")]
+		private static partial Regex TokenRegex();
+
+		/// <summary>
+		/// Regex for the addresses from the options elements.
+		/// </summary>
+		[GeneratedRegex(@"<option\s+value=""(?<uid>\d+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
+		private static partial Regex AddressRegex();
+
+		/// <summary>
+		/// Regex for the bin days from the data table elements.
+		/// </summary>
+		[GeneratedRegex(@"<td[^>]+>\s*<div[^>]+>\s*<div[^>]+>\s*(?<date>[^<]+).+?<td[^>]+>\s*<div[^>]+>\s*<div[^>]+>\s*(?<service>[^<]+)")]
+		private static partial Regex BinDaysRegex();
+
+		/// <summary>
+		/// Regex for the collection date format.
+		/// </summary>
+		[GeneratedRegex(@"\((?<day>\d+)(?:st|nd|rd|th)\)")]
+		private static partial Regex CollectionDateRegex();
+
+		/// <inheritdoc/>
+		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+		{
+			// Prepare client-side request for getting the cookie
+			if (clientSideResponse == null)
+			{
+				var clientSideRequest = new ClientSideRequest()
+				{
+					RequestId = 1,
+					Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
+					Method = "GET",
+					Headers = new Dictionary<string, string>() {
+						{"user-agent", Constants.UserAgent},
+					},
+					Body = string.Empty,
+				};
+
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					Addresses = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getAddressesResponse;
+			}
+			// Prepare client-side request for getting the token
+			else if (clientSideResponse.RequestId == 1)
+			{
+				cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+					clientSideResponse.Headers["Set-Cookie"]);
+				// Prepare client-side request
+				var clientSideRequest = new ClientSideRequest()
+				{
+					RequestId = 2,
+					Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
+					Method = "GET",
+					Headers = new Dictionary<string, string>() {
+						{"user-agent", Constants.UserAgent},
+						{"cookie", cookie},
+					},
+					Body = string.Empty,
+				};
+
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					Addresses = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getAddressesResponse;
+			}
+			// Prepare client-side request for getting addresses
+			else if (clientSideResponse.RequestId == 2)
+			{
+				// Get token from response
+				token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+
+				// Prepare client-side request
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				{
+					{"formid", "/Forms/FIND_MY_BIN_BAR"},
+					{"ebs", token},
+					{"origrequrl", "https://forms.newforest.gov.uk/ufs/FIND_MY_BIN_BAR.eb"},
+					{"formstack", "FIND_MY_BIN_BAR:71bc4a7b-7a80-40a9-848c-87ab447b90ae"},
+					{"PAGE:E.h", ""},
+					{"PAGE:B.h", ""},
+					{"PAGE:N.h", ""},
+					{"PAGE:S.h", ""},
+					{"PAGE:R.h", ""},
+					{"PAGE:D", ""},
+					{"PAGE:H", ""},
+					{"PAGE:X", "0"},
+					{"PAGE:Y", "0"},
+					{"PAGE:F", "CTID-EBTnjgwK-_"},
+					{"ufsEndUser*", "1"},
+					{"pageSeq", "1"},
+					{"pageId", "Page_1"},
+					{"formStateId", "1"},
+					{"$USERVAR1", ""},
+					{"$USERVAR2", ""},
+					{"$USERVAR3", ""},
+					{"CTRL:JmLqCKl2:_:A", postcode},
+					{"CTRL:JmLqCKl2:_:B.h", ""},
+					{"HID:inputs", "ICTRL:JmLqCKl2:_:A,ACTRL:JmLqCKl2:_:B.h,ACTRL:EBTnjgwK:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:S.h,APAGE:R.h"},
+					{"CTRL:EBTnjgwK:_", "Submit"}
+				});
+
+				var requestHeaders = new Dictionary<string, string>() {
+					{"user-agent", Constants.UserAgent},
+					{"content-type", "application/x-www-form-urlencoded"},
+					{"cookie", cookie},
+				};
+
+				var clientSideRequest = new ClientSideRequest()
+				{
+					RequestId = 3,
+					Url = "https://forms.newforest.gov.uk/ufs/ufsajax?ebz=" + token,
+					Method = "POST",
+					Headers = requestHeaders,
+					Body = requestBody,
+				};
+
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					Addresses = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getAddressesResponse;
+			}
+			// Process addresses from response
+			else if (clientSideResponse.RequestId == 3)
+			{
+				// Parse the JSON response
+				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+
+				// Find the first html key that contains <option
+				string? htmlWithOptions = null;
+				if (jsonDoc.RootElement.TryGetProperty("updatedControls", out var updatedControls))
+				{
+					foreach (var control in updatedControls.EnumerateArray())
+					{
+						if (control.TryGetProperty("html", out var htmlProperty) &&
+							htmlProperty.ValueKind == JsonValueKind.String &&
+							htmlProperty.GetString()?.Contains("<option") == true)
+						{
+							htmlWithOptions = htmlProperty.GetString().Replace("\\\"", "\"");
+							break;
+						}
+					}
+				}
+				// TODO Error handling for when htmlWithOptions is null
+
+				// Get addresses from response
+				var rawAddresses = AddressRegex().Matches(htmlWithOptions)!;
+
+				// Iterate through each address, and create a new address object
+				var addresses = new List<Address>();
+				foreach (Match rawAddress in rawAddresses)
+				{
+					var uid = rawAddress.Groups["uid"].Value;
+
+					// Exclude placeholder/invalid options
+					if (uid == "-1" || uid == "111111")
+					{
+						continue;
+					}
+
+					var address = new Address()
+					{
+						Property = rawAddress.Groups["address"].Value.Replace("&nbsp", " "),
+						Street = string.Empty,
+						Town = string.Empty,
+						Postcode = postcode,
+						Uid = uid,
+					};
+
+					addresses.Add(address);
+				}
+
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					Addresses = addresses.AsReadOnly(),
+					NextClientSideRequest = null
+				};
+
+				return getAddressesResponse;
+			}
+
+			// Throw exception for invalid request
+			throw new InvalidOperationException("Invalid client-side request.");
+		}
+
+		/// <inheritdoc/>
+		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		{
+			// Prepare client-side request for getting the cookie
+			if (clientSideResponse == null)
+			{
+				var clientSideRequest = new ClientSideRequest()
+				{
+					RequestId = 1,
+					Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
+					Method = "GET",
+					Headers = new Dictionary<string, string>() {
+						{"user-agent", Constants.UserAgent},
+					},
+					Body = string.Empty,
+				};
+
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getBinDaysResponse;
+			}
+			// Prepare client-side request for getting the token
+			else if (clientSideResponse.RequestId == 1)
+			{
+				cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+					clientSideResponse.Headers["Set-Cookie"]);
+				// Prepare client-side request
+				var clientSideRequest = new ClientSideRequest()
+				{
+					RequestId = 2,
+					Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
+					Method = "GET",
+					Headers = new Dictionary<string, string>() {
+						{"user-agent", Constants.UserAgent},
+						{"cookie", cookie},
+					},
+					Body = string.Empty,
+				};
+
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getBinDaysResponse;
+			}
+			// Prepare client-side request for getting addresses
+			else if (clientSideResponse.RequestId == 2)
+			{
+				// Get token from response
+				token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+
+				// Prepare client-side request
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				{
+					{"formid", "/Forms/FIND_MY_BIN_BAR"},
+					{"ebs", token},
+					{"origrequrl", "https://forms.newforest.gov.uk/ufs/FIND_MY_BIN_BAR.eb"},
+					{"formstack", "FIND_MY_BIN_BAR:71bc4a7b-7a80-40a9-848c-87ab447b90ae"},
+					{"PAGE:E.h", ""},
+					{"PAGE:B.h", ""},
+					{"PAGE:N.h", ""},
+					{"PAGE:S.h", ""},
+					{"PAGE:R.h", ""},
+					{"PAGE:D", ""},
+					{"PAGE:H", ""},
+					{"PAGE:X", "0"},
+					{"PAGE:Y", "97"},
+					{"PAGE:F", ""},
+					{"ufsEndUser*", "1"},
+					{"pageSeq", "1"},
+					{"pageId", "Page_1"},
+					{"formStateId", "1"},
+					{"$USERVAR1", ""},
+					{"$USERVAR2", ""},
+					{"$USERVAR3", ""},
+					{"CTRL:KOeKcmrC:_:A", address.Uid!},
+					{"CTRL:KOeKcmrC:_:B.h", ""},
+					{"HID:inputs", "ICTRL:KOeKcmrC:_:A,ACTRL:KOeKcmrC:_:B.h,ACTRL:QxB4NyYs:_,ACTRL:Ggx8Z7ze:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:S.h,APAGE:R.h"},
+					{"CTRL:QxB4NyYs:_", "Submit"},
+				});
+
+				var requestHeaders = new Dictionary<string, string>() {
+					{"user-agent", Constants.UserAgent},
+					{"content-type", "application/x-www-form-urlencoded"},
+					{"cookie", cookie},
+				};
+
+				var clientSideRequest = new ClientSideRequest()
+				{
+					RequestId = 3,
+					Url = "https://forms.newforest.gov.uk/ufs/ufsajax?ebz=" + token,
+					Method = "POST",
+					Headers = requestHeaders,
+					Body = requestBody,
+				};
+
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = null,
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getBinDaysResponse;
+			}
+			// Process bin days from response
+			else if (clientSideResponse.RequestId == 3)
+			{
+				// Parse the JSON response
+				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+
+				// Find the first html key that contains <option
+				string? htmlWithOptions = null;
+				if (jsonDoc.RootElement.TryGetProperty("updatedControls", out var updatedControls))
+				{
+					foreach (var control in updatedControls.EnumerateArray())
+					{
+						if (control.TryGetProperty("html", out var htmlProperty) &&
+							htmlProperty.ValueKind == JsonValueKind.String &&
+							htmlProperty.GetString()?.Contains(">Future collections<") == true)
+						{
+							htmlWithOptions = htmlProperty.GetString().Replace("\\\"", "\"");
+							break;
+						}
+					}
+				}
+				// TODO Error handling for when htmlWithOptions is null
+				if (htmlWithOptions == null)
+				{
+					throw new InvalidOperationException("Could not find bin days HTML");
+				}
+
+				// TODO Does C# allow for assertions, so when something changes on the NFDC website it's easy to 
+				//   detect where the code has broken?
+
+				htmlWithOptions = htmlWithOptions.Replace("\r\n", String.Empty);
+
+				// Get bin days from response
+				var rawBinDays = BinDaysRegex().Matches(htmlWithOptions)!;
+
+				var format = "dddd MMMM d, yyyy"; // 'dddd' for full weekday, 'MMMM' for full month, 'd' for day, 'yyyy' for 4-digit year
+
+				// Iterate through each bin day, and create a new bin day object
+				var binDays = new List<BinDay>();
+				foreach (Match rawBinDay in rawBinDays)
+				{
+					var service = rawBinDay.Groups["service"].Value;
+					var collectionDate = rawBinDay.Groups["date"].Value;
+
+					var date = DateOnly.ParseExact(collectionDate, format, System.Globalization.CultureInfo.InvariantCulture);
+
+					// Get matching bin types from the service using the keys
+					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
+
+					var binDay = new BinDay()
+					{
+						Date = date,
+						Address = address,
+						Bins = matchedBinTypes.ToList().AsReadOnly()
+					};
+
+					binDays.Add(binDay);
+				}
+
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+					NextClientSideRequest = null
+				};
+
+				return getBinDaysResponse;
+			}
+
+			// Throw exception for invalid request
+			throw new InvalidOperationException("Invalid client-side request.");
+		}
+	}
+}
