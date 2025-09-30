@@ -25,11 +25,11 @@ Adding new councils is the most common contribution. Before you start, please fa
 
 The style guide covers everything you need to know, including:
 
--   **Key Principles:** The core concepts behind how collectors work.
--   **File Structure:** Where to place your new collector and test files.
--   **Implementation Details:** Guidance on Naming Conventions, Collector Implementation, and our Design Philosophy.
--   **Code Examples:** Templates for both collector and integration test classes.
--   **Commit Guidelines:** How to format your commit messages.
+- **Key Principles:** The core concepts behind how collectors work.
+- **File Structure:** Where to place your new collector and test files.
+- **Implementation Details:** Guidance on Naming Conventions, Collector Implementation, and our Design Philosophy.
+- **Code Examples:** Templates for both collector and integration test classes.
+- **Commit Guidelines:** How to format your commit messages.
 
 ### Quick Workflow
 
