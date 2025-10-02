@@ -22,8 +22,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <inheritdoc/>
 		public override string GovUkId => "new-forest";
 
-		private string token = "";
-
 		private string cookie = "";
 
 		/// <summary>
@@ -137,8 +135,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			else if (clientSideResponse.RequestId == 2)
 			{
-				// Get token from response
-				token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+				var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
@@ -297,8 +294,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			else if (clientSideResponse.RequestId == 2)
 			{
-				// Get token from response
-				token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+				var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
