@@ -54,6 +54,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Keys = new List<string>() { "Garden Waste" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
+		
+		// Used for the Address API call
+		private const string ApiKey = "f5a8f110545e4d009411c908b25b7596";
+		// Used for the Bin Day API call
+		private const string Signature = "TAvYIUFj6dzaP90XQCm2ElY6Cd34ze05I3ba7LKTiBs";
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -62,7 +67,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				var encodedPostcode = Uri.EscapeDataString(postcode);
-				var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={encodedPostcode}&Subscription-Key=f5a8f110545e4d009411c908b25b7596";
+				var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={encodedPostcode}&Subscription-Key={ApiKey}";
 
 				var clientSideRequest = new ClientSideRequest()
 				{
@@ -123,7 +128,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting bin days
 			if (clientSideResponse == null)
 			{
-				var requestUrl = $"https://prod-17.uksouth.logic.azure.com/workflows/58253d7b7d754447acf9fe5fcf76f493/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=TAvYIUFj6dzaP90XQCm2ElY6Cd34ze05I3ba7LKTiBs";
+				var requestUrl = $"https://prod-17.uksouth.logic.azure.com/workflows/58253d7b7d754447acf9fe5fcf76f493/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig={Signature}";
 
 				var clientSideRequest = new ClientSideRequest()
 				{
