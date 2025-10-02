@@ -5,6 +5,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using System;
 	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
+	using System.Globalization;
 	using System.Text.Json;
 	using System.Text.RegularExpressions;
 
@@ -371,7 +372,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var service = rawBinDay.Groups["service"].Value;
 					var collectionDate = rawBinDay.Groups["date"].Value;
 
-					var date = DateOnly.ParseExact(collectionDate, format, System.Globalization.CultureInfo.InvariantCulture);
+					var date = DateOnly.ParseExact(collectionDate, format, CultureInfo.InvariantCulture);
 					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
 
 					var binDay = new BinDay()
