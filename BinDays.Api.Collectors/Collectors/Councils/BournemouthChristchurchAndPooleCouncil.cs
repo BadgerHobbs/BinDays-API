@@ -8,7 +8,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using System.Globalization;
 	using System.Linq;
 	using System.Text.Json;
-	using System.Text.RegularExpressions;
 
 	/// <summary>
 	/// Collector implementation for Bournemouth, Christchurch and Poole Council.
@@ -135,7 +134,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{"user-agent", Constants.UserAgent},
 						{"content-type", "application/json"},
 					},
-					Body = $"{{uprn: \"{address.Uid}\"}}",
+					Body = $"{{\"uprn\": \"{address.Uid}\"}}",
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
