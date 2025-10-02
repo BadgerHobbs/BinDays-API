@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
@@ -7,6 +5,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using System;
 	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
+	using System.Text.Json;
 	using System.Text.RegularExpressions;
 
 	/// <summary>
@@ -208,14 +207,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						if (control.TryGetProperty("html", out var htmlProperty) &&
 							htmlProperty.ValueKind == JsonValueKind.String &&
-							htmlProperty.GetString()?.Contains("<option") == true)
+							htmlProperty.GetString()!.Contains("<option") == true)
 						{
 							htmlWithOptions = htmlProperty.GetString().Replace("\\\"", "\"");
 							break;
 						}
 					}
 				}
-				// TODO Error handling for when htmlWithOptions is null
+
+				if (htmlWithOptions == null)
+				{
+					throw new InvalidOperationException("Could not find bin days HTML");
+				}
 
 				// Get addresses from response
 				var rawAddresses = AddressRegex().Matches(htmlWithOptions)!;
@@ -388,23 +391,19 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						}
 					}
 				}
-				// TODO Error handling for when htmlWithOptions is null
+
 				if (htmlWithOptions == null)
 				{
 					throw new InvalidOperationException("Could not find bin days HTML");
 				}
 
-				// TODO Does C# allow for assertions, so when something changes on the NFDC website it's easy to 
-				//   detect where the code has broken?
-
 				htmlWithOptions = htmlWithOptions.Replace("\r\n", String.Empty);
 
-				// Get bin days from response
 				var rawBinDays = BinDaysRegex().Matches(htmlWithOptions)!;
 
-				var format = "dddd MMMM d, yyyy"; // 'dddd' for full weekday, 'MMMM' for full month, 'd' for day, 'yyyy' for 4-digit year
+				// Example: Tuesday August 10, 2021
+				var format = "dddd MMMM d, yyyy";
 
-				// Iterate through each bin day, and create a new bin day object
 				var binDays = new List<BinDay>();
 				foreach (Match rawBinDay in rawBinDays)
 				{
@@ -412,8 +411,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDate = rawBinDay.Groups["date"].Value;
 
 					var date = DateOnly.ParseExact(collectionDate, format, System.Globalization.CultureInfo.InvariantCulture);
-
-					// Get matching bin types from the service using the keys
 					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
 
 					var binDay = new BinDay()
@@ -435,7 +432,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				return getBinDaysResponse;
 			}
 
-			// Throw exception for invalid request
 			throw new InvalidOperationException("Invalid client-side request.");
 		}
 	}
