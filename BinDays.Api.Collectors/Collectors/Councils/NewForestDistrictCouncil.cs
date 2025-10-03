@@ -95,6 +95,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{"user-agent", Constants.UserAgent},
 					},
 					Body = string.Empty,
+					Options = new ClientSideOptions
+					{
+						FollowRedirects = false,
+					},
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
@@ -260,6 +264,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{"user-agent", Constants.UserAgent},
 					},
 					Body = string.Empty,
+					Options = new ClientSideOptions
+					{
+						FollowRedirects = false,
+					},
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
