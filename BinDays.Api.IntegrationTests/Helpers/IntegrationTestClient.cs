@@ -138,7 +138,8 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			var responseHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 			foreach (var header in httpResponse.Headers.Concat(httpResponse.Content.Headers))
 			{
-				responseHeaders[header.Key] = string.Join(",", header.Value);
+				// Convert headers to lowercase to match BinDays-Client library
+				responseHeaders[header.Key.ToLower()] = string.Join(",", header.Value);
 			}
 
 			return new ClientSideResponse
