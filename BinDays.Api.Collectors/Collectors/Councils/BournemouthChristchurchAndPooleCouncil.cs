@@ -80,7 +80,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "GET",
 					Headers = [],
-					Body = string.Empty,
+					Body = null,
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()

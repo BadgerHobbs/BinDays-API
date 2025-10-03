@@ -30,7 +30,7 @@ namespace BinDays.Api.Collectors.Models
 		/// <summary>
 		/// Gets the body of the request.
 		/// </summary>
-		required public string Body { get; init; }
+		required public string? Body { get; init; }
 
 		/// <summary>
 		/// Gets the options of the request.
