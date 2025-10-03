@@ -54,10 +54,15 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Keys = new List<string>() { "Garden Waste" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
-		
-		// Used for the Address API call
+
+		/// <summary>
+		/// Used for the Address API call.
+		/// </summary>
 		private const string ApiKey = "f5a8f110545e4d009411c908b25b7596";
-		// Used for the Bin Day API call
+
+		/// <summary>
+		/// Used for the Bin Day API call
+		/// </summary>
 		private const string Signature = "TAvYIUFj6dzaP90XQCm2ElY6Cd34ze05I3ba7LKTiBs";
 
 		/// <inheritdoc/>
@@ -100,8 +105,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var address = new Address()
 					{
 						Property = addressElement.GetProperty("FULL_ADDRESS").GetString()!.Trim(),
-						Street = addressElement.GetProperty("Street").GetString()!.Trim(),
-						Town = addressElement.GetProperty("Town").GetString()!.Trim(),
+						Street = null,
+						Town = null,
 						Postcode = postcode,
 						Uid = addressElement.GetProperty("UPRN").GetString()!.Trim(),
 					};
@@ -135,11 +140,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "POST",
-					Headers = new Dictionary<string, string>() {
-						{"user-agent", Constants.UserAgent},
-						{"content-type", "application/json"},
+					Headers = new Dictionary<string, string>()
+					{
+						{ "user-agent", Constants.UserAgent }, { "content-type", "application/json" },
 					},
-					Body = $"{{\"uprn\": \"{address.Uid}\"}}",
+					Body = JsonSerializer.Serialize(new { uprn = address.Uid }),
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
@@ -167,8 +172,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						var rangeEl = binTypeElement.GetProperty("scheduleDateRange");
 						foreach (var dateEl in rangeEl.EnumerateArray())
 						{
-							var date = DateOnly.ParseExact(dateEl.GetString()!, "yyyy-MM-dd",
-								CultureInfo.InvariantCulture, DateTimeStyles.None);
+							var date = DateOnly.ParseExact(
+								dateEl.GetString()!,
+								"yyyy-MM-dd",
+								CultureInfo.InvariantCulture,
+								DateTimeStyles.None
+							);
 
 							var binDay = new BinDay()
 							{
