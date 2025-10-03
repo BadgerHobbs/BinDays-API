@@ -11,19 +11,31 @@ namespace BinDays.Api.IntegrationTests.Helpers
 	/// </summary>
 	internal sealed class IntegrationTestClient
 	{
-		private readonly HttpClient _httpClient;
+		private readonly HttpClient _httpClientWithRedirects;
+		private readonly HttpClient _httpClientWithoutRedirects;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="IntegrationTestClient"/> class.
 		/// </summary>
 		public IntegrationTestClient()
 		{
-			var httpClientHandler = new HttpClientHandler
+			// Client that automatically follows redirects
+			var handlerWithRedirects = new HttpClientHandler
 			{
 				UseCookies = false,
 				CookieContainer = new CookieContainer(),
+				AllowAutoRedirect = true,
 			};
-			_httpClient = new HttpClient(httpClientHandler);
+			_httpClientWithRedirects = new HttpClient(handlerWithRedirects);
+
+			// Client that does NOT automatically follow redirects
+			var handlerWithoutRedirects = new HttpClientHandler
+			{
+				UseCookies = false,
+				CookieContainer = new CookieContainer(),
+				AllowAutoRedirect = false,
+			};
+			_httpClientWithoutRedirects = new HttpClient(handlerWithoutRedirects);
 		}
 
 		/// <summary>
@@ -117,7 +129,10 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				}
 			}
 
-			using var httpResponse = await _httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseContentRead);
+			// Choose the appropriate HttpClient based on the FollowRedirects option
+			var httpClient = request.Options.FollowRedirects ? _httpClientWithRedirects : _httpClientWithoutRedirects;
+
+			using var httpResponse = await httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseContentRead);
 			var responseContent = await httpResponse.Content.ReadAsStringAsync();
 
 			var responseHeaders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
