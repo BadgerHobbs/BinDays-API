@@ -33,6 +33,11 @@ namespace BinDays.Api.Collectors.Models
 		required public string ReasonPhrase { get; init; }
 
 		/// <summary>
+		/// Gets the options of the response.
+		/// </summary>
+		public ClientSideOptions Options { get; init; } = new();
+
+		/// <summary>
 		/// Gets a value indicating whether the request was successful.
 		/// </summary>
 		public bool IsSuccessStatusCode => StatusCode >= 200 && StatusCode <= 299;

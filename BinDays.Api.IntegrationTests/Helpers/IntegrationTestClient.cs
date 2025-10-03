@@ -132,7 +132,8 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				StatusCode = (int)httpResponse.StatusCode,
 				Headers = responseHeaders,
 				Content = responseContent,
-				ReasonPhrase = httpResponse.ReasonPhrase ?? string.Empty
+				ReasonPhrase = httpResponse.ReasonPhrase ?? string.Empty,
+				Options = request.Options,
 			};
 		}
 

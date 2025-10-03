@@ -31,5 +31,10 @@ namespace BinDays.Api.Collectors.Models
 		/// Gets the body of the request.
 		/// </summary>
 		required public string Body { get; init; }
+
+		/// <summary>
+		/// Gets the options of the request.
+		/// </summary>
+		public ClientSideOptions Options { get; init; } = new();
 	}
 }
