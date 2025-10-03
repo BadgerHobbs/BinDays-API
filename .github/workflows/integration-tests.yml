@@ -9,6 +9,10 @@ on:
     paths:
       - BinDays.Api/**
       - BinDays.Api.Collectors/**
+  pull_request:
+    paths:
+      - BinDays.Api/**
+      - BinDays.Api.Collectors/**
 
 jobs:
   discover_councils:
