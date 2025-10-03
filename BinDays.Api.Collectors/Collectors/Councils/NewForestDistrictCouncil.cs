@@ -198,7 +198,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 							htmlProperty.ValueKind == JsonValueKind.String &&
 							htmlProperty.GetString()!.Contains("<option") == true)
 						{
-							htmlWithOptions = htmlProperty.GetString().Replace("\\\"", "\"");
+							htmlWithOptions = htmlProperty.GetString()!.Replace("\\\"", "\"");
 							break;
 						}
 					}
@@ -366,7 +366,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 							htmlProperty.ValueKind == JsonValueKind.String &&
 							htmlProperty.GetString()?.Contains(">Future collections<") == true)
 						{
-							htmlWithOptions = htmlProperty.GetString().Replace("\\\"", "\"");
+							htmlWithOptions = htmlProperty.GetString()!.Replace("\\\"", "\"");
 							break;
 						}
 					}
