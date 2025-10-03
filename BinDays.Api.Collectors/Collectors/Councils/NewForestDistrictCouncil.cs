@@ -23,8 +23,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <inheritdoc/>
 		public override string GovUkId => "new-forest";
 
-		private string cookie = "";
-
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
@@ -110,8 +108,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting the token
 			else if (clientSideResponse.RequestId == 1)
 			{
-				cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-					clientSideResponse.Headers["Set-Cookie"]);
+				var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+					clientSideResponse.Headers["set-cookie"]);
 				// Prepare client-side request
 				var clientSideRequest = new ClientSideRequest()
 				{
@@ -123,6 +121,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{"cookie", cookie},
 					},
 					Body = string.Empty,
+					Options = new ClientSideOptions
+					{
+						Metadata = {
+							{ "cookie", cookie },
+						}
+					},
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
@@ -154,7 +158,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestHeaders = new Dictionary<string, string>() {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
-					{"cookie", cookie},
+					{"cookie", clientSideResponse.Options.Metadata["cookie"]},
 				};
 
 				var clientSideRequest = new ClientSideRequest()
@@ -269,8 +273,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting the token
 			else if (clientSideResponse.RequestId == 1)
 			{
-				cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-					clientSideResponse.Headers["Set-Cookie"]);
+				var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+					clientSideResponse.Headers["set-cookie"]);
 				// Prepare client-side request
 				var clientSideRequest = new ClientSideRequest()
 				{
@@ -282,6 +286,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{"cookie", cookie},
 					},
 					Body = string.Empty,
+					Options = new ClientSideOptions
+					{
+						Metadata = {
+							{ "cookie", cookie },
+						}
+					},
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
@@ -312,7 +322,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestHeaders = new Dictionary<string, string>() {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
-					{"cookie", cookie},
+					{"cookie", clientSideResponse.Options.Metadata["cookie"]},
 				};
 
 				var clientSideRequest = new ClientSideRequest()
