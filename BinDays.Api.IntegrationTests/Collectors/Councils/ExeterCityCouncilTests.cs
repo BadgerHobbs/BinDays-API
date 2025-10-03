@@ -1,36 +1,36 @@
 namespace BinDays.Api.IntegrationTests.Collectors.Councils
 {
-    using BinDays.Api.Collectors.Collectors;
-    using BinDays.Api.Collectors.Collectors.Councils;
-    using BinDays.Api.Collectors.Services;
-    using BinDays.Api.IntegrationTests.Helpers;
-    using System.Threading.Tasks;
-    using Xunit;
-    using Xunit.Abstractions;
+	using BinDays.Api.Collectors.Collectors;
+	using BinDays.Api.Collectors.Collectors.Councils;
+	using BinDays.Api.Collectors.Services;
+	using BinDays.Api.IntegrationTests.Helpers;
+	using System.Threading.Tasks;
+	using Xunit;
+	using Xunit.Abstractions;
 
-    public class ExeterCityCouncilTests
-    {
-        private readonly IntegrationTestClient _client = new();
-        private static readonly ICollector _collector = new ExeterCityCouncil();
-        private readonly CollectorService _collectorService = new([_collector]);
-        private readonly ITestOutputHelper _outputHelper;
+	public class ExeterCityCouncilTests
+	{
+		private readonly IntegrationTestClient _client = new();
+		private static readonly ICollector _collector = new ExeterCityCouncil();
+		private readonly CollectorService _collectorService = new([_collector]);
+		private readonly ITestOutputHelper _outputHelper;
 
-        public ExeterCityCouncilTests(ITestOutputHelper outputHelper)
-        {
-            _outputHelper = outputHelper;
-        }
+		public ExeterCityCouncilTests(ITestOutputHelper outputHelper)
+		{
+			_outputHelper = outputHelper;
+		}
 
-        [Theory]
-        [InlineData("EX4 1BG")]
-        public async Task GetBinDaysTest(string postcode)
-        {
-            await TestSteps.EndToEnd(
-                _client,
-                _collectorService,
-                _collector,
-                postcode,
-                _outputHelper
-            );
-        }
-    }
+		[Theory]
+		[InlineData("EX4 1BG")]
+		public async Task GetBinDaysTest(string postcode)
+		{
+			await TestSteps.EndToEnd(
+				_client,
+				_collectorService,
+				_collector,
+				postcode,
+				_outputHelper
+			);
+		}
+	}
 }

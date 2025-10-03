@@ -3,10 +3,10 @@
 	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;
-	using Microsoft.AspNetCore.Mvc;
-	using Microsoft.Extensions.Logging;
-	using Microsoft.Extensions.Caching.Distributed;
 	using Microsoft.AspNetCore.Http;
+	using Microsoft.AspNetCore.Mvc;
+	using Microsoft.Extensions.Caching.Distributed;
+	using Microsoft.Extensions.Logging;
 	using Newtonsoft.Json;
 
 	/// <summary>

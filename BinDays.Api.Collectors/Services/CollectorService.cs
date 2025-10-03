@@ -1,9 +1,9 @@
 namespace BinDays.Api.Collectors.Services
 {
-	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Collectors;
-	using System.Collections.ObjectModel;
+	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Models;
+	using System.Collections.ObjectModel;
 
 	/// <summary>
 	/// Service for returning specific or all collectors.
