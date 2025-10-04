@@ -3,6 +3,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 	using BinDays.Api.Collectors.Collectors;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;
+	using BinDays.Api.Collectors.Utilities;
 	using Xunit.Abstractions;
 
 	/// <summary>
@@ -27,6 +28,9 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			ITestOutputHelper outputHelper
 		)
 		{
+			// Format postcode to match API controller formatting.
+			postcode = ProcessingUtilities.FormatPostcode(postcode);
+
 			// Step 1: Get Collector
 			var collector = await GetCollectorAsync(
 				client,

@@ -9,7 +9,7 @@ namespace BinDays.Api.Collectors.Utilities
 	/// <summary>
 	/// Provides utility methods for processing data.
 	/// </summary>
-	internal static partial class ProcessingUtilities
+	public static partial class ProcessingUtilities
 	{
 		/// <summary>
 		/// Regex to parse set-cookies.
@@ -136,6 +136,33 @@ namespace BinDays.Api.Collectors.Utilities
 
 
 			return string.Join("; ", cookieValues);
+		}
+
+		/// <summary>
+		/// Formats a postcode by ensuring there is a single space separating the outward and inward codes.
+		/// </summary>
+		/// <param name="postcode">The postcode string to format. It can be with or without spaces and in any case.</param>
+		/// <returns>
+		/// The formatted postcode in uppercase with a single space in the correct position (e.g. "SW1A 0AA"),
+		/// or the original string if it's null or whitespace.
+		/// </returns>
+		public static string FormatPostcode(string postcode)
+		{
+			if (string.IsNullOrWhiteSpace(postcode))
+			{
+				return postcode;
+			}
+
+			// Remove all existing spaces and convert to uppercase
+			string formattedPostcode = postcode.Replace(" ", "").ToUpper();
+
+			// Insert a space before the last three characters
+			if (formattedPostcode.Length > 3)
+			{
+				formattedPostcode = formattedPostcode.Insert(formattedPostcode.Length - 3, " ");
+			}
+
+			return formattedPostcode;
 		}
 	}
 }

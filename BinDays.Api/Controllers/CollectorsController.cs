@@ -3,6 +3,7 @@
 	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;
+	using BinDays.Api.Collectors.Utilities;
 	using Microsoft.AspNetCore.Http;
 	using Microsoft.AspNetCore.Mvc;
 	using Microsoft.Extensions.Caching.Distributed;
@@ -88,6 +89,8 @@
 		[Route("/collector")]
 		public IActionResult GetCollector(string postcode, [FromBody] ClientSideResponse? clientSideResponse)
 		{
+			postcode = ProcessingUtilities.FormatPostcode(postcode);
+
 			var cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
 			var cachedResult = _cache.GetString(cacheKey);
 
@@ -141,6 +144,8 @@
 		[Route("/{govUkId}/addresses")]
 		public IActionResult GetAddresses(string govUkId, string postcode, [FromBody] ClientSideResponse? clientSideResponse)
 		{
+			postcode = ProcessingUtilities.FormatPostcode(postcode);
+
 			var cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
 			var cachedResult = _cache.GetString(cacheKey);
 
@@ -195,6 +200,8 @@
 		[Route("/{govUkId}/bin-days")]
 		public IActionResult GetBinDays(string govUkId, string postcode, string uid, [FromBody] ClientSideResponse? clientSideResponse)
 		{
+			postcode = ProcessingUtilities.FormatPostcode(postcode);
+
 			var cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
 			var cachedResult = _cache.GetString(cacheKey);
 
