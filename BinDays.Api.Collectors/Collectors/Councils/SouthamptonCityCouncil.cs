@@ -60,6 +60,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		private static partial Regex UfprtTokenRegex();
 
 		/// <summary>
+		/// Regex for the __RequestVerificationToken token values from input fields.
+		/// </summary>
+		[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__RequestVerificationToken[""'][^>]*?value=[""'](?<token>[^""']*)[""'][^>]*?/?>")]
+		private static partial Regex RequestVerificationTokenRegex();
+
+		/// <summary>
 		/// Regex for the addresses from the options elements.
 		/// </summary>
 		[GeneratedRegex(@"<option\s+value=""(?<uid>\d+),""[^>]*>\s*(?<address>.*?)\s*</option>")]
@@ -102,17 +108,20 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				// Get ufprt from response
 				var ufprt = UfprtTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+				var requestVerificationToken = RequestVerificationTokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
 
 				// Prepare client-side request
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
 				{
 					{"SearchString", postcode},
 					{"ufprt", ufprt},
+					{"__RequestVerificationToken", requestVerificationToken}
 				});
 
 				var requestHeaders = new Dictionary<string, string>() {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
+					{"cookie", ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["Set-Cookie"])},
 				};
 
 				var clientSideRequest = new ClientSideRequest()
@@ -199,9 +208,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting bin days
 			else if (clientSideResponse.RequestId == 1)
 			{
-				// Get ufprt from response
-				var ufprt = UfprtTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
-
 				// Prepare client-side request
 				var clientSideRequest = new ClientSideRequest()
 				{
