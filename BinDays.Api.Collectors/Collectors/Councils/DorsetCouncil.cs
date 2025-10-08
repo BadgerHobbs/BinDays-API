@@ -26,7 +26,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -69,7 +69,15 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "POST",
 					Headers = [],
-					Body = $@"{{""/placecube_digitalplace.addresscontext/search-address-by-postcode"":{{""companyId"":""35001"",""postcode"":""{postcode.Replace(" ", String.Empty)}"",""fallbackToNationalLookup"":false}}}}",
+					Body = JsonSerializer.Serialize(new Dictionary<string, object>
+					{
+						["/placecube_digitalplace.addresscontext/search-address-by-postcode"] = new
+						{
+							companyId = "35001",
+							postcode = postcode.Replace(" ", String.Empty),
+							fallbackToNationalLookup = false
+						}
+					}),
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
@@ -122,7 +130,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/recyclingday/{address.Uid}";
-
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 1,
@@ -147,7 +154,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse.RequestId == 1)
 			{
 				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/refuseday/{address.Uid}";
-
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 2,
@@ -178,8 +184,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 			else if (clientSideResponse.RequestId == 2)
 			{
-				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/foodwasteday/{address.Uid}";
+				var metadata = clientSideResponse.Options.Metadata;
+				metadata.Add("refuseday", clientSideResponse.Content);
 
+				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/foodwasteday/{address.Uid}";
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 3,
@@ -193,10 +201,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = null,
 					Options = new ClientSideOptions
 					{
-						Metadata = {
-							{ "recyclingday", clientSideResponse.Options.Metadata["recyclingday"] },
-							{ "refuseday", clientSideResponse.Content },
-						}
+						Metadata = metadata
 					},
 				};
 
@@ -211,8 +216,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 			else if (clientSideResponse.RequestId == 3)
 			{
-				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/gardenwasteday/{address.Uid}";
+				var metadata = clientSideResponse.Options.Metadata;
+				metadata.Add("foodwasteday", clientSideResponse.Content);
 
+				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/gardenwasteday/{address.Uid}";
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 4,
@@ -226,11 +233,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = null,
 					Options = new ClientSideOptions
 					{
-						Metadata = {
-							{ "recyclingday", clientSideResponse.Options.Metadata["recyclingday"] },
-							{ "refuseday", clientSideResponse.Options.Metadata["refuseday"] },
-							{ "foodwasteday", clientSideResponse.Content },
-						}
+						Metadata = metadata
 					},
 				};
 
@@ -258,7 +261,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						// Determine matching bin types from the description
 						var dateEl = binTypeElement.GetProperty("dateNextVisit");
 						var type = binTypeElement.GetProperty("type").GetString()!;
-						var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => type.Contains(y)));
+						var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => type.Contains(y)));
 
 						var date = DateOnly.ParseExact(
 							dateEl.GetString()!,
