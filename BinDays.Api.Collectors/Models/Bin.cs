@@ -20,7 +20,7 @@ namespace BinDays.Api.Collectors.Models
 		/// <summary>
 		/// Gets bin type.
 		/// </summary>
-		public string? Type { get; init; }
+		public BinType? Type { get; init; }
 
 		/// <summary>
 		/// Gets bin keys (identifiers).

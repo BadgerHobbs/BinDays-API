@@ -59,7 +59,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Name = "Glass Recycling",
 				Colour = "Black",
 				Keys = new List<string>() { "black box" }.AsReadOnly(),
-				Type = "Box",
+				Type = BinType.Box,
 			},
 		}.AsReadOnly();
 

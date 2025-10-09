@@ -45,14 +45,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Name = "Card & Brown Paper",
 				Colour = "Blue",
 				Keys = new List<string>() { "recyclingNextDate" }.AsReadOnly(),
-				Type = "Bag",
+				Type = BinType.Bag,
 			},
 			new()
 			{
 				Name = "Metal, Glass, Paper & Plastic",
 				Colour = "Green",
 				Keys = new List<string>() { "recyclingNextDate" }.AsReadOnly(),
-				Type = "Box",
+				Type = BinType.Box,
 			},
 			new()
 			{

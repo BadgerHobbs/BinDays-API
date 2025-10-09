@@ -39,7 +39,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Name = "Cardboard Recycling",
 				Colour = "Blue",
 				Keys = new List<string>() { "recycling" }.AsReadOnly(),
-				Type = "Bag",
+				Type = BinType.Bag,
 			},
 			new()
 			{
