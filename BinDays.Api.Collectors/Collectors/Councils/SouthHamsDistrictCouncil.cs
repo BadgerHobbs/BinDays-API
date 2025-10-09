@@ -94,7 +94,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse?.RequestId == 1)
 			{
 				// Get set-cookies from response
-				var setCookies = clientSideResponse.Headers["set-cookie"];
+				if (!clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookies))
+				{
+					throw new InvalidOperationException("Could not find 'set-cookie' header in response.");
+				}
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Get session id from response content
@@ -196,7 +199,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse?.RequestId == 1)
 			{
 				// Get set-cookies from response
-				var setCookies = clientSideResponse.Headers["set-cookie"];
+				if (!clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookies))
+				{
+					throw new InvalidOperationException("Could not find 'set-cookie' header in response.");
+				}
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Get session id from response content
@@ -251,7 +257,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDateString = dateMatch.Groups[1].Value;
 
 					// Get matching bin types from the service using the keys
-					var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 					// Parse the date (e.g. 'tomorrow, Wednesday, 07 May 2025') to date only
 					var date = DateOnly.ParseExact(
