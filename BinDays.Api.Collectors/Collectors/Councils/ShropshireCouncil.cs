@@ -251,7 +251,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 
 					// Get matching bin types from the type using the keys
-					var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => collectionType.Contains(y, StringComparison.CurrentCultureIgnoreCase)));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, collectionType);
 
 					var binDay = new BinDay()
 					{
