@@ -266,8 +266,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				);
 
 				// Find matching bin types based on the description (case-insensitive)
-				var matchedBins = _binTypes.Where(bin =>
-					bin.Keys.Any(key => rawBinType.Contains(key, StringComparison.OrdinalIgnoreCase)));
+				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, rawBinType);
 
 				foreach (var binType in matchedBins)
 				{

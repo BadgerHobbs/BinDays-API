@@ -164,5 +164,20 @@ namespace BinDays.Api.Collectors.Utilities
 
 			return formattedPostcode;
 		}
+
+		/// <summary>
+		/// Gets a collection of bins that match a given service description based on their keys.
+		/// </summary>
+		/// <param name="bins">The collection of all possible Bin objects.</param>
+		/// <param name="serviceDescription">The service description string to match against the bin keys.</param>
+		/// <returns>An enumerable collection of matching Bin objects.</returns>
+		public static IEnumerable<Bin> GetMatchingBins(ReadOnlyCollection<Bin> bins, string serviceDescription)
+		{
+			return bins.Where(bin =>
+				bin.Keys.Any(key =>
+					serviceDescription.Contains(key, StringComparison.OrdinalIgnoreCase)
+				)
+			);
+		}
 	}
 }

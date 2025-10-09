@@ -192,8 +192,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDate = collectionArray[0]!["nextCollectionDate"]!.GetValue<string>();
 
 					// Find matching bin types based on the container name containing a key (case-insensitive)
-					var matchedBins = _binTypes.Where(bin =>
-						bin.Keys.Any(key => containerName.Contains(key, StringComparison.OrdinalIgnoreCase)));
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, containerName);
 
 					// Parse the date string (e.g., "2025-04-15T00:00:00")
 					var date = DateOnly.ParseExact(
