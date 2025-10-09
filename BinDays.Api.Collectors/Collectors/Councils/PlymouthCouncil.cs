@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -311,7 +311,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Find matching bin types based on the round type in their keys
-					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(roundType)).ToList();
+					var matchedBins = _binTypes.Where(bin => bin.Keys.Contains(roundType)).ToList();
 
 					var binDay = new BinDay()
 					{

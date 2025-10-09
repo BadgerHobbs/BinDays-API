@@ -27,12 +27,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The API subscription key required for Bristol City Council API requests.
 		/// </summary>
-		private const string ApiSubscriptionKey = "47ffd667d69c4a858f92fc38dc24b150";
+		private const string _apiSubscriptionKey = "47ffd667d69c4a858f92fc38dc24b150";
 
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -84,7 +84,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestUrl = "https://bcprdapidyna002.azure-api.net/bcprdfundyna001-llpg/LLPGService";
 
 				var requestHeaders = new Dictionary<string, string>() {
-					{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey},
+					{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey},
 				};
 
 				var requestBody = JsonSerializer.Serialize(new { postcode });
@@ -154,7 +154,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestUrl = "https://bcprdapidyna002.azure-api.net/bcprdfundyna001-alloy/NextCollectionDates";
 
 				var requestHeaders = new Dictionary<string, string>() {
-					{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey},
+					{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey},
 				};
 
 				var requestBody = JsonSerializer.Serialize(new { uprn = address.Uid });
@@ -193,7 +193,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDate = collectionArray[0]!["nextCollectionDate"]!.GetValue<string>();
 
 					// Find matching bin types based on the container name containing a key (case-insensitive)
-					var matchedBins = binTypes.Where(bin =>
+					var matchedBins = _binTypes.Where(bin =>
 						bin.Keys.Any(key => containerName.Contains(key, StringComparison.OrdinalIgnoreCase)));
 
 					// Parse the date string (e.g., "2025-04-15T00:00:00")

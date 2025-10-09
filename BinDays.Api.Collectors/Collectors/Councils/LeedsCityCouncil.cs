@@ -25,12 +25,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The API subscription key required for Leeds City Council API requests.
 		/// </summary>
-		private const string ApiSubscriptionKey = "ad8dd80444fe45fcad376f82cf9a5ab4";
+		private const string _apiSubscriptionKey = "ad8dd80444fe45fcad376f82cf9a5ab4";
 
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -66,7 +66,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
-						{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey}
+						{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey}
 					},
 					Body = string.Empty,
 				};
@@ -131,7 +131,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
-						{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey}
+						{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey}
 					},
 					Body = string.Empty,
 				};
@@ -172,7 +172,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Get matching bin types from the type using the keys
-					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => type.Contains(y)));
+					var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => type.Contains(y)));
 
 					var binDay = new BinDay()
 					{

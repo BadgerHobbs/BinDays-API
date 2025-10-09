@@ -26,7 +26,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> __binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -261,7 +261,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						// Determine matching bin types from the description
 						var dateEl = binTypeElement.GetProperty("dateNextVisit");
 						var type = binTypeElement.GetProperty("type").GetString()!;
-						var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => type.Contains(y)));
+						var matchedBinTypes = __binTypes.Where(x => x.Keys.Any(y => type.Contains(y)));
 
 						var date = DateOnly.ParseExact(
 							dateEl.GetString()!,

@@ -26,7 +26,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -181,7 +181,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						CultureInfo.InvariantCulture
 					);
 
-					var matchedBinTypes = binTypes.Where(b => b.Keys.Any(k => binType.Contains(k, StringComparison.InvariantCultureIgnoreCase)));
+					var matchedBinTypes = _binTypes.Where(b => b.Keys.Any(k => binType.Contains(k, StringComparison.InvariantCultureIgnoreCase)));
 
 					binDays.Add(new BinDay()
 					{

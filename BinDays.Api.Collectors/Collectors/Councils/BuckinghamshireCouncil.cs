@@ -28,7 +28,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -60,27 +60,27 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// Client ID for Buckinghamshire Council requests.
 		/// </summary>
-		private const int BucksClientId = 152;
+		private const int _bucksClientId = 152;
 
 		/// <summary>
 		/// Council ID for Buckinghamshire Council requests.
 		/// </summary>
-		private const int BucksCouncilId = 34505;
+		private const int _bucksCouncilId = 34505;
 
 		/// <summary>
 		/// Base URL for the Buckinghamshire Council API.
 		/// </summary>
-		private const string API_BASE_URL = "https://itouchvision.app/portal/itouchvision/";
+		private const string _apiBaseUrl = "https://itouchvision.app/portal/itouchvision/";
 
 		/// <summary>
 		/// AES key used for encrypting and decrypting requests.
 		/// </summary>
-		public static readonly byte[] AesKey = Convert.FromHexString("F57E76482EE3DC3336495DEDEEF3962671B054FE353E815145E29C5689F72FEC");
+		public static readonly byte[] _aesKey = Convert.FromHexString("F57E76482EE3DC3336495DEDEEF3962671B054FE353E815145E29C5689F72FEC");
 
 		/// <summary>
 		/// AES IV used for encrypting and decrypting requests.
 		/// </summary>
-		public static readonly byte[] AesIv = Convert.FromHexString("2CBF4FC35C69B82362D393A4F0B9971A");
+		public static readonly byte[] _aesIv = Convert.FromHexString("2CBF4FC35C69B82362D393A4F0B9971A");
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -92,14 +92,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				{
 					P_POSTCODE = postcode,
 					P_LANG_CODE = "EN",
-					P_CLIENT_ID = BucksClientId,
-					P_COUNCIL_ID = BucksCouncilId
+					P_CLIENT_ID = _bucksClientId,
+					P_COUNCIL_ID = _bucksCouncilId
 				};
 
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 1,
-					Url = $"{API_BASE_URL}kmbd/address",
+					Url = $"{_apiBaseUrl}kmbd/address",
 					Method = "POST",
 					Headers = new Dictionary<string, string>
 					{
@@ -155,15 +155,15 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var payload = new
 				{
 					P_UPRN = address.Uid,
-					P_CLIENT_ID = BucksClientId,
-					P_COUNCIL_ID = BucksCouncilId,
+					P_CLIENT_ID = _bucksClientId,
+					P_COUNCIL_ID = _bucksCouncilId,
 					P_LANG_CODE = "EN"
 				};
 
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 1,
-					Url = $"{API_BASE_URL}kmbd/collectionDay",
+					Url = $"{_apiBaseUrl}kmbd/collectionDay",
 					Method = "POST",
 					Headers = new Dictionary<string, string>
 					{
@@ -190,7 +190,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				foreach (var collectionItem in collectionDayArray.EnumerateArray())
 				{
 					var rawBinType = collectionItem.GetProperty("binType").GetString()!;
-					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(rawBinType)).ToList().AsReadOnly();
+					var matchedBins = _binTypes.Where(bin => bin.Keys.Contains(rawBinType)).ToList().AsReadOnly();
 
 					// Process the main collection day
 					var collectionDayString = collectionItem.GetProperty("collectionDay").GetString()!;
@@ -251,12 +251,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			byte[] utf8Data = Encoding.UTF8.GetBytes(json);
 
 			using Aes aesAlg = Aes.Create();
-			aesAlg.Key = AesKey;
-			aesAlg.IV = AesIv;
+			aesAlg.Key = _aesKey;
+			aesAlg.IV = _aesIv;
 			aesAlg.Mode = CipherMode.CBC;
 			aesAlg.Padding = PaddingMode.PKCS7;
 
-			byte[] encryptedBytes = aesAlg.EncryptCbc(utf8Data, AesIv);
+			byte[] encryptedBytes = aesAlg.EncryptCbc(utf8Data, _aesIv);
 
 			return Convert.ToHexString(encryptedBytes).ToLowerInvariant();
 		}
@@ -271,12 +271,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			byte[] encryptedBytes = Convert.FromHexString(hex);
 
 			using Aes aesAlg = Aes.Create();
-			aesAlg.Key = AesKey;
-			aesAlg.IV = AesIv;
+			aesAlg.Key = _aesKey;
+			aesAlg.IV = _aesIv;
 			aesAlg.Mode = CipherMode.CBC;
 			aesAlg.Padding = PaddingMode.PKCS7;
 
-			byte[] decryptedBytes = aesAlg.DecryptCbc(encryptedBytes, AesIv);
+			byte[] decryptedBytes = aesAlg.DecryptCbc(encryptedBytes, _aesIv);
 
 			return Encoding.UTF8.GetString(decryptedBytes);
 		}

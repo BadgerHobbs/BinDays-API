@@ -10,12 +10,12 @@ namespace BinDays.Api.IntegrationTests.Helpers
 	/// </summary>
 	internal static class TestOutput
 	{
-		private const string PrimaryIndent = "- ";
-		private const string SecondaryIndent = "  - ";
-		private const int BorderWidth = 54;
-		private const int MaxAddressesToShow = 5;
-		private const int MaxBinDaysToShow = 10;
-		private static readonly string TopBottomBorder = new('=', BorderWidth);
+		private const string _primaryIndent = "- ";
+		private const string _secondaryIndent = "  - ";
+		private const int _borderWidth = 54;
+		private const int _maxAddressesToShow = 5;
+		private const int _maxBinDaysToShow = 10;
+		private static readonly string _topBottomBorder = new('=', _borderWidth);
 
 		/// <summary>
 		/// Writes a formatted summary of the test results to the xUnit test output.
@@ -49,7 +49,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		{
 			summaryBuilder.AppendLine();
 			const string summaryTitle = " Test Summary ";
-			summaryBuilder.AppendLine(CreateCenteredHeader(summaryTitle, BorderWidth, '='));
+			summaryBuilder.AppendLine(CreateCenteredHeader(summaryTitle, _borderWidth, '='));
 			summaryBuilder.AppendLine();
 		}
 
@@ -61,7 +61,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		private static void AppendCollectorDetails(StringBuilder summaryBuilder, ICollector collector)
 		{
 			const string collectorHeaderText = " Collector ";
-			summaryBuilder.AppendLine(CreateCenteredHeader(collectorHeaderText, BorderWidth, '-'));
+			summaryBuilder.AppendLine(CreateCenteredHeader(collectorHeaderText, _borderWidth, '-'));
 			summaryBuilder.AppendLine();
 			summaryBuilder.AppendLine($"{collector?.Name ?? "Unknown"}");
 			summaryBuilder.AppendLine();
@@ -76,27 +76,27 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		{
 			var addressCount = addresses?.Count ?? 0;
 			string addressHeaderText = $" Addresses ({addressCount}) ";
-			summaryBuilder.AppendLine(CreateCenteredHeader(addressHeaderText, BorderWidth, '-'));
+			summaryBuilder.AppendLine(CreateCenteredHeader(addressHeaderText, _borderWidth, '-'));
 			summaryBuilder.AppendLine();
 
 			if (addresses == null || addressCount == 0)
 			{
-				summaryBuilder.AppendLine($"{PrimaryIndent}No addresses found.");
+				summaryBuilder.AppendLine($"{_primaryIndent}No addresses found.");
 			}
 			else
 			{
-				foreach (var address in addresses.Take(MaxAddressesToShow))
+				foreach (var address in addresses.Take(_maxAddressesToShow))
 				{
 					string addressLine = string.Join(", ",
 						new[] { address.Property, address.Street, address.Town, address.Postcode, address.Uid }
 						.Where(part => !string.IsNullOrWhiteSpace(part)));
 
-					summaryBuilder.AppendLine($"{PrimaryIndent}{addressLine}");
+					summaryBuilder.AppendLine($"{_primaryIndent}{addressLine}");
 				}
 
-				if (addressCount > MaxAddressesToShow)
+				if (addressCount > _maxAddressesToShow)
 				{
-					summaryBuilder.AppendLine($"{PrimaryIndent}...");
+					summaryBuilder.AppendLine($"{_primaryIndent}...");
 				}
 			}
 
@@ -112,12 +112,12 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		{
 			var binDaysCount = binDays?.Count ?? 0;
 			string binDaysHeaderText = $" Bin Days ({binDaysCount}) ";
-			summaryBuilder.AppendLine(CreateCenteredHeader(binDaysHeaderText, BorderWidth, '-'));
+			summaryBuilder.AppendLine(CreateCenteredHeader(binDaysHeaderText, _borderWidth, '-'));
 			summaryBuilder.AppendLine();
 
 			if (binDays == null || binDaysCount == 0)
 			{
-				summaryBuilder.AppendLine($"{PrimaryIndent}No bin days found.");
+				summaryBuilder.AppendLine($"{_primaryIndent}No bin days found.");
 			}
 			else
 			{
@@ -134,21 +134,21 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// <param name="orderedBinDays">The list of bin days, ordered by date.</param>
 		private static void AppendLimitedBinDays(StringBuilder summaryBuilder, List<BinDay> orderedBinDays)
 		{
-			foreach (var binDay in orderedBinDays.Take(MaxBinDaysToShow))
+			foreach (var binDay in orderedBinDays.Take(_maxBinDaysToShow))
 			{
 				int binsOnThisDay = binDay.Bins?.Count ?? 0;
-				summaryBuilder.AppendLine($"{PrimaryIndent}{binDay.Date:dd/MM/yyyy} ({binsOnThisDay} bins):");
+				summaryBuilder.AppendLine($"{_primaryIndent}{binDay.Date:dd/MM/yyyy} ({binsOnThisDay} bins):");
 
 				if (binDay.Bins != null && binsOnThisDay > 0)
 				{
 					foreach (var bin in binDay.Bins)
 					{
-						summaryBuilder.AppendLine($"{SecondaryIndent}{bin.Name ?? "Unnamed Bin"}");
+						summaryBuilder.AppendLine($"{_secondaryIndent}{bin.Name ?? "Unnamed Bin"}");
 					}
 				}
 				else
 				{
-					summaryBuilder.AppendLine($"{SecondaryIndent}No bins listed for this day.");
+					summaryBuilder.AppendLine($"{_secondaryIndent}No bins listed for this day.");
 				}
 
 				summaryBuilder.AppendLine();
@@ -162,7 +162,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// <param name="binDaysCount">The total count of bin days found.</param>
 		private static void AppendMoreBinDaysIndicator(StringBuilder summaryBuilder, int binDaysCount)
 		{
-			if (binDaysCount > MaxBinDaysToShow)
+			if (binDaysCount > _maxBinDaysToShow)
 			{
 				// Remove the last blank line added in the loop if we are adding the 'more' line
 				if (summaryBuilder.Length >= Environment.NewLine.Length * 2 &&
@@ -170,7 +170,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				{
 					summaryBuilder.Length -= Environment.NewLine.Length;
 				}
-				summaryBuilder.AppendLine($"{PrimaryIndent}...");
+				summaryBuilder.AppendLine($"{_primaryIndent}...");
 				summaryBuilder.AppendLine();
 			}
 		}
@@ -181,7 +181,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// <param name="summaryBuilder">The StringBuilder to append to.</param>
 		private static void AppendSummaryFooter(StringBuilder summaryBuilder)
 		{
-			summaryBuilder.AppendLine(TopBottomBorder);
+			summaryBuilder.AppendLine(_topBottomBorder);
 		}
 
 		/// <summary>

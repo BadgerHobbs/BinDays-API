@@ -67,7 +67,7 @@ Collectors in this project follow a few specific design principles that are impo
 
 - **Handling Secrets:** Store API keys or other secrets as `private const string` fields within the collector class. Do not expose them publicly.
 
-- **Flexible Bin Matching:** The `binTypes` collection allows for flexible matching of bin types from the source data. Use the `Keys` property to define one or more identifiers from the data that map to a specific bin. Matching logic can be case-insensitive or based on partial strings as needed.
+- **Flexible Bin Matching:** The `_binTypes` collection allows for flexible matching of bin types from the source data. Use the `Keys` property to define one or more identifiers from the data that map to a specific bin. Matching logic can be case-insensitive or based on partial strings as needed.
 
 ## Code Examples
 
@@ -102,7 +102,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{

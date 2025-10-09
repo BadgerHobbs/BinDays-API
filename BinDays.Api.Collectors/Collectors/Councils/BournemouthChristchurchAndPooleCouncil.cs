@@ -26,7 +26,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -58,12 +58,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// Used for the Address API call.
 		/// </summary>
-		private const string ApiKey = "f5a8f110545e4d009411c908b25b7596";
+		private const string _apiKey = "f5a8f110545e4d009411c908b25b7596";
 
 		/// <summary>
 		/// Used for the Bin Day API call
 		/// </summary>
-		private const string Signature = "TAvYIUFj6dzaP90XQCm2ElY6Cd34ze05I3ba7LKTiBs";
+		private const string _signature = "TAvYIUFj6dzaP90XQCm2ElY6Cd34ze05I3ba7LKTiBs";
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -72,7 +72,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				var encodedPostcode = Uri.EscapeDataString(postcode);
-				var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={encodedPostcode}&Subscription-Key={ApiKey}";
+				var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={encodedPostcode}&Subscription-Key={_apiKey}";
 
 				var clientSideRequest = new ClientSideRequest()
 				{
@@ -133,7 +133,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting bin days
 			if (clientSideResponse == null)
 			{
-				var requestUrl = $"https://prod-17.uksouth.logic.azure.com/workflows/58253d7b7d754447acf9fe5fcf76f493/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig={Signature}";
+				var requestUrl = $"https://prod-17.uksouth.logic.azure.com/workflows/58253d7b7d754447acf9fe5fcf76f493/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig={_signature}";
 
 				var clientSideRequest = new ClientSideRequest()
 				{
@@ -167,7 +167,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						// Determine matching bin types from the description
 						var description = binTypeElement.GetProperty("wasteContainerUsageTypeDescription").GetString()!;
-						var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => description.Contains(y)));
+						var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => description.Contains(y)));
 
 						var rangeEl = binTypeElement.GetProperty("scheduleDateRange");
 						foreach (var dateEl in rangeEl.EnumerateArray())

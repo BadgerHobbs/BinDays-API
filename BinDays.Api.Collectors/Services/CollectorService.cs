@@ -13,7 +13,7 @@ namespace BinDays.Api.Collectors.Services
 		/// <summary>
 		/// The list of collectors acquired via dependency injection.
 		/// </summary>
-		private readonly ReadOnlyCollection<ICollector> collectors;
+		private readonly ReadOnlyCollection<ICollector> _collectors;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CollectorService"/> class.
@@ -22,7 +22,7 @@ namespace BinDays.Api.Collectors.Services
 		/// <exception cref="ArgumentNullException">Thrown when collectors is null.</exception>
 		public CollectorService(IEnumerable<ICollector> collectors)
 		{
-			this.collectors = new ReadOnlyCollection<ICollector>([.. collectors]);
+			_collectors = new ReadOnlyCollection<ICollector>([.. collectors]);
 		}
 
 		/// <summary>
@@ -31,7 +31,7 @@ namespace BinDays.Api.Collectors.Services
 		/// <returns>The collectors.</returns>
 		public ReadOnlyCollection<ICollector> GetCollectors()
 		{
-			return collectors;
+			return _collectors;
 		}
 
 		/// <summary>
@@ -42,7 +42,7 @@ namespace BinDays.Api.Collectors.Services
 		/// <exception cref="SupportedCollectorNotFoundException">Thrown when no collector matches the given govUkId.</exception>
 		public ICollector GetCollector(string govUkId)
 		{
-			var collector = collectors.SingleOrDefault(collector => collector.GovUkId == govUkId);
+			var collector = _collectors.SingleOrDefault(collector => collector.GovUkId == govUkId);
 			return collector ?? throw new SupportedCollectorNotFoundException(govUkId);
 		}
 
