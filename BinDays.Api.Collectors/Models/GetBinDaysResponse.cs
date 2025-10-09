@@ -12,7 +12,7 @@ namespace BinDays.Api.Collectors.Models
 		/// <summary>
 		/// Gets the next client-side request to be made, if further requests are required.
 		/// </summary>
-		public ClientSideRequest? NextClientSideRequest { get; init; }
+		public ClientSideRequest? NextClientSideRequest { get; init; } = null;
 
 		/// <summary>
 		/// Gets the list of bin days found, if no further client-side requests are required.

@@ -24,24 +24,24 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "Rubbish",
-				Colour = "Grey",
+				Colour = BinColor.Grey,
 				Keys = new List<string>() { "Household Collection" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Blue",
+				Colour = BinColor.Blue,
 				Keys = new List<string>() { "Recycling Collection" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "Green Recycling" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -273,7 +273,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 
 					// Get matching bin types from the service using the keys
-					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
+					var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
 
 					var binDay = new BinDay()
 					{

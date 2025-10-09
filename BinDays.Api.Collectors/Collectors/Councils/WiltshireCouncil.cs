@@ -34,32 +34,32 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "Household Waste",
-				Colour = "Black",
+				Colour = BinColor.Black,
 				Keys = new List<string>() { "Household waste" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Mixed Dry Recycling",
-				Colour = "Blue",
+				Colour = BinColor.Blue,
 				Keys = new List<string>() { "Mixed dry recycling" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "Garden" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Glass Recycling",
-				Colour = "Black",
+				Colour = BinColor.Black,
 				Keys = new List<string>() { "black box" }.AsReadOnly(),
-				Type = "Box",
+				Type = BinType.Box,
 			},
 		}.AsReadOnly();
 
@@ -266,7 +266,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				);
 
 				// Find matching bin types based on the description (case-insensitive)
-				var matchedBins = binTypes.Where(bin =>
+				var matchedBins = _binTypes.Where(bin =>
 					bin.Keys.Any(key => rawBinType.Contains(key, StringComparison.OrdinalIgnoreCase)));
 
 				foreach (var binType in matchedBins)

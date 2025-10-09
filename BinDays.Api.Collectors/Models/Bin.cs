@@ -15,12 +15,12 @@ namespace BinDays.Api.Collectors.Models
 		/// <summary>
 		/// Gets bin colour.
 		/// </summary>
-		required public string Colour { get; init; }
+		required public BinColor Colour { get; init; }
 
 		/// <summary>
 		/// Gets bin type.
 		/// </summary>
-		public string? Type { get; init; }
+		public BinType? Type { get; init; }
 
 		/// <summary>
 		/// Gets bin keys (identifiers).

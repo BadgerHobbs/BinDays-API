@@ -32,45 +32,45 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "General Waste",
-				Colour = "Black",
+				Colour = BinColor.Black,
 				Keys = new List<string>() { "General Waste" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Cans & Plastics Recycling",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "Green Recycling Box" }.AsReadOnly(),
-				Type = "Box",
+				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Brown Paper & Cardboard Recycling",
-				Colour = "Blue",
+				Colour = BinColor.Blue,
 				Keys = new List<string>() { "Blue Sack" }.AsReadOnly(),
-				Type = "Bag",
+				Type = BinType.Bag,
 			},
 			new()
 			{
 				Name = "Paper & Glass Recycling",
-				Colour = "Black",
+				Colour = BinColor.Black,
 				Keys = new List<string>() { "Black Recycling Box" }.AsReadOnly(),
-				Type = "Box",
+				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Food Waste",
-				Colour = "Brown",
+				Colour = BinColor.Brown,
 				Keys = new List<string>() { "Food Waste Bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "Garden Waste Bin" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -135,7 +135,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getAddressesResponse = new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 
 				return getAddressesResponse;
@@ -193,7 +192,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDate = collectionArray[0]!["nextCollectionDate"]!.GetValue<string>();
 
 					// Find matching bin types based on the container name containing a key (case-insensitive)
-					var matchedBins = binTypes.Where(bin =>
+					var matchedBins = _binTypes.Where(bin =>
 						bin.Keys.Any(key => containerName.Contains(key, StringComparison.OrdinalIgnoreCase)));
 
 					// Parse the date string (e.g., "2025-04-15T00:00:00")
@@ -217,7 +216,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 
 				return getBinDaysResponse;

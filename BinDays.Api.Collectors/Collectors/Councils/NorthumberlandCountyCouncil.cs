@@ -25,24 +25,24 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "General Waste",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "General waste" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Brown",
+				Colour = BinColor.Brown,
 				Keys = new List<string>() { "Garden waste" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Blue",
+				Colour = BinColor.Blue,
 				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -104,7 +104,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups["tokenValue"].Value;
 
 				// Get set-cookies from response
-				var setCookies = clientSideResponse.Headers["set-cookie"];
+				if (!clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookies))
+				{
+					throw new InvalidOperationException("Could not find 'set-cookie' header in response.");
+				}
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Prepare client-side request
@@ -208,7 +211,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups["tokenValue"].Value;
 
 				// Get set-cookies from response
-				var setCookies = clientSideResponse.Headers["set-cookie"];
+				if (!clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookies))
+				{
+					throw new InvalidOperationException("Could not find 'set-cookie' header in response.");
+				}
 				var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
 				// Prepare client-side request
@@ -272,7 +278,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 
 					// Get matching bin types from the type using the keys
-					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => binTypeStr.Contains(y)));
+					var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => binTypeStr.Contains(y)));
 
 					var binDay = new BinDay()
 					{

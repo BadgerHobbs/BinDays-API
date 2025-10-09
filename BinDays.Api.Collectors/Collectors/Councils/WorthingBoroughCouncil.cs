@@ -44,24 +44,24 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Blue",
+				Colour = BinColor.Blue,
 				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Rubbish",
-				Colour = "Grey",
+				Colour = BinColor.Grey,
 				Keys = new List<string>() { "General rubbish" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "Garden" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -185,7 +185,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						);
 
 						// Get matching bin types from the collection using the keys
-						var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => collection.Contains(y)));
+						var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => collection.Contains(y)));
 
 						var binDay = new BinDay()
 						{

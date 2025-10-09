@@ -25,12 +25,12 @@ namespace BinDays.Api.Collectors.Models
 		/// <summary>
 		/// Gets the headers of the request.
 		/// </summary>
-		required public Dictionary<string, string> Headers { get; init; }
+		public Dictionary<string, string> Headers { get; init; } = new();
 
 		/// <summary>
 		/// Gets the body of the request.
 		/// </summary>
-		required public string? Body { get; init; }
+		public string? Body { get; init; }
 
 		/// <summary>
 		/// Gets the options of the request.

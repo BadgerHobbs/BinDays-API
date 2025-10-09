@@ -25,30 +25,30 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "Paper & Card",
-				Colour = "Blue",
+				Colour = BinColor.Blue,
 				Keys = new List<string>() { "ahtm_dates_blue_pulpable_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Metal, Glass & Plastic Bottles",
-				Colour = "Brown",
+				Colour = BinColor.Brown,
 				Keys = new List<string>() { "ahtm_dates_brown_commingled_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Food & Garden Waste",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "ahtm_dates_green_organic_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "General Waste",
-				Colour = "Black",
+				Colour = BinColor.Black,
 				Keys = new List<string>() { "ahtm_dates_black_bin" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -270,7 +270,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				// Iterate through defined bin types
 				var binDays = new List<BinDay>();
-				foreach (var binType in binTypes)
+				foreach (var binType in _binTypes)
 				{
 					foreach (var key in binType.Keys)
 					{

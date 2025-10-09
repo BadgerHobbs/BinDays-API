@@ -39,24 +39,24 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "General Waste",
-				Colour = "Black",
+				Colour = BinColor.Black,
 				Keys = new List<string>() { "Refuse" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "GardenBin" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -72,8 +72,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://torridgedc-self.achieveservice.com/service/My_property_information",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				return new GetAddressesResponse()
@@ -169,8 +167,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://torridgedc-self.achieveservice.com/service/My_property_information",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				return new GetBinDaysResponse()
@@ -263,7 +259,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						collectionDate = DateOnly.ParseExact(datePart, "ddd d MMM", CultureInfo.InvariantCulture);
 					}
 
-					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(binKey)).ToList();
+					var matchedBins = _binTypes.Where(bin => bin.Keys.Contains(binKey)).ToList();
 					if (matchedBins.Any())
 					{
 						binDays.Add(new BinDay

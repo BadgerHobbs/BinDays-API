@@ -32,26 +32,26 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			new()
 			{
 				Name = "Refuse",
-				Colour = "Black",
+				Colour = BinColor.Black,
 				Keys = new List<string>() { "Refuse collection" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Green",
+				Colour = BinColor.Green,
 				Keys = new List<string>() { "Recycling collection" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Food Waste",
-				Colour = "Grey",
+				Colour = BinColor.Grey,
 				Keys = new List<string>() { "Food waste collection" }.AsReadOnly(),
-				Type = "Caddy"
+				Type = BinType.Caddy
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Brown",
+				Colour = BinColor.Brown,
 				Keys = new List<string>() { "Garden waste collection" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -81,8 +81,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
@@ -144,8 +142,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
