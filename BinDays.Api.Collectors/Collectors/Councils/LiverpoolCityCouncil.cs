@@ -31,19 +31,19 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Blue",
+				Colour = BinColour.Blue,
 				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "Green" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Household Waste",
-				Colour = "Purple",
+				Colour = BinColour.Purple,
 				Keys = new List<string>() { "Refuse" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
