@@ -28,7 +28,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
@@ -190,7 +190,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				foreach (var collectionItem in collectionDayArray.EnumerateArray())
 				{
 					var rawBinType = collectionItem.GetProperty("binType").GetString()!;
-					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(rawBinType)).ToList().AsReadOnly();
+					var matchedBins = _binTypes.Where(bin => bin.Keys.Contains(rawBinType)).ToList().AsReadOnly();
 
 					// Process the main collection day
 					var collectionDayString = collectionItem.GetProperty("collectionDay").GetString()!;
