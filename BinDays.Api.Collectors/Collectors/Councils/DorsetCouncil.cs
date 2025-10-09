@@ -259,7 +259,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						// Determine matching bin types from the description
 						var dateEl = binTypeElement.GetProperty("dateNextVisit");
 						var type = binTypeElement.GetProperty("type").GetString()!;
-						var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => type.Contains(y)));
+						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, type);
 
 						var date = DateOnly.ParseExact(
 							dateEl.GetString()!,

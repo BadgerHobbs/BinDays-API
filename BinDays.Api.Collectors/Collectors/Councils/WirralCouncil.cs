@@ -282,7 +282,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Get matching bin types from the type using the keys
-					var matchedBinTypes = _binTypes.Where(b => b.Keys.Contains(binName));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
 
 					binDays.Add(new BinDay()
 					{
