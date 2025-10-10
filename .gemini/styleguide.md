@@ -46,6 +46,10 @@ Collectors in this project follow a few specific design principles that are impo
 
 - **Stateless by Design:** Because all requests to council websites originate from the client application (the user's device), the API itself is stateless. This means you cannot save state, such as authentication tokens or session cookies, between the different steps of a collector's process (e.g., between `GetAddresses` and `GetBinDays`). Each step is an independent transaction.
 
+- **Step-by-Step Request Implementation:** For collectors that require multiple client-side requests, use a step-by-step implementation based on the `RequestId` of the `clientSideResponse`. This is typically structured as an `if/else if` chain.
+
+  - **Preserve Existing Logic:** Do not refactor the existing `if/else if` structure. This pattern is intentional and provides a clear, linear flow for debugging and maintaining multi-step processes.
+
 - **Intentionally Brittle and Minimal Exception Handling:** Collectors are intentionally designed to be "brittle"—that is, they are expected to fail loudly and quickly if the council's website changes or if the data format is not what is expected.
 
   - **Avoid `try/catch` blocks:** Do not wrap parsing logic in `try/catch` blocks to handle nulls or formatting issues silently. Let the code raise exceptions (e.g., `NullReferenceException`, `FormatException`).
@@ -68,6 +72,18 @@ Collectors in this project follow a few specific design principles that are impo
 - **Handling Secrets:** Store API keys or other secrets as `private const string` fields within the collector class. Do not expose them publicly.
 
 - **Flexible Bin Matching:** The `_binTypes` collection allows for flexible matching of bin types from the source data. Use the `Keys` property to define one or more identifiers from the data that map to a specific bin. Matching logic can be case-insensitive or based on partial strings as needed.
+
+- **Model Defaults:** To simplify object creation and reduce redundant code, model properties have default values where applicable.
+
+  - `ClientSideRequest.Headers`: Defaults to an empty `Dictionary<string, string>`.
+  - `ClientSideRequest.Body`: Defaults to `null`.
+  - `NextClientSideRequest`: The `NextClientSideRequest` property in response models like `GetAddressesResponse` and `GetBinDaysResponse` defaults to `null`.
+  - **Avoid Redundant Initializations:** When creating new instances of these models, do not explicitly set these properties to their default values (e.g., avoid `Headers = []` or `NextClientSideRequest = null`).
+
+- **Enums for Bins:**
+  - **`BinColour`:** Use the `BinColour` enum for the `Colour` property of the `Bin` model.
+  - **`BinType`:** Use the `BinType` enum for the `Type` property of the `Bin` model.
+  - This provides type safety and avoids the use of "magic strings."
 
 ## Code Examples
 
