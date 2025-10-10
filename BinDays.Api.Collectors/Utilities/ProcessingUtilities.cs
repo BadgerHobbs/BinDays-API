@@ -117,7 +117,7 @@ namespace BinDays.Api.Collectors.Utilities
 		/// suitable for use in a 'Cookie' request header.
 		/// </summary>
 		/// <param name="setCookieHeader">The raw 'Set-Cookie' header string containing one or more cookie definitions.</param>
-		/// <returns>A string containing the cookie key-value pairs (e.g., "key1=value1; key2=value2")
+		/// <returns>A string containing the cookie key-value pairs (e.g. "key1=value1; key2=value2")
 		/// ready for use in a 'Cookie' request header, or an empty string if the input is null or empty.</returns>
 		public static string ParseSetCookieHeaderForRequestCookie(string setCookieHeader)
 		{

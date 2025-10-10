@@ -156,7 +156,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						var collectionDate = rawBinDaysObject.GetProperty(key).ToString();
 
-						// Parse the date (e.g., "2024-07-29T00:00:00")
+						// Parse the date (e.g. "2024-07-29T00:00:00")
 						var date = DateOnly.ParseExact(
 							collectionDate,
 							"yyyy-MM-ddTHH:mm:ss",

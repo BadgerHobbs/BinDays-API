@@ -254,7 +254,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var rawBinType = collection.GetProperty("RoundTypeName").GetString()!;
 				var rawBinDayDate = collection.GetProperty("DateString").GetString()!;
 
-				// Parsing the date string (e.g., "7/3/2025 12:00:00 AM")
+				// Parsing the date string (e.g. "7/3/2025 12:00:00 AM")
 				var date = DateOnly.FromDateTime(
 					DateTime.Parse(rawBinDayDate, CultureInfo.InvariantCulture)
 				);

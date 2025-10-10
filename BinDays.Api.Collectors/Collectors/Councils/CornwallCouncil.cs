@@ -176,7 +176,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var binId = rawBinDay.Groups["binId"].Value;
 					var dateString = rawBinDay.Groups["date"].Value;
 
-					// Parse date string (e.g., "18 Jul")
+					// Parse date string (e.g. "18 Jul")
 					var date = DateOnly.ParseExact(
 						dateString,
 						"d MMM",

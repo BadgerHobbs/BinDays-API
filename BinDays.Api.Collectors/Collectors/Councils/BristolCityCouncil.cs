@@ -190,7 +190,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Find matching bin types based on the container name containing a key (case-insensitive)
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, containerName);
 
-					// Parse the date string (e.g., "2025-04-15T00:00:00")
+					// Parse the date string (e.g. "2025-04-15T00:00:00")
 					var date = DateOnly.ParseExact(
 						collectionDate,
 						"yyyy-MM-dd'T'HH:mm:ss",

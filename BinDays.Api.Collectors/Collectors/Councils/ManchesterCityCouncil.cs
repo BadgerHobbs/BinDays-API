@@ -262,14 +262,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				{
 					foreach (var key in binType.Keys)
 					{
-						// Split the date string (e.g., "15/04/2025 00:00:00;\n13/05/2025 00:00:00")
+						// Split the date string (e.g. "15/04/2025 00:00:00;\n13/05/2025 00:00:00")
 						var rawDates = binData[key]!
 							.ToString()
 							.Split([";\n", ";"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 						foreach (var rawDate in rawDates)
 						{
-							// Parse the date string (e.g., "15/04/2025 00:00:00")
+							// Parse the date string (e.g. "15/04/2025 00:00:00")
 							var date = DateOnly.ParseExact(
 								rawDate,
 								"dd/MM/yyyy HH:mm:ss",

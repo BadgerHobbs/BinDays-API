@@ -13,15 +13,15 @@ This style guide outlines the coding conventions for C# code developed for the B
 
 ## File Structure
 
-- **New Collectors:** Place new council collector classes in `BinDays.Api.Collectors/Collectors/Councils/`. The filename should match the class name (e.g., `MyNewCouncil.cs`).
-- **Integration Tests:** Corresponding integration tests for new collectors must be placed in `BinDays.Api.IntegrationTests/Collectors/Councils/`. The test filename should be `[CollectorName]Tests.cs` (e.g., `MyNewCouncilTests.cs`).
+- **New Collectors:** Place new council collector classes in `BinDays.Api.Collectors/Collectors/Councils/`. The filename should match the class name (e.g. `MyNewCouncil.cs`).
+- **Integration Tests:** Corresponding integration tests for new collectors must be placed in `BinDays.Api.IntegrationTests/Collectors/Councils/`. The test filename should be `[CollectorName]Tests.cs` (e.g. `MyNewCouncilTests.cs`).
 
 ## Naming Conventions
 
-- **Collector Classes:** Use PascalCase (e.g., `MyNewCouncil`).
-- **Interfaces:** Use the `I` prefix (e.g., `ICollector`).
-- **Methods and Properties:** Use PascalCase (e.g., `GetAddresses`, `WebsiteUrl`).
-- **Private Fields:** Use `_camelCase` (e.g., `_client`).
+- **Collector Classes:** Use PascalCase (e.g. `MyNewCouncil`).
+- **Interfaces:** Use the `I` prefix (e.g. `ICollector`).
+- **Methods and Properties:** Use PascalCase (e.g. `GetAddresses`, `WebsiteUrl`).
+- **Private Fields:** Use `_camelCase` (e.g. `_client`).
 
 ## Collector Implementation and Design
 
@@ -44,7 +44,7 @@ A collector must implement the following properties and methods:
 
 Collectors in this project follow a few specific design principles that are important to understand when contributing.
 
-- **Stateless by Design:** Because all requests to council websites originate from the client application (the user's device), the API itself is stateless. This means you cannot save state, such as authentication tokens or session cookies, between the different steps of a collector's process (e.g., between `GetAddresses` and `GetBinDays`). Each step is an independent transaction.
+- **Stateless by Design:** Because all requests to council websites originate from the client application (the user's device), the API itself is stateless. This means you cannot save state, such as authentication tokens or session cookies, between the different steps of a collector's process (e.g. between `GetAddresses` and `GetBinDays`). Each step is an independent transaction.
 
 - **Step-by-Step Request Implementation:** For collectors that require multiple client-side requests, use a step-by-step implementation based on the `RequestId` of the `clientSideResponse`. This is typically structured as an `if/else if` chain.
 
@@ -52,11 +52,11 @@ Collectors in this project follow a few specific design principles that are impo
 
 - **Intentionally Brittle and Minimal Exception Handling:** Collectors are intentionally designed to be "brittle"—that is, they are expected to fail loudly and quickly if the council's website changes or if the data format is not what is expected.
 
-  - **Avoid `try/catch` blocks:** Do not wrap parsing logic in `try/catch` blocks to handle nulls or formatting issues silently. Let the code raise exceptions (e.g., `NullReferenceException`, `FormatException`).
+  - **Avoid `try/catch` blocks:** Do not wrap parsing logic in `try/catch` blocks to handle nulls or formatting issues silently. Let the code raise exceptions (e.g. `NullReferenceException`, `FormatException`).
   - **Why?** This approach ensures that errors are not hidden. When a collector fails, the error is captured and logged at a higher level in the application. This makes it immediately obvious that a collector is broken and provides a clear stack trace, which makes debugging and fixing the issue much easier. The multi-stage process of each collector helps pinpoint exactly where the failure occurred. You can see this pattern in existing council implementations, which have very little explicit exception handling.
-  - **Custom Exceptions:** For predictable, high-level failures (e.g., a postcode not being found in the `gov.uk` service), create and throw a custom exception (e.g., `GovUkIdNotFoundException`) to provide more specific error context.
+  - **Custom Exceptions:** For predictable, high-level failures (e.g. a postcode not being found in the `gov.uk` service), create and throw a custom exception (e.g. `GovUkIdNotFoundException`) to provide more specific error context.
 
-- **Code Reuse with Base Classes:** If multiple collectors share a significant amount of logic (e.g., interacting with the same third-party service like `gov.uk`), encapsulate the shared logic in a base class to promote code reuse and maintainability.
+- **Code Reuse with Base Classes:** If multiple collectors share a significant amount of logic (e.g. interacting with the same third-party service like `gov.uk`), encapsulate the shared logic in a base class to promote code reuse and maintainability.
 
 ### Data Handling and Parsing
 
@@ -78,7 +78,7 @@ Collectors in this project follow a few specific design principles that are impo
   - `ClientSideRequest.Headers`: Defaults to an empty `Dictionary<string, string>`.
   - `ClientSideRequest.Body`: Defaults to `null`.
   - `NextClientSideRequest`: The `NextClientSideRequest` property in response models like `GetAddressesResponse` and `GetBinDaysResponse` defaults to `null`.
-  - **Avoid Redundant Initializations:** When creating new instances of these models, do not explicitly set these properties to their default values (e.g., avoid `Headers = []` or `NextClientSideRequest = null`).
+  - **Avoid Redundant Initializations:** When creating new instances of these models, do not explicitly set these properties to their default values (e.g. avoid `Headers = []` or `NextClientSideRequest = null`).
 
 - **Enums for Bins:**
   - **`BinColour`:** Use the `BinColour` enum for the `Colour` property of the `Bin` model.
@@ -123,7 +123,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			new()
 			{
 				Name = "Human Readable Bin Name",
-				Colour = BinColor.Grey,
+				Colour = BinColour.Grey,
 				Keys = new List<string>() { "BIN_ID_IN_DATA" }.AsReadOnly(),
 				Type = BinType.Bag,
 			},
@@ -238,9 +238,9 @@ After implementing your collector and its integration test, follow these final s
 
 - **Requirement:** Every new collector **must** have an accompanying integration test.
 - **Test Helper:** Use the `TestSteps.EndToEnd` helper for end-to-end testing of the collector.
-- **Test Naming:** Test methods should be named descriptively (e.g., `GetBinDaysTest`).
+- **Test Naming:** Test methods should be named descriptively (e.g. `GetBinDaysTest`).
 
 ### Commit Messages
 
 - **Be Descriptive:** Write clear and descriptive commit messages that explain the "what" and "why" of the changes.
-- **Reference Issues:** If your commit addresses an issue, reference it in the commit message (e.g., `Fixes #123`).
+- **Reference Issues:** If your commit addresses an issue, reference it in the commit message (e.g. `Fixes #123`).

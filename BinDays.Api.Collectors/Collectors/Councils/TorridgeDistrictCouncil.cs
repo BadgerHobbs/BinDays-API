@@ -31,7 +31,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		private static partial Regex SessionIdRegex();
 
 		/// <summary>
-		/// Regex to parse the bin schedule string, e.g., "Refuse: Today then every alternate Mon".
+		/// Regex to parse the bin schedule string, e.g. "Refuse: Today then every alternate Mon".
 		/// </summary>
 		[GeneratedRegex(@"^([^:]+):\s*(.*?)\s*then", RegexOptions.IgnoreCase)]
 		private static partial Regex BinScheduleRegex();
@@ -222,7 +222,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var binDays = new List<BinDay>();
 
-				// Iterate through each collection entry (e.g., Round1, Round2)
+				// Iterate through each collection entry (e.g. Round1, Round2)
 				foreach (var property in rawBinDayData.EnumerateObject())
 				{
 					var scheduleString = property.Value.GetString();
@@ -248,7 +248,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 					else
 					{
-						// e.g., "Wed 16 Jul". The year is implied as the current one.
+						// e.g. "Wed 16 Jul". The year is implied as the current one.
 						collectionDate = DateOnly.ParseExact(datePart, "ddd d MMM", CultureInfo.InvariantCulture);
 					}
 

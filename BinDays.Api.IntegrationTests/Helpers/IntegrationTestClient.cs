@@ -41,8 +41,8 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// <summary>
 		/// Executes the entire request cycle for a multi-step API call.
 		/// </summary>
-		/// <typeparam name="TResponse">The type of the final API response object (e.g., GetAddressesResponse).</typeparam>
-		/// <typeparam name="TResult">The type of the final data expected (e.g., IReadOnlyCollection<Address>).</typeparam>
+		/// <typeparam name="TResponse">The type of the final API response object (e.g. GetAddressesResponse).</typeparam>
+		/// <typeparam name="TResult">The type of the final data expected (e.g. IReadOnlyCollection<Address>).</typeparam>
 		/// <param name="initialFunc">A function that makes the first call to the API method (with clientSideResponse = null).</param>
 		/// <param name="subsequentFunc">A function that makes subsequent calls to the API method, passing the ClientSideResponse.</param>
 		/// <param name="nextRequestExtractor">A function to extract the NextClientSideRequest from the API response.</param>
