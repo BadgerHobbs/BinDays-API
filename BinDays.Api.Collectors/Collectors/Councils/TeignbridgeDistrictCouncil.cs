@@ -181,23 +181,20 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var rawBinTypes = rawBinCollection.Groups["BinType"].Captures;
 
 					// Get matching bin types from the type using the keys
-					var matchedBinTypes = _binTypes.Where(x =>
-						x.Keys.Any(y =>
-							rawBinTypes.Any(z =>
-								z.Value.Contains(y, StringComparison.OrdinalIgnoreCase)
-							)
-						)
-					);
+					var matchedBinTypes = rawBinTypes
+						.SelectMany(rawBinType => ProcessingUtilities.GetMatchingBins(_binTypes, rawBinType.Value))
+						.Distinct()
+						.ToList()
+						.AsReadOnly();
 
 					var binDay = new BinDay()
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
+						Bins = matchedBinTypes,
 					};
 
 					binDays.Add(binDay);
-
 				}
 
 				var getBinDaysResponse = new GetBinDaysResponse()

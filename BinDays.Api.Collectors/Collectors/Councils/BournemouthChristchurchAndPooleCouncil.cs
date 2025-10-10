@@ -160,7 +160,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						// Determine matching bin types from the description
 						var description = binTypeElement.GetProperty("wasteContainerUsageTypeDescription").GetString()!;
-						var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => description.Contains(y)));
+						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, description);
 
 						var rangeEl = binTypeElement.GetProperty("scheduleDateRange");
 						foreach (var dateEl in rangeEl.EnumerateArray())
@@ -176,7 +176,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 							{
 								Date = date,
 								Address = address,
-								Bins = matchedBinTypes.ToList().AsReadOnly()
+								Bins = matchedBinTypes,
 							};
 
 							binDays.Add(binDay);

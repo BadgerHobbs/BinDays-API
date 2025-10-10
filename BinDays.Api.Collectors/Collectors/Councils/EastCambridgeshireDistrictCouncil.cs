@@ -198,13 +198,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Get matching bin types from the bin ID using the keys
-					var matchedBinTypes = _binTypes.Where(x => x.Keys.Contains(binTypeStr));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeStr);
 
 					var binDay = new BinDay()
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
+						Bins = matchedBinTypes,
 					};
 
 					binDays.Add(binDay);

@@ -245,7 +245,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDateString = dateMatch.Groups[1].Value;
 
 					// Get matching bin types from the service using the keys
-					var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 					// Parse the date (e.g. 'tomorrow, Wednesday, 07 May 2025') to date only
 					var date = DateOnly.ParseExact(
@@ -260,7 +260,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
+						Bins = matchedBinTypes,
 					};
 
 					binDays.Add(binDay);

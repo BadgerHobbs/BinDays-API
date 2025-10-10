@@ -159,7 +159,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Find all matching bin types based on the date key
-					var matchedBins = _binTypes.Where(bin => bin.Keys.Contains(rawBinDay.Name[0].ToString()));
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, rawBinDay.Name[0].ToString());
 
 					var binDay = new BinDay()
 					{

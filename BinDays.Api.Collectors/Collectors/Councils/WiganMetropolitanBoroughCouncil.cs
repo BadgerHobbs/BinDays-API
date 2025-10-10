@@ -285,13 +285,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Get matching bin types from the type using the keys
-					var matchedBinTypes = _binTypes.Where(b => b.Keys.Contains(binTypeKey));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeKey);
 
 					binDays.Add(new BinDay()
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
+						Bins = matchedBinTypes,
 					});
 				}
 

@@ -174,13 +174,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						CultureInfo.InvariantCulture
 					);
 
-					var matchedBinTypes = _binTypes.Where(b => b.Keys.Any(k => binType.Contains(k, StringComparison.InvariantCultureIgnoreCase)));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
 
 					binDays.Add(new BinDay()
 					{
 						Date = collectionDate,
 						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
+						Bins = matchedBinTypes,
 					});
 				}
 

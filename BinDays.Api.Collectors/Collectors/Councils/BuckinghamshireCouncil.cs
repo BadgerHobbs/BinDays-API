@@ -187,7 +187,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				foreach (var collectionItem in collectionDayArray.EnumerateArray())
 				{
 					var rawBinType = collectionItem.GetProperty("binType").GetString()!;
-					var matchedBins = _binTypes.Where(bin => bin.Keys.Contains(rawBinType)).ToList().AsReadOnly();
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, rawBinType);
 
 					// Process the main collection day
 					var collectionDayString = collectionItem.GetProperty("collectionDay").GetString()!;

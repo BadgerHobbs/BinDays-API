@@ -302,7 +302,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Find matching bin types based on the round type in their keys
-					var matchedBins = _binTypes.Where(bin => bin.Keys.Contains(roundType)).ToList();
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, roundType);
 
 					var binDay = new BinDay()
 					{

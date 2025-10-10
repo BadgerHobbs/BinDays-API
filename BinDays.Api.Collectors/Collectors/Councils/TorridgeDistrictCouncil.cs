@@ -252,7 +252,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						collectionDate = DateOnly.ParseExact(datePart, "ddd d MMM", CultureInfo.InvariantCulture);
 					}
 
-					var matchedBins = _binTypes.Where(bin => bin.Keys.Contains(binKey)).ToList();
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binKey);
+
 					if (matchedBins.Any())
 					{
 						binDays.Add(new BinDay

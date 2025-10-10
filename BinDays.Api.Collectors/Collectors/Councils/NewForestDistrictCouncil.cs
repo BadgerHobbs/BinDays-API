@@ -378,13 +378,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDate = rawBinDay.Groups["date"].Value;
 
 					var date = DateOnly.ParseExact(collectionDate, format, CultureInfo.InvariantCulture);
-					var matchedBinTypes = _binTypes.Where(x => x.Keys.Any(y => service.Contains(y)));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 					var binDay = new BinDay()
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
+						Bins = matchedBinTypes,
 					};
 
 					binDays.Add(binDay);
