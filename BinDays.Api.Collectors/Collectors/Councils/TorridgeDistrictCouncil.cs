@@ -72,13 +72,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://torridgedc-self.achieveservice.com/service/My_property_information",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				return new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -118,7 +115,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -138,8 +134,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var address = new Address()
 					{
 						Property = addressData.GetProperty("display").GetString(),
-						Street = string.Empty,
-						Town = string.Empty,
 						Postcode = postcode,
 						Uid = addressData.GetProperty("uprn").GetString(),
 					};
@@ -150,7 +144,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				return new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 			}
 
@@ -169,13 +162,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://torridgedc-self.achieveservice.com/service/My_property_information",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -214,7 +204,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -278,7 +267,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				return new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 			}
 

@@ -110,7 +110,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -138,7 +137,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				return new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 			}
 
@@ -174,7 +172,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -233,7 +230,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				return new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 			}
 

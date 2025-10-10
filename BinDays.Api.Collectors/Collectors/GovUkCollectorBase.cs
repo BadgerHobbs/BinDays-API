@@ -51,13 +51,11 @@ namespace BinDays.Api.Collectors.Collectors
 					RequestId = 1,
 					Url = GovUkBaseUrl,
 					Method = "POST",
-					Headers = [],
 					Body = requestBody,
 				};
 
 				var getCollectorResponse = new GetCollectorResponse()
 				{
-					Collector = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -84,7 +82,6 @@ namespace BinDays.Api.Collectors.Collectors
 				var getCollectorResponse = new GetCollectorResponse()
 				{
 					Collector = collector,
-					NextClientSideRequest = null
 				};
 
 				return getCollectorResponse;

@@ -90,7 +90,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -128,7 +127,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getAddressesResponse = new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 
 				return getAddressesResponse;
@@ -165,7 +163,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -183,7 +180,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var getBinDaysResponse = new GetBinDaysResponse()
 					{
 						BinDays = currentMonthBinDays,
-						NextClientSideRequest = null
 					};
 					return getBinDaysResponse;
 				}
@@ -212,7 +208,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					var getBinDaysResponse = new GetBinDaysResponse()
 					{
-						BinDays = null,
 						NextClientSideRequest = clientSideRequest
 					};
 					return getBinDaysResponse;
@@ -227,7 +222,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
 					BinDays = nextMonthBinDays,
-					NextClientSideRequest = null
 				};
 
 				return getBinDaysResponse;
