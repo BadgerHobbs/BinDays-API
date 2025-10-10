@@ -1,8 +1,16 @@
+using BinDays.Api.Converters;
+using System.Text.Json.Serialization;
+
 namespace BinDays.Api.Collectors.Models
 {
     /// <summary>
     /// Represents the colour of a bin.
     /// </summary>
+    /// <remarks>
+    /// For compatibility with the BinDays-App, this enum is serialized
+    /// to a space-separated string (e.g. LightBlue -> "Light Blue").
+    /// </remarks>
+    [JsonConverter(typeof(SpacedPascalCaseEnumConverter<BinColour>))]
     public enum BinColour
     {
         /// <summary>
