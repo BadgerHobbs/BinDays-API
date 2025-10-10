@@ -7,8 +7,8 @@ namespace BinDays.Api.Collectors.Models
 	/// Represents the colour of a bin.
 	/// </summary>
 	/// <remarks>
-	/// For compatibility with the BinDays-App, this enum is serialized
-	/// to a space-separated string (e.g. LightBlue -> "Light Blue").
+	/// For compatibility with the BinDays-App, this enum is serialized to a
+	/// space-separated string (e.g. LightBlue -> "Light Blue").
 	/// </remarks>
 	[JsonConverter(typeof(SpacedPascalCaseEnumConverter<BinColour>))]
 	public enum BinColour

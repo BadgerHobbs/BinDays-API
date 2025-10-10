@@ -1,8 +1,14 @@
+using System.Text.Json.Serialization;
+
 namespace BinDays.Api.Collectors.Models
 {
 	/// <summary>
 	/// Represents the type of a bin.
 	/// </summary>
+	/// <remarks>
+	/// For compatibility with the BinDays-App, this enum is serialized to a string.
+	/// </remarks>
+	[JsonConverter(typeof(JsonStringEnumConverter))]
 	public enum BinType
 	{
 		/// <summary>
