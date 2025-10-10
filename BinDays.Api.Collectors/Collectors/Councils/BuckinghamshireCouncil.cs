@@ -75,12 +75,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// AES key used for encrypting and decrypting requests.
 		/// </summary>
-		public static readonly byte[] _aesKey = Convert.FromHexString("F57E76482EE3DC3336495DEDEEF3962671B054FE353E815145E29C5689F72FEC");
+		private static readonly byte[] _aesKey = Convert.FromHexString("F57E76482EE3DC3336495DEDEEF3962671B054FE353E815145E29C5689F72FEC");
 
 		/// <summary>
 		/// AES IV used for encrypting and decrypting requests.
 		/// </summary>
-		public static readonly byte[] _aesIv = Convert.FromHexString("2CBF4FC35C69B82362D393A4F0B9971A");
+		private static readonly byte[] _aesIv = Convert.FromHexString("2CBF4FC35C69B82362D393A4F0B9971A");
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
