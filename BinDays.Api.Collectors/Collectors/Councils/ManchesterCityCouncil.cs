@@ -25,30 +25,30 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "Paper & Card",
-				Colour = "Blue",
+				Colour = BinColour.Blue,
 				Keys = new List<string>() { "ahtm_dates_blue_pulpable_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Metal, Glass & Plastic Bottles",
-				Colour = "Brown",
+				Colour = BinColour.Brown,
 				Keys = new List<string>() { "ahtm_dates_brown_commingled_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Food & Garden Waste",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "ahtm_dates_green_organic_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "General Waste",
-				Colour = "Black",
+				Colour = BinColour.Black,
 				Keys = new List<string>() { "ahtm_dates_black_bin" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -64,13 +64,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/citizen?archived=Y&preview=false&locale=en",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -107,7 +104,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -130,8 +126,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var address = new Address()
 					{
 						Property = property.Trim(),
-						Street = string.Empty,
-						Town = string.Empty,
 						Postcode = postcode,
 						Uid = uid,
 					};
@@ -142,7 +136,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getAddressesResponse = new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 
 				return getAddressesResponse;
@@ -163,13 +156,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/citizen?archived=Y&preview=false&locale=en",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -206,7 +196,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -255,7 +244,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -270,18 +258,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				// Iterate through defined bin types
 				var binDays = new List<BinDay>();
-				foreach (var binType in binTypes)
+				foreach (var binType in _binTypes)
 				{
 					foreach (var key in binType.Keys)
 					{
-						// Split the date string (e.g., "15/04/2025 00:00:00;\n13/05/2025 00:00:00")
+						// Split the date string (e.g. "15/04/2025 00:00:00;\n13/05/2025 00:00:00")
 						var rawDates = binData[key]!
 							.ToString()
 							.Split([";\n", ";"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 						foreach (var rawDate in rawDates)
 						{
-							// Parse the date string (e.g., "15/04/2025 00:00:00")
+							// Parse the date string (e.g. "15/04/2025 00:00:00")
 							var date = DateOnly.ParseExact(
 								rawDate,
 								"dd/MM/yyyy HH:mm:ss",
@@ -304,7 +292,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 
 				return getBinDaysResponse;

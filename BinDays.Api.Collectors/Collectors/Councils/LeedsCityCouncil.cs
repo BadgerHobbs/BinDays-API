@@ -25,29 +25,29 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The API subscription key required for Leeds City Council API requests.
 		/// </summary>
-		private const string ApiSubscriptionKey = "ad8dd80444fe45fcad376f82cf9a5ab4";
+		private const string _apiSubscriptionKey = "ad8dd80444fe45fcad376f82cf9a5ab4";
 
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "General Waste",
-				Colour = "Black",
+				Colour = BinColour.Black,
 				Keys = new List<string>() { "Black" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Brown",
+				Colour = BinColour.Brown,
 				Keys = new List<string>() { "Brown" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "Green" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -66,14 +66,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
-						{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey}
+						{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey}
 					},
-					Body = string.Empty,
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -95,8 +93,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var address = new Address()
 					{
 						Property = property?.Trim(),
-						Street = null,
-						Town = null,
 						Postcode = postcode,
 						Uid = uprn,
 					};
@@ -107,7 +103,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getAddressesResponse = new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 
 				return getAddressesResponse;
@@ -131,14 +126,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Url = requestUrl,
 					Method = "GET",
 					Headers = new Dictionary<string, string>() {
-						{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey}
+						{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey}
 					},
-					Body = string.Empty,
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -172,13 +165,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Get matching bin types from the type using the keys
-					var matchedBinTypes = binTypes.Where(x => x.Keys.Any(y => type.Contains(y)));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, type);
 
 					var binDay = new BinDay()
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
+						Bins = matchedBinTypes,
 					};
 
 					binDays.Add(binDay);
@@ -187,7 +180,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 
 				return getBinDaysResponse;

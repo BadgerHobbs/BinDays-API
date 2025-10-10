@@ -31,7 +31,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		private static partial Regex SessionIdRegex();
 
 		/// <summary>
-		/// Regex to parse the bin schedule string, e.g., "Refuse: Today then every alternate Mon".
+		/// Regex to parse the bin schedule string, e.g. "Refuse: Today then every alternate Mon".
 		/// </summary>
 		[GeneratedRegex(@"^([^:]+):\s*(.*?)\s*then", RegexOptions.IgnoreCase)]
 		private static partial Regex BinScheduleRegex();
@@ -39,24 +39,24 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "General Waste",
-				Colour = "Black",
+				Colour = BinColour.Black,
 				Keys = new List<string>() { "Refuse" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "GardenBin" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -72,13 +72,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://torridgedc-self.achieveservice.com/service/My_property_information",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				return new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -118,7 +115,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -138,8 +134,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var address = new Address()
 					{
 						Property = addressData.GetProperty("display").GetString(),
-						Street = string.Empty,
-						Town = string.Empty,
 						Postcode = postcode,
 						Uid = addressData.GetProperty("uprn").GetString(),
 					};
@@ -150,7 +144,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				return new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 			}
 
@@ -169,13 +162,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://torridgedc-self.achieveservice.com/service/My_property_information",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -214,7 +204,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -233,7 +222,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var binDays = new List<BinDay>();
 
-				// Iterate through each collection entry (e.g., Round1, Round2)
+				// Iterate through each collection entry (e.g. Round1, Round2)
 				foreach (var property in rawBinDayData.EnumerateObject())
 				{
 					var scheduleString = property.Value.GetString();
@@ -259,11 +248,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 					else
 					{
-						// e.g., "Wed 16 Jul". The year is implied as the current one.
+						// e.g. "Wed 16 Jul". The year is implied as the current one.
 						collectionDate = DateOnly.ParseExact(datePart, "ddd d MMM", CultureInfo.InvariantCulture);
 					}
 
-					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(binKey)).ToList();
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binKey);
+
 					if (matchedBins.Any())
 					{
 						binDays.Add(new BinDay
@@ -278,7 +268,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				return new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 			}
 

@@ -117,7 +117,7 @@ namespace BinDays.Api.Collectors.Utilities
 		/// suitable for use in a 'Cookie' request header.
 		/// </summary>
 		/// <param name="setCookieHeader">The raw 'Set-Cookie' header string containing one or more cookie definitions.</param>
-		/// <returns>A string containing the cookie key-value pairs (e.g., "key1=value1; key2=value2")
+		/// <returns>A string containing the cookie key-value pairs (e.g. "key1=value1; key2=value2")
 		/// ready for use in a 'Cookie' request header, or an empty string if the input is null or empty.</returns>
 		public static string ParseSetCookieHeaderForRequestCookie(string setCookieHeader)
 		{
@@ -163,6 +163,21 @@ namespace BinDays.Api.Collectors.Utilities
 			}
 
 			return formattedPostcode;
+		}
+
+		/// <summary>
+		/// Gets a collection of bins that match a given service based on their keys.
+		/// </summary>
+		/// <param name="bins">The collection of all possible Bin objects.</param>
+		/// <param name="service">The service string to match against the bin keys.</param>
+		/// <returns>A read-only collection of Bin objects that match the given service.</returns>
+		public static ReadOnlyCollection<Bin> GetMatchingBins(ReadOnlyCollection<Bin> bins, string service)
+		{
+			return bins.Where(bin =>
+				bin.Keys.Any(key =>
+					service.Contains(key, StringComparison.OrdinalIgnoreCase)
+				)
+			).ToList().AsReadOnly();
 		}
 	}
 }

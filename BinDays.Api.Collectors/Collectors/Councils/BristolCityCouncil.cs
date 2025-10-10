@@ -27,50 +27,50 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The API subscription key required for Bristol City Council API requests.
 		/// </summary>
-		private const string ApiSubscriptionKey = "47ffd667d69c4a858f92fc38dc24b150";
+		private const string _apiSubscriptionKey = "47ffd667d69c4a858f92fc38dc24b150";
 
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "General Waste",
-				Colour = "Black",
+				Colour = BinColour.Black,
 				Keys = new List<string>() { "General Waste" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Cans & Plastics Recycling",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "Green Recycling Box" }.AsReadOnly(),
-				Type = "Box",
+				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Brown Paper & Cardboard Recycling",
-				Colour = "Blue",
+				Colour = BinColour.Blue,
 				Keys = new List<string>() { "Blue Sack" }.AsReadOnly(),
-				Type = "Bag",
+				Type = BinType.Bag,
 			},
 			new()
 			{
 				Name = "Paper & Glass Recycling",
-				Colour = "Black",
+				Colour = BinColour.Black,
 				Keys = new List<string>() { "Black Recycling Box" }.AsReadOnly(),
-				Type = "Box",
+				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Food Waste",
-				Colour = "Brown",
+				Colour = BinColour.Brown,
 				Keys = new List<string>() { "Food Waste Bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "Garden Waste Bin" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -84,7 +84,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestUrl = "https://bcprdapidyna002.azure-api.net/bcprdfundyna001-llpg/LLPGService";
 
 				var requestHeaders = new Dictionary<string, string>() {
-					{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey},
+					{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey},
 				};
 
 				var requestBody = JsonSerializer.Serialize(new { postcode });
@@ -100,7 +100,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -123,8 +122,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var address = new Address()
 					{
 						Property = fullAddress,
-						Street = string.Empty,
-						Town = string.Empty,
 						Postcode = postcode,
 						Uid = uid.Replace("UPRN", "", StringComparison.OrdinalIgnoreCase),
 					};
@@ -135,7 +132,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getAddressesResponse = new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 
 				return getAddressesResponse;
@@ -154,7 +150,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestUrl = "https://bcprdapidyna002.azure-api.net/bcprdfundyna001-alloy/NextCollectionDates";
 
 				var requestHeaders = new Dictionary<string, string>() {
-					{"Ocp-Apim-Subscription-Key", ApiSubscriptionKey},
+					{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey},
 				};
 
 				var requestBody = JsonSerializer.Serialize(new { uprn = address.Uid });
@@ -170,7 +166,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -193,10 +188,9 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var collectionDate = collectionArray[0]!["nextCollectionDate"]!.GetValue<string>();
 
 					// Find matching bin types based on the container name containing a key (case-insensitive)
-					var matchedBins = binTypes.Where(bin =>
-						bin.Keys.Any(key => containerName.Contains(key, StringComparison.OrdinalIgnoreCase)));
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, containerName);
 
-					// Parse the date string (e.g., "2025-04-15T00:00:00")
+					// Parse the date string (e.g. "2025-04-15T00:00:00")
 					var date = DateOnly.ParseExact(
 						collectionDate,
 						"yyyy-MM-dd'T'HH:mm:ss",
@@ -208,7 +202,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBins.ToList().AsReadOnly()
+						Bins = matchedBins,
 					};
 
 					binDays.Add(binDay);
@@ -217,7 +211,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 
 				return getBinDaysResponse;

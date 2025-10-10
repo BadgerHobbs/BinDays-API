@@ -33,24 +33,24 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "Domestic",
-				Colour = "Brown",
+				Colour = BinColour.Brown,
 				Keys = new List<string>() { "DO" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Recycling",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "RE" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Garden Waste",
-				Colour = "Black",
+				Colour = BinColour.Black,
 				Keys = new List<string>() { "GA", "OR" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -66,13 +66,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://plymouth-self.achieveservice.com/en/AchieveForms/?form_uri=sandbox-publish://AF-Process-31283f9a-3ae7-4225-af71-bf3884e0ac1b/AF-Stagedba4a7d5-e916-46b6-abdb-643d38bec875/definition.json&redirectlink=/en&cancelRedirectLink=/en&consentMessage=yes",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -130,7 +127,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -173,7 +169,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getAddressesResponse = new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 
 				return getAddressesResponse;
@@ -194,13 +189,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://plymouth-self.achieveservice.com/en/AchieveForms/?form_uri=sandbox-publish://AF-Process-31283f9a-3ae7-4225-af71-bf3884e0ac1b/AF-Stagedba4a7d5-e916-46b6-abdb-643d38bec875/definition.json&redirectlink=/en&cancelRedirectLink=/en&consentMessage=yes",
 					Method = "GET",
-					Headers = [],
-					Body = string.Empty,
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -280,7 +272,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -311,7 +302,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Find matching bin types based on the round type in their keys
-					var matchedBins = binTypes.Where(bin => bin.Keys.Contains(roundType)).ToList();
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, roundType);
 
 					var binDay = new BinDay()
 					{
@@ -326,7 +317,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 
 				return getBinDaysResponse;

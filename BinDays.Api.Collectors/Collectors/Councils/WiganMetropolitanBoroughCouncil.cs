@@ -25,30 +25,30 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> binTypes = new List<Bin>()
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{
 				Name = "Black Bin",
-				Colour = "Black",
+				Colour = BinColour.Black,
 				Keys = new List<string>() { "BlackBin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Brown Bin",
-				Colour = "Brown",
+				Colour = BinColour.Brown,
 				Keys = new List<string>() { "BrownBin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Green Bin",
-				Colour = "Green",
+				Colour = BinColour.Green,
 				Keys = new List<string>() { "GreenBin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Blue Bin",
-				Colour = "Blue",
+				Colour = BinColour.Blue,
 				Keys = new List<string>() { "BlueBin" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
@@ -91,12 +91,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Headers = new Dictionary<string, string>() {
 						{"user-agent", Constants.UserAgent},
 					},
-					Body = string.Empty,
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -133,7 +131,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -150,8 +147,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(new Address()
 					{
 						Property = rawAddress.Groups["address"].Value.Trim(),
-						Street = string.Empty,
-						Town = string.Empty,
 						Postcode = postcode,
 						Uid = rawAddress.Groups["uid"].Value,
 					});
@@ -160,7 +155,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getAddressesResponse = new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 
 				return getAddressesResponse;
@@ -183,12 +177,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Headers = new Dictionary<string, string>() {
 						{"user-agent", Constants.UserAgent},
 					},
-					Body = string.Empty,
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -225,7 +217,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -266,7 +257,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -295,20 +285,19 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Get matching bin types from the type using the keys
-					var matchedBinTypes = binTypes.Where(b => b.Keys.Contains(binTypeKey));
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeKey);
 
 					binDays.Add(new BinDay()
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBinTypes.ToList().AsReadOnly()
+						Bins = matchedBinTypes,
 					});
 				}
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 
 				return getBinDaysResponse;
