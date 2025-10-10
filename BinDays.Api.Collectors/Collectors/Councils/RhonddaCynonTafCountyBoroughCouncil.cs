@@ -201,9 +201,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					);
 
 					// Find matching bin types
-					var matchedBins = _binTypes
-						.Where(bin => bin.Keys.Any(key => binTypeText.Contains(key, StringComparison.InvariantCultureIgnoreCase)))
-						.ToList();
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeText);
 
 					// If bins are matched, create or update BinDay entry
 					if (matchedBins.Count > 0)
