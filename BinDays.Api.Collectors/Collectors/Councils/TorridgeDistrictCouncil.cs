@@ -254,7 +254,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binKey);
 
-					if (matchedBins.Any())
+					if (matchedBins.Count != 0)
 					{
 						binDays.Add(new BinDay
 						{

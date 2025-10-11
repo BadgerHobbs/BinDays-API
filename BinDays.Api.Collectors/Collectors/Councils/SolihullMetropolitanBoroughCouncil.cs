@@ -208,8 +208,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse.RequestId == 1)
 			{
 				// Get viewstate and event validation from response
-				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
-				var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups[1].Value;
+				_ = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+				_ = EventValidationRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
 				var clientSideRequest = new ClientSideRequest()
