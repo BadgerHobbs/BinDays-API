@@ -6,6 +6,8 @@ on:
     - cron: "0 9 * * *"
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - BinDays.Api/**
       - BinDays.Api.Collectors/**

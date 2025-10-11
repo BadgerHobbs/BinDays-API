@@ -1,0 +1,48 @@
+name: Dotnet Format
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - BinDays.Api/**
+      - BinDays.Api.Collectors/**
+  pull_request:
+    paths:
+      - BinDays.Api/**
+      - BinDays.Api.Collectors/**
+
+jobs:
+  dotnet_format:
+    name: Dotnet Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run Dotnet Format
+        run: |
+          if [ -n "${{ secrets.WORKFLOW_TOKEN }}" ]; then
+            dotnet format --no-restore --verify-no-changes --severity info
+          else
+            dotnet format --no-restore --severity info
+          fi
+
+      - name: Commit changes
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Action"
+          git add .
+          git diff-index --quiet HEAD -- || (
+            git commit -am "Auto-format code with dotnet format"
+            git push
+          )
