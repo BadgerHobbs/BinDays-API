@@ -4,7 +4,6 @@ namespace BinDays.Api.IntegrationTests.Helpers
 	using System.Linq;
 	using System.Net;
 	using System.Net.Http;
-	using System.Security.Authentication;
 	using System.Text;
 
 	/// <summary>
@@ -26,7 +25,6 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				UseCookies = false,
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = true,
-				SslProtocols = SslProtocols.Tls12,
 			};
 			_httpClientWithRedirects = new HttpClient(handlerWithRedirects);
 
@@ -36,7 +34,6 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				UseCookies = false,
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = false,
-				SslProtocols = SslProtocols.Tls12,
 			};
 			_httpClientWithoutRedirects = new HttpClient(handlerWithoutRedirects);
 		}
