@@ -29,9 +29,24 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// </summary>
 		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
-			new() { Name = "Non-Recyclable Waste", Colour = BinColour.Purple, Keys = new List<string>() { "Non-Recyclable Waste" }.AsReadOnly(), },
-			new() { Name = "Mixed Recycling", Colour = BinColour.Black, Keys = new List<string>() { "Recycling" }.AsReadOnly(), },
-			new() { Name = "Cardboard & Paper", Colour = BinColour.Blue, Keys = new List<string>() { "Cardboard" }.AsReadOnly(), },
+			new()
+			{
+				Name = "Non-Recyclable Waste",
+				Colour = BinColour.Purple,
+				Keys = new List<string>() { "Non-Recyclable Waste" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Mixed Recycling",
+				Colour = BinColour.Black,
+				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Cardboard & Paper",
+				Colour = BinColour.Blue,
+				Keys = new List<string>() { "Cardboard" }.AsReadOnly(),
+			},
 			new()
 			{
 				Name = "Food Waste",
@@ -41,7 +56,9 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			},
 			new()
 			{
-				Name = "Garden Waste", Colour = BinColour.Brown, Keys = new List<string>() { "Garden Waste" }.AsReadOnly(),
+				Name = "Garden Waste",
+				Colour = BinColour.Brown,
+				Keys = new List<string>() { "Garden Waste" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
 
@@ -70,7 +87,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		private static partial Regex LevelsTokenRegex();
 
 		/// <summary>
-		/// Regex for the Levels Token
+		/// Regex for the Submission Token
 		/// </summary>
 		[GeneratedRegex(@"name=""submission_token""\s+value=""(?<token>.*?)""")]
 		private static partial Regex SubmissionTokenRegex();
@@ -104,13 +121,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://waste.nc.north-herts.gov.uk/w/webpage/find-bin-collection-day-input-address",
 					Method = "GET",
-					Headers = [],
-					Body = null,
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
 				{
-					Addresses = null,
 					NextClientSideRequest = clientSideRequest
 				};
 
@@ -145,7 +159,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				return new GetAddressesResponse() { Addresses = null, NextClientSideRequest = clientSideRequest };
+				return new GetAddressesResponse()
+				{
+					NextClientSideRequest = clientSideRequest
+				};
 			}
 
 			if (clientSideResponse.RequestId == 2)
@@ -178,14 +195,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Options = clientSideResponse.Options,
 				};
 
-				return new GetAddressesResponse() { Addresses = null, NextClientSideRequest = clientSideRequest };
+				return new GetAddressesResponse()
+				{
+					NextClientSideRequest = clientSideRequest
+				};
 			}
 
 			// Process addresses from response
 			if (clientSideResponse.RequestId == 3)
 			{
 				// Get addresses from response
-				var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+				var rawAddresses = AddressRegex().Matches(clientSideResponse.Content);
 
 				// Iterate through each address, and create a new address object
 				var addresses = new List<Address>();
@@ -205,7 +225,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getAddressesResponse = new GetAddressesResponse()
 				{
 					Addresses = addresses.AsReadOnly(),
-					NextClientSideRequest = null
 				};
 
 				return getAddressesResponse;
@@ -226,13 +245,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					RequestId = 1,
 					Url = "https://waste.nc.north-herts.gov.uk/w/webpage/find-bin-collection-day-input-address",
 					Method = "GET",
-					Headers = [],
-					Body = null,
 				};
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -267,7 +283,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -312,7 +327,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -342,7 +356,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetBinDaysResponse()
 				{
-					BinDays = null,
 					NextClientSideRequest = clientSideRequest
 				};
 			}
@@ -382,7 +395,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-					NextClientSideRequest = null
 				};
 
 				return getBinDaysResponse;
