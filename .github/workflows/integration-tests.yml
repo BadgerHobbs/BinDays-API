@@ -23,7 +23,7 @@ jobs:
     outputs:
       councils_json: ${{ steps.list_councils.outputs.councils_json }}
     env:
-      EXCLUDED_COUNCILS: '[]'
+      EXCLUDED_COUNCILS: "[]"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,26 +51,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure OpenSSL
-        run: |
-          echo '
-          [openssl_init]
-          ssl_conf = ssl_sect
-
-          [ssl_sect]
-          system_default = system_default_sect
-
-          [system_default_sect]
-          MinProtocol = TLSv1
-          CipherString = DEFAULT@SECLEVEL=1
-          ' | sudo tee -a /etc/ssl/openssl.cnf
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
+      - name: Create Legacy OpenSSL Config
+        run: |
+          # Create a temporary OpenSSL config file that lowers security level
+          cat <<EOF > $RUNNER_TEMP/openssl-legacy.cnf
+          .include /etc/ssl/openssl.cnf
+          [system_default_sect]
+          MinProtocol = TLSv1
+          CipherString = DEFAULT@SECLEVEL=1
+          EOF
+
       - name: Run Integration Tests for ${{ matrix.council }}
+        env:
+          OPENSSL_CONF: ${{ runner.temp }}/openssl-legacy.cnf
         run: |
           echo "Running tests for ${{ matrix.council }}..."
           dotnet test --filter "FullyQualifiedName~${{ matrix.council }}Tests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
