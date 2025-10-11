@@ -4,6 +4,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 	using System.Linq;
 	using System.Net;
 	using System.Net.Http;
+	using System.Net.Security;
 	using System.Text;
 
 	/// <summary>
@@ -19,23 +20,37 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// </summary>
 		public IntegrationTestClient()
 		{
-			AppContext.SetSwitch("System.Net.Security.UseLegacyTlsCiphers", true);
+			var cipherSuitesPolicy = new CipherSuitesPolicy(
+				new[]
+				{
+					TlsCipherSuite.TLS_AES_256_GCM_SHA384,
+					TlsCipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+					TlsCipherSuite.TLS_AES_128_GCM_SHA256
+				});
 
 			// Client that automatically follows redirects
-			var handlerWithRedirects = new HttpClientHandler
+			var handlerWithRedirects = new SocketsHttpHandler
 			{
 				UseCookies = false,
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = true,
+				SslOptions = new SslClientAuthenticationOptions
+				{
+					CipherSuitesPolicy = cipherSuitesPolicy
+				}
 			};
 			_httpClientWithRedirects = new HttpClient(handlerWithRedirects);
 
 			// Client that does NOT automatically follow redirects
-			var handlerWithoutRedirects = new HttpClientHandler
+			var handlerWithoutRedirects = new SocketsHttpHandler
 			{
 				UseCookies = false,
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = false,
+				SslOptions = new SslClientAuthenticationOptions
+				{
+					CipherSuitesPolicy = cipherSuitesPolicy
+				}
 			};
 			_httpClientWithoutRedirects = new HttpClient(handlerWithoutRedirects);
 		}
