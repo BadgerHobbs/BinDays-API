@@ -5,6 +5,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 	using System.Net;
 	using System.Net.Http;
 	using System.Net.Security;
+	using System.Runtime.InteropServices;
 	using System.Text;
 
 	/// <summary>
@@ -20,39 +21,68 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// </summary>
 		public IntegrationTestClient()
 		{
-			var cipherSuitesPolicy = new CipherSuitesPolicy(
-				new[]
-				{
-					TlsCipherSuite.TLS_AES_256_GCM_SHA384,
-					TlsCipherSuite.TLS_CHACHA20_POLY1305_SHA256,
-					TlsCipherSuite.TLS_AES_128_GCM_SHA256
-				});
-
-			// Client that automatically follows redirects
-			var handlerWithRedirects = new SocketsHttpHandler
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 			{
-				UseCookies = false,
-				CookieContainer = new CookieContainer(),
-				AllowAutoRedirect = true,
-				SslOptions = new SslClientAuthenticationOptions
-				{
-					CipherSuitesPolicy = cipherSuitesPolicy
-				}
-			};
-			_httpClientWithRedirects = new HttpClient(handlerWithRedirects);
+				var cipherSuitesPolicy = new CipherSuitesPolicy(
+					new[]
+					{
+						TlsCipherSuite.TLS_AES_256_GCM_SHA384,
+						TlsCipherSuite.TLS_CHACHA20_POLY1305_SHA256,
+						TlsCipherSuite.TLS_AES_128_GCM_SHA256,
+						TlsCipherSuite.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+						TlsCipherSuite.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+						TlsCipherSuite.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
+						TlsCipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
+						TlsCipherSuite.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+						TlsCipherSuite.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+					});
 
-			// Client that does NOT automatically follow redirects
-			var handlerWithoutRedirects = new SocketsHttpHandler
-			{
-				UseCookies = false,
-				CookieContainer = new CookieContainer(),
-				AllowAutoRedirect = false,
-				SslOptions = new SslClientAuthenticationOptions
+				// Client that automatically follows redirects
+				var handlerWithRedirects = new SocketsHttpHandler
 				{
-					CipherSuitesPolicy = cipherSuitesPolicy
-				}
-			};
-			_httpClientWithoutRedirects = new HttpClient(handlerWithoutRedirects);
+					UseCookies = false,
+					CookieContainer = new CookieContainer(),
+					AllowAutoRedirect = true,
+					SslOptions = new SslClientAuthenticationOptions
+					{
+						CipherSuitesPolicy = cipherSuitesPolicy
+					}
+				};
+				_httpClientWithRedirects = new HttpClient(handlerWithRedirects);
+
+				// Client that does NOT automatically follow redirects
+				var handlerWithoutRedirects = new SocketsHttpHandler
+				{
+					UseCookies = false,
+					CookieContainer = new CookieContainer(),
+					AllowAutoRedirect = false,
+					SslOptions = new SslClientAuthenticationOptions
+					{
+						CipherSuitesPolicy = cipherSuitesPolicy
+					}
+				};
+				_httpClientWithoutRedirects = new HttpClient(handlerWithoutRedirects);
+			}
+			else
+			{
+				// Client that automatically follows redirects
+				var handlerWithRedirects = new HttpClientHandler
+				{
+					UseCookies = false,
+					CookieContainer = new CookieContainer(),
+					AllowAutoRedirect = true,
+				};
+				_httpClientWithRedirects = new HttpClient(handlerWithRedirects);
+
+				// Client that does NOT automatically follow redirects
+				var handlerWithoutRedirects = new HttpClientHandler
+				{
+					UseCookies = false,
+					CookieContainer = new CookieContainer(),
+					AllowAutoRedirect = false,
+				};
+				_httpClientWithoutRedirects = new HttpClient(handlerWithoutRedirects);
+			}
 		}
 
 		/// <summary>
