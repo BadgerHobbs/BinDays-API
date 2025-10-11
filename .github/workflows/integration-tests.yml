@@ -56,19 +56,34 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Create Legacy OpenSSL Config
+      - name: Configure Legacy Crypto Policies for OpenSSL
         run: |
-          # Create a temporary OpenSSL config file that lowers security level
-          cat <<EOF > $RUNNER_TEMP/openssl-legacy.cnf
-          .include /etc/ssl/openssl.cnf
+          echo "Applying legacy OpenSSL configuration for compatibility..."
+
+          # Define the configuration block to be prepended
+          CONFIG_BLOCK="""
+          # Prepended by GitHub Actions to enable legacy crypto
+          [openssl_init]
+          ssl_conf = ssl_sect
+
+          [ssl_sect]
+          system_default = system_default_sect
+
           [system_default_sect]
           MinProtocol = TLSv1
           CipherString = DEFAULT@SECLEVEL=1
-          EOF
+          """
+
+          # Create a new config file by prepending the block to the existing file
+          echo "$CONFIG_BLOCK" | sudo tee /tmp/openssl.cnf.new > /dev/null
+          sudo cat /etc/ssl/openssl.cnf >> /tmp/openssl.cnf.new
+
+          # Replace the original config file
+          sudo mv /tmp/openssl.cnf.new /etc/ssl/openssl.cnf
+
+          echo "OpenSSL configuration successfully updated."
 
       - name: Run Integration Tests for ${{ matrix.council }}
-        env:
-          OPENSSL_CONF: ${{ runner.temp }}/openssl-legacy.cnf
         run: |
           echo "Running tests for ${{ matrix.council }}..."
           dotnet test --filter "FullyQualifiedName~${{ matrix.council }}Tests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
