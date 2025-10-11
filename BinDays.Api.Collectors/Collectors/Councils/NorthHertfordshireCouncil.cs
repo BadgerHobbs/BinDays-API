@@ -137,9 +137,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 					Body = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
 					{
-						{ "_dummy", "1" },
-						{ "_session_storage", "{\"_global\":{}}" },
-						{ "_update_page_content_request", "1" },
 						{ "form_check_ajax", csrfToken },
 					}),
 					Options = new ClientSideOptions
@@ -155,51 +152,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var cleanedContent = clientSideResponse.Content.Replace("\\", "").Replace("&quot;", "\"");
 				var nextUrl = AjaxUrlRegex().Match(cleanedContent).Groups["url"].Value;
-				var submissionToken = SubmissionTokenRegex().Match(cleanedContent).Groups["token"].Value;
 				var levelsToken = LevelsTokenRegex().Match(cleanedContent).Groups["token"].Value;
 
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
 				{
 					{ "levels", levelsToken },
 					{ "search_string", postcode },
-					{ "display_limit", "75" },
-					{ "presenter_settings[records_limit]", "75" },
-					{ "presenter_settings[load_more_records_label]", "Click here to load more addresses" },
-					{ "presenter_settings[min_characters]", "3" },
-					{ "presenter_settings[exact_match_first]", "0" },
-					{ "settings[message_offline_mode_unique_lookup]", "" },
-					{ "settings[wrapper]", "16" },
-					{ "settings[presenter]", "73" },
-					{ "settings[remember_last_value]", "0" },
-					{
-						"settings[label]",
-						"Search for an address. For example, 123 Test Road, or SG6 3JF. Postcodes must contain a space."
-					},
-					{ "settings[hint]", "" },
-					{ "settings[required]", "1" },
-					{ "settings[omit_if_blank]", "0" },
-					{ "settings[title_field_path]", ":PRO0000228GBLLP1" },
-					{ "settings[lookup_field_path]", ":CMP0000243GBNLM1" },
-					{ "settings[lookup_comparator]", "17" },
-					{ "settings[order_field_path]", ":CMP0000211GBNLM1" },
-					{ "settings[order_direction]", "ASC" },
-					{ "settings[force_to_default_input_value]", "0" },
-					{ "settings[logged_in_user_visibility_relationship][OBJ0000063GBNLM9_inverse]", "0" },
-					{ "settings[limit_subset_field_path]", ":SUB0000445GBNLM1" },
-					{ "settings[allow_existing_invalid_value]", "0" },
-					{ "settings[show_value_history]", "0" },
-					{ "settings[presenter_settings][records_limit]", "75" },
-					{
-						"settings[presenter_settings][load_more_records_label]", "Click here to load more addresses"
-					},
-					{ "settings[presenter_settings][min_characters]", "3" },
-					{ "settings[presenter_settings][exact_match_first]", "0" },
-					{ "settings[display_on_small_devices]", "true" },
-					{ "settings[display_on_medium_devices]", "true" },
-					{ "settings[display_on_large_devices]", "true" },
-					{ "settings[tiles_orientation]", "horizontal" },
-					{ "settings[message_offline_mode_callback]", "" },
-					{ "context_page_id", "PAG0000732GBNLM1" },
 					{ "form_check_ajax", clientSideResponse.Options.Metadata["form_check_ajax"] },
 				});
 
@@ -299,9 +257,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 					Body = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
 					{
-						{ "_dummy", "1" },
-						{ "_session_storage", "{\"_global\":{}}" },
-						{ "_update_page_content_request", "1" },
 						{ "form_check_ajax", csrfToken },
 					}),
 					Options = new ClientSideOptions
@@ -321,12 +276,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse.RequestId == 2)
 			{
 				var cleanedContent = clientSideResponse.Content.Replace("\\", "").Replace("&quot;", "\"");
-				var nextUrl = AjaxUrlRegex().Match(cleanedContent).Groups["url"].Value;
 				var submissionToken = SubmissionTokenRegex().Match(cleanedContent).Groups["token"].Value;
-				var levelsToken = LevelsTokenRegex().Match(cleanedContent).Groups["token"].Value;
 				var dynamicUrl = AjaxDynamicUrlRegex().Match(cleanedContent).Groups["url"].Value;
-				// TODO wrong URL extracted for this step. It needs to be the one like:
-				//   https://waste.nc.north-herts.gov.uk/w/webpage/find-bin-collection-day-input-address?webpage_subpage_id=PAG0000732GBNLM1&webpage_token=9bc074e8acd954409e1f654670f56d3f27ce1ea5382bfe84c56ad1c19204477f
 				var formData = new Dictionary<string, string>()
 				{
 					{"form_check", clientSideResponse.Options.Metadata["form_check_ajax"]},
@@ -371,9 +322,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 				var formData = new Dictionary<string, string>()
 				{
-					{"_dummy", "1"},
-					{"_session_storage", "{\"_global\":{\"destination_stack\":[\"w/webpage/find-bin-collection-day-input-address\"]}}"},
-					{"_update_page_content_request", "1"},
 					{"form_check_ajax", clientSideResponse.Options.Metadata["form_check_ajax"]},
 				};
 				var clientSideRequest = new ClientSideRequest()
