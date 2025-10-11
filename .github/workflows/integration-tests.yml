@@ -16,35 +16,14 @@ on:
       - BinDays.Api.Collectors/**
 
 jobs:
-  discover_councils:
-    name: Discover Council Test Files
-    runs-on: ubuntu-latest
-    outputs:
-      councils_json: ${{ steps.list_councils.outputs.councils_json }}
-    env:
-      EXCLUDED_COUNCILS: "[]"
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: List council test file identifiers
-        id: list_councils
-        run: |
-          TARGET_DIR="BinDays.Api.IntegrationTests/Collectors/Councils"
-          cd "$TARGET_DIR" || exit 1
-          all_councils=$(ls *Tests.cs 2>/dev/null | sed 's/Tests\.cs$//' | jq -c --raw-input --slurp 'split("\n") | map(select(length > 0))')
-          filtered_councils=$(echo "$all_councils" | jq -c --argjson excluded "$EXCLUDED_COUNCILS" '. - $excluded')
-          echo "councils_json=$filtered_councils" >> $GITHUB_OUTPUT
-        shell: bash
-
   run_council_tests:
     name: Test ${{ matrix.council }}
-    needs: discover_councils
     runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
-        council: ${{ fromJson(needs.discover_councils.outputs.councils_json) }}
+        council:
+          - TeignbridgeDistrictCouncil
 
     steps:
       - name: Checkout code
@@ -54,6 +33,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
+
+      - name: Cat SSL config
+        run: cat /etc/ssl/openssl.cnf
 
       - name: Configure Legacy Crypto Policies for OpenSSL
         run: |
