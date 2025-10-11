@@ -51,8 +51,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set Crypto Policies
-        run: sudo update-crypto-policies --set LEGACY
+      - name: Configure OpenSSL
+        run: |
+          echo "CipherString = DEFAULT:@SECLEVEL=1" | sudo tee -a /etc/ssl/openssl.cnf
+          echo "MinProtocol = TLSv1.2" | sudo tee -a /etc/ssl/openssl.cnf
+          echo "Options = UnsafeLegacyRenegotiation" | sudo tee -a /etc/ssl/openssl.cnf
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
