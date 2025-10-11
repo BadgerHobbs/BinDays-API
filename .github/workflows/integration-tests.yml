@@ -51,6 +51,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set Crypto Policies
+        run: sudo update-crypto-policies --set LEGACY
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
