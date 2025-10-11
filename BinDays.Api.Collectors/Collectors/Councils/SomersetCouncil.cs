@@ -11,7 +11,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using System.Text.Json;
 
 	/// <summary>
-	/// Collector implementation for Bournemouth, Christchurch and Poole Council.
+	/// Collector implementation for Somerset Council.
 	/// </summary>
 	internal sealed partial class SomersetCouncil : GovUkCollectorBase, ICollector
 	{
@@ -45,7 +45,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Food waste" }.AsReadOnly(),
+				Keys = new List<string>() { "Food" }.AsReadOnly(),
 				Type = BinType.Caddy,
 			},
 			new()
@@ -241,15 +241,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			}
 			return bytes;
 		}
-
-		// 
-
+		
 		/// <summary>
 		/// Encrypts a plain text string using AES-256-CBC with custom hex key/IV.
 		/// </summary>
 		/// <param name="plainText">The string to encrypt.</param>
-		/// <returns>The encrypted data as a Base64-encoded string.</returns>
-		public static string Encrypt(string plainText)
+		/// <returns>The encrypted data as a lowercase hexadecimal string.</returns>
+		private static string Encrypt(string plainText)
 		{
 			byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
 			byte[] key = HexToByteArray(_key);
@@ -278,18 +276,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				}
 			}
 
-			// Return the encrypted bytes as a Base64 string for easy transport
+			// Return the encrypted bytes as a lowercase hexadecimal string for easy transport
 			return Convert.ToHexString(encrypted).ToLower();
 		}
 
 		/// <summary>
-		/// Decrypts a Base64-encoded string using AES-256-CBC with custom hex key/IV.
+		/// Decrypts a hexadecimal encoded string using AES-256-CBC with custom hex key/IV.
 		/// </summary>
-		/// <param name="cipherTextBase64">The Base64-encoded string to decrypt.</param>
+		/// <param name="cipherTextHex">The hexadecimal encoded string to decrypt.</param>
 		/// <returns>The decrypted plain text string.</returns>
-		public static string Decrypt(string cipherTextBase64)
+		private static string Decrypt(string cipherTextHex)
 		{
-			byte[] cipherBytes = Convert.FromHexString(cipherTextBase64);
+			byte[] cipherBytes = Convert.FromHexString(cipherTextHex);
 			byte[] key = HexToByteArray(_key);
 			byte[] iv = HexToByteArray(_iv);
 			string plaintext = null;
