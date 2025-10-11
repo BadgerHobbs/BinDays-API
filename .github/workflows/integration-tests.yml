@@ -53,9 +53,17 @@ jobs:
 
       - name: Configure OpenSSL
         run: |
-          echo "CipherString = DEFAULT:@SECLEVEL=1" | sudo tee -a /etc/ssl/openssl.cnf
-          echo "MinProtocol = TLSv1.2" | sudo tee -a /etc/ssl/openssl.cnf
-          echo "Options = UnsafeLegacyRenegotiation" | sudo tee -a /etc/ssl/openssl.cnf
+          echo '
+          [openssl_init]
+          ssl_conf = ssl_sect
+
+          [ssl_sect]
+          system_default = system_default_sect
+
+          [system_default_sect]
+          MinProtocol = TLSv1
+          CipherString = DEFAULT@SECLEVEL=1
+          ' | sudo tee -a /etc/ssl/openssl.cnf
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
