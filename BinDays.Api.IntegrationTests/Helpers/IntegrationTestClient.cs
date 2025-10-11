@@ -19,6 +19,8 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// </summary>
 		public IntegrationTestClient()
 		{
+			AppContext.SetSwitch("System.Net.Security.UseLegacyTlsCiphers", true);
+
 			// Client that automatically follows redirects
 			var handlerWithRedirects = new HttpClientHandler
 			{
