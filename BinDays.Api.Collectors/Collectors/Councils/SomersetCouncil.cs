@@ -264,7 +264,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				aesAlg.IV = iv;
 
 				// Create an encryptor to perform the stream transform
-				ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+				ICryptoTransform encryptor = aesAlg.CreateEncryptor();
 
 				// Create the streams and perform the encryption
 				using (var msEncrypt = new System.IO.MemoryStream())
@@ -302,7 +302,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				aesAlg.IV = iv;
 
 				// Create a decryptor to perform the stream transform
-				ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+				ICryptoTransform decryptor = aesAlg.CreateDecryptor();
 
 				// Create the streams and perform the decryption
 				using (var msDecrypt = new System.IO.MemoryStream(cipherBytes))
