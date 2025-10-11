@@ -22,7 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.WORKFLOW_TOKEN }}
+          token: ${{ github.token }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -31,11 +31,7 @@ jobs:
 
       - name: Run Dotnet Format
         run: |
-          if [ -n "${{ secrets.WORKFLOW_TOKEN }}" ]; then
-            dotnet format --no-restore --verify-no-changes --severity info
-          else
-            dotnet format --no-restore --severity info
-          fi
+          dotnet format --no-restore --verify-no-changes --severity info
 
       - name: Commit changes
         run: |
