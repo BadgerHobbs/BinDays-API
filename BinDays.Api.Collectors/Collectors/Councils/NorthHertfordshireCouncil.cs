@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
 	using BinDays.Api.Collectors.Models;
@@ -9,6 +7,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using System.Collections.ObjectModel;
 	using System.Globalization;
 	using System.Text.Json;
+	using System.Text.RegularExpressions;
 
 	/// <summary>
 	/// Collector implementation for North Hertfordshire Council.
@@ -130,8 +129,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return getAddressesResponse;
 			}
-
-			if (clientSideResponse.RequestId == 1)
+			else if (clientSideResponse.RequestId == 1)
 			{
 				var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 					clientSideResponse.Headers["set-cookie"]);
@@ -164,8 +162,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					NextClientSideRequest = clientSideRequest
 				};
 			}
-
-			if (clientSideResponse.RequestId == 2)
+			else if (clientSideResponse.RequestId == 2)
 			{
 				var cleanedContent = clientSideResponse.Content.Replace("\\", "").Replace("&quot;", "\"");
 				var nextUrl = AjaxUrlRegex().Match(cleanedContent).Groups["url"].Value;
@@ -182,7 +179,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var clientSideRequest = new ClientSideRequest()
 				{
 					RequestId = 3,
-					Url = "https://waste.nc.north-herts.gov.uk" + nextUrl + $"&ajax_action=html_get_type_ahead_results",
+					Url = $"https://waste.nc.north-herts.gov.uk{nextUrl}&ajax_action=html_get_type_ahead_results",
 					Method = "POST",
 					Headers =
 						new Dictionary<string, string>()
@@ -200,9 +197,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					NextClientSideRequest = clientSideRequest
 				};
 			}
-
 			// Process addresses from response
-			if (clientSideResponse.RequestId == 3)
+			else if (clientSideResponse.RequestId == 3)
 			{
 				// Get addresses from response
 				var rawAddresses = AddressRegex().Matches(clientSideResponse.Content);
@@ -252,8 +248,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					NextClientSideRequest = clientSideRequest
 				};
 			}
-
-			if (clientSideResponse.RequestId == 1)
+			else if (clientSideResponse.RequestId == 1)
 			{
 				var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 					clientSideResponse.Headers["set-cookie"]);
@@ -269,7 +264,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{ "content-type", "application/x-www-form-urlencoded" },
 						{ "cookie", cookie },
 						{ "x-requested-with", "XMLHttpRequest" },
-						{ "accept", "application/json, text/javascript, */*; q=0.01" }
 					},
 					Body = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
 					{
@@ -286,9 +280,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					NextClientSideRequest = clientSideRequest
 				};
 			}
-
 			// Now we're on to new requests...
-			if (clientSideResponse.RequestId == 2)
+			else if (clientSideResponse.RequestId == 2)
 			{
 				var cleanedContent = clientSideResponse.Content.Replace("\\", "").Replace("&quot;", "\"");
 				var submissionToken = SubmissionTokenRegex().Match(cleanedContent).Groups["token"].Value;
@@ -330,8 +323,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					NextClientSideRequest = clientSideRequest
 				};
 			}
-
-			if (clientSideResponse.RequestId == 3)
+			else if (clientSideResponse.RequestId == 3)
 			{
 				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 				var formData = new Dictionary<string, string>()
@@ -359,9 +351,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					NextClientSideRequest = clientSideRequest
 				};
 			}
-
 			// Process bin days from response
-			if (clientSideResponse.RequestId == 4)
+			else if (clientSideResponse.RequestId == 4)
 			{
 				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 				var htmlToParse = jsonDoc.RootElement.GetProperty("data").GetString()!;
