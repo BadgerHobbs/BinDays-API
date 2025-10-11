@@ -174,34 +174,34 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var resultsElement = jsonDoc.RootElement.GetProperty("collectionDay");
 				foreach (var binTypeElement in resultsElement.EnumerateArray())
 				{
-					// Determine matching bin types from the description
 					var binDescription = binTypeElement.GetProperty("binType").GetString()!;
-					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binDescription);
-					var dateEl = binTypeElement.GetProperty("collectionDay").GetString();
-					var dateEl2 = binTypeElement.GetProperty("followingDay").GetString();
-					var dates = new List<DateOnly>();
-					if (!string.IsNullOrEmpty(dateEl))
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binDescription);
+
+					// Collect non-empty date fields and parse them
+					var dateStrings = new[]
 					{
-						dates.Add(DateOnly.ParseExact(dateEl, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None));
-					}
-					if (!string.IsNullOrEmpty(dateEl2))
-					{
-						dates.Add(DateOnly.ParseExact(dateEl2, "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None));
-					}
+						binTypeElement.GetProperty("collectionDay").GetString(),
+						binTypeElement.GetProperty("followingDay").GetString()
+					};
+
+					var dates = dateStrings
+						.Where(s => !string.IsNullOrWhiteSpace(s))
+						.Select(s => DateOnly.ParseExact(s!, "dd-MM-yyyy", CultureInfo.InvariantCulture))
+						.ToList();
 
 					foreach (var date in dates)
 					{
-						var binDay = new BinDay()
+						binDays.Add(new BinDay
 						{
 							Date = date,
 							Address = address,
-							Bins = matchedBinTypes,
-						};
-						binDays.Add(binDay);
-						// Food waste is collected with recycling, but not listed in the calendar
+							Bins = matchedBins
+						});
+
+						// Food waste is collected with recycling but not listed in the calendar
 						if (binDescription == "Recycling")
 						{
-							binDays.Add(new BinDay()
+							binDays.Add(new BinDay
 							{
 								Date = date,
 								Address = address,
@@ -210,6 +210,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						}
 					}
 				}
+
 
 				var getBinDaysResponse = new GetBinDaysResponse()
 				{
