@@ -34,32 +34,18 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      # --- START: NEW AND IMPROVED STEPS ---
+      - name: Cat SSL config
+        run: cat /etc/ssl/openssl.cnf
 
-      - name: Create and Configure Local SSL Config
-        id: ssl_config
+      - name: Configure Legacy Crypto Policies for OpenSSL
         run: |
-          # Define the path for the new local config file
-          LOCAL_SSL_CONF="${{ github.workspace }}/openssl-legacy.cnf"
+          sudo sed -i '1i openssl_conf = default_conf' /etc/ssl/openssl.cnf
+          sudo sed -i '$a\n[ default_conf ]\n\nssl_conf = ssl_sect\n\n[ssl_sect]\n\nsystem_default = system_default_sect\n\n[system_default_sect]\nMinProtocol = TLSv1.2\nCipherString = DEFAULT:@SECLEVEL=1' /etc/ssl/openssl.cnf
 
-          # Copy the system's base config to the local file
-          cp /etc/ssl/openssl.cnf "$LOCAL_SSL_CONF"
-
-          # Modify the local copy (no sudo needed)
-          sed -i '1i openssl_conf = openssl_init\n\n[openssl_init]\nssl_conf = ssl_sect\n\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT@SECLEVEL=1\n' "$LOCAL_SSL_CONF"
-
-          # Output the path for the next step
-          echo "config_path=$LOCAL_SSL_CONF" >> "$GITHUB_OUTPUT"
-
-          echo "--- Custom SSL Config created at $LOCAL_SSL_CONF ---"
-          cat "$LOCAL_SSL_CONF"
-
-      # --- END: NEW AND IMPROVED STEPS ---
+      - name: Cat SSL config 2
+        run: cat /etc/ssl/openssl.cnf
 
       - name: Run Integration Tests for ${{ matrix.council }}
-        # Set the environment variable to force .NET/OpenSSL to use your custom config
-        env:
-          OPENSSL_CONF: ${{ steps.ssl_config.outputs.config_path }}
         run: |
           dotnet test --filter "FullyQualifiedName~${{ matrix.council }}Tests" \
             --logger "console;verbosity=detailed" \
