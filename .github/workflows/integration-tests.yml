@@ -56,6 +56,24 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      - name: Workaround for SSL error on self-hosted runner
+        run: |
+          # This is a workaround for an SSL error that occurs on self-hosted runners
+          # when running integration tests for specific councils, such as Teignbridge.
+          # The error "The SSL connection could not be established" is caused by
+          # the council's server using a legacy TLS version. This updates the SSL
+          # config to allow for a less strict security level.
+          #
+          # The script is idempotent and will only modify the openssl.cnf file
+          # if the required configuration is not already present.
+          if ! grep -q "ssl_conf = ssl_sect" /etc/ssl/openssl.cnf; then
+            sudo sed -i '/\[openssl_init\]/a ssl_conf = ssl_sect' /etc/ssl/openssl.cnf
+          fi
+
+          if ! grep -q "\[ssl_sect\]" /etc/ssl/openssl.cnf; then
+            echo -e "\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT@SECLEVEL=1" | sudo tee -a /etc/ssl/openssl.cnf
+          fi
+
       - name: Run Integration Tests for ${{ matrix.council }}
         run: |
           echo "Running tests for ${{ matrix.council }}..."
