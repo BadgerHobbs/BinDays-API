@@ -70,6 +70,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Type = BinType.Bag,
 				Keys = new List<string>() { "Black/Grey Bag" }.AsReadOnly()
 			},
+			new()
+			{
+				Name = "Garden Waste",
+				Colour = BinColour.Brown,
+				Type = BinType.Bin,
+				Keys = new List<string>() { "Garden Waste Bin" }.AsReadOnly()
+			},
 		}.AsReadOnly();
 
 		/// <summary>
