@@ -57,17 +57,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		}.AsReadOnly();
 
 		/// <summary>
-		/// Client ID for Buckinghamshire Council requests.
+		/// Client ID for Somerset Council requests.
 		/// </summary>
 		private const int _clientId = 129;
 
 		/// <summary>
-		/// Council ID for Buckinghamshire Council requests.
+		/// Council ID for Somerset Council requests.
 		/// </summary>
 		private const int _councilId = 34493;
 
 		/// <summary>
-		/// Base URL for the Buckinghamshire Council API.
+		/// Base URL for the Somerset Council API.
 		/// </summary>
 		private const string _apiBaseUrl = "https://iweb.itouchvision.com/portal/itouchvision/";
 
@@ -199,8 +199,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					var dates = dateStrings
 						.Where(s => !string.IsNullOrWhiteSpace(s))
-						.Select(s => DateOnly.ParseExact(s!, "dd-MM-yyyy", CultureInfo.InvariantCulture))
-						.ToList();
+						.Select(s => DateOnly.ParseExact(s!, "dd-MM-yyyy", CultureInfo.InvariantCulture));
 
 					foreach (var date in dates)
 					{
@@ -237,9 +236,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			aesAlg.IV = _aesIv;
 			aesAlg.Mode = CipherMode.CBC;
 			aesAlg.Padding = PaddingMode.PKCS7;
-
 			byte[] encryptedBytes = aesAlg.EncryptCbc(plainBytes, _aesIv);
-			
+
 			return Convert.ToHexString(encryptedBytes).ToLowerInvariant();
 		}
 
