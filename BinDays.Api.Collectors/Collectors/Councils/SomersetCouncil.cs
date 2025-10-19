@@ -45,7 +45,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Food" }.AsReadOnly(),
+				Keys = new List<string>() { "Food", "Recycling" }.AsReadOnly(),
 				Type = BinType.Caddy,
 			},
 			new()
@@ -210,17 +210,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 							Address = address,
 							Bins = matchedBins
 						});
-
-						// Food waste is collected with recycling but not listed in the calendar
-						if (binDescription == "Recycling")
-						{
-							binDays.Add(new BinDay
-							{
-								Date = date,
-								Address = address,
-								Bins = ProcessingUtilities.GetMatchingBins(_binTypes, "Food Waste")
-							});
-						}
 					}
 				}
 
