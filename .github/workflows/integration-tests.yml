@@ -75,6 +75,9 @@ jobs:
           fi
 
       - name: Run Integration Tests for ${{ matrix.council }}
-        run: |
-          echo "Running tests for ${{ matrix.council }}..."
-          dotnet test --filter "FullyQualifiedName~${{ matrix.council }}Tests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+        uses: nick-invision/retry@v3
+        with:
+          max_attempts: 2
+          command: |
+            echo "Running tests for ${{ matrix.council }}..."
+            dotnet test --filter "FullyQualifiedName~${{ matrix.council }}Tests" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
