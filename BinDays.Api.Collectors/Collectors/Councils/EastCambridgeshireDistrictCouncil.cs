@@ -62,6 +62,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		[GeneratedRegex(@"<div class=""row collectionsrow"">.*?<img.*?alt=""(?<binType>[^""]+)"">.*?<div class=""col-xs-6 col-sm-6"">(?<date>.*?)<\/div>", RegexOptions.Singleline)]
 		private static partial Regex BinDaysRegex();
 
+		/// <summary>
+		/// Regex for replacing multiple whitespace characters with a single space.
+		/// </summary>
+		[GeneratedRegex(@"\s+")]
+		private static partial Regex WhitespaceRegex();
+
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 		{
@@ -188,7 +194,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				foreach (Match rawBinDay in rawBinDays)
 				{
 					var binTypeStr = rawBinDay.Groups["binType"].Value.Trim();
-					var dateStr = rawBinDay.Groups["date"].Value.Trim();
+					var dateStr = WhitespaceRegex().Replace(rawBinDay.Groups["date"].Value.Trim(), " ");
 
 					// Parse date string (e.g. "Fri - 26 Sep 2025")
 					var date = DateOnly.ParseExact(
