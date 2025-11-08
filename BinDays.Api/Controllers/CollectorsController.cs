@@ -116,6 +116,11 @@
 
 				return Ok(result);
 			}
+			catch (UnsupportedCollectorException ex)
+			{
+				_logger.LogWarning(ex, "Unsupported collector {CollectorName} for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.CollectorName, ex.GovUkId, postcode);
+				return NotFound($"{ex.CollectorName} is not currently supported.");
+			}
 			catch (GovUkIdNotFoundException ex)
 			{
 				_logger.LogWarning(ex, "No gov.uk ID found for postcode: {Postcode}.", postcode);
