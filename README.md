@@ -37,9 +37,9 @@ The API is containerized for deployment with Docker.
 Deploy the pre-built image from the GitHub Container Registry:
 
 ```bash
-docker run -d
-    --name bindays-api
-    -p 8080:8080
+docker run -d \
+    --name bindays-api \
+    -p 8080:8080 \
     ghcr.io/badgerhobbs/bindays-api:latest
 ```
 

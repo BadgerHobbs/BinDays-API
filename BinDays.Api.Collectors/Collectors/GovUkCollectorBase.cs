@@ -33,6 +33,12 @@ namespace BinDays.Api.Collectors.Collectors
 		private static partial Regex GovUkIdRegex();
 
 		/// <summary>
+		/// Regex for the collector name from the html.
+		/// </summary>
+		[GeneratedRegex(@"<span class=""local-authority"">(?<CollectorName>.*?)<\/span>")]
+		private static partial Regex CollectorNameRegex();
+
+		/// <summary>
 		/// Gets the collector for a given postcode, potentially requiring multiple steps via client-side responses.
 		/// </summary>
 		/// <param name="collectorService">The collector service.</param>
@@ -75,8 +81,22 @@ namespace BinDays.Api.Collectors.Collectors
 					throw new GovUkIdNotFoundException(postcode);
 				}
 
+				var collectorName = CollectorNameRegex().Match(clientSideResponse.Content).Groups["CollectorName"].Value;
+				if (string.IsNullOrWhiteSpace(collectorName))
+				{
+					throw new InvalidOperationException($"No collector name found in gov.uk response for ID: {govUkId}.");
+				}
+
 				// Get collector with matching gov.uk id
-				var collector = collectorService.GetCollector(govUkId);
+				ICollector collector;
+				try
+				{
+					collector = collectorService.GetCollector(govUkId);
+				}
+				catch (SupportedCollectorNotFoundException)
+				{
+					throw new UnsupportedCollectorException(govUkId, collectorName);
+				}
 
 				// Build response, no next client-side request required
 				var getCollectorResponse = new GetCollectorResponse()
