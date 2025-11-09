@@ -44,7 +44,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Name = "Plastic & Metal Recycling",
 				Colour = BinColour.White,
 				Keys = new List<string>() { "Recycling and Food" }.AsReadOnly(),
-				Type = BinType.Bag,
+				Type = BinType.Sack,
 			},
 			new()
 			{
