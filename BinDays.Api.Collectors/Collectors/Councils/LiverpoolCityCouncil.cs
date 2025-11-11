@@ -166,24 +166,24 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						var dateString = rawBinDate.Groups["date"].Value;
 
-						// Strip the st|nd|rd|th from the date string
-						dateString = CollectionDateRegex().Replace(dateString, "");
+						// Strip the st|nd|rd|th and remove day of the week
+						dateString = CollectionDateRegex().Replace(dateString, "").Split(",").Last().Trim();
 
 						// Handle a date of 'Today'
 						if (dateString == "Today")
 						{
-							dateString = DateTime.Now.ToString("dddd, d MMMM");
+							dateString = DateTime.Now.ToString("d MMMM");
 						}
 						// Handle a date of "Tomorrow"
 						else if (dateString == "Tomorrow")
 						{
-							dateString = DateTime.Now.AddDays(1).ToString("dddd, d MMMM");
+							dateString = DateTime.Now.AddDays(1).ToString("d MMMM");
 						}
 
 						// Parse the date
 						var date = DateOnly.ParseExact(
 							dateString,
-							"dddd, d MMMM",
+							"d MMMM",
 							CultureInfo.InvariantCulture,
 							DateTimeStyles.None
 						);

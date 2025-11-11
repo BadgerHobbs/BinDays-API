@@ -22,6 +22,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 
 		[Theory]
 		[InlineData("L15 2HF")]
+		[InlineData("L8 2TG")]
 		public async Task GetBinDaysTest(string postcode)
 		{
 			await TestSteps.EndToEnd(
