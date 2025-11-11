@@ -27,6 +27,12 @@ namespace BinDays.Api.Collectors.Collectors
 		public virtual Uri GovUkUrl => new($"{GovUkBaseUrl}/{GovUkId}");
 
 		/// <summary>
+		/// Regex for the gov.uk ID from the first address.
+		/// </summary>
+		[GeneratedRegex(@"<option value=""(?<GovUkId>[^""]+)""")]
+		private static partial Regex FirstAddressGovUkIdRegex();
+
+		/// <summary>
 		/// Regex for the gov.uk ID from the html.
 		/// </summary>
 		[GeneratedRegex(@"value=""https://www.gov.uk/.*?/(?<GovUkId>[\w-]+)""")]
@@ -57,7 +63,7 @@ namespace BinDays.Api.Collectors.Collectors
 					RequestId = 1,
 					Url = GovUkBaseUrl,
 					Method = "POST",
-					Body = requestBody,
+					Body = requestBody
 				};
 
 				var getCollectorResponse = new GetCollectorResponse()
@@ -70,35 +76,47 @@ namespace BinDays.Api.Collectors.Collectors
 			// Process collector from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				// Try to get gov.uk ID from response header
-				var govUkId = clientSideResponse.Headers.GetValueOrDefault("location")?.Split("/").Last().Trim();
+				// Check if multiple addresses returned, if so get the first Gov UK ID
+				var firstAddressGovUkId = FirstAddressGovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
 
-				// If null, try to get gov.uk ID from response html
-				govUkId ??= GovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
+				GetCollectorResponse getCollectorResponse;
 
-				if (govUkId == null)
+				// If we found a gov.uk ID from address, make a second request to the collector page.
+				if (!string.IsNullOrWhiteSpace(firstAddressGovUkId))
 				{
-					throw new GovUkIdNotFoundException(postcode);
+					// Prepare client-side request
+					var clientSideRequest = new ClientSideRequest()
+					{
+						RequestId = 2,
+						Url = $"{GovUkBaseUrl}/{firstAddressGovUkId}",
+						Method = "GET",
+					};
+
+					getCollectorResponse = new GetCollectorResponse()
+					{
+						NextClientSideRequest = clientSideRequest
+					};
+
+					return getCollectorResponse;
+				}
+				// If no gov.uk ID found from address, it should already be in the response.
+				else
+				{
+					var collector = ExtractCollector(collectorService, postcode, clientSideResponse);
+
+					getCollectorResponse = new GetCollectorResponse()
+					{
+						Collector = collector,
+					};
 				}
 
-				var collectorName = CollectorNameRegex().Match(clientSideResponse.Content).Groups["CollectorName"].Value;
-				if (string.IsNullOrWhiteSpace(collectorName))
-				{
-					throw new InvalidOperationException($"No collector name found in gov.uk response for ID: {govUkId}.");
-				}
+				return getCollectorResponse;
+			}
+			// Prepare client-side request for getting collector
+			else if (clientSideResponse.RequestId == 2)
+			{
+				var collector = ExtractCollector(collectorService, postcode, clientSideResponse);
 
-				// Get collector with matching gov.uk id
-				ICollector collector;
-				try
-				{
-					collector = collectorService.GetCollector(govUkId);
-				}
-				catch (SupportedCollectorNotFoundException)
-				{
-					throw new UnsupportedCollectorException(govUkId, collectorName);
-				}
-
-				// Build response, no next client-side request required
 				var getCollectorResponse = new GetCollectorResponse()
 				{
 					Collector = collector,
@@ -109,6 +127,42 @@ namespace BinDays.Api.Collectors.Collectors
 
 			// Throw exception for invalid request
 			throw new InvalidOperationException("Invalid client-side request.");
+		}
+
+		/// <summary>
+		/// Extract the gov.uk collector ID and name from the response.
+		/// </summary>
+		private static ICollector ExtractCollector(CollectorService collectorService, string postcode, ClientSideResponse clientSideResponse)
+		{
+			// Try to get gov.uk ID from response header
+			var govUkId = clientSideResponse.Headers.GetValueOrDefault("location")?.Split("/").Last().Trim();
+
+			// If null, try to get gov.uk ID from response html
+			govUkId ??= GovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
+
+			if (govUkId == null)
+			{
+				throw new GovUkIdNotFoundException(postcode);
+			}
+
+			var collectorName = CollectorNameRegex().Match(clientSideResponse.Content).Groups["CollectorName"].Value;
+			if (string.IsNullOrWhiteSpace(collectorName))
+			{
+				throw new InvalidOperationException($"No collector name found in gov.uk response for ID: {govUkId}.");
+			}
+
+			// Get collector with matching gov.uk id
+			ICollector collector;
+			try
+			{
+				collector = collectorService.GetCollector(govUkId);
+			}
+			catch (SupportedCollectorNotFoundException)
+			{
+				throw new UnsupportedCollectorException(govUkId, collectorName);
+			}
+
+			return collector;
 		}
 	}
 }
