@@ -5,6 +5,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using System;
 	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
+	using System.Globalization;
 	using System.Text.RegularExpressions;
 
 	/// <summary>
@@ -61,14 +62,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// Regex for the bin days from the data table elements.
 		/// </summary>
-		[GeneratedRegex(@"<tr>\s*<td>(?<service>.*?)</td>\s*<td>(?<date>.*?)</td>\s*</tr>")]
+		[GeneratedRegex(@"<tbody>\s*<tr>\s*<t.>(?<service>.*?)</t.>\s*<td>(?<date>.*?)</td>\s*</tr>\s*</tbody>")]
 		private static partial Regex BinDaysRegex();
-
-		/// <summary>
-		/// Regex for the collection date format.
-		/// </summary>
-		[GeneratedRegex(@"\((?<day>\d+)(?:st|nd|rd|th)\)")]
-		private static partial Regex CollectionDateRegex();
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -248,20 +243,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var service = rawBinDay.Groups["service"].Value;
 					var collectionDate = rawBinDay.Groups["date"].Value;
 
-					// Get the day number from the collection date
-					var dayNumber = int.Parse(CollectionDateRegex().Match(collectionDate).Groups["day"].Value);
-
-					var date = new DateOnly(
-						DateTime.Now.Year,
-						DateTime.Now.Month,
-						dayNumber
+					var date = DateOnly.ParseExact(
+						collectionDate,
+						"ddd dd/MM/yyyy",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
 					);
-
-					// If the day number is less then today, it is next month
-					if (dayNumber < DateTime.Now.Day)
-					{
-						date = date.AddMonths(1);
-					}
 
 					// Get matching bin types from the service using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
