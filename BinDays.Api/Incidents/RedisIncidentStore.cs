@@ -39,9 +39,11 @@ namespace BinDays.Api.Incidents
 			var payload = JsonSerializer.Serialize(incident, SerializerOptions);
 
 			var cutoffScore = ToScore(DateTime.UtcNow - RetentionWindow);
-			db.SortedSetRemoveRangeByScore(IndexKey, double.NegativeInfinity, cutoffScore);
 
-			db.SortedSetAdd(IndexKey, payload, ToScore(incident.OccurredUtc));
+			var transaction = db.CreateTransaction();
+			_ = transaction.SortedSetRemoveRangeByScoreAsync(IndexKey, double.NegativeInfinity, cutoffScore);
+			_ = transaction.SortedSetAddAsync(IndexKey, payload, ToScore(incident.OccurredUtc));
+			transaction.Execute();
 		}
 
 		/// <inheritdoc/>
