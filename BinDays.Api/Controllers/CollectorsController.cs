@@ -4,11 +4,15 @@
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;
 	using BinDays.Api.Collectors.Utilities;
+	using BinDays.Api.Incidents;
 	using Microsoft.AspNetCore.Http;
 	using Microsoft.AspNetCore.Mvc;
 	using Microsoft.Extensions.Caching.Distributed;
 	using Microsoft.Extensions.Logging;
 	using Newtonsoft.Json;
+	using System.Net.Http;
+	using System.Security.Cryptography;
+	using System.Text;
 
 	/// <summary>
 	/// API controller for managing collectors.
@@ -27,6 +31,11 @@
 		private readonly ILogger<CollectorsController> _logger;
 
 		/// <summary>
+		/// Store for recording failed incidents.
+		/// </summary>
+		private readonly IIncidentStore _incidentStore;
+
+		/// <summary>
 		/// Distributed cache for storing responses.
 		/// </summary>
 		private readonly IDistributedCache _cache;
@@ -42,11 +51,13 @@
 		/// <param name="collectorService">Service for retrieving collector information.</param>
 		/// <param name="logger">Logger for the controller.</param>
 		/// <param name="cache">Distributed cache for storing responses.</param>
-		public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IDistributedCache cache)
+		/// <param name="incidentStore">Store for recording failed incidents.</param>
+		public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IDistributedCache cache, IIncidentStore incidentStore)
 		{
 			_collectorService = collectorService;
 			_logger = logger;
 			_cache = cache;
+			_incidentStore = incidentStore;
 		}
 
 		/// <summary>
@@ -134,6 +145,7 @@
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "An unexpected error occurred while retrieving collector for postcode: {Postcode}.", postcode);
+				RecordIncident(null, IncidentOperation.GetCollector, ex);
 				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching the collector for the specified postcode. Please try again later.");
 			}
 		}
@@ -189,6 +201,7 @@
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "An unexpected error occurred while retrieving addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
+				RecordIncident(govUkId, IncidentOperation.GetAddresses, ex);
 				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching addresses. Please try again later.");
 			}
 		}
@@ -255,8 +268,79 @@
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "An unexpected error occurred while retrieving bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+				RecordIncident(govUkId, IncidentOperation.GetBinDays, ex);
 				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching bin days. Please try again later.");
 			}
+		}
+
+		/// <summary>
+		/// Records an unexpected incident for diagnostics.
+		/// </summary>
+		/// <param name="govUkId">The collector identifier, if known.</param>
+		/// <param name="operation">The operation that was being performed.</param>
+		/// <param name="exception">The triggering exception.</param>
+		private void RecordIncident(string? govUkId, IncidentOperation operation, Exception exception)
+		{
+			var normalisedGovUkId = string.IsNullOrWhiteSpace(govUkId) ? string.Empty : govUkId.Trim().ToLowerInvariant();
+
+			var incident = new IncidentRecord
+			{
+				IncidentId = Guid.NewGuid(),
+				GovUkId = normalisedGovUkId,
+				OccurredUtc = DateTime.UtcNow,
+				Category = Classify(exception),
+				Operation = operation,
+				MessageHash = ComputeHash(exception),
+				ExceptionType = exception.GetType().FullName ?? exception.GetType().Name,
+			};
+
+			try
+			{
+				_incidentStore.RecordIncident(incident);
+			}
+			catch (Exception storeException)
+			{
+				_logger.LogError(storeException, "Failed to record incident for collector {GovUkId}.", normalisedGovUkId);
+			}
+		}
+
+		/// <summary>
+		/// Classifies an exception into an incident category.
+		/// </summary>
+		/// <param name="exception">The exception to classify.</param>
+		/// <returns>The incident category.</returns>
+		private static IncidentCategory Classify(Exception exception)
+		{
+			switch (exception)
+			{
+				case HttpRequestException:
+				case TimeoutException:
+				case TaskCanceledException:
+					return IncidentCategory.CollectorFailure;
+
+				case System.Text.Json.JsonException:
+				case FormatException:
+				case InvalidOperationException:
+					return IncidentCategory.IntegrationChanged;
+
+				default:
+					return IncidentCategory.SystemFailure;
+			}
+		}
+
+		/// <summary>
+		/// Computes a deterministic hash for an exception.
+		/// </summary>
+		/// <param name="exception">The exception to hash.</param>
+		/// <returns>A hexadecimal hash string.</returns>
+		private static string ComputeHash(Exception exception)
+		{
+			var payload = Encoding.UTF8.GetBytes(
+				$"{exception.GetType().FullName}|{exception.TargetSite?.ToString() ?? "UnknownTarget"}|{exception.Message}"
+			);
+			var hash = SHA256.HashData(payload);
+
+			return Convert.ToHexString(hash);
 		}
 	}
 }
