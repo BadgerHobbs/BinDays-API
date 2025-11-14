@@ -311,21 +311,12 @@
 		/// <returns>The incident category.</returns>
 		private static IncidentCategory Classify(Exception exception)
 		{
-			switch (exception)
+			return exception switch
 			{
-				case HttpRequestException:
-				case TimeoutException:
-				case TaskCanceledException:
-					return IncidentCategory.CollectorFailure;
-
-				case System.Text.Json.JsonException:
-				case FormatException:
-				case InvalidOperationException:
-					return IncidentCategory.IntegrationChanged;
-
-				default:
-					return IncidentCategory.SystemFailure;
-			}
+				HttpRequestException or TimeoutException or TaskCanceledException => IncidentCategory.CollectorFailure,
+				System.Text.Json.JsonException or FormatException or InvalidOperationException => IncidentCategory.IntegrationChanged,
+				_ => IncidentCategory.SystemFailure,
+			};
 		}
 
 		/// <summary>
