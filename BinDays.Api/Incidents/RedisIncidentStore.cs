@@ -57,8 +57,9 @@ namespace BinDays.Api.Incidents
 			var ids = db.SortedSetRangeByScore(IndexKey, order: Order.Descending);
 
 			var incidentKeys = ids
-				.Where(id => id.HasValue && Guid.TryParseExact(id.ToString(), "N", out _))
-				.Select(id => (RedisKey)GetIncidentKey(Guid.ParseExact(id.ToString(), "N")))
+				.Select(id => id.HasValue && Guid.TryParseExact(id.ToString(), "N", out var guid) ? (Guid?)guid : null)
+				.Where(guid => guid.HasValue)
+				.Select(guid => (RedisKey)GetIncidentKey(guid!.Value))
 				.ToArray();
 
 			if (incidentKeys.Length == 0)

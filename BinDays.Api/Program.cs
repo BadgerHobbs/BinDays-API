@@ -15,13 +15,14 @@ builder.Services.AddControllers();
 var redis = builder.Configuration.GetValue<string>("Redis");
 if (!string.IsNullOrEmpty(redis))
 {
+	var multiplexer = ConnectionMultiplexer.Connect(redis);
+	builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+	builder.Services.AddSingleton<IIncidentStore, RedisIncidentStore>();
+
 	builder.Services.AddStackExchangeRedisCache(options =>
 	{
-		options.Configuration = redis;
+		options.ConnectionMultiplexerFactory = () => Task.FromResult<IConnectionMultiplexer>(multiplexer);
 	});
-
-	builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redis));
-	builder.Services.AddSingleton<IIncidentStore, RedisIncidentStore>();
 }
 else
 {
