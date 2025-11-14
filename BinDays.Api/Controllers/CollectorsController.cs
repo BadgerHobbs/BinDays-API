@@ -336,7 +336,7 @@
 		private static string ComputeHash(Exception exception)
 		{
 			var payload = Encoding.UTF8.GetBytes(
-				$"{exception.GetType().FullName}|{exception.TargetSite}|{exception.Message}"
+				$"{exception.GetType().FullName}|{exception.TargetSite?.ToString() ?? "UnknownTarget"}|{exception.Message}"
 			);
 			var hash = SHA256.HashData(payload);
 

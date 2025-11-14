@@ -4,6 +4,7 @@ namespace BinDays.Api.Incidents
 	using System;
 	using System.Collections.Generic;
 	using System.Globalization;
+	using System.Linq;
 	using System.Text.Json;
 	using System.Text.Json.Serialization;
 
@@ -12,7 +13,6 @@ namespace BinDays.Api.Incidents
 	/// </summary>
 	internal sealed class RedisIncidentStore : IIncidentStore
 	{
-		private const string IndexKey = "health:incidents:index";
 		private const string IncidentKeyPrefix = "health:incident:";
 		private static readonly TimeSpan RetentionWindow = TimeSpan.FromDays(90);
 		private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -42,51 +42,31 @@ namespace BinDays.Api.Incidents
 			var incidentKey = GetIncidentKey(incident.IncidentId);
 
 			db.StringSet(incidentKey, payload, RetentionWindow);
-
-			var score = ToScore(incident.OccurredUtc);
-			db.SortedSetAdd(IndexKey, incident.IncidentId.ToString("N", CultureInfo.InvariantCulture), score);
-
-			// Prevent the index from sticking around indefinitely
-			db.KeyExpire(IndexKey, RetentionWindow);
 		}
 
 		/// <inheritdoc/>
 		public IReadOnlyList<IncidentRecord> GetIncidents()
 		{
 			var db = _connectionMultiplexer.GetDatabase();
-			var ids = db.SortedSetRangeByScore(IndexKey, order: Order.Descending);
+			var server = _connectionMultiplexer.GetServer(_connectionMultiplexer.GetEndPoints().First());
 
-			var incidentKeys = ids
-				.Select(id => id.HasValue && Guid.TryParseExact(id.ToString(), "N", out var guid) ? (Guid?)guid : null)
-				.Where(guid => guid.HasValue)
-				.Select(guid => (RedisKey)GetIncidentKey(guid!.Value))
-				.ToArray();
-
-			if (incidentKeys.Length == 0)
+			var incidents = new List<IncidentRecord>();
+			foreach (var key in server.Keys(pattern: $"{IncidentKeyPrefix}*"))
 			{
-				return [];
+				var value = db.StringGet(key);
+				if (!value.HasValue)
+				{
+					continue;
+				}
+
+				var incident = JsonSerializer.Deserialize<IncidentRecord>(value!, SerializerOptions);
+				if (incident != null)
+				{
+					incidents.Add(incident);
+				}
 			}
 
-			var incidentValues = db.StringGet(incidentKeys);
-
-			var incidents = incidentValues
-				.Where(value => value.HasValue)
-				.Select(value => JsonSerializer.Deserialize<IncidentRecord>(value!, SerializerOptions))
-				.Where(incident => incident is not null)
-				.Cast<IncidentRecord>();
-
-			return [.. incidents];
-		}
-
-		/// <summary>
-		/// Converts the supplied UTC date to a sorted-set score.
-		/// </summary>
-		/// <param name="utcDateTime">The UTC timestamp.</param>
-		/// <returns>The numeric score.</returns>
-		private static double ToScore(DateTime utcDateTime)
-		{
-			var utc = DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc);
-			return new DateTimeOffset(utc).ToUnixTimeMilliseconds();
+			return [.. incidents.OrderByDescending(incident => incident.OccurredUtc)];
 		}
 
 		/// <summary>
@@ -98,5 +78,6 @@ namespace BinDays.Api.Incidents
 		{
 			return $"{IncidentKeyPrefix}{incidentId.ToString("N", CultureInfo.InvariantCulture)}";
 		}
+
 	}
 }
