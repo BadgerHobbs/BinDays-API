@@ -57,21 +57,11 @@ namespace BinDays.Api.Incidents
 				return [];
 			}
 
-			var incidents = new List<IncidentRecord>(entries.Length);
-
-			foreach (var entry in entries)
-			{
-				if (!entry.HasValue)
-				{
-					continue;
-				}
-
-				var incident = JsonSerializer.Deserialize<IncidentRecord>(entry!, SerializerOptions);
-				if (incident != null)
-				{
-					incidents.Add(incident);
-				}
-			}
+			var incidents = entries
+				.Where(e => e.HasValue)
+				.Select(e => JsonSerializer.Deserialize<IncidentRecord>(e!, SerializerOptions))
+				.OfType<IncidentRecord>()
+				.ToList();
 
 			return incidents;
 		}
