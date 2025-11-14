@@ -56,14 +56,22 @@ namespace BinDays.Api.Incidents
 			var db = _connectionMultiplexer.GetDatabase();
 			var ids = db.SortedSetRangeByScore(IndexKey, order: Order.Descending);
 
-			var incidents = ids
-				.Where(id => id.HasValue)
-				.Select(id => id.ToString())
-				.Where(id => Guid.TryParseExact(id, "N", out _))
-				.Select(id => db.StringGet(GetIncidentKey(Guid.ParseExact(id!, "N"))))
+			var incidentKeys = ids
+				.Where(id => id.HasValue && Guid.TryParseExact(id.ToString(), "N", out _))
+				.Select(id => (RedisKey)GetIncidentKey(Guid.ParseExact(id.ToString(), "N")))
+				.ToArray();
+
+			if (incidentKeys.Length == 0)
+			{
+				return [];
+			}
+
+			var incidentValues = db.StringGet(incidentKeys);
+
+			var incidents = incidentValues
 				.Where(value => value.HasValue)
 				.Select(value => JsonSerializer.Deserialize<IncidentRecord>(value!, SerializerOptions))
-				.Where(incident => incident != null)
+				.Where(incident => incident is not null)
 				.Cast<IncidentRecord>();
 
 			return [.. incidents];
