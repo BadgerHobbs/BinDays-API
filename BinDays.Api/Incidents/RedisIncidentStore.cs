@@ -3,8 +3,6 @@ namespace BinDays.Api.Incidents
 	using StackExchange.Redis;
 	using System;
 	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Linq;
 	using System.Text.Json;
 	using System.Text.Json.Serialization;
 
@@ -13,7 +11,7 @@ namespace BinDays.Api.Incidents
 	/// </summary>
 	internal sealed class RedisIncidentStore : IIncidentStore
 	{
-		private const string IncidentKeyPrefix = "health:incident:";
+		private const string IndexKey = "health:incidents";
 		private static readonly TimeSpan RetentionWindow = TimeSpan.FromDays(90);
 		private static readonly JsonSerializerOptions SerializerOptions = new()
 		{
@@ -39,45 +37,52 @@ namespace BinDays.Api.Incidents
 
 			var db = _connectionMultiplexer.GetDatabase();
 			var payload = JsonSerializer.Serialize(incident, SerializerOptions);
-			var incidentKey = GetIncidentKey(incident.IncidentId);
 
-			db.StringSet(incidentKey, payload, RetentionWindow);
+			var cutoffScore = ToScore(DateTime.UtcNow - RetentionWindow);
+			db.SortedSetRemoveRangeByScore(IndexKey, double.NegativeInfinity, cutoffScore);
+
+			db.SortedSetAdd(IndexKey, payload, ToScore(incident.OccurredUtc));
 		}
 
 		/// <inheritdoc/>
 		public IReadOnlyList<IncidentRecord> GetIncidents()
 		{
 			var db = _connectionMultiplexer.GetDatabase();
-			var server = _connectionMultiplexer.GetServer(_connectionMultiplexer.GetEndPoints().First());
+			var entries = db.SortedSetRangeByScore(IndexKey, order: Order.Descending);
 
-			var incidents = new List<IncidentRecord>();
-			foreach (var key in server.Keys(pattern: $"{IncidentKeyPrefix}*"))
+			if (entries.Length == 0)
 			{
-				var value = db.StringGet(key);
-				if (!value.HasValue)
+				return [];
+			}
+
+			var incidents = new List<IncidentRecord>(entries.Length);
+
+			foreach (var entry in entries)
+			{
+				if (!entry.HasValue)
 				{
 					continue;
 				}
 
-				var incident = JsonSerializer.Deserialize<IncidentRecord>(value!, SerializerOptions);
+				var incident = JsonSerializer.Deserialize<IncidentRecord>(entry!, SerializerOptions);
 				if (incident != null)
 				{
 					incidents.Add(incident);
 				}
 			}
 
-			return [.. incidents.OrderByDescending(incident => incident.OccurredUtc)];
+			return incidents;
 		}
 
 		/// <summary>
-		/// Builds the Redis key for a specific incident identifier.
+		/// Converts a UTC timestamp to a sorted-set score.
 		/// </summary>
-		/// <param name="incidentId">The incident identifier.</param>
-		/// <returns>The Redis key.</returns>
-		private static string GetIncidentKey(Guid incidentId)
+		/// <param name="utcDateTime">The UTC timestamp.</param>
+		/// <returns>The numeric score.</returns>
+		private static double ToScore(DateTime utcDateTime)
 		{
-			return $"{IncidentKeyPrefix}{incidentId.ToString("N", CultureInfo.InvariantCulture)}";
+			var utc = DateTime.SpecifyKind(utcDateTime, DateTimeKind.Utc);
+			return new DateTimeOffset(utc).ToUnixTimeMilliseconds();
 		}
-
 	}
 }
