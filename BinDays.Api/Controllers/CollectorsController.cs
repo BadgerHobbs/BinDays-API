@@ -127,6 +127,11 @@
 
 				return Ok(result);
 			}
+			catch (InvalidPostcodeException ex)
+			{
+				_logger.LogWarning(ex, "Invalid postcode provided: {Postcode}.", postcode);
+				return BadRequest("The supplied postcode is invalid.");
+			}
 			catch (UnsupportedCollectorException ex)
 			{
 				_logger.LogWarning(ex, "Unsupported collector {CollectorName} for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.CollectorName, ex.GovUkId, postcode);

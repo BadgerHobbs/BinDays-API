@@ -45,6 +45,12 @@ namespace BinDays.Api.Collectors.Collectors
 		private static partial Regex CollectorNameRegex();
 
 		/// <summary>
+		/// Regex for detecting an invalid postcode response.
+		/// </summary>
+		[GeneratedRegex(@"This isn(?:'|&#39;)t a valid postcode\.")]
+		private static partial Regex InvalidPostcodeRegex();
+
+		/// <summary>
 		/// Gets the collector for a given postcode, potentially requiring multiple steps via client-side responses.
 		/// </summary>
 		/// <param name="collectorService">The collector service.</param>
@@ -76,6 +82,11 @@ namespace BinDays.Api.Collectors.Collectors
 			// Process collector from response
 			else if (clientSideResponse.RequestId == 1)
 			{
+				if (InvalidPostcodeRegex().IsMatch(clientSideResponse.Content))
+				{
+					throw new InvalidPostcodeException(postcode);
+				}
+
 				// Check if multiple addresses returned, if so get the first Gov UK ID
 				var firstAddressGovUkId = FirstAddressGovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
 
