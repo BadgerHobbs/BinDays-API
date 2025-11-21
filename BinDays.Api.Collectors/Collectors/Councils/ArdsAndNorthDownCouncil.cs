@@ -88,12 +88,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Iterate through each address json, and create a new address object
 				foreach (var addressElement in jsonDoc.RootElement.GetProperty("addresses").EnumerateArray())
 				{
-					string? property = addressElement.GetProperty("addressText").GetString()?.Trim();
+					string? property = addressElement.GetProperty("addressText").GetString();
 					string? uprn = addressElement.GetProperty("uprn").GetString();
 
-					if (property != null && property.EndsWith(postcode.Trim()[^3..], StringComparison.OrdinalIgnoreCase)) {
-						property = property[..^(postcode.Length+1)].TrimEnd(',', ' ', '\t');
-					}
+					// Remove postcode from property (e.g.'1 OLD MILL COURT, NEWTOWNARDS, BT23 4JG')
+					property = property?.Replace($", {postcode}", "", StringComparison.OrdinalIgnoreCase).Trim();
 
 					var address = new Address()
 					{
