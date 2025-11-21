@@ -1,0 +1,191 @@
+namespace BinDays.Api.Collectors.Collectors.Councils
+{
+	using BinDays.Api.Collectors.Models;
+	using BinDays.Api.Collectors.Utilities;
+	using System;
+	using System.Collections.Generic;
+	using System.Collections.ObjectModel;
+	using System.Globalization;
+	using System.Linq;
+	using System.Text.Json;
+
+	/// <summary>
+	/// Collector implementation for Ards and North Down Council.
+	/// </summary>
+	internal sealed partial class ArdsAndNorthDownCouncil : GovUkCollectorBase, ICollector
+	{
+		/// <inheritdoc/>
+		public string Name => "Ards and North Down Council";
+
+		/// <inheritdoc/>
+		public Uri WebsiteUrl => new("https://www.ardsandnorthdown.gov.uk/article/1141/Bins-and-recycling");
+
+		/// <inheritdoc/>
+		public override string GovUkId => "ards-and-north-down";
+
+		/// <summary>
+		/// The list of bin types for this collector.
+		/// </summary>
+		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
+		{
+			new()
+			{
+				Name = "General Waste",
+				Colour = BinColour.Grey,
+				Keys = new List<string>() { "General waste bin" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Garden and Food Waste",
+				Colour = BinColour.Brown,
+				Keys = new List<string>() { "Garden and food waste bin" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Recycling",
+				Colour = BinColour.Blue,
+				Keys = new List<string>() { "Recycling bin" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Glass",
+				Colour = BinColour.Yellow,
+				Keys = new List<string>() { "Glass container" }.AsReadOnly(),
+				Type = BinType.Box,
+			},
+		}.AsReadOnly();
+
+		/// <inheritdoc/>
+		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+		{
+			// Prepare client-side request for getting addresses
+			if (clientSideResponse == null)
+			{
+				var requestUrl = $"https://ardsandnorthdownbincalendar.azurewebsites.net/api/addresses/{postcode}";
+
+				var clientSideRequest = new ClientSideRequest()
+				{
+					RequestId = 1,
+					Url = requestUrl,
+					Method = "GET",
+				};
+
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getAddressesResponse;
+			}
+			// Process addresses from response
+			else if (clientSideResponse.RequestId == 1)
+			{
+				var addresses = new List<Address>();
+
+				// Parse response content as JSON array
+				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+
+				// Iterate through each address json, and create a new address object
+				foreach (var addressElement in jsonDoc.RootElement.GetProperty("addresses").EnumerateArray())
+				{
+					string? property = addressElement.GetProperty("addressText").ToString();
+					string? uprn = addressElement.GetProperty("uprn").ToString();
+
+					var address = new Address()
+					{
+						Property = property?.Trim(),
+						Postcode = postcode,
+						Uid = uprn,
+					};
+					addresses.Add(address);
+				}
+
+				var getAddressesResponse = new GetAddressesResponse()
+				{
+					Addresses = addresses.AsReadOnly(),
+				};
+
+				return getAddressesResponse;
+			}
+
+			// Throw exception for invalid request
+			throw new InvalidOperationException("Invalid client-side request.");
+		}
+
+		/// <inheritdoc/>
+		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		{
+			// Prepare client-side request for getting bin days
+			if (clientSideResponse == null)
+			{
+				var requestUrl = $"https://ardsandnorthdownbincalendar.azurewebsites.net/api/collectiondates/{address.Uid}";
+
+				var clientSideRequest = new ClientSideRequest()
+				{
+					RequestId = 1,
+					Url = requestUrl,
+					Method = "GET",
+				};
+
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					NextClientSideRequest = clientSideRequest
+				};
+
+				return getBinDaysResponse;
+			}
+			// Process bin days from response
+			else if (clientSideResponse.RequestId == 1)
+			{
+				// Parse response content as JSON object
+				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+				var rawBinDaysObject = jsonDoc.RootElement;
+
+				// Iterate through all bin type keys and get associated collection date
+				var binDays = new List<BinDay>();
+
+				foreach (var week in new[] { "lastWeek", "thisWeek", "nextWeek" })
+				{
+					foreach (var dayEntry in rawBinDaysObject.GetProperty(week).EnumerateArray())
+					{
+						var collectionDate = dayEntry.GetProperty("date").ToString();
+
+						// Parse the date (e.g. "2024-07-29T00:00:00")
+						var date = DateOnly.ParseExact(
+							collectionDate,
+							"yyyy-MM-ddTHH:mm:ss",
+							CultureInfo.InvariantCulture,
+							DateTimeStyles.None
+						);
+
+						foreach (var binEntry in dayEntry.GetProperty("bins").EnumerateArray())
+						{
+							var keyVal = binEntry.GetProperty("name").ToString();
+
+							var binType = _binTypes.Single(b => b.Keys.Contains(keyVal));
+
+							var binDay = new BinDay()
+							{
+								Date = date,
+								Address = address,
+								Bins = new List<Bin>() { binType }.AsReadOnly(),
+							};
+
+							binDays.Add(binDay);
+						}
+					}
+				}
+
+				var getBinDaysResponse = new GetBinDaysResponse()
+				{
+					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+				};
+
+				return getBinDaysResponse;
+			}
+
+			// Throw exception for invalid request
+			throw new InvalidOperationException("Invalid client-side request.");
+		}
+	}
+}
