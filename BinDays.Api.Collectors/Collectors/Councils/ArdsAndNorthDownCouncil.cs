@@ -169,7 +169,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 							binsForDay.Add(binType);
 						}
 
-						if (binsForDay.Any())
+						if (binsForDay.Count != 0)
 						{
 							var binDay = new BinDay()
 							{
