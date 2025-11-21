@@ -88,8 +88,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Iterate through each address json, and create a new address object
 				foreach (var addressElement in jsonDoc.RootElement.GetProperty("addresses").EnumerateArray())
 				{
-					string? property = addressElement.GetProperty("addressText").ToString();
-					string? uprn = addressElement.GetProperty("uprn").ToString();
+					string? property = addressElement.GetProperty("addressText").GetString();
+					string? uprn = addressElement.GetProperty("uprn").GetString();
 
 					var address = new Address()
 					{
@@ -148,7 +148,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				{
 					foreach (var dayEntry in rawBinDaysObject.GetProperty(week).EnumerateArray())
 					{
-						var collectionDate = dayEntry.GetProperty("date").ToString();
+						var collectionDate = dayEntry.GetProperty("date").GetString();
+						ArgumentNullException.ThrowIfNull(collectionDate);
 
 						// Parse the date (e.g. "2024-07-29T00:00:00")
 						var date = DateOnly.ParseExact(
@@ -158,17 +159,23 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 							DateTimeStyles.None
 						);
 
+						var binsForDay = new List<Bin>();
 						foreach (var binEntry in dayEntry.GetProperty("bins").EnumerateArray())
 						{
-							var keyVal = binEntry.GetProperty("name").ToString();
+							var keyVal = binEntry.GetProperty("name").GetString();
+							ArgumentNullException.ThrowIfNull(keyVal);
 
 							var binType = _binTypes.Single(b => b.Keys.Contains(keyVal));
+							binsForDay.Add(binType);
+						}
 
+						if (binsForDay.Any())
+						{
 							var binDay = new BinDay()
 							{
 								Date = date,
 								Address = address,
-								Bins = new List<Bin>() { binType }.AsReadOnly(),
+								Bins = binsForDay.AsReadOnly(),
 							};
 
 							binDays.Add(binDay);
