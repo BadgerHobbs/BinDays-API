@@ -91,9 +91,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					string? property = addressElement.GetProperty("addressText").GetString();
 					string? uprn = addressElement.GetProperty("uprn").GetString();
 
+					// Remove postcode from property (e.g.'1 OLD MILL COURT, NEWTOWNARDS, BT23 4JG')
+					property = property?.Replace($", {postcode}", "", StringComparison.OrdinalIgnoreCase).Trim();
+
 					var address = new Address()
 					{
-						Property = property?.Trim(),
+						Property = property,
 						Postcode = postcode,
 						Uid = uprn,
 					};
