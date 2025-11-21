@@ -21,7 +21,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		}
 
 		[Theory]
-		[InlineData("B27 7AJ")]
+		[InlineData("B92 7EX")]
 		public async Task GetBinDaysTest(string postcode)
 		{
 			await TestSteps.EndToEnd(
@@ -34,3 +34,4 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		}
 	}
 }
+
