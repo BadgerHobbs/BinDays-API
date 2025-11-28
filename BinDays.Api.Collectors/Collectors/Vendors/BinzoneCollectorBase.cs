@@ -4,7 +4,6 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
 	using System.Globalization;
 	using System.Text.RegularExpressions;
 
@@ -27,7 +26,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
+		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{

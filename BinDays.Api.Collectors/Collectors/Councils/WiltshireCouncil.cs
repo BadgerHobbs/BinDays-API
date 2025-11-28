@@ -34,7 +34,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
+		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
 		{
 			new()
 			{

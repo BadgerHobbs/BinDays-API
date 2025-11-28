@@ -171,7 +171,7 @@ namespace BinDays.Api.Collectors.Utilities
 		/// <param name="bins">The collection of all possible Bin objects.</param>
 		/// <param name="service">The service string to match against the bin keys.</param>
 		/// <returns>A read-only collection of Bin objects that match the given service.</returns>
-		public static ReadOnlyCollection<Bin> GetMatchingBins(ReadOnlyCollection<Bin> bins, string service)
+		public static ReadOnlyCollection<Bin> GetMatchingBins(IReadOnlyCollection<Bin> bins, string service)
 		{
 			return bins.Where(bin =>
 				bin.Keys.Any(key =>
