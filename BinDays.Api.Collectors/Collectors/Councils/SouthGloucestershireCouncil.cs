@@ -1,12 +1,12 @@
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
+	using BinDays.Api.Collectors.Collectors.Vendors;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
 	using System.Globalization;
-	using System.Linq;
 	using System.Text.Json;
 
 	/// <summary>
@@ -165,7 +165,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBins.ToList().AsReadOnly()
+						Bins = matchedBins,
 					};
 
 					binDays.Add(binDay);

@@ -1,4 +1,4 @@
-namespace BinDays.Api.Collectors.Collectors
+namespace BinDays.Api.Collectors.Collectors.Vendors
 {
 	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Models;

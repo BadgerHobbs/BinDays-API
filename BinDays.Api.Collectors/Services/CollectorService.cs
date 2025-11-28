@@ -1,6 +1,7 @@
 namespace BinDays.Api.Collectors.Services
 {
 	using BinDays.Api.Collectors.Collectors;
+	using BinDays.Api.Collectors.Collectors.Vendors;
 	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Models;
 	using System.Collections.ObjectModel;

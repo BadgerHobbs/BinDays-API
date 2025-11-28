@@ -1,6 +1,6 @@
 namespace BinDays.Api.IntegrationTests.Collectors
 {
-	using BinDays.Api.Collectors.Collectors;
+	using BinDays.Api.Collectors.Collectors.Vendors;
 	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Services;

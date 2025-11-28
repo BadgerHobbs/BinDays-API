@@ -1,17 +1,15 @@
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
+	using BinDays.Api.Collectors.Collectors.Vendors;
 	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
+	using System;
+	using System.Collections.Generic;
 	using System.Collections.ObjectModel;
-	using System.Globalization;
-	using System.Text.Json;
-	using System.Text.Json.Nodes;
-	using System.Text.RegularExpressions;
 
 	/// <summary>
 	/// Collector implementation for West Devon Borough Council.
 	/// </summary>
-	internal sealed partial class WestDevonBoroughCouncil : GovUkCollectorBase, ICollector
+	internal sealed class WestDevonBoroughCouncil : FccCollectorBase, ICollector
 	{
 		/// <inheritdoc/>
 		public string Name => "West Devon Borough Council";
@@ -22,22 +20,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <inheritdoc/>
 		public override string GovUkId => "west-devon";
 
-		/// <summary>
-		/// Regex for the title within <h3> tags
-		/// </summary>
-		[GeneratedRegex(@"<h3.*?>\s*(.*?)\s*</h3>")]
-		private static partial Regex ServiceRegex();
+		/// <inheritdoc/>
+		protected override string BaseUrl => "https://westdevon.fccenvironment.co.uk/";
 
-		/// <summary>
-		/// Regex for the date following specific text and within <b> tags
-		/// </summary>
-		[GeneratedRegex(@"Your next scheduled collection is\s*<b>\s*(.*?)\s*</b>")]
-		private static partial Regex DateRegex();
+		/// <inheritdoc/>
+		protected override string CollectionDetailsEndpoint => "ajaxprocessor/getcollectiondetails";
 
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
+		/// <inheritdoc/>
+		protected override ReadOnlyCollection<Bin> BinTypes => new List<Bin>()
 		{
 			new()
 			{
@@ -81,223 +71,5 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Type = BinType.Sack,
 			},
 		}.AsReadOnly();
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
-		{
-			// Prepare client-side request for getting session id
-			if (clientSideResponse == null)
-			{
-				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
-				{
-					RequestId = 1,
-					Url = "https://westdevon.fccenvironment.co.uk/mycollections",
-					Method = "GET",
-				};
-
-				var getAddressesResponse = new GetAddressesResponse()
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Prepare client-side request for getting addresses
-			else if (clientSideResponse?.RequestId == 1)
-			{
-				// Get session id from response header
-				var sessionId = GetSessionId(clientSideResponse);
-
-				// Prepare client-side request
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
-				{
-					{"fcc_session_token", sessionId},
-					{"postcode", postcode},
-				});
-
-				var requestHeaders = new Dictionary<string, string>() {
-					{"cookie", $"fcc_session_cookie={sessionId}"},
-					{"x-requested-with", "XMLHttpRequest"},
-					{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
-				};
-
-				var clientSideRequest = new ClientSideRequest()
-				{
-					RequestId = 2,
-					Url = "https://westdevon.fccenvironment.co.uk/ajaxprocessor/getaddresses",
-					Method = "POST",
-					Headers = requestHeaders,
-					Body = requestBody,
-				};
-
-				var getAddressesResponse = new GetAddressesResponse()
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Process addresses from response
-			else if (clientSideResponse?.RequestId == 2)
-			{
-				// Parse response content as JSON object
-				var responseJson = JsonSerializer.Deserialize<JsonObject>(clientSideResponse.Content)!;
-				var addressesJson = responseJson["addresses"]!.AsObject();
-
-				// Iterate through each address json, and create a new address object
-				var addresses = new List<Address>();
-				foreach (var property in addressesJson)
-				{
-					JsonArray addressArray = property.Value!.AsArray();
-
-					string uid = addressArray[0]!.GetValue<string>();
-					string fullAddress = addressArray[1]!.GetValue<string>();
-
-					var address = new Address()
-					{
-						Property = fullAddress,
-						Postcode = postcode,
-						Uid = uid,
-					};
-
-					addresses.Add(address);
-				}
-
-				var getAddressesResponse = new GetAddressesResponse()
-				{
-					Addresses = addresses.AsReadOnly(),
-				};
-
-				return getAddressesResponse;
-			}
-
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
-		}
-
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
-		{
-			// Prepare client-side request for getting session id
-			if (clientSideResponse == null)
-			{
-				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
-				{
-					RequestId = 1,
-					Url = "https://westdevon.fccenvironment.co.uk/mycollections",
-					Method = "GET",
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse()
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Prepare client-side request for getting bin days
-			else if (clientSideResponse?.RequestId == 1)
-			{
-				// Get session id from response header
-				var sessionId = GetSessionId(clientSideResponse);
-
-				// Prepare client-side request
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
-				{
-					{"fcc_session_token", sessionId},
-					{"uprn", address.Uid!},
-				});
-
-				var requestHeaders = new Dictionary<string, string>() {
-					{"cookie", $"fcc_session_cookie={sessionId}"},
-					{"x-requested-with", "XMLHttpRequest"},
-					{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
-				};
-
-				var clientSideRequest = new ClientSideRequest()
-				{
-					RequestId = 2,
-					Url = "https://westdevon.fccenvironment.co.uk/ajaxprocessor/getcollectiondetails",
-					Method = "POST",
-					Headers = requestHeaders,
-					Body = requestBody,
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse()
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse?.RequestId == 2)
-			{
-				// Parse response content as JSON object
-				var responseJson = JsonSerializer.Deserialize<JsonObject>(clientSideResponse.Content)!;
-				var binDaysJson = responseJson["binCollections"]!["tile"]!.AsArray();
-
-				// Iterate through each bin days html, and create a new bin days object
-				var binDays = new List<BinDay>();
-				foreach (var binDayHtml in binDaysJson)
-				{
-					// Using regex get the service and date
-					var service = ServiceRegex().Match(binDayHtml![0]!.ToString()).Groups[1].Value;
-					var collectionDate = DateRegex().Match(binDayHtml![0]!.ToString()).Groups[1].Value;
-
-					// Get matching bin types from the service using the keys
-					var binTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-
-					// Parse the date (e.g. 'tomorrow, Tuesday, 15 April 2025') to date only
-					var date = DateOnly.ParseExact(
-						collectionDate.Split(",").Last().Trim(),
-						"dd MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					var binDay = new BinDay()
-					{
-						Date = date,
-						Address = address,
-						Bins = binTypes.ToList().AsReadOnly()
-					};
-
-					binDays.Add(binDay);
-				}
-
-				var getBinDaysResponse = new GetBinDaysResponse()
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
-			}
-
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
-		}
-
-		/// <summary>
-		/// Retrieves the session ID from the client-side response.
-		/// </summary>
-		/// <param name="clientSideResponse">The client-side response.</param>
-		/// <returns>The session ID.</returns>
-		private static string GetSessionId(ClientSideResponse clientSideResponse)
-		{
-			// Get session id from header cookie
-			// e.g. set-cookie: fcc_session_cookie=7e397cdc04a1195d60be4255d153ebee; ...
-			var cookie = clientSideResponse.Headers["set-cookie"];
-
-			var sessionId = cookie.Split(";")
-				.Where(x => x.Contains("fcc_session_cookie"))
-				.First()
-				.Split("=")
-				.Last();
-
-			return sessionId;
-		}
 	}
 }

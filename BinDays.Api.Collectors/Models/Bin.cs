@@ -1,7 +1,5 @@
 namespace BinDays.Api.Collectors.Models
 {
-	using System.Collections.ObjectModel;
-
 	/// <summary>
 	/// Model which represents an bin for a given collector.
 	/// </summary>
@@ -25,6 +23,6 @@ namespace BinDays.Api.Collectors.Models
 		/// <summary>
 		/// Gets bin keys (identifiers).
 		/// </summary>
-		required public ReadOnlyCollection<string> Keys { get; init; }
+		required public IReadOnlyCollection<string> Keys { get; init; }
 	}
 }
