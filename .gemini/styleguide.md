@@ -145,12 +145,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 		{
 			// Prepare client-side request for getting addresses
-			if (clientSideResponse.RequestId == null)
+			if (clientSideResponse == null)
 			{
 				// ...
 			}
 			// Process addresses from response
-			else if (clientSideResponse.RequestId == 2)
+			else if (clientSideResponse.RequestId == 1)
 			{
 				// ...
 			}
@@ -163,12 +163,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 		{
 			// Prepare client-side request for getting bin days
-			if (clientSideResponse.RequestId == null)
+			if (clientSideResponse == null)
 			{
 				// ...
 			}
 			// Process bin days from response
-			else if (clientSideResponse.RequestId == 2)
+			else if (clientSideResponse.RequestId == 1)
 			{
 				var binDays = new List<BinDay>();
 
