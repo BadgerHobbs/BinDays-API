@@ -1,7 +1,5 @@
 namespace BinDays.Api.Collectors.Models
 {
-	using System.Collections.ObjectModel;
-
 	/// <summary>
 	/// Represents the response from an address lookup request.
 	/// This response can either contain the next client-side request to be made,
@@ -17,6 +15,6 @@ namespace BinDays.Api.Collectors.Models
 		/// <summary>
 		/// Gets the list of addresses found, if no further client-side requests are required.
 		/// </summary>
-		public ReadOnlyCollection<Address>? Addresses { get; init; }
+		public IReadOnlyCollection<Address>? Addresses { get; init; }
 	}
 }

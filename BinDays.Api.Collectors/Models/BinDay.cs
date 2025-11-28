@@ -1,7 +1,5 @@
 namespace BinDays.Api.Collectors.Models
 {
-	using System.Collections.ObjectModel;
-
 	/// <summary>
 	/// Model which represents a bin day for a given collector.
 	/// </summary>
@@ -19,7 +17,6 @@ namespace BinDays.Api.Collectors.Models
 
 		/// <summary>
 		/// Gets bin day bins.
-		/// </summary>
-		required public ReadOnlyCollection<Bin> Bins { get; init; }
+		required public IReadOnlyCollection<Bin> Bins { get; init; }
 	}
 }
