@@ -17,6 +17,7 @@ namespace BinDays.Api.Collectors.Models
 
 		/// <summary>
 		/// Gets bin day bins.
+		/// </summary>
 		required public IReadOnlyCollection<Bin> Bins { get; init; }
 	}
 }
