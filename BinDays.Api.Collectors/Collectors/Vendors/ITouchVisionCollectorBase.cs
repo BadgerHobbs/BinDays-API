@@ -63,12 +63,11 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				{
 					RequestId = 1,
 					Url = $"{ApiBaseUrl}kmbd/address",
-					Method = "POST",
+					Method = "GET",
 					Headers = new Dictionary<string, string>
 					{
-						{ "content-type", "application/json; charset=UTF-8" }
+						{ "P_PARAMETER", Encrypt(JsonSerializer.Serialize(payload)) }
 					},
-					Body = Encrypt(JsonSerializer.Serialize(payload)),
 				};
 
 				var getAddressesResponse = new GetAddressesResponse()
@@ -81,22 +80,21 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			// Process addresses from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				var addresses = new List<Address>();
 				string decryptedJson = Decrypt(clientSideResponse.Content);
 				using var jsonDoc = JsonDocument.Parse(decryptedJson);
 
-				if (jsonDoc.RootElement.TryGetProperty("ADDRESS", out var addressArray))
+				var adressElements = jsonDoc.RootElement.GetProperty("ADDRESS");
+				var addresses = new List<Address>();
+
+				foreach (var addressElement in adressElements.EnumerateArray())
 				{
-					foreach (var addressElement in addressArray.EnumerateArray())
+					var address = new Address()
 					{
-						var address = new Address()
-						{
-							Property = addressElement.GetProperty("FULL_ADDRESS").GetString()?.Trim(),
-							Uid = addressElement.GetProperty("UPRN").GetInt64().ToString(),
-							Postcode = postcode,
-						};
-						addresses.Add(address);
-					}
+						Property = addressElement.GetProperty("FULL_ADDRESS").GetString()?.Trim(),
+						Uid = addressElement.GetProperty("UPRN").GetInt64().ToString(),
+						Postcode = postcode,
+					};
+					addresses.Add(address);
 				}
 
 				var getAddressesResponse = new GetAddressesResponse()
@@ -129,12 +127,11 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				{
 					RequestId = 1,
 					Url = $"{ApiBaseUrl}kmbd/collectionDay",
-					Method = "POST",
+					Method = "GET",
 					Headers = new Dictionary<string, string>
 					{
-						{ "content-type", "application/json; charset=UTF-8" }
+						{ "P_PARAMETER", Encrypt(JsonSerializer.Serialize(payload)) }
 					},
-					Body = Encrypt(JsonSerializer.Serialize(payload)),
 				};
 
 				var getBinDaysResponse = new GetBinDaysResponse()
@@ -147,21 +144,41 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				var binDays = new List<BinDay>();
 				string decryptedJson = Decrypt(clientSideResponse.Content);
 				using var jsonDoc = JsonDocument.Parse(decryptedJson);
 
-				if (jsonDoc.RootElement.TryGetProperty("collectionDay", out var collectionDayArray))
-				{
-					foreach (var collectionItem in collectionDayArray.EnumerateArray())
-					{
-						var binType = collectionItem.GetProperty("binType").GetString()!;
-						var matchedBins = ProcessingUtilities.GetMatchingBins(BinTypes, binType);
+				var collectionDayArray = jsonDoc.RootElement.GetProperty("collectionDay");
+				var binDays = new List<BinDay>();
 
-						// Check main collection day
-						AddBinDayIfValid(binDays, address, matchedBins, collectionItem, "collectionDay");
-						// Check following day
-						AddBinDayIfValid(binDays, address, matchedBins, collectionItem, "followingDay");
+				foreach (var collectionItem in collectionDayArray.EnumerateArray())
+				{
+					var binType = collectionItem.GetProperty("binType").GetString()!;
+					var matchedBins = ProcessingUtilities.GetMatchingBins(BinTypes, binType);
+
+					var dateStrings = new[]
+					{
+						collectionItem.GetProperty("collectionDay").GetString(),
+						collectionItem.GetProperty("followingDay").GetString()
+					};
+
+					foreach (var dateString in dateStrings)
+					{
+						if (!string.IsNullOrWhiteSpace(dateString))
+						{
+							var date = DateOnly.ParseExact(
+								dateString,
+								"dd-MM-yyyy",
+								CultureInfo.InvariantCulture,
+								DateTimeStyles.None
+							);
+
+							binDays.Add(new BinDay
+							{
+								Date = date,
+								Address = address,
+								Bins = matchedBins
+							});
+						}
 					}
 				}
 
@@ -178,59 +195,42 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		}
 
 		/// <summary>
-		/// Adds a bin day to the list if the date property is valid.
+		/// Encrypts a plain text string using AES-256-CBC with custom hex key/IV.
 		/// </summary>
-		private static void AddBinDayIfValid(List<BinDay> binDays, Address address, IReadOnlyCollection<Bin> bins, JsonElement element, string propertyName)
-		{
-			if (element.TryGetProperty(propertyName, out var dateProp) && !string.IsNullOrWhiteSpace(dateProp.GetString()))
-			{
-				var date = DateOnly.ParseExact(
-					dateProp.GetString()!,
-					"dd-MM-yyyy",
-					CultureInfo.InvariantCulture
-				);
-
-				var binDay = new BinDay()
-				{
-					Date = date,
-					Address = address,
-					Bins = bins,
-				};
-
-				binDays.Add(binDay);
-			}
-		}
-
-		/// <summary>
-		/// Encrypts the provided JSON string using AES encryption.
-		/// </summary>
-		/// <param name="plainText">The JSON string to encrypt.</param>
-		/// <returns>The encrypted hex string.</returns>
+		/// <param name="plainText">The string to encrypt.</param>
+		/// <returns>The encrypted data as a lowercase hexadecimal string.</returns>
 		private static string Encrypt(string plainText)
 		{
 			byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+
 			using Aes aesAlg = Aes.Create();
 			aesAlg.Key = _aesKey;
 			aesAlg.IV = _aesIv;
 			aesAlg.Mode = CipherMode.CBC;
 			aesAlg.Padding = PaddingMode.PKCS7;
-			return Convert.ToHexString(aesAlg.EncryptCbc(plainBytes, _aesIv)).ToLowerInvariant();
+			byte[] encryptedBytes = aesAlg.EncryptCbc(plainBytes, _aesIv);
+
+			return Convert.ToHexString(encryptedBytes).ToLowerInvariant();
 		}
 
 		/// <summary>
-		/// Decrypts the provided JSON string using AES decryption.
+		/// Decrypts a hexadecimal encoded string using AES-256-CBC with custom hex key/IV.
 		/// </summary>
-		/// <param name="hex">The encrypted hex string to decrypt.</param>
-		/// <returns>The decrypted JSON string.</returns>
+		/// <param name="hex">The hexadecimal encoded string to decrypt.</param>
+		/// <returns>The decrypted plain text string.</returns>
 		private static string Decrypt(string hex)
 		{
 			byte[] encryptedBytes = Convert.FromHexString(hex);
+
 			using Aes aesAlg = Aes.Create();
 			aesAlg.Key = _aesKey;
 			aesAlg.IV = _aesIv;
 			aesAlg.Mode = CipherMode.CBC;
 			aesAlg.Padding = PaddingMode.PKCS7;
-			return Encoding.UTF8.GetString(aesAlg.DecryptCbc(encryptedBytes, _aesIv));
+
+			byte[] decryptedBytes = aesAlg.DecryptCbc(encryptedBytes, _aesIv);
+
+			return Encoding.UTF8.GetString(decryptedBytes);
 		}
 	}
 }
