@@ -38,6 +38,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Name = "Food Waste",
 				Colour = BinColour.Grey,
 				Keys = new List<string>() { "C", "R" }.AsReadOnly(),
+				Type = BinType.Caddy,
 			},
 			new()
 			{
