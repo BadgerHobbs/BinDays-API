@@ -1,10 +1,12 @@
 namespace BinDays.Api.IntegrationTests.Helpers
 {
 	using BinDays.Api.Collectors.Models;
+	using System;
 	using System.Linq;
 	using System.Net;
 	using System.Net.Http;
 	using System.Text;
+	using Xunit.Abstractions;
 
 	/// <summary>
 	/// A client helper for executing multi-step requests during integration tests.
@@ -13,12 +15,17 @@ namespace BinDays.Api.IntegrationTests.Helpers
 	{
 		private readonly HttpClient _httpClientWithRedirects;
 		private readonly HttpClient _httpClientWithoutRedirects;
+		private readonly ITestOutputHelper _outputHelper;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="IntegrationTestClient"/> class.
 		/// </summary>
-		public IntegrationTestClient()
+		public IntegrationTestClient(ITestOutputHelper outputHelper)
 		{
+			_outputHelper = outputHelper;
+
+			var enableHttpLogging = Environment.GetEnvironmentVariable("BINDAYS_ENABLE_HTTP_LOGGING") == "true";
+
 			// Client that automatically follows redirects
 			var handlerWithRedirects = new HttpClientHandler
 			{
@@ -26,7 +33,9 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = true,
 			};
-			_httpClientWithRedirects = new HttpClient(handlerWithRedirects);
+			_httpClientWithRedirects = enableHttpLogging
+				? new HttpClient(new LoggingHttpHandler(outputHelper, handlerWithRedirects))
+				: new HttpClient(handlerWithRedirects);
 
 			// Client that does NOT automatically follow redirects
 			var handlerWithoutRedirects = new HttpClientHandler
@@ -35,7 +44,9 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = false,
 			};
-			_httpClientWithoutRedirects = new HttpClient(handlerWithoutRedirects);
+			_httpClientWithoutRedirects = enableHttpLogging
+				? new HttpClient(new LoggingHttpHandler(outputHelper, handlerWithoutRedirects))
+				: new HttpClient(handlerWithoutRedirects);
 		}
 
 		/// <summary>
