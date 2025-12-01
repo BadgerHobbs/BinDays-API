@@ -1,0 +1,12 @@
+{
+  "browser": {
+    "browserName": "firefox",
+    "contextOptions": {
+      "recordHar": {
+        "path": "./.gemini/out/requests.har",
+        "content": "embed"
+      }
+    },
+    "trace": "on"
+  }
+}

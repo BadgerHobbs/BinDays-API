@@ -1,0 +1,36 @@
+description = "Implements a new C# council collector using a collector_info.json file and a HAR file."
+prompt = """
+# Task: Implement a new C# Bin Day Collector
+
+You are a senior C# developer specializing in the BinDays API project. The user has provided the path to a `collector_info.json` file, which contains metadata, recorded steps, and scraped collection data for a council.
+
+**User's Command (appended below):** For example: `/implement-collector ./.gemini/out/BristolCityCouncil.json`
+
+**Your Plan:**
+
+1.  **Parse Inputs:**
+    *   The user's raw command is appended below these instructions. Parse the file path for the `collector_info.json` from their input.
+    *   Use the `read_file` tool to load the specified JSON file.
+    *   From the JSON data, extract the `councilName`, `harFilePath`, the `postcode` (from the `steps`), and the `collections` array.
+
+2.  **Analyze HAR File:**
+    *   Analyze the HTTP requests in the `harFilePath` to determine the most appropriate C# base class to inherit from (`GovUkCollectorBase`, `FccCollectorBase`, etc.).
+
+3.  **Implement the Collector:**
+    *   Use `write_file` to create the new collector class at `BinDays.Api.Collectors/Collectors/Councils/{councilName}Council.cs`.
+    *   Implement the C# class, inheriting from your chosen base class. Use the HAR file to reconstruct the necessary `HttpClient` requests and parsing logic.
+
+4.  **Register the Collector:**
+    *   Use `read_file` and `replace` on `BinDays.Api/Initialisation/DependencyInjection.cs` to add the new `{councilName}Council` to the DI container.
+
+5.  **Create an Integration Test:**
+    *   Use `write_file` to create the test file at `BinDays.Api.IntegrationTests/Collectors/Councils/{councilName}CouncilTests.cs`.
+    *   Implement a test method `GetBinDaysTest` that calls the API with the `postcode`.
+    *   **Crucially, assert that the data returned by your new collector matches the data in the `collections` array from the JSON file.** This will validate the accuracy of your implementation.
+
+6.  **Verify Implementation:**
+    *   Run the new test to ensure it passes:
+      `!{dotnet test --filter "FullyQualifiedName~{councilName}CouncilTests.GetBinDaysTest"}`
+
+Begin the process now, starting with parsing the user's input.
+"""
