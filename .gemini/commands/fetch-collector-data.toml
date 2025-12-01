@@ -1,0 +1,68 @@
+description = "Uses the Playwright MCP server to find and record the steps for fetching bin data for a given postcode."
+prompt = """
+# Task: Record Bin Collector Steps and Scrape Bin Data via Playwright MCP
+
+You are an agent that controls a web browser via a Playwright MCP server. Your goal is to navigate to the bin collection page for a UK council, record the steps, scrape the upcoming bin collections, and save the resulting HAR file and collector info file.
+
+**User Input (Postcode):** `{{args}}`
+
+**Your Plan:**
+
+1.  **Connect & Navigate (GOV.UK):**
+    *   Connect to the Playwright MCP server.
+    *   Instruct the server to `goto` `https://www.gov.uk/rubbish-collection-day` and record this action as the first step.
+    *   Instruct the server to fill the postcode `{{args}}` into the form and click the "Find" button. Record these actions.
+
+2.  **Extract Council Info:**
+    *   On the results page, instruct the server to extract the council's name and its website URL.
+    *   Create a `PascalCase` version of the council name (e.g., "Bristol City Council" -> "BristolCityCouncil") for use in filenames.
+
+3.  **Navigate and Record (Council Website):**
+    *   Instruct the server to `goto` the extracted council website URL. Record this action.
+    *   Heuristically search for and click on links related to bin collections (e.g., containing "bin", "waste", "recycling"). Record this action.
+    *   Once on the correct page, instruct the server to fill in the postcode again and select the first available address if a list appears. Record all these actions as distinct steps.
+
+4.  **Scrape Bin Collection Data:**
+    *   On the final page that displays the bin collections, you must parse the live HTML to extract the schedule.
+    *   Analyze the page structure (tables `<table>`, divs `<div>`, lists `<ul>`/`<ol>`) to identify repeating elements that represent collection days.
+    *   For each collection day, extract the date and the names or descriptions of the bins being collected (e.g., "Recycling", "General Waste").
+    *   This data will be used to populate the `collector_info.json` file.
+
+5.  **Finalize & Save:**
+    *   Close the Playwright browser session and assume the Playwright server was configured to automatically produce a HAR file at `./.gemini/out/requests.har`.
+    *   **Clean the HAR File:** Use the `!{...}` syntax to execute the Node.js script to clean the generated HAR file. The command will be: `!{node ./.gemini/scripts/clean-har.js ./.gemini/out/requests.har ./.gemini/out/{CouncilName}.cleaned.har}`
+    *   **Define Collector Info & Bin Data Structure:** Use the `write_file` tool to save a new JSON file at `./.gemini/out/{CouncilName}.json`. This file must contain the following structure, populated with the information you have gathered:
+
+        ```json
+        {
+          "councilName": "...",
+          "councilWebsite": "...",
+          "govUkId": "...",
+          "harFilePath": "./.gemini/out/{CouncilName}.cleaned.har",
+          "steps": [
+            {
+              "function": "goto",
+              "destination": "...",
+              "name": null,
+              "operation": null,
+              "value": null
+            }
+          ],
+          "collections": [
+            {
+              "Date": "YYYY-MM-DD",
+              "Bins": [
+                {
+                  "Name": "Recycling",
+                  "Colour": "Blue",
+                  "Type": "Bin"
+                }
+              ]
+            }
+          ]
+        }
+        ```
+    *   Report to the user that the files have been created successfully.
+
+Begin now by connecting to the server and starting the navigation process.
+"""
