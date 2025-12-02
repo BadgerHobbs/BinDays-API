@@ -1,0 +1,194 @@
+name: Implement New Collector
+
+on:
+  workflow_dispatch:
+    inputs:
+      postcode:
+        description: 'The postcode to fetch collector data for'
+        required: true
+      branch_name:
+        description: 'The name of the new branch to create'
+        required: true
+
+jobs:
+  fetch_data:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Workaround for SSL error on self-hosted runner
+        run: |
+          # This is a workaround for an SSL error that occurs on self-hosted runners
+          # when running integration tests for specific councils, such as Teignbridge.
+          # The error "The SSL connection could not be established" is caused by
+          # the council's server using a legacy TLS version. This updates the SSL
+          # config to allow for a less strict security level.
+          #
+          # The script is idempotent and will only modify the openssl.cnf file
+          # if the required configuration is not already present.
+          if ! grep -q "ssl_conf = ssl_sect" /etc/ssl/openssl.cnf; then
+            sudo sed -i '/\[openssl_init\]/a ssl_conf = ssl_sect' /etc/ssl/openssl.cnf
+          fi
+
+          if ! grep -q "\[ssl_sect\]" /etc/ssl/openssl.cnf; then
+            echo -e "\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT@SECLEVEL=1" | sudo tee -a /etc/ssl/openssl.cnf
+          fi
+
+      - name: Clean output directory
+        run: |
+          mkdir -p .gemini/out
+          rm -rf .gemini/out/*
+
+      - name: Fetch collector data
+        id: fetch
+        uses: google-gemini/run-gemini-cli@main
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          prompt: "/fetch-collector-data ${{ github.event.inputs.postcode }}"
+          gemini_model: gemini-2.5-pro
+          settings: |
+            {
+              "mcpServers": {
+                "playwright": {
+                  "command": "npx",
+                  "args": [
+                    "@playwright/mcp@latest",
+                    "--config",
+                    "./playwright-config.json"
+                  ]
+                }
+              },
+              "context": {
+                "fileFiltering": {
+                  "respectGitIgnore": false,
+                  "enableRecursiveFileSearch": true
+                }
+              }
+            }
+
+      - name: Upload collector data
+        uses: actions/upload-artifact@v4
+        with:
+          name: collector-data
+          path: .gemini/out/
+
+  implement_collector:
+    needs: fetch_data
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Workaround for SSL error on self-hosted runner
+        run: |
+          # This is a workaround for an SSL error that occurs on self-hosted runners
+          # when running integration tests for specific councils, such as Teignbridge.
+          # The error "The SSL connection could not be established" is caused by
+          # the council's server using a legacy TLS version. This updates the SSL
+          # config to allow for a less strict security level.
+          #
+          # The script is idempotent and will only modify the openssl.cnf file
+          # if the required configuration is not already present.
+          if ! grep -q "ssl_conf = ssl_sect" /etc/ssl/openssl.cnf; then
+            sudo sed -i '/\[openssl_init\]/a ssl_conf = ssl_sect' /etc/ssl/openssl.cnf
+          fi
+
+          if ! grep -q "\[ssl_sect\]" /etc/ssl/openssl.cnf; then
+            echo -e "\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT@SECLEVEL=1" | sudo tee -a /etc/ssl/openssl.cnf
+          fi
+          
+      - name: Download collector data
+        uses: actions/download-artifact@v4
+        with:
+          name: collector-data
+          path: .gemini/out/
+
+      - name: Get Collector Info File Path
+        id: collector_info
+        run: |
+          file_path=$(find .gemini/out -type f -name "*.json" -exec grep -l '"councilName"' {} + | head -n 1)
+          if [ -z "$file_path" ]; then
+            echo "Collector info file not found"
+            exit 1
+          fi
+          echo "file_path=$file_path" >> $GITHUB_OUTPUT
+
+      - name: Get Council Name for commit message
+        id: council_name_commit
+        run: |
+          council_name=$(jq -r .councilName ${{ steps.collector_info.outputs.file_path }})
+          echo "council_name=$council_name" >> $GITHUB_OUTPUT
+
+      - name: Create new branch
+        run: |
+          git checkout -b ${{ github.event.inputs.branch_name }}
+
+      - name: Implement collector
+        id: implement
+        uses: google-gemini/run-gemini-cli@main
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          prompt: "/implement-collector ${{ steps.collector_info.outputs.file_path }}"
+          gemini_model: gemini-2.5-pro
+          settings: |
+            {
+              "mcpServers": {
+                "playwright": {
+                  "command": "npx",
+                  "args": [
+                    "@playwright/mcp@latest",
+                    "--config",
+                    "./playwright-config.json"
+                  ]
+                }
+              },
+              "context": {
+                "fileFiltering": {
+                  "respectGitIgnore": false,
+                  "enableRecursiveFileSearch": true
+                }
+              }
+            }
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m "feat: Implement new collector for ${{ steps.council_name_commit.outputs.council_name }}"
+          git push -u origin ${{ github.event.inputs.branch_name }}
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create --base main --head ${{ github.event.inputs.branch_name }} --title "feat: Implement new collector for ${{ steps.council_name_commit.outputs.council_name }}" --body "This PR was automatically generated by a GitHub Action to implement a new bin day collector."
