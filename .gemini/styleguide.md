@@ -23,6 +23,36 @@ This style guide outlines the coding conventions for C# code developed for the B
 - **Methods and Properties:** Use PascalCase (e.g. `GetAddresses`, `WebsiteUrl`).
 - **Private Fields:** Use `_camelCase` (e.g. `_client`).
 
+## Documentation
+
+### Docstrings
+
+All public-facing code (and ideally private), including classes, methods, and properties, must be documented using XML documentation comments (`///`). This ensures that the code is self-documenting and that IntelliSense provides useful information to developers.
+
+- **Clarity and Conciseness:** Summaries should be clear, concise, and written in plain language.
+- **Parameters:** All method parameters must be documented with a `<param>` tag, explaining their purpose.
+- **Return Values:** The return value of a method must be documented with a `<returns>` tag, describing what the method returns.
+- **Inherited Members:** For members that implement an interface, use `<inheritdoc/>` to inherit the documentation from the base interface. This avoids duplicating documentation and ensures consistency.
+
+**Example of a method implementation:**
+
+```c#
+/// <inheritdoc/>
+public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+{
+    // ... implementation
+}
+```
+
+**Example of a property implementation:**
+
+```c#
+/// <summary>
+/// Gets the name of the collector.
+/// </summary>
+public string Name { get; }
+```
+
 ## Collector Implementation and Design
 
 This section covers the details of how to implement a collector, including the required interface, the core design philosophy, and data handling best practices.
@@ -94,11 +124,11 @@ This section provides complete code templates for a new collector and its corres
 ```c#
 namespace BinDays.Api.Collectors.Collectors.Councils
 {
+	using BinDays.Api.Collectors.Collectors.Vendors;
 	using BinDays.Api.Collectors.Models;
 	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
 	using System.Text.RegularExpressions;
 
 	/// <summary>
@@ -203,24 +233,25 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 ```c#
 namespace BinDays.Api.IntegrationTests.Collectors.Councils
 {
-	using BinDays.Api.Collectors.Collectors;
-	using BinDays.Api.Collectors.Collectors.Councils;
-	using BinDays.Api.Collectors.Services;
-	using BinDays.Api.IntegrationTests.Helpers;
-	using System.Threading.Tasks;
-	using Xunit;
-	using Xunit.Abstractions;
+    using BinDays.Api.Collectors.Collectors;
+    using BinDays.Api.Collectors.Collectors.Councils;
+    using BinDays.Api.Collectors.Services;
+    using BinDays.Api.IntegrationTests.Helpers;
+    using System.Threading.Tasks;
+    using Xunit;
+    using Xunit.Abstractions;
 
 	public class MyNewCouncilTests
 	{
-		private readonly IntegrationTestClient _client = new();
+        private readonly IntegrationTestClient _client;
 		private static readonly ICollector _collector = new MyNewCouncil();
 		private readonly CollectorService _collectorService = new([_collector]);
 		private readonly ITestOutputHelper _outputHelper;
 
 		public MyNewCouncilTests(ITestOutputHelper outputHelper)
 		{
-			_outputHelper = outputHelper;
+            _outputHelper = outputHelper;
+            _client = new IntegrationTestClient(outputHelper);
 		}
 
 		[Theory]
