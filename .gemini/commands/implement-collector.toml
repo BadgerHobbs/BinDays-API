@@ -1,36 +1,66 @@
 description = "Implements a new C# council collector using a collector_info.json file and a HAR file."
 prompt = """
-# Task: Implement a new C# Bin Day Collector
+# Task: Implement a new C# Bin Day Collector and Integration Test
 
-You are a senior C# developer specializing in the BinDays API project. The user has provided the path to a `collector_info.json` file, which contains metadata, recorded steps, and scraped collection data for a council.
+You are a senior C# developer specializing in the BinDays API project. Your task is to implement a new council bin day collector based on a `collector_info.json` file provided by the user.
 
-**User's Command (appended below):** For example: `/implement-collector ./.gemini/out/BristolCityCouncil.json`
+You must strictly adhere to the project's conventions. The implementation must be robust, maintainable, and thoroughly tested.
 
-**Your Plan:**
+**Input File:** `{{args}}`
 
-1.  **Parse Inputs:**
-    *   The user's raw command is appended below these instructions. Parse the file path for the `collector_info.json` from their input.
-    *   Use the `read_file` tool to load the specified JSON file.
-    *   From the JSON data, extract the `councilName`, `harFilePath`, the `postcode` (from the `steps`), and the `collections` array.
+---
+## Core Instructions & Style Guide
 
-2.  **Analyze HAR File:**
-    *   Analyze the HTTP requests in the `harFilePath` to determine the most appropriate C# base class to inherit from (`GovUkCollectorBase`, `FccCollectorBase`, etc.).
+Your implementation **MUST** follow the existing patterns and style of the project.
 
-3.  **Implement the Collector:**
-    *   Use `write_file` to create the new collector class at `BinDays.Api.Collectors/Collectors/Councils/{councilName}Council.cs`.
-    *   Implement the C# class, inheriting from your chosen base class. Use the HAR file to reconstruct the necessary `HttpClient` requests and parsing logic.
+**1. Style and Conventions:**
+   - Adhere strictly to the C# Style Guide: `@{.gemini/styleguide.md}`
+   - Pay close attention to the **"Collector Implementation and Design"** section, especially regarding:
+     - Stateless, multi-step request design.
+     - Avoiding browser emulation; replicate HTTP requests directly.
+     - Minimal exception handling (fail-fast philosophy).
+     - Using `Regex` for HTML parsing and `System.Text.Json` for JSON.
+     - Correctly defining `_binTypes` and using `ProcessingUtilities`.
+
+**2. Existing Implementations:**
+   - Before writing any code, analyze the existing collectors to understand the established patterns. You have access to them here: `@{BinDays.Api.Collectors/Collectors/Councils/}`
+   - Note the different base classes used (`GovUkCollectorBase`, `FccCollectorBase`, `ITouchVisionCollectorBase`, `BinzoneCollectorBase`). Your first step is to determine if the new collector fits one of these.
+   - The core interfaces are available for your reference:
+     - `@{BinDays.Api.Collectors/Collectors/ICollector.cs}`
+     - `@{BinDays.Api.Collectors/Collectors/Vendors/}`
+
+**3. Debugging:**
+   - If your tests fail, use the debugging guide to help diagnose issues with HTTP requests: `@{.gemini/DEBUGGING.md}`
+
+---
+## Your Implementation Plan
+
+1.  **Analyze Inputs:**
+    *   Read and parse the `collector_info.json` file provided in `{{args}}`.
+    *   Extract `councilName`, `councilWebsite`, `govUkId`, `harFilePath`, the `postcode` (from the steps or other context), and the `collections` data.
+    *   Read and analyze the corresponding HAR file from `harFilePath`.
+
+2.  **Choose a Base Class:**
+    *   Based on the HAR file and existing examples, determine the most appropriate base class to inherit from. If the request flow is unique, inherit from `GovUkCollectorBase` and implement the logic from scratch.
+
+3.  **Implement the Collector Class:**
+    *   Create the new collector class file at `BinDays.Api.Collectors/Collectors/Councils/{councilName}Council.cs`.
+    *   Implement the `ICollector` interface.
+    *   Use the HAR file and the `steps` from the JSON to meticulously reconstruct the `GetAddresses` and `GetBinDays` methods. This involves creating `ClientSideRequest` objects for each step of the process.
+    *   Define the `_binTypes` collection based on the `collections` data. Ensure the `Keys` match the data found in the HTTP responses.
 
 4.  **Register the Collector:**
-    *   Use `read_file` and `replace` on `BinDays.Api/Initialisation/DependencyInjection.cs` to add the new `{councilName}Council` to the DI container.
+    *   Use `read_file` and `replace` on `BinDays.Api/Initialisation/DependencyInjection.cs` to add the new `{councilName}Council` to the DI container. Keep the list alphabetized.
 
-5.  **Create an Integration Test:**
-    *   Use `write_file` to create the test file at `BinDays.Api.IntegrationTests/Collectors/Councils/{councilName}CouncilTests.cs`.
-    *   Implement a test method `GetBinDaysTest` that calls the API with the `postcode`.
-    *   **Crucially, assert that the data returned by your new collector matches the data in the `collections` array from the JSON file.** This will validate the accuracy of your implementation.
+5.  **Create the Integration Test:**
+    *   Create a new test file at `BinDays.Api.IntegrationTests/Collectors/Councils/{councilName}CouncilTests.cs`.
+    *   Use the provided test template from the style guide.
+    *   The test must use a real postcode and assert that the bin days returned by your collector **exactly match** the `collections` data from the input JSON file. This is your primary validation step.
 
-6.  **Verify Implementation:**
-    *   Run the new test to ensure it passes:
+6.  **Verify and Run:**
+    *   Execute the new integration test to confirm your implementation is correct.
       `!{dotnet test --filter "FullyQualifiedName~{councilName}CouncilTests.GetBinDaysTest"}`
+    *   If the test fails, use the HTTP logging feature described in the debugging guide to compare the requests made by your collector against the HAR file. Fix any discrepancies and re-run the test until it passes.
 
-Begin the process now, starting with parsing the user's input.
+Begin the process now by analyzing the input file.
 """
