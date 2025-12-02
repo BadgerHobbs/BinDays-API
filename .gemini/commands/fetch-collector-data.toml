@@ -2,36 +2,32 @@ description = "Uses the Playwright MCP server to find and record the steps for f
 prompt = """
 # Task: Record Bin Collector Steps and Scrape Bin Data via Playwright MCP
 
-You are an agent that controls a web browser via a Playwright MCP server. Your goal is to navigate to the bin collection page for a UK council, record the steps, scrape the upcoming bin collections, and save the resulting HAR file and collector info file.
+You are an agent that controls a web browser via a Playwright MCP server. Your goal is to navigate to a UK council's bin collection page, record the necessary interaction steps, scrape the upcoming bin collections, and save the resulting HAR file and collector info file.
 
 **User Input (Postcode):** `{{args}}`
 
 **Your Plan:**
 
-1.  **Connect & Navigate (GOV.UK):**
+1.  **Find Council Website (Do Not Record Steps):**
     *   Connect to the Playwright MCP server.
-    *   Instruct the server to `goto` `https://www.gov.uk/rubbish-collection-day` and record this action as the first step.
-    *   Instruct the server to fill the postcode `{{args}}` into the form and click the "Find" button. Record these actions.
-
-2.  **Extract Council Info:**
-    *   On the results page, instruct the server to extract the council's name and its website URL.
+    *   Navigate to `https://www.gov.uk/rubbish-collection-day`, enter the postcode `{{args}}`, and find the target council's website URL.
+    *   Extract the council's name and its website URL.
     *   Create a `PascalCase` version of the council name (e.g., "Bristol City Council" -> "BristolCityCouncil") for use in filenames.
 
-3.  **Navigate and Record (Council Website):**
-    *   Instruct the server to `goto` the extracted council website URL. Record this action.
-    *   Heuristically search for and click on links related to bin collections (e.g., containing "bin", "waste", "recycling"). Record this action.
-    *   Once on the correct page, instruct the server to fill in the postcode again and select the first available address if a list appears. Record all these actions as distinct steps.
+2.  **Navigate and Record Steps (Council Website):**
+    *   Navigate to the specific page on the council's website for checking bin collections. This may be the URL you extracted directly, or you may need to click through from their homepage.
+    *   **Begin recording steps here.** The first step in your recorded output must be the navigation to the page containing the postcode input field on the council's website.
+    *   Record all subsequent user interactions as distinct steps: filling in the postcode, selecting an address from a list, and clicking buttons.
 
-4.  **Scrape Bin Collection Data:**
-    *   On the final page that displays the bin collections, you must parse the live HTML to extract the schedule.
-    *   Analyze the page structure (tables `<table>`, divs `<div>`, lists `<ul>`/`<ol>`) to identify repeating elements that represent collection days.
-    *   For each collection day, extract the date and the names or descriptions of the bins being collected (e.g., "Recycling", "General Waste").
-    *   This data will be used to populate the `collector_info.json` file.
+3.  **Scrape Bin Collection Data:**
+    *   On the final page that displays the bin collections, parse the live HTML to extract the schedule.
+    *   Analyze the page structure (tables `<table>`, divs `<div>`, lists `<ul>`/`<ol>`) to identify repeating elements representing collection days.
+    *   For each collection, extract the date and the names/descriptions of the bins being collected.
 
-5.  **Finalize & Save:**
-    *   Close the Playwright browser session and assume the Playwright server was configured to automatically produce a HAR file at `./.gemini/out/requests.har`.
-    *   **Clean the HAR File:** Use the `!{...}` syntax to execute the Node.js script to clean the generated HAR file. The command will be: `!{node ./.gemini/scripts/clean-har.js ./.gemini/out/requests.har ./.gemini/out/{CouncilName}.cleaned.har}`
-    *   **Define Collector Info & Bin Data Structure:** Use the `write_file` tool to save a new JSON file at `./.gemini/out/{CouncilName}.json`. This file must contain the following structure, populated with the information you have gathered:
+4.  **Finalize & Save:**
+    *   Close the Playwright browser session. The server is configured to automatically produce a HAR file at `./.gemini/out/requests.har`.
+    *   **Clean the HAR File:** Execute the Node.js script to clean the HAR file: `!{node ./.gemini/scripts/clean-har.js ./.gemini/out/requests.har ./.gemini/out/{CouncilName}.cleaned.har}`
+    *   **Define Collector Info & Bin Data:** Use the `write_file` tool to save a new JSON file at `./.gemini/out/{CouncilName}.json`. This file must contain the following structure, populated with the information you have gathered. **The `steps` array must only contain the interactions with the council website.**
 
         ```json
         {
@@ -42,7 +38,7 @@ You are an agent that controls a web browser via a Playwright MCP server. Your g
           "steps": [
             {
               "function": "goto",
-              "destination": "...",
+              "destination": "https://council.website.com/bins",
               "name": null,
               "operation": null,
               "value": null
