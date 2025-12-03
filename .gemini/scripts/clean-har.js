@@ -13,6 +13,7 @@ if (!inputFile || !outputFile) {
 // List of headers to strip (lowercase for comparison)
 // We explicitly DO NOT include: 'cookie', 'set-cookie', 'authorization', 'accesstoken', 'content-type', 'location'
 const HEADERS_TO_REMOVE = new Set([
+    /*
     // Standard Request Headers
     'host',
     'accept',
@@ -83,6 +84,7 @@ const HEADERS_TO_REMOVE = new Set([
     'x-arcgis-instance', 
     'request-context',
     'x-contensis-viewer-groups'
+    */
 ]);
 
 // Helper to filter headers
@@ -128,13 +130,17 @@ fs.readFile(inputFile, { encoding: 'utf-8' }, (err, data) => {
                 mimeType.includes('x-protobuf') ||
                 url.includes('www.gov.uk') ||
                 url.includes('google.com') ||
+                url.includes('google.co.uk') ||
+                url.includes('googleapis.com') ||
+                url.includes('google-analytics.com') ||
+                url.includes('googletagmanager.com') ||
+                url.includes('gstatic.com') ||
                 url.includes('doubleclick.net') ||
                 url.includes('cookiebot.net') ||
                 url.includes('cookiebot.com') ||
                 url.includes('facebook.com') ||
-                url.includes('google-analytics.com') ||
-                url.includes('googletagmanager.com') ||
-                url.includes('hotjar.com')
+                url.includes('hotjar.com') ||
+                url.includes('silktide.com')
             ) {
                 return false;
             }
