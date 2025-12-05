@@ -28,7 +28,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
         /// <summary>
         /// The list of bin types for this collector.
         /// </summary>
-        private readonly ReadOnlyCollection<Bin> _binTypes = new List<Bin>()
+        private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
         {
             new()
             {
@@ -86,7 +86,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
                     RequestId = 1,
                     Url = "https://area.southnorfolkandbroadland.gov.uk/FindAddress",
                     Method = "GET",
-                    Headers = new Dictionary<string, string>() {
+                    Headers = new() {
                         {"User-Agent", Constants.UserAgent},
                     },
                 };
@@ -104,7 +104,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
                 var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
 
                 // Prepare request body
-                var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+                var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
                 {
                     { "Postcode", postcode },
                     { "__RequestVerificationToken", token }
@@ -115,7 +115,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
                     RequestId = 2,
                     Url = "https://area.southnorfolkandbroadland.gov.uk/FindAddress",
                     Method = "POST",
-                    Headers = new Dictionary<string, string>() {
+                    Headers = new() {
                         {"User-Agent", Constants.UserAgent},
                         {"Content-Type", "application/x-www-form-urlencoded"},
                         {"Cookie", requestCookies},
@@ -199,7 +199,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
                     RequestId = 1,
                     Url = "https://area.southnorfolkandbroadland.gov.uk/",
                     Method = "GET",
-                    Headers = new Dictionary<string, string>() {
+                    Headers = new() {
                         {"User-Agent", Constants.UserAgent},
                         {"Cookie", $"MyArea.Data={encodedJson}"},
                     },
@@ -225,7 +225,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
                     RequestId = 2,
                     Url = requestUrl,
                     Method = "GET",
-                    Headers = new Dictionary<string, string>() {
+                    Headers = new() {
                         {"User-Agent", Constants.UserAgent},
                     },
                 };
