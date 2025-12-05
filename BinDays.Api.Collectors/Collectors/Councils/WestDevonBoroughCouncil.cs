@@ -33,41 +33,41 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "Plastic & Metal Recycling",
 				Colour = BinColour.White,
-				Keys = new List<string>() { "Recycling and Food" }.AsReadOnly(),
+				Keys = ["Recycling and Food"],
 				Type = BinType.Sack,
 			},
-			new()
+			new ()
 			{
 				Name = "Paper, Glass, & Cartons Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Recycling and Food" }.AsReadOnly(),
+				Keys = ["Recycling and Food"],
 				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Cardboard, Batteries, Ink, & Clothes Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Recycling and Food" }.AsReadOnly(),
+				Keys = ["Recycling and Food"],
 				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "Recycling and Food" }.AsReadOnly(),
+				Keys = ["Recycling and Food"],
 				Type = BinType.Caddy,
 			},
 			new()
 			{
 				Name = "General Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Refuse" }.AsReadOnly(),
+				Keys = ["Refuse"],
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Garden" }.AsReadOnly(),
+				Keys = ["Garden"],
 				Type = BinType.Sack,
 			},
 		}.AsReadOnly();
