@@ -152,7 +152,16 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process addresses from response
 			else if (clientSideResponse.RequestId == 1)
 			{
+				var addresses = new List<Address>();
+
 				// ...
+
+				var getAddressesResponse = new GetAddressesResponse
+				{
+					Addresses = addresses.AsReadOnly(),
+				};
+
+				return getAddressesResponse;
 			}
 
 			// Throw exception for invalid request
