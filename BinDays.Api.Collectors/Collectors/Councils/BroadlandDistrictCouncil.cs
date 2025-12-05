@@ -247,7 +247,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				{
 					var dateString = eventElement.GetProperty("day").GetString()!;
 
-					// Parse date stirng (e.g. 2025-03-01)
+					// Parse date string (e.g. 2025-03-01)
 					var date = DateOnly.ParseExact(
 						dateString,
 						"yyyy-MM-dd",
