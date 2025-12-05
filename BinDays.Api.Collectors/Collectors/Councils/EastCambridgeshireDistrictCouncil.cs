@@ -35,7 +35,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Keys = ["Black Bag"],
 				Type = BinType.Bag,
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Blue,
@@ -73,7 +73,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting session cookies
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://eastcambs-self.achieveservice.com/bincollections",
@@ -83,7 +83,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -111,7 +111,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					formUri = "sandbox-shared://AF-Process-e38aa672-38b4-4355-a601-0132ab5ef8b7/AF-Stage-361ee725-08c0-49eb-aa18-a44a60cbee92/definition.json"
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = requestUrl,
@@ -124,7 +124,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -141,7 +141,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (Match rawAddress in rawAddresses)
 				{
-					var address = new Address()
+					var address = new Address
 					{
 						Property = rawAddress.Groups["address"].Value.Trim(),
 						Uid = rawAddress.Groups["uprn"].Value,
@@ -150,7 +150,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -168,7 +168,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://eastcambs-self.achieveservice.com/appshost/firmstep/self/apps/custompage/bincollections?uprn={address.Uid}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
@@ -178,7 +178,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -205,7 +205,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get matching bin types from the bin ID using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeStr);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -215,7 +215,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

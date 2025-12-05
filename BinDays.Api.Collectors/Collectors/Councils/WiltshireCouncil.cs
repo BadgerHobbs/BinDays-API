@@ -42,7 +42,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Black,
 				Keys = ["Household waste"],
 			},
-			new ()
+			new()
 			{
 				Name = "Mixed Dry Recycling",
 				Colour = BinColour.Blue,
@@ -69,7 +69,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			if (clientSideResponse == null)
 			{
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"Postcode", postcode},
 					{"Uprn", string.Empty},
@@ -77,18 +77,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"Year", DateTime.Now.Year.ToString()},
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/AddressList",
 					Method = "POST",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
 					},
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -112,7 +112,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					string? town = addressElement.GetProperty("Town").GetString();
 					string? uprn = addressElement.GetProperty("UPRN").GetString();
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = property?.Trim(),
 						Street = street?.Trim(),
@@ -124,7 +124,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -142,7 +142,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting current month's bin days
 			if (clientSideResponse == null)
 			{
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"Postcode", address.Postcode!},
 					{"Uprn", address.Uid!},
@@ -150,18 +150,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"Year", DateTime.Now.Year.ToString()},
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList",
 					Method = "POST",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
 					},
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -177,7 +177,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// If future collections were found in the current month, return them
 				if (currentMonthBinDays.Count > 0)
 				{
-					var getBinDaysResponse = new GetBinDaysResponse()
+					var getBinDaysResponse = new GetBinDaysResponse
 					{
 						BinDays = currentMonthBinDays,
 					};
@@ -187,7 +187,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				else
 				{
 					var nextMonthDate = DateTime.Now.AddMonths(1);
-					var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+					var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 					{
 						{"Postcode", address.Postcode!},
 						{"Uprn", address.Uid!},
@@ -195,18 +195,18 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{"Year", nextMonthDate.Year.ToString()},
 					});
 
-					var clientSideRequest = new ClientSideRequest()
+					var clientSideRequest = new ClientSideRequest
 					{
 						RequestId = 2,
 						Url = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList",
 						Method = "POST",
-						Headers = new Dictionary<string, string>() {
+						Headers = new() {
 							{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
 						},
 						Body = requestBody,
 					};
 
-					var getBinDaysResponse = new GetBinDaysResponse()
+					var getBinDaysResponse = new GetBinDaysResponse
 					{
 						NextClientSideRequest = clientSideRequest
 					};
@@ -219,7 +219,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Process the response content from the next month's response
 				var nextMonthBinDays = ParseBinDays(clientSideResponse.Content, address);
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = nextMonthBinDays,
 				};
@@ -264,7 +264,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				foreach (var binType in matchedBins)
 				{
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,

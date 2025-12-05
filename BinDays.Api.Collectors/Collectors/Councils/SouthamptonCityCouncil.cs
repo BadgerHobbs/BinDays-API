@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Blue,
 				Keys = ["Recycling"],
 			},
-			new ()
+			new()
 			{
 				Name = "Glass",
 				Colour = BinColour.Grey,
@@ -84,17 +84,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://www.southampton.gov.uk/bins-recycling/bins/collections/",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -118,20 +118,20 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var requestVerificationToken = requestVerificationTokenMatch.Groups["token"].Value;
 
 				// Prepare client-side request
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"SearchString", postcode},
 					{"ufprt", ufprt},
 					{"__RequestVerificationToken", requestVerificationToken}
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 					{"cookie", ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["Set-Cookie"])},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://www.southampton.gov.uk/bins-recycling/bins/collections/",
@@ -140,7 +140,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -160,7 +160,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var property = rawAddress.Groups["address"].Value;
 					var uprn = rawAddress.Groups["uid"].Value;
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = property,
 						Postcode = postcode,
@@ -170,7 +170,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -189,17 +189,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://www.southampton.gov.uk/bins-recycling/bins/collections/",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -210,14 +210,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse.RequestId == 1)
 			{
 				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = $"https://www.southampton.gov.uk/whereilive/waste-calendar?UPRN={address.Uid}",
 					Method = "GET",
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -248,7 +248,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get matching bin types from the service using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -258,7 +258,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

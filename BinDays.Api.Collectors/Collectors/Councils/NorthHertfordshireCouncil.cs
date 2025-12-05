@@ -34,7 +34,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Purple,
 				Keys = ["Non-Recyclable Waste"],
 			},
-			new ()
+			new()
 			{
 				Name = "Mixed Recycling",
 				Colour = BinColour.Black,
@@ -115,14 +115,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://waste.nc.north-herts.gov.uk/w/webpage/find-bin-collection-day-input-address",
 					Method = "GET",
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -134,12 +134,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 					clientSideResponse.Headers["set-cookie"]);
 				var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://waste.nc.north-herts.gov.uk/w/webpage/find-bin-collection-day-input-address",
 					Method = "POST",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent },
 						{ "content-type", "application/x-www-form-urlencoded" },
@@ -147,7 +147,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{"x-requested-with", "XMLHttpRequest"},
 						{"accept", "application/json, text/javascript, */*; q=0.01"}
 					},
-					Body = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+					Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
 					{
 						{ "form_check_ajax", csrfToken },
 					}),
@@ -157,7 +157,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -168,7 +168,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var nextUrl = AjaxUrlRegex().Match(cleanedContent).Groups["url"].Value;
 				var levelsToken = LevelsTokenRegex().Match(cleanedContent).Groups["token"].Value;
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{ "levels", levelsToken },
 					{ "search_string", postcode },
@@ -176,13 +176,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				});
 
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = $"https://waste.nc.north-herts.gov.uk{nextUrl}&ajax_action=html_get_type_ahead_results",
 					Method = "POST",
 					Headers =
-						new Dictionary<string, string>()
+						new()
 						{
 							{ "user-agent", Constants.UserAgent },
 							{ "content-type", "application/x-www-form-urlencoded" },
@@ -192,7 +192,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Options = clientSideResponse.Options,
 				};
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -207,7 +207,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (Match rawAddress in rawAddresses)
 				{
-					var address = new Address()
+					var address = new Address
 					{
 						Property = rawAddress.Groups["address"].Value,
 						Street = string.Empty,
@@ -218,7 +218,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -236,14 +236,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// The first 2 requests are the same as for GetAddresses, as we need the same variables
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://waste.nc.north-herts.gov.uk/w/webpage/find-bin-collection-day-input-address",
 					Method = "GET",
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -253,19 +253,19 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 					clientSideResponse.Headers["set-cookie"]);
 				var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://waste.nc.north-herts.gov.uk/w/webpage/find-bin-collection-day-input-address",
 					Method = "POST",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent },
 						{ "content-type", "application/x-www-form-urlencoded" },
 						{ "cookie", cookie },
 						{ "x-requested-with", "XMLHttpRequest" },
 					},
-					Body = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+					Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
 					{
 						{ "form_check_ajax", csrfToken },
 					}),
@@ -275,7 +275,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -286,7 +286,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var cleanedContent = clientSideResponse.Content.Replace("\\", "").Replace("&quot;", "\"");
 				var submissionToken = SubmissionTokenRegex().Match(cleanedContent).Groups["token"].Value;
 				var dynamicUrl = AjaxDynamicUrlRegex().Match(cleanedContent).Groups["url"].Value;
-				var formData = new Dictionary<string, string>()
+				var formData = new Dictionary<string, string>
 				{
 					{"form_check", clientSideResponse.Options.Metadata["form_check_ajax"]},
 					{"submitted_page_id", "PAG0000732GBNLM1"},
@@ -301,12 +301,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"form_check_ajax", clientSideResponse.Options.Metadata["form_check_ajax"]},
 				};
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(formData);
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = "https://waste.nc.north-herts.gov.uk" + dynamicUrl,
 					Method = "POST",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent },
 						{ "content-type", "application/x-www-form-urlencoded" },
@@ -318,7 +318,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Options = clientSideResponse.Options,
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -326,16 +326,16 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse.RequestId == 3)
 			{
 				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-				var formData = new Dictionary<string, string>()
+				var formData = new Dictionary<string, string>
 				{
 					{"form_check_ajax", clientSideResponse.Options.Metadata["form_check_ajax"]},
 				};
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 4,
 					Url = "https://waste.nc.north-herts.gov.uk" + jsonDoc.RootElement.GetProperty("redirect_url").GetString()!,
 					Method = "POST",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent },
 						{ "content-type", "application/x-www-form-urlencoded" },
@@ -346,7 +346,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -373,7 +373,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get matching bin types from the service using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -383,7 +383,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

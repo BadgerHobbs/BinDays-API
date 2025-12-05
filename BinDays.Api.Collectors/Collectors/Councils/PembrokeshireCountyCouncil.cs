@@ -34,7 +34,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Type = BinType.Caddy,
 				Keys = ["Green Food Waste Caddy"]
 			},
-			new ()
+			new()
 			{
 				Name = "Paper",
 				Colour = BinColour.Blue,
@@ -96,17 +96,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting addresses
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = $"https://nearest.pembrokeshire.gov.uk/search/?query={postcode}",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -121,7 +121,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				foreach (Match rawAddress in rawAddresses)
 				{
-					addresses.Add(new Address()
+					addresses.Add(new Address
 					{
 						Property = rawAddress.Groups["address"].Value.Trim(),
 						Postcode = postcode,
@@ -129,7 +129,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -146,17 +146,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting bin days
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = $"https://nearest.pembrokeshire.gov.uk/property/{address.Uid}",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -182,7 +182,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
 
-					binDays.Add(new BinDay()
+					binDays.Add(new BinDay
 					{
 						Date = collectionDate,
 						Address = address,
@@ -190,7 +190,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

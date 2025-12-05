@@ -36,7 +36,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Green,
 				Keys = ["Rubbish"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Grey,
@@ -81,7 +81,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting token
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://area.southnorfolkandbroadland.gov.uk/FindAddress",
@@ -91,7 +91,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -110,7 +110,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{ "__RequestVerificationToken", token }
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://area.southnorfolkandbroadland.gov.uk/FindAddress",
@@ -123,7 +123,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -149,7 +149,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// The value contains all data needed for the cookie, separated by semicolons.
 					// Format: UPRN;Address;X;Y;Ward;Parish;Village;Street;Authority
 					// We store this entire string as the Uid to reconstruct the cookie later.
-					var address = new Address()
+					var address = new Address
 					{
 						Property = displayText.Trim(),
 						Postcode = postcode,
@@ -159,7 +159,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -194,7 +194,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var jsonString = JsonSerializer.Serialize(cookieData);
 				var encodedJson = WebUtility.UrlEncode(jsonString);
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://area.southnorfolkandbroadland.gov.uk/",
@@ -205,7 +205,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -220,7 +220,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Construct ReCollect API URL
 				var requestUrl = $"https://api.eu.recollect.net/api/places/{placeId}/services/6/events?nomerge=true&locale=en-GB&after={dateFrom}&before={dateTo}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = requestUrl,
@@ -230,7 +230,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -261,7 +261,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						var subject = flag.GetProperty("subject").GetString()!;
 						var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, subject);
 
-						var binDay = new BinDay()
+						var binDay = new BinDay
 						{
 							Date = date,
 							Address = address,
@@ -272,7 +272,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

@@ -40,7 +40,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Brown,
 				Keys = ["DO"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
@@ -60,14 +60,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Step 1: Get Session ID
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://plymouth-self.achieveservice.com/en/AchieveForms/?form_uri=sandbox-publish://AF-Process-31283f9a-3ae7-4225-af71-bf3884e0ac1b/AF-Stagedba4a7d5-e916-46b6-abdb-643d38bec875/definition.json&redirectlink=/en&cancelRedirectLink=/en&consentMessage=yes",
 					Method = "GET",
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -110,12 +110,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var requestUrl = $"https://plymouth-self.achieveservice.com/apibroker/?api=RunLookup&id=560d5266e930f&sid={sessionId}";
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"content-type", "application/json; charset=UTF-8"},
 					{"cookie", requestCookies},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = requestUrl,
@@ -124,7 +124,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -153,7 +153,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Combine flat and house for property, ensuring no double spaces
 					string addressProperty = $"{flat} {house}".Trim().Replace("  ", " ");
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = addressProperty,
 						Street = street.Trim(),
@@ -165,7 +165,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -183,14 +183,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Step 1: Get Session ID (same as GetAddresses Step 1)
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://plymouth-self.achieveservice.com/en/AchieveForms/?form_uri=sandbox-publish://AF-Process-31283f9a-3ae7-4225-af71-bf3884e0ac1b/AF-Stagedba4a7d5-e916-46b6-abdb-643d38bec875/definition.json&redirectlink=/en&cancelRedirectLink=/en&consentMessage=yes",
 					Method = "GET",
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -255,12 +255,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var requestUrl = $"https://plymouth-self.achieveservice.com/apibroker/?api=RunLookup&id=5c99439d85f83&sid={sessionId}";
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"content-type", "application/json; charset=UTF-8"},
 					{"cookie", requestCookies},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = requestUrl,
@@ -269,7 +269,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -303,7 +303,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Find matching bin types based on the round type in their keys
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, roundType);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -313,7 +313,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

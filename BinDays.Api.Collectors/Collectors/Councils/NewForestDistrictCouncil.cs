@@ -34,7 +34,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Black,
 				Keys = ["General"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
@@ -86,12 +86,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting the cookie
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 					Options = new ClientSideOptions
@@ -100,7 +100,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -113,12 +113,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 					clientSideResponse.Headers["set-cookie"]);
 				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 						{"cookie", cookie},
 					},
@@ -130,7 +130,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -143,7 +143,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"formid", "/Forms/FIND_MY_BIN_BAR"},
 					{"ebs", token},
@@ -155,13 +155,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"CTRL:EBTnjgwK:_", "Submit"}
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 					{"cookie", clientSideResponse.Options.Metadata["cookie"]},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = "https://forms.newforest.gov.uk/ufs/ufsajax?ebz=" + token,
@@ -170,7 +170,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -219,7 +219,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						continue;
 					}
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = rawAddress.Groups["address"].Value.Replace("&nbsp", " "),
 						Postcode = postcode,
@@ -229,7 +229,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -247,12 +247,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting the cookie
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 					Options = new ClientSideOptions
@@ -261,7 +261,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -274,12 +274,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 					clientSideResponse.Headers["set-cookie"]);
 				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 						{"cookie", cookie},
 					},
@@ -291,7 +291,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -304,7 +304,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"formid", "/Forms/FIND_MY_BIN_BAR"},
 					{"ebs", token},
@@ -315,13 +315,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"CTRL:QxB4NyYs:_", "Submit"},
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 					{"cookie", clientSideResponse.Options.Metadata["cookie"]},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = "https://forms.newforest.gov.uk/ufs/ufsajax?ebz=" + token,
@@ -330,7 +330,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -380,7 +380,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var date = DateOnly.ParseExact(collectionDate, format, CultureInfo.InvariantCulture);
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -390,7 +390,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

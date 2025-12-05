@@ -36,7 +36,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Keys = ["Recycling and Food"],
 				Type = BinType.Sack,
 			},
-			new ()
+			new()
 			{
 				Name = "Paper, Glass, & Cartons Recycling",
 				Colour = BinColour.Green,

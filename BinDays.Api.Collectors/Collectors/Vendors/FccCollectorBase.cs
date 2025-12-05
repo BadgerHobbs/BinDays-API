@@ -55,14 +55,14 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			// Prepare client-side request for getting session
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = BaseUrl,
 					Method = "GET",
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -89,7 +89,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					{"postcode", postcode},
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = $"{BaseUrl}ajaxprocessor/getaddresses",
@@ -103,7 +103,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -129,7 +129,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -147,14 +147,14 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			// Prepare client-side request for getting session
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = BaseUrl,
 					Method = "GET",
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -183,7 +183,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					{"uprn", address.Uid!},
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = $"{BaseUrl}{CollectionDetailsEndpoint}",
@@ -197,7 +197,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -225,7 +225,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 
 					var matchedBins = ProcessingUtilities.GetMatchingBins(BinTypes, service);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -234,7 +234,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays)
 				};

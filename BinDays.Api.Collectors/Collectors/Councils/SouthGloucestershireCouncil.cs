@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Green,
 				Keys = ["C", "R"],
 			},
-			new ()
+			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Grey,
@@ -56,14 +56,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://webapps.southglos.gov.uk/Webservices/SGC.RefuseCollectionService/RefuseCollectionService.svc/getAddresses/{postcode}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -86,7 +86,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					string? town = addressElement.GetProperty("Town").GetString();
 					string? uprn = addressElement.GetProperty("Uprn").GetString();
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = property?.Trim(),
 						Street = street?.Trim(),
@@ -98,7 +98,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -118,14 +118,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://webapps.southglos.gov.uk/Webservices/SGC.RefuseCollectionService/RefuseCollectionService.svc/getCollections/{address.Uid}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -161,7 +161,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Find all matching bin types based on the date key
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, rawBinDay.Name[0].ToString());
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -171,7 +171,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

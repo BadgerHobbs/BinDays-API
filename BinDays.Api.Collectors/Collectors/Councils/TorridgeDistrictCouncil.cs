@@ -46,7 +46,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Black,
 				Keys = ["Refuse"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
@@ -66,14 +66,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Step 1: Get Session ID
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://torridgedc-self.achieveservice.com/service/My_property_information",
 					Method = "GET",
 				};
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -88,12 +88,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Extract Session ID from Step 1 response content
 				var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = $"https://torridgedc-self.achieveservice.com/apibroker/runLookup?id=5a3aefaf052d9&sid={sessionId}",
 					Method = "POST",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "cookie", requestCookies },
 					},
@@ -112,7 +112,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}),
 				};
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -130,7 +130,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				foreach (var property in rawAddresses.EnumerateObject())
 				{
 					var addressData = property.Value;
-					var address = new Address()
+					var address = new Address
 					{
 						Property = addressData.GetProperty("display").GetString(),
 						Postcode = postcode,
@@ -140,7 +140,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				return new GetAddressesResponse()
+				return new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -156,14 +156,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Step 1: Get Session ID
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://torridgedc-self.achieveservice.com/service/My_property_information",
 					Method = "GET",
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -178,12 +178,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Extract Session ID from Step 1 response content
 				var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = $"https://torridgedc-self.achieveservice.com/apibroker/runLookup?id=6583107397653&sid={sessionId}",
 					Method = "POST",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "cookie", requestCookies },
 					},
@@ -201,7 +201,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}),
 				};
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -264,7 +264,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				return new GetBinDaysResponse()
+				return new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

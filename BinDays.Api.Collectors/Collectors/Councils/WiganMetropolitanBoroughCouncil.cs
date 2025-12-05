@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Black,
 				Keys = ["BlackBin"],
 			},
-			new ()
+			new()
 			{
 				Name = "Brown Bin",
 				Colour = BinColour.Brown,
@@ -83,17 +83,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting token
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://apps.wigan.gov.uk/MyNeighbourhood/Search.aspx",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -106,7 +106,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 				var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"__VIEWSTATE", viewState},
 					{"__VIEWSTATEGENERATOR", "F01E8114"},
@@ -115,12 +115,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"ctl00$ContentPlaceHolder1$btnPostcodeSearch", "Search"},
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://apps.wigan.gov.uk/MyNeighbourhood/Search.aspx",
@@ -129,7 +129,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -144,7 +144,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				foreach (Match rawAddress in rawAddresses)
 				{
-					addresses.Add(new Address()
+					addresses.Add(new Address
 					{
 						Property = rawAddress.Groups["address"].Value.Trim(),
 						Postcode = postcode,
@@ -152,7 +152,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -169,17 +169,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting token
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://apps.wigan.gov.uk/MyNeighbourhood/Search.aspx",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -192,7 +192,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 				var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"__VIEWSTATE", viewState},
 					{"__VIEWSTATEGENERATOR", "F01E8114"},
@@ -201,12 +201,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"ctl00$ContentPlaceHolder1$btnPostcodeSearch", "Search"},
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://apps.wigan.gov.uk/MyNeighbourhood/Search.aspx",
@@ -215,7 +215,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -230,7 +230,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				string requestCookies = clientSideResponse.Headers["set-cookie"];
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"__EVENTTARGET", "ctl00$ContentPlaceHolder1$lstAddresses"},
 					{"__VIEWSTATE", viewState},
@@ -240,13 +240,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"ctl00$ContentPlaceHolder1$lstAddresses", address.Uid!},
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 					{"cookie", requestCookies},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = "https://apps.wigan.gov.uk/MyNeighbourhood/Search.aspx",
@@ -255,7 +255,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -287,7 +287,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get matching bin types from the type using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeKey);
 
-					binDays.Add(new BinDay()
+					binDays.Add(new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -295,7 +295,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

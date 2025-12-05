@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Black,
 				Keys = ["Refuse"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
@@ -62,7 +62,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = "https://www.dorsetcouncil.gov.uk/api/jsonws/invoke";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
@@ -78,7 +78,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}),
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -95,7 +95,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
 				{
-					var address = new Address()
+					var address = new Address
 					{
 						Property = addressElement.GetProperty("fullAddress").GetString()!.Trim(),
 						Postcode = postcode,
@@ -105,7 +105,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -124,19 +124,19 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/recyclingday/{address.Uid}";
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent },
 						{ "accept", "application/json" }
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -146,12 +146,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			else if (clientSideResponse.RequestId == 1)
 			{
 				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/refuseday/{address.Uid}";
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = requestUrl,
 					Method = "GET",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent },
 						{ "accept", "application/json" }
@@ -164,7 +164,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 
@@ -178,12 +178,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				metadata.Add("refuseday", clientSideResponse.Content);
 
 				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/foodwasteday/{address.Uid}";
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = requestUrl,
 					Method = "GET",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent },
 						{ "accept", "application/json" }
@@ -194,7 +194,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 
@@ -208,12 +208,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				metadata.Add("foodwasteday", clientSideResponse.Content);
 
 				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/gardenwasteday/{address.Uid}";
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 4,
 					Url = requestUrl,
 					Method = "GET",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent },
 						{ "accept", "application/json" }
@@ -224,7 +224,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -255,7 +255,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 							DateTimeStyles.None
 						);
 
-						var binDay = new BinDay()
+						var binDay = new BinDay
 						{
 							Date = date,
 							Address = address,
@@ -266,7 +266,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

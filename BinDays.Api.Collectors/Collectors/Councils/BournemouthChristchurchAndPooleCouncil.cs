@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Black,
 				Keys = ["Rubbish"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Blue,
@@ -73,14 +73,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var encodedPostcode = Uri.EscapeDataString(postcode);
 				var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={encodedPostcode}&Subscription-Key={_apiKey}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -98,7 +98,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var resultsElement = jsonDoc.RootElement.GetProperty("Results");
 				foreach (var addressElement in resultsElement.EnumerateArray())
 				{
-					var address = new Address()
+					var address = new Address
 					{
 						Property = addressElement.GetProperty("FULL_ADDRESS").GetString()!.Trim(),
 						Postcode = postcode,
@@ -108,7 +108,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -128,19 +128,19 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://prod-17.uksouth.logic.azure.com/workflows/58253d7b7d754447acf9fe5fcf76f493/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig={_signature}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "POST",
-					Headers = new Dictionary<string, string>()
+					Headers = new()
 					{
 						{ "user-agent", Constants.UserAgent }, { "content-type", "application/json" },
 					},
 					Body = JsonSerializer.Serialize(new { uprn = address.Uid }),
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -171,7 +171,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 								DateTimeStyles.None
 							);
 
-							var binDay = new BinDay()
+							var binDay = new BinDay
 							{
 								Date = date,
 								Address = address,
@@ -183,7 +183,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

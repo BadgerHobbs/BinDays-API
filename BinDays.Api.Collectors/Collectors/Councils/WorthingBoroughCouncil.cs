@@ -51,7 +51,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Blue,
 				Keys = ["Recycling"],
 			},
-			new ()
+			new()
 			{
 				Name = "Rubbish",
 				Colour = BinColour.Grey,
@@ -73,17 +73,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://www.adur-worthing.gov.uk/bin-day/?brlu-address-postcode={postcode}&return-url=%2Fbin-day%2F&action=search";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -102,7 +102,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var uid = rawAddress.Groups["uid"].Value;
 					var addressText = rawAddress.Groups["address"].Value.Trim();
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = addressText,
 						Postcode = postcode,
@@ -112,7 +112,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -132,17 +132,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://www.adur-worthing.gov.uk/bin-day/?brlu-selected-address={address.Uid}&return-url=/bin-day/";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -179,7 +179,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						// Get matching bin types from the collection using the keys
 						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, collection);
 
-						var binDay = new BinDay()
+						var binDay = new BinDay
 						{
 							Date = date,
 							Address = address,
@@ -190,7 +190,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

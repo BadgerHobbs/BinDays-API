@@ -34,7 +34,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Grey,
 				Keys = ["General waste bin"],
 			},
-			new ()
+			new()
 			{
 				Name = "Garden and Food Waste",
 				Colour = BinColour.Brown,
@@ -63,14 +63,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://ardsandnorthdownbincalendar.azurewebsites.net/api/addresses/{postcode}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -94,7 +94,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Remove postcode from property (e.g.'1 OLD MILL COURT, NEWTOWNARDS, BT23 4JG')
 					property = property?.Replace($", {postcode}", "", StringComparison.OrdinalIgnoreCase).Trim();
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = property,
 						Postcode = postcode,
@@ -103,7 +103,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -123,14 +123,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://ardsandnorthdownbincalendar.azurewebsites.net/api/collectiondates/{address.Uid}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -174,7 +174,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 						if (binsForDay.Count != 0)
 						{
-							var binDay = new BinDay()
+							var binDay = new BinDay
 							{
 								Date = date,
 								Address = address,
@@ -186,7 +186,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

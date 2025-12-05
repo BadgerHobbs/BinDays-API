@@ -64,7 +64,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			{
 				// Prepare client-side request
 				var requestBody = JsonSerializer.Serialize(new { postcode });
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = GovUkBaseUrl,
@@ -72,7 +72,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					Body = requestBody
 				};
 
-				var getCollectorResponse = new GetCollectorResponse()
+				var getCollectorResponse = new GetCollectorResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -96,14 +96,14 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				if (!string.IsNullOrWhiteSpace(firstAddressGovUkId))
 				{
 					// Prepare client-side request
-					var clientSideRequest = new ClientSideRequest()
+					var clientSideRequest = new ClientSideRequest
 					{
 						RequestId = 2,
 						Url = $"{GovUkBaseUrl}/{firstAddressGovUkId}",
 						Method = "GET",
 					};
 
-					getCollectorResponse = new GetCollectorResponse()
+					getCollectorResponse = new GetCollectorResponse
 					{
 						NextClientSideRequest = clientSideRequest
 					};
@@ -115,7 +115,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				{
 					var collector = ExtractCollector(collectorService, postcode, clientSideResponse);
 
-					getCollectorResponse = new GetCollectorResponse()
+					getCollectorResponse = new GetCollectorResponse
 					{
 						Collector = collector,
 					};
@@ -128,7 +128,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			{
 				var collector = ExtractCollector(collectorService, postcode, clientSideResponse);
 
-				var getCollectorResponse = new GetCollectorResponse()
+				var getCollectorResponse = new GetCollectorResponse
 				{
 					Collector = collector,
 				};

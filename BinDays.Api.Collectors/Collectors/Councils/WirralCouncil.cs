@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Green,
 				Keys = ["Green bin"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Grey,
@@ -77,17 +77,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting token
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://www.wirral.gov.uk/bincal_dev/",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -100,7 +100,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 				var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"__VIEWSTATE", viewState},
 					{"__EVENTVALIDATION", eventValidation},
@@ -108,12 +108,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"ctl00$MainContent$LookupPostcode", "Go"},
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://www.wirral.gov.uk/bincal_dev/",
@@ -122,7 +122,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -137,7 +137,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				foreach (Match rawAddress in rawAddresses)
 				{
-					addresses.Add(new Address()
+					addresses.Add(new Address
 					{
 						Property = rawAddress.Groups["address"].Value.Trim(),
 						Postcode = postcode,
@@ -145,7 +145,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -162,17 +162,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting token
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://www.wirral.gov.uk/bincal_dev/",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -185,7 +185,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 				var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"__VIEWSTATE", viewState},
 					{"__EVENTVALIDATION", eventValidation},
@@ -193,12 +193,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"ctl00$MainContent$LookupPostcode", "Go"},
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://www.wirral.gov.uk/bincal_dev/",
@@ -207,7 +207,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -220,7 +220,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 				var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"__VIEWSTATE", viewState},
 					{"__EVENTVALIDATION", eventValidation},
@@ -229,12 +229,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"ctl00$MainContent$FindRounds", "Find bin collections"},
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = "https://www.wirral.gov.uk/bincal_dev/",
@@ -243,7 +243,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -273,7 +273,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get matching bin types from the type using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
 
-					binDays.Add(new BinDay()
+					binDays.Add(new BinDay
 					{
 						Date = collectionDate,
 						Address = address,
@@ -281,7 +281,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					});
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

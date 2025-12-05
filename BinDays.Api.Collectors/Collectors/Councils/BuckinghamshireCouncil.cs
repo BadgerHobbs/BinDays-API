@@ -39,7 +39,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Keys = ["Food waste"],
 				Type = BinType.Caddy,
 			},
-			new ()
+			new()
 			{
 				Name = "Mixed Recycling",
 				Colour = BinColour.Blue,

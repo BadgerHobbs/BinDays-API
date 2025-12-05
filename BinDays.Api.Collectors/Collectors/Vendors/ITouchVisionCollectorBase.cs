@@ -59,7 +59,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					P_COUNCIL_ID = CouncilId
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = $"{ApiBaseUrl}kmbd/address",
@@ -70,7 +70,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -88,7 +88,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 
 				foreach (var addressElement in adressElements.EnumerateArray())
 				{
-					var address = new Address()
+					var address = new Address
 					{
 						Property = addressElement.GetProperty("FULL_ADDRESS").GetString()?.Trim(),
 						Uid = addressElement.GetProperty("UPRN").GetInt64().ToString(),
@@ -97,7 +97,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -123,7 +123,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					P_LANG_CODE = "EN"
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = $"{ApiBaseUrl}kmbd/collectionDay",
@@ -134,7 +134,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -182,7 +182,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					}
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

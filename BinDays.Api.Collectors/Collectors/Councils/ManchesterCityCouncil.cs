@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Blue,
 				Keys = ["ahtm_dates_blue_pulpable_bin"],
 			},
-			new ()
+			new()
 			{
 				Name = "Metal, Glass & Plastic Bottles",
 				Colour = BinColour.Brown,
@@ -59,14 +59,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting authorization token
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/citizen?archived=Y&preview=false&locale=en",
 					Method = "GET",
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -89,11 +89,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"Authorization", authToken},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/custom?action=widget-property-search&actionedby=location_search_property&loadform=true&access=citizen&locale=en",
@@ -102,7 +102,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody.ToJsonString(),
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -123,7 +123,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					string uid = addressNode!["value"]!.GetValue<string>();
 					string property = addressNode["label"]!.GetValue<string>();
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = property.Trim(),
 						Postcode = postcode,
@@ -133,7 +133,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -151,14 +151,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting authorization token
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/citizen?archived=Y&preview=false&locale=en",
 					Method = "GET",
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -181,11 +181,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"Authorization", authToken},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/custom?action=retrieve-property&actionedby=_KDF_optionSelected&loadform=true&access=citizen&locale=en",
@@ -194,7 +194,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody.ToJsonString(),
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -229,11 +229,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 				};
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"Authorization", authToken},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = "https://manchester.form.uk.empro.verintcloudservices.com/api/custom?action=bin_checker-get_bin_col_info&actionedby=_KDF_custom&loadform=true&access=citizen&locale=en",
@@ -242,7 +242,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody.ToJsonString(),
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -277,7 +277,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 								DateTimeStyles.None
 							);
 
-							var binDay = new BinDay()
+							var binDay = new BinDay
 							{
 								Date = date,
 								Address = address,
@@ -289,7 +289,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

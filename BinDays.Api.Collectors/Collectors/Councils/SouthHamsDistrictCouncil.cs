@@ -35,7 +35,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Green,
 				Keys = ["Recycling"],
 			},
-			new ()
+			new()
 			{
 				Name = "Refuse",
 				Colour = BinColour.Grey,

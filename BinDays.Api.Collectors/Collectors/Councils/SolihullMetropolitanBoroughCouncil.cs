@@ -33,7 +33,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Green,
 				Keys = ["Green Wheelie Bin"],
 			},
-			new ()
+			new()
 			{
 				Name = "Glass Recycling",
 				Colour = BinColour.Black,
@@ -85,17 +85,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://digital.solihull.gov.uk/BinCollectionCalendar/",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -110,7 +110,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{"__VIEWSTATE", viewState},
 					{"__EVENTVALIDATION", eventValidation},
@@ -118,12 +118,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{"butFindAddress", "Find+Address"},
 				});
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 					{"content-type", "application/x-www-form-urlencoded"},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = "https://digital.solihull.gov.uk/BinCollectionCalendar/",
@@ -132,7 +132,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -158,7 +158,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						continue;
 					}
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = property,
 						Postcode = postcode,
@@ -168,7 +168,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -187,17 +187,17 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			if (clientSideResponse == null)
 			{
 				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = "https://digital.solihull.gov.uk/BinCollectionCalendar/",
 					Method = "GET",
-					Headers = new Dictionary<string, string>() {
+					Headers = new() {
 						{"user-agent", Constants.UserAgent},
 					},
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -212,14 +212,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				_ = EventValidationRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = $"https://digital.solihull.gov.uk/BinCollectionCalendar/Calendar.aspx?UPRN={address.Uid}",
 					Method = "GET",
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -250,7 +250,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get matching bin types from the service using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -260,7 +260,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

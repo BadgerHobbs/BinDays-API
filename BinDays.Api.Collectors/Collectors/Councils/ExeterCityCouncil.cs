@@ -35,7 +35,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Black,
 				Keys = ["Refuse collection"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
@@ -76,14 +76,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://exeter.gov.uk/repositories/hidden-pages/address-finder?qtype=bins&term={postcode}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -103,7 +103,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					string? property = addressElement.GetProperty("label").GetString();
 					string? uprn = addressElement.GetProperty("UPRN").GetString();
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = property?.Trim(),
 						Postcode = postcode,
@@ -113,7 +113,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -133,14 +133,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://exeter.gov.uk/repositories/hidden-pages/address-finder?qtype=bins&term={address.Postcode}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
 					Method = "GET",
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -184,7 +184,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// Get matching bin types from the collection using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, collection);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -194,7 +194,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

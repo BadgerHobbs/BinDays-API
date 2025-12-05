@@ -34,7 +34,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.White,
 				Keys = ["recycling"],
 			},
-			new ()
+			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.LightGreen,
@@ -86,11 +86,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?&Postcode={postcode}";
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
@@ -98,7 +98,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Headers = requestHeaders,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -118,7 +118,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var uid = rawAddress.Groups["uid"].Value;
 					var fullAddress = rawAddress.Groups["address"].Value.Trim();
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = fullAddress,
 						Postcode = postcode,
@@ -128,7 +128,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -149,11 +149,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Use live URL as per legacy implementation, not base website URL
 				var requestUrl = $"https://live-rctcbc.cloud.contensis.com/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?uprn={address.Uid!}";
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"user-agent", Constants.UserAgent},
 				};
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
@@ -161,7 +161,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Headers = requestHeaders,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -206,7 +206,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					// If bins are matched, create or update BinDay entry
 					if (matchedBins.Count > 0)
 					{
-						var binDay = new BinDay()
+						var binDay = new BinDay
 						{
 							Date = collectionDate,
 							Address = address,
@@ -216,7 +216,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					}
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

@@ -39,7 +39,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				Colour = BinColour.Black,
 				Keys = ["General Waste"],
 			},
-			new ()
+			new()
 			{
 				Name = "Cans & Plastics Recycling",
 				Colour = BinColour.Green,
@@ -82,13 +82,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = "https://bcprdapidyna002.azure-api.net/bcprdfundyna001-llpg/LLPGService";
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey},
 				};
 
 				var requestBody = JsonSerializer.Serialize(new { postcode });
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
@@ -97,7 +97,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -118,7 +118,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					string fullAddress = rawAddress!["addressFull"]!.GetValue<string>().Trim();
 					string uid = rawAddress!["GAZ_ID"]!.GetValue<string>();
 
-					var address = new Address()
+					var address = new Address
 					{
 						Property = fullAddress,
 						Postcode = postcode,
@@ -128,7 +128,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					addresses.Add(address);
 				}
 
-				var getAddressesResponse = new GetAddressesResponse()
+				var getAddressesResponse = new GetAddressesResponse
 				{
 					Addresses = addresses.AsReadOnly(),
 				};
@@ -148,13 +148,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				var requestUrl = "https://bcprdapidyna002.azure-api.net/bcprdfundyna001-alloy/NextCollectionDates";
 
-				var requestHeaders = new Dictionary<string, string>() {
+				var requestHeaders = new Dictionary<string, string> {
 					{"Ocp-Apim-Subscription-Key", _apiSubscriptionKey},
 				};
 
 				var requestBody = JsonSerializer.Serialize(new { uprn = address.Uid });
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = requestUrl,
@@ -163,7 +163,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					Body = requestBody,
 				};
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest
 				};
@@ -197,7 +197,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						DateTimeStyles.None
 					);
 
-					var binDay = new BinDay()
+					var binDay = new BinDay
 					{
 						Date = date,
 						Address = address,
@@ -207,7 +207,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					binDays.Add(binDay);
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse()
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
 					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 				};

@@ -34,7 +34,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				Colour = BinColour.Black,
 				Keys = ["grey bin"],
 			},
-			new ()
+			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
@@ -106,12 +106,12 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			// Prepare client-side request for getting the initial session redirect
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = $"{EformBaseUrl}/ebase/ufsmain?formid=BINZONE_DESKTOP&SOVA_TAG={ServiceId}",
 					Method = "GET",
-					Options = new ClientSideOptions()
+					Options = new ClientSideOptions
 					{
 						// We need to trap the 302 to get the Location header
 						FollowRedirects = false,
@@ -130,7 +130,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				var relativeLocation = clientSideResponse.Headers["location"];
 				var fullRedirectUrl = $"{EformBaseUrl}/ebase/{relativeLocation}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = fullRedirectUrl,
@@ -158,7 +158,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				var refererUrl = clientSideResponse.Options.Metadata["referer"];
 				var ebs = EbzRegex().Match(refererUrl).Groups[1].Value;
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{ "formid", "/Forms/BINZONE_DESKTOP" },
 					{ "ebs", ebs },
@@ -171,7 +171,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					{ "HID:inputs", "ICTRL:2:_:A,ACTRL:20:_,ACTRL:24:_,ICTRL:70:_:A,ICTRL:31:_:A,ICTRL:32:_:A,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:S.h,APAGE:R.h" },
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
@@ -197,7 +197,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					var uid = match.Groups["uid"].Value;
 					var addressText = match.Groups["address"].Value.Trim();
 
-					addresses.Add(new Address()
+					addresses.Add(new Address
 					{
 						Property = addressText,
 						Postcode = postcode,
@@ -217,12 +217,12 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			// Prepare client-side request for getting the initial session redirect
 			if (clientSideResponse == null)
 			{
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
 					Url = $"{EformBaseUrl}/ebase/ufsmain?formid=BINZONE_DESKTOP&SOVA_TAG={ServiceId}",
 					Method = "GET",
-					Options = new ClientSideOptions()
+					Options = new ClientSideOptions
 					{
 						FollowRedirects = false,
 					},
@@ -240,7 +240,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				var relativeLocation = clientSideResponse.Headers["location"];
 				var fullRedirectUrl = $"{EformBaseUrl}/ebase/{relativeLocation}";
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 2,
 					Url = fullRedirectUrl,
@@ -271,7 +271,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				// Save EBS for next step
 				clientSideResponse.Options.Metadata.Add("ebs", ebs);
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{ "formid", "/Forms/BINZONE_DESKTOP" },
 					{ "ebs", ebs },
@@ -284,7 +284,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					{ "HID:inputs", "ICTRL:2:_:A,ACTRL:20:_,ACTRL:24:_,ICTRL:70:_:A,ICTRL:31:_:A,ICTRL:32:_:A,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:S.h,APAGE:R.h" },
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 3,
 					Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
@@ -309,7 +309,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				// Scrape the dynamic HID:inputs value from the response
 				var hidInputs = HidInputsRegex().Match(clientSideResponse.Content).Groups["value"].Value;
 
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>()
+				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
 					{ "formid", "/Forms/BINZONE_DESKTOP" },
 					{ "ebs", ebs },
@@ -322,7 +322,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					{ "HID:inputs", hidInputs },
 				});
 
-				var clientSideRequest = new ClientSideRequest()
+				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 4,
 					Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
@@ -371,7 +371,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					{
 						var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
 
-						var binDay = new BinDay()
+						var binDay = new BinDay
 						{
 							Date = date,
 							Address = address,

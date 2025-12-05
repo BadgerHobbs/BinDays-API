@@ -237,7 +237,7 @@
 
 			try
 			{
-				var address = new Address()
+				var address = new Address
 				{
 					Postcode = postcode,
 					Uid = uid
