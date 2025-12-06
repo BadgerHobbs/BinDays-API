@@ -124,7 +124,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "Human Readable Bin Name",
 				Colour = BinColour.Grey,
-				Keys = ["BIN_ID_IN_DATA"],
+				Keys = new List<string>() { "BIN_ID_IN_DATA" }.AsReadOnly(),
 				Type = BinType.Bag,
 			},
 		}.AsReadOnly();

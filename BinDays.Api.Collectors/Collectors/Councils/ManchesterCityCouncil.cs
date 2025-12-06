@@ -31,25 +31,25 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "Paper & Card",
 				Colour = BinColour.Blue,
-				Keys = ["ahtm_dates_blue_pulpable_bin"],
+				Keys = new List<string>() { "ahtm_dates_blue_pulpable_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Metal, Glass & Plastic Bottles",
 				Colour = BinColour.Brown,
-				Keys = ["ahtm_dates_brown_commingled_bin"],
+				Keys = new List<string>() { "ahtm_dates_brown_commingled_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "Food & Garden Waste",
 				Colour = BinColour.Green,
-				Keys = ["ahtm_dates_green_organic_bin"],
+				Keys = new List<string>() { "ahtm_dates_green_organic_bin" }.AsReadOnly(),
 			},
 			new()
 			{
 				Name = "General Waste",
 				Colour = BinColour.Black,
-				Keys = ["ahtm_dates_black_bin"],
+				Keys = new List<string>() { "ahtm_dates_black_bin" }.AsReadOnly(),
 			},
 		}.AsReadOnly();
 
