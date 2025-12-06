@@ -10,6 +10,8 @@
 	using Microsoft.Extensions.Caching.Distributed;
 	using Microsoft.Extensions.Logging;
 	using Newtonsoft.Json;
+	using System;
+	using System.Linq;
 	using System.Net.Http;
 	using System.Security.Cryptography;
 	using System.Text;
@@ -71,6 +73,31 @@
 		}
 
 		/// <summary>
+		/// Attempts to retrieve and deserialize an object from the cache. 
+		/// Handles deserialization errors by evicting the bad cache entry.
+		/// </summary>
+		/// <typeparam name="T">The type to deserialize into.</typeparam>
+		/// <param name="cacheKey">The cache key.</param>
+		/// <returns>The deserialized object or null if not found or invalid.</returns>
+		private T? TryGetFromCache<T>(string cacheKey) where T : class
+		{
+			if (_cache.GetString(cacheKey) is string cachedResult)
+			{
+				try
+				{
+					return JsonConvert.DeserializeObject<T>(cachedResult, _jsonSerializerSettings);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogWarning(ex, "Failed to deserialize cached data for key '{CacheKey}'. Evicting invalid cache entry.", cacheKey);
+					_cache.Remove(cacheKey);
+				}
+			}
+
+			return null;
+		}
+
+		/// <summary>
 		/// Gets all the collectors.
 		/// </summary>
 		/// <returns>An enumerable collection of collectors or an error response.</returns>
@@ -103,12 +130,11 @@
 			postcode = ProcessingUtilities.FormatPostcode(postcode);
 
 			var cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
-			var cachedResult = _cache.GetString(cacheKey);
+			var cachedResponse = TryGetFromCache<GetCollectorResponse>(cacheKey);
 
-			if (cachedResult != null)
+			if (cachedResponse != null)
 			{
-				var cachedResponse = JsonConvert.DeserializeObject<GetCollectorResponse>(cachedResult, _jsonSerializerSettings);
-				_logger.LogInformation("Returning cached collector {CollectorName} for postcode: {Postcode}.", cachedResponse!.Collector!.Name, postcode);
+				_logger.LogInformation("Returning cached collector {CollectorName} for postcode: {Postcode}.", cachedResponse.Collector!.Name, postcode);
 				return Ok(cachedResponse);
 			}
 
@@ -169,12 +195,11 @@
 			postcode = ProcessingUtilities.FormatPostcode(postcode);
 
 			var cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
-			var cachedResult = _cache.GetString(cacheKey);
+			var cachedResponse = TryGetFromCache<GetAddressesResponse>(cacheKey);
 
-			if (cachedResult != null)
+			if (cachedResponse != null)
 			{
-				var cachedResponse = JsonConvert.DeserializeObject<GetAddressesResponse>(cachedResult, _jsonSerializerSettings);
-				_logger.LogInformation("Returning {AddressCount} cached addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", cachedResponse!.Addresses!.Count, govUkId, postcode);
+				_logger.LogInformation("Returning {AddressCount} cached addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", cachedResponse.Addresses!.Count, govUkId, postcode);
 				return Ok(cachedResponse);
 			}
 
@@ -226,12 +251,11 @@
 			postcode = ProcessingUtilities.FormatPostcode(postcode);
 
 			var cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
-			var cachedResult = _cache.GetString(cacheKey);
+			var cachedResponse = TryGetFromCache<GetBinDaysResponse>(cacheKey);
 
-			if (cachedResult != null)
+			if (cachedResponse != null)
 			{
-				var cachedResponse = JsonConvert.DeserializeObject<GetBinDaysResponse>(cachedResult, _jsonSerializerSettings);
-				_logger.LogInformation("Returning {BinDayCount} cached bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", cachedResponse!.BinDays!.Count, govUkId, postcode, uid);
+				_logger.LogInformation("Returning {BinDayCount} cached bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", cachedResponse.BinDays!.Count, govUkId, postcode, uid);
 				return Ok(cachedResponse);
 			}
 
