@@ -36,7 +36,7 @@ Your implementation **MUST** follow the existing patterns and style of the proje
 ## Your Implementation Plan
 
 1.  **Analyze Inputs:**
-    *   Read and parse the `collector_info.json` file provided in `{{args}}`.
+    *   Read and parse the collector information json file located at `./.gemini/out/{{args}}.json`.
     *   Extract `councilName`, `councilWebsite`, `govUkId`, `harFilePath`, the `postcode` (from the steps or other context), and the `collections` data.
     *   Read and analyze the corresponding HAR file from `harFilePath`.
 
