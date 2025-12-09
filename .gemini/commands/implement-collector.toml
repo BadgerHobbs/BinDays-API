@@ -49,15 +49,12 @@ Your implementation **MUST** follow the existing patterns and style of the proje
     *   Use the HAR file and the `steps` from the JSON to meticulously reconstruct the `GetAddresses` and `GetBinDays` methods. This involves creating `ClientSideRequest` objects for each step of the process.
     *   Define the `_binTypes` collection based on the `collections` data. Ensure the `Keys` match the data found in the HTTP responses.
 
-4.  **Register the Collector:**
-    *   Use `read_file` and `replace` on `BinDays.Api/Initialisation/DependencyInjection.cs` to add the new `{councilName}Council` to the DI container. Keep the list alphabetized.
-
-5.  **Create the Integration Test:**
+4.  **Create the Integration Test:**
     *   Create a new test file at `BinDays.Api.IntegrationTests/Collectors/Councils/{councilName}CouncilTests.cs`.
     *   Use the provided test template from the style guide.
     *   The test must use a real postcode and assert that the bin days returned by your collector **exactly match** the `collections` data from the input JSON file. This is your primary validation step.
 
-6.  **Verify and Run:**
+5.  **Verify and Run:**
     *   Execute the new integration test to confirm your implementation is correct.
       `!{dotnet test --filter "FullyQualifiedName~{councilName}CouncilTests.GetBinDaysTest"}`
     *   If the test fails, use the HTTP logging feature described in the debugging guide to compare the requests made by your collector against the HAR file. Fix any discrepancies and re-run the test until it passes.
