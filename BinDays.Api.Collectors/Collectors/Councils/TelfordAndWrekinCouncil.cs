@@ -93,7 +93,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process addresses from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				using var jsonDoc = JsonDocument.Parse(JsonDocument.Parse(clientSideResponse.Content).RootElement.GetString()!);
+				using var jsonDoc = JsonDocument.Parse(JsonSerializer.Deserialize<string>(clientSideResponse.Content)!);
 				var rawAddresses = jsonDoc.RootElement.GetProperty("properties");
 
 				var addresses = new List<Address>();
@@ -146,7 +146,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				using var jsonDoc = JsonDocument.Parse(JsonDocument.Parse(clientSideResponse.Content).RootElement.GetString()!);
+				using var jsonDoc = JsonDocument.Parse(JsonSerializer.Deserialize<string>(clientSideResponse.Content)!);
 				var rawBinDays = jsonDoc.RootElement.GetProperty("bincollections");
 
 				var binDays = new List<BinDay>();
