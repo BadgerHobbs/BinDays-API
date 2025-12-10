@@ -1,10 +1,10 @@
 # Implementing a New Bin Day Collector
 
-This document outlines two methods for implementing a new bin day collector for a council: running the process locally using the Gemini CLI, or automating it with a GitHub Action.
+This document outlines three methods for implementing a new bin day collector for a council: running the process locally using the Gemini CLI, using the OpenAI Codex CLI, or automating it with a GitHub Action.
 
 ## Method 1: Local Implementation with Gemini CLI
 
-This method allows you to run the collector implementation process on your local machine.
+This method allows you to run the collector implementation process on your local machine using the Gemini CLI.
 
 ### Prerequisites
 
@@ -83,7 +83,73 @@ Before running the commands, you need to configure the Playwright MCP server for
 
 You can then type `/exit` to close the Gemini CLI.
 
-## Method 2: Automated Implementation with GitHub Actions
+## Method 2: Local Implementation with Codex CLI
+
+This method allows you to run the collector implementation process on your local machine using the Codex CLI.
+
+### Prerequisites
+
+1.  **Codex CLI**: Ensure you have the Codex CLI installed and configured.
+2.  **Node.js**: The Playwright MCP server requires Node.js (version 18 or newer).
+3.  **.NET SDK**: You need the .NET SDK (version 8.0 or newer) to build the project and run tests.
+4.  **Repository**: Clone this repository to your local machine.
+
+### Configuration
+
+Before running the commands, you need to configure the Playwright MCP server for the Codex CLI.
+
+1.  Create a `config.toml` file in a `.codex` directory at the root of the project (`.codex/config.toml`).
+2.  Add the following configuration to the file. This tells the Codex CLI how to start the Playwright server.
+
+    ```toml
+    [mcp_servers.playwright]
+    command = "npx"
+    args = ["@playwright/mcp@latest"]
+    ```
+
+### Step-by-Step Guide
+
+1.  **Start the Codex CLI**
+
+    Open your terminal and start the Codex CLI in interactive mode. You can use the `--full-auto` flag to automatically accept any confirmation prompts.
+
+    ```bash
+    codex
+    ```
+
+2.  **Fetch Collector Data**
+
+    Once inside the Codex CLI, run the following command, replacing `<postcode>` with a valid postcode for the council you want to add:
+
+    ```
+    /prompts:fetch-collector-data POSTCODE="<postcode>"
+    ```
+
+    This command will:
+
+    - Start the Playwright MCP server.
+    - Use the browser to navigate the council's website and record the steps required to find the bin collection dates.
+    - Save the recorded steps and the scraped bin collection data into a new JSON file: `.gemini/out/<CouncilName>.json`.
+    - Save the network requests into a HAR file: `.gemini/out/<CouncilName>.cleaned.har`.
+
+3.  **Implement the Collector**
+
+    After the data fetching is complete, run the following command inside the same Codex CLI session, using the council name from the previous step:
+
+    ```
+    /prompts:implement-collector FILENAME="<CouncilName>"
+    ```
+
+    This command will:
+
+    - Read the provided JSON and HAR files from the `.gemini/out` directory.
+    - Generate a new C# collector class in `BinDays.Api.Collectors/Collectors/Councils/`.
+    - Generate a new integration test file in `BinDays.Api.IntegrationTests/Collectors/Councils/`.
+    - Run the newly created integration test to verify the implementation.
+
+You can then type `/quit` to close the Codex CLI.
+
+## Method 3: Automated Implementation with GitHub Actions
 
 The `implement-collector.yml` workflow automates the entire process using a self-hosted runner.
 
