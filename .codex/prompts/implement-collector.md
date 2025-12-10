@@ -1,0 +1,62 @@
+---
+description: Implements a new C# council collector using a collector_info.json file and a HAR file.
+argument-hint: '[FILENAME="<filename>"]'
+---
+
+# Task: Implement a new C# Bin Day Collector and Integration Test
+
+You are a senior C# developer specializing in the BinDays API project. Your task is to implement a new council bin day collector based on a `collector_info.json` file provided by the user.
+
+You must strictly adhere to the project's conventions. The implementation must be robust, maintainable, and thoroughly tested.
+
+**Input File:** `$FILENAME`
+
+---
+## Core Instructions & Style Guide
+
+Your implementation **MUST** follow the existing patterns and style of the project.
+
+**1. Style and Conventions:**
+   - Adhere strictly to the C# Style Guide. You should read the style guide located at `.gemini/styleguide.md`.
+   - Pay close attention to the **"Collector Implementation and Design"** section, especially regarding:
+     - Stateless, multi-step request design.
+     - Avoiding browser emulation; replicate HTTP requests directly.
+     - Minimal exception handling (fail-fast philosophy).
+     - Using `Regex` for HTML parsing and `System.Text.Json` for JSON.
+     - Correctly defining `_binTypes` and using `ProcessingUtilities`.
+
+**2. Existing Implementations:**
+   - Before writing any code, analyze the existing collectors to understand the established patterns. You have access to them in the directory `BinDays.Api.Collectors/Collectors/Councils/`.
+   - Note the different base classes used (`GovUkCollectorBase`, `FccCollectorBase`, `ITouchVisionCollectorBase`, `BinzoneCollectorBase`). Your first step is to determine if the new collector fits one of these.
+   - The core interfaces are available for your reference. You should read `BinDays.Api.Collectors/Collectors/ICollector.cs` and the files in `BinDays.Api.Collectors/Collectors/Vendors/`.
+
+**3. Debugging:**
+   - If your tests fail, use the debugging guide to help diagnose issues with HTTP requests. The guide is located at `.gemini/DEBUGGING.md`.
+
+---
+## Your Implementation Plan
+
+1.  **Analyze Inputs:**
+    *   Read and parse the collector information json file located at `./.gemini/out/$FILENAME.json`.
+    *   Extract `councilName`, `councilWebsite`, `govUkId`, `harFilePath`, the `postcode` (from the steps or other context), and the `collections` data.
+    *   Read and analyze the corresponding HAR file from `harFilePath`.
+
+2.  **Choose a Base Class:**
+    *   Based on the HAR file and existing examples, determine the most appropriate base class to inherit from. If the request flow is unique, inherit from `GovUkCollectorBase` and implement the logic from scratch.
+
+3.  **Implement the Collector Class:**
+    *   Create the new collector class file at `BinDays.Api.Collectors/Collectors/Councils/{councilName}Council.cs`.
+    *   Implement the `ICollector` interface.
+    *   Use the HAR file and the `steps` from the JSON to meticulously reconstruct the `GetAddresses` and `GetBinDays` methods. This involves creating `ClientSideRequest` objects for each step of the process.
+    *   Define the `_binTypes` collection based on the `collections` data. Ensure the `Keys` match the data found in the HTTP responses.
+
+4.  **Create the Integration Test:**
+    *   Create a new test file at `BinDays.Api.IntegrationTests/Collectors/Councils/{councilName}CouncilTests.cs`.
+    *   Use the provided test template from the style guide.
+    *   The test must use a real postcode and assert that the bin days returned by your collector **exactly match** the `collections` data from the input JSON file. This is your primary validation step.
+
+5.  **Verify and Run:**
+    *   Execute the new integration test to confirm your implementation is correct. Use the `run_shell_command` tool to run: `dotnet test --filter "FullyQualifiedName~{councilName}CouncilTests.GetBinDaysTest"`
+    *   If the test fails, use the HTTP logging feature described in the debugging guide to compare the requests made by your collector against the HAR file. Fix any discrepancies and re-run the test until it passes.
+
+Begin the process now by analyzing the input file.
