@@ -248,7 +248,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var binType = rawBinDay.Groups["binType"].Value;
 					var collectionDates = rawBinDay.Groups["collectionDates"].Value
 						.Split(",")
-						.Select(x => x.Trim());
+						.Select(x => x.Trim())
+						.Where(x => !string.IsNullOrWhiteSpace(x));
 
 					// Skip if there are no collection dates (e.g. 'No Garden Collections at this Property')
 					if (collectionDates.Any(x => x.StartsWith("No ")))
