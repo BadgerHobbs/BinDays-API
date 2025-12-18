@@ -94,7 +94,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					RequestId = 2,
 					Url = $"{BaseUrl}ajaxprocessor/getaddresses",
 					Method = "POST",
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
 						{ "x-requested-with", "XMLHttpRequest"},
 						{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
@@ -188,7 +188,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					RequestId = 2,
 					Url = $"{BaseUrl}{CollectionDetailsEndpoint}",
 					Method = "POST",
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
 						{ "x-requested-with", "XMLHttpRequest"},
 						{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8"},

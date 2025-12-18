@@ -64,7 +64,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					RequestId = 1,
 					Url = $"{ApiBaseUrl}kmbd/address",
 					Method = "GET",
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
 						{ "P_PARAMETER", Encrypt(JsonSerializer.Serialize(payload)) }
 					},
@@ -128,7 +128,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					RequestId = 1,
 					Url = $"{ApiBaseUrl}kmbd/collectionDay",
 					Method = "GET",
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
 						{ "P_PARAMETER", Encrypt(JsonSerializer.Serialize(payload)) }
 					},

@@ -111,6 +111,10 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					RequestId = 1,
 					Url = $"{EformBaseUrl}/ebase/ufsmain?formid=BINZONE_DESKTOP&SOVA_TAG={ServiceId}",
 					Method = "GET",
+					Headers = new()
+					{
+						{ "user-agent", Constants.UserAgent },
+					},
 					Options = new ClientSideOptions
 					{
 						// We need to trap the 302 to get the Location header
@@ -135,8 +139,9 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					RequestId = 2,
 					Url = fullRedirectUrl,
 					Method = "GET",
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
+						{ "user-agent", Constants.UserAgent },
 						{ "cookie", cookie },
 					},
 					Options = new ClientSideOptions
@@ -177,8 +182,9 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
 					Method = "POST",
 					Body = requestBody,
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
+						{ "user-agent", Constants.UserAgent },
 						{ "cookie", cookie },
 						{ "Content-Type", "application/x-www-form-urlencoded" },
 					},
@@ -222,6 +228,10 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					RequestId = 1,
 					Url = $"{EformBaseUrl}/ebase/ufsmain?formid=BINZONE_DESKTOP&SOVA_TAG={ServiceId}",
 					Method = "GET",
+					Headers = new()
+					{
+						{ "user-agent", Constants.UserAgent },
+					},
 					Options = new ClientSideOptions
 					{
 						FollowRedirects = false,
@@ -245,8 +255,9 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					RequestId = 2,
 					Url = fullRedirectUrl,
 					Method = "GET",
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
+						{ "user-agent", Constants.UserAgent },
 						{ "cookie", cookie },
 					},
 					Options = new ClientSideOptions
@@ -290,8 +301,9 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
 					Method = "POST",
 					Body = requestBody,
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
+						{ "user-agent", Constants.UserAgent },
 						{ "cookie", cookie },
 						{ "Content-Type", "application/x-www-form-urlencoded" },
 					},
@@ -328,8 +340,9 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
 					Method = "POST",
 					Body = requestBody,
-					Headers = new Dictionary<string, string>
+					Headers = new()
 					{
+						{ "user-agent", Constants.UserAgent },
 						{ "cookie", cookie },
 						{ "Content-Type", "application/x-www-form-urlencoded" },
 					},
