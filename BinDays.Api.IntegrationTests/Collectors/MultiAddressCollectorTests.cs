@@ -5,12 +5,18 @@ namespace BinDays.Api.IntegrationTests.Collectors
 	using BinDays.Api.Collectors.Services;
 	using BinDays.Api.IntegrationTests.Helpers;
 	using Xunit;
+	using Xunit.Abstractions;
 
 	public sealed class MultiAddressCollectorTests
 	{
 		private readonly IntegrationTestClient _client;
 		private readonly CollectorService _collectorService = new([]);
 		private const string _postcode = "SS9 3RE";
+
+		public MultiAddressCollectorTests(ITestOutputHelper outputHelper)
+		{
+			_client = new IntegrationTestClient(outputHelper);
+		}
 
 		[Fact]
 		public async Task GetCollectorTest()
