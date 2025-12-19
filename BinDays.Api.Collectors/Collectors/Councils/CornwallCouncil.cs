@@ -177,18 +177,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var dateString = rawBinDay.Groups["date"].Value;
 
 					// Parse date string (e.g. "18 Jul")
-					var date = DateOnly.ParseExact(
-						dateString,
-						"d MMM",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					// If the parsed date is in the past, assume it's for the next year
-					if (date < DateOnly.FromDateTime(DateTime.Today))
-					{
-						date = date.AddYears(1);
-					}
+					var date = dateString.ParseDateInferringYear("d MMM");
 
 					// Get matching bin types from the bin ID using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binId);

@@ -365,17 +365,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					binString = HtmlTagRegex().Replace(binString, "");
 
 					// Parse the date (e.g. "Thursday 27 November")
-					var date = DateOnly.ParseExact(
-						dateString,
-						"dddd d MMMM",
-						CultureInfo.InvariantCulture
-					);
-
-					// If the parsed date is in a month that has already passed this year, assume it's for next year
-					if (date.Month < DateTime.Now.Month)
-					{
-						date = date.AddYears(1);
-					}
+					var date = dateString.ParseDateInferringYear("dddd d MMMM");
 
 					// Split bin description by comma or "and" to get individual bins
 					var bins = binString.Split([",", " and "], StringSplitOptions.RemoveEmptyEntries);

@@ -248,7 +248,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					else
 					{
 						// e.g. "Wed 16 Jul". The year is implied as the current one.
-						collectionDate = DateOnly.ParseExact(datePart, "ddd d MMM", CultureInfo.InvariantCulture);
+						collectionDate = datePart.ParseDateInferringYear("ddd d MMM");
 					}
 
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binKey);

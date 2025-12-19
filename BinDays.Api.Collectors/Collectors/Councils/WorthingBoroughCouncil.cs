@@ -169,12 +169,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					foreach (var collectionDate in collectionDates)
 					{
 						// Parse the date (e.g. 'Friday 16 May')
-						var date = DateOnly.ParseExact(
-							collectionDate.Trim(),
-							"dddd d MMMM",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
+						var date = collectionDate.Trim().ParseDateInferringYear("dddd d MMMM");
 
 						// Get matching bin types from the collection using the keys
 						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, collection);

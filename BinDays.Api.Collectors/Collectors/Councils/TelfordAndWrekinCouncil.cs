@@ -164,18 +164,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					dateString = CollectionDateRegex().Replace(dateString, "");
 
 					// Parse the date (e.g. "Monday 15th December")
-					var date = DateOnly.ParseExact(
-						dateString,
-						"dddd d MMMM",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					// If the parsed date is in a month that has already passed this year, assume it's for next year
-					if (date.Month < DateTime.Now.Month)
-					{
-						date = date.AddYears(1);
-					}
+					var date = dateString.ParseDateInferringYear("dddd d MMMM");
 
 					var binType = rawBinDay.GetProperty("name").GetString()!;
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);

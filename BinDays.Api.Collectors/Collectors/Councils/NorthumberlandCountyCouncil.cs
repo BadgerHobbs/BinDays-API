@@ -249,18 +249,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					dateStr = OrdinalIndicatorsRegex().Replace(dateStr, "");
 
 					// Parse the date
-					var date = DateOnly.ParseExact(
-						dateStr,
-						"d MMMM",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					// If the parsed date is in a month that has already passed this year, assume it's for next year
-					if (date.Month < DateTime.Now.Month)
-					{
-						date = date.AddYears(1);
-					}
+					var date = dateStr.ParseDateInferringYear("d MMMM");
 
 					// Get matching bin types from the type using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeStr);
