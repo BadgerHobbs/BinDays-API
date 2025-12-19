@@ -181,12 +181,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						}
 
 						// Parse the date
-						var date = DateOnly.ParseExact(
-							dateString,
-							"d MMMM",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
+						var date = dateString.ParseDateInferringYear("d MMMM");
 
 						// Get matching bin types from the type using the keys
 						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
