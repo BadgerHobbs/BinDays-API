@@ -213,7 +213,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 
 	public class MyNewCouncilTests
 	{
-		private readonly IntegrationTestClient _client = new();
+		private readonly IntegrationTestClient _client;
 		private static readonly ICollector _collector = new MyNewCouncil();
 		private readonly CollectorService _collectorService = new([_collector]);
 		private readonly ITestOutputHelper _outputHelper;
@@ -221,6 +221,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		public MyNewCouncilTests(ITestOutputHelper outputHelper)
 		{
 			_outputHelper = outputHelper;
+			_client = new IntegrationTestClient(outputHelper);
 		}
 
 		[Theory]

@@ -8,7 +8,7 @@ namespace BinDays.Api.IntegrationTests.Collectors
 
 	public sealed class MultiAddressCollectorTests
 	{
-		private readonly IntegrationTestClient _client = new();
+		private readonly IntegrationTestClient _client;
 		private readonly CollectorService _collectorService = new([]);
 		private const string _postcode = "SS9 3RE";
 
