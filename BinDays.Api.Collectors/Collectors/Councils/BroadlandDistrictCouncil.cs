@@ -5,7 +5,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
 	using System.Globalization;
 	using System.Net;
 	using System.Text.Json;
@@ -20,7 +19,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		public string Name => "Broadland District Council";
 
 		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://area.southnorfolkandbroadland.gov.uk/FindAddress");
+		public Uri WebsiteUrl => new("https://www.southnorfolkandbroadland.gov.uk/rubbish-recycling/bin-collections-and-app/find-bin-collection-day");
 
 		/// <inheritdoc/>
 		public override string GovUkId => "broadland";
@@ -70,10 +69,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		private static partial Regex AddressesRegex();
 
 		/// <summary>
-		/// Regex for parsing the ReCollect Place ID from the dashboard HTML.
+		/// Regex for parsing bin names and dates from the dashboard HTML.
 		/// </summary>
-		[GeneratedRegex(@"api\.eu\.recollect\.net/api/places/(?<placeId>[a-zA-Z0-9-]+)/services")]
-		private static partial Regex PlaceIdRegex();
+		[GeneratedRegex(@"<strong>(?<name>[^<]+)</strong><br\s*/?>\s*(?<date>[A-Za-z]+\s+\d{1,2}\s+[A-Za-z]+\s+\d{4})<br", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+		private static partial Regex BinDayRegex();
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -171,7 +170,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <inheritdoc/>
 		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 		{
-			// Prepare client-side request for getting dashboard (to extract ReCollect ID)
+			// Prepare client-side request for getting dashboard with address context
 			if (clientSideResponse == null)
 			{
 				// Reconstruct the MyArea.Data cookie
@@ -210,66 +209,34 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					NextClientSideRequest = clientSideRequest
 				};
 			}
-			// Process dashboard response to find API Place ID and make API request
+			// Process dashboard response to parse bin days
 			else if (clientSideResponse.RequestId == 1)
 			{
-				var placeId = PlaceIdRegex().Match(clientSideResponse.Content).Groups["placeId"].Value;
-				var dateFrom = DateTime.Now.ToString("yyyy-MM-dd");
-				var dateTo = DateTime.Now.AddYears(1).ToString("yyyy-MM-dd");
-
-				// Construct ReCollect API URL
-				var requestUrl = $"https://api.eu.recollect.net/api/places/{placeId}/services/6/events?nomerge=true&locale=en-GB&after={dateFrom}&before={dateTo}";
-
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 2,
-					Url = requestUrl,
-					Method = "GET",
-					Headers = new() {
-						{"User-Agent", Constants.UserAgent},
-					},
-				};
-
-				return new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-			}
-			// Process ReCollect API response
-			else if (clientSideResponse.RequestId == 2)
-			{
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-				var eventsElement = jsonDoc.RootElement.GetProperty("events");
-
 				var binDays = new List<BinDay>();
 
-				foreach (var eventElement in eventsElement.EnumerateArray())
+				foreach (Match match in BinDayRegex().Matches(clientSideResponse.Content))
 				{
-					var dateString = eventElement.GetProperty("day").GetString()!;
+					var binName = WebUtility.HtmlDecode(match.Groups["name"].Value).Trim();
+					var dateString = match.Groups["date"].Value.Trim();
 
-					// Parse date string (e.g. 2025-03-01)
+					// Parse date stirng (e.g. 'Friday 19 December 2025')
 					var date = DateOnly.ParseExact(
 						dateString,
-						"yyyy-MM-dd",
+						"dddd d MMMM yyyy",
 						CultureInfo.InvariantCulture,
 						DateTimeStyles.None
 					);
 
-					var flagsElement = eventElement.GetProperty("flags");
-					foreach (var flag in flagsElement.EnumerateArray())
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
+
+					var binDay = new BinDay
 					{
-						var subject = flag.GetProperty("subject").GetString()!;
-						var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, subject);
+						Date = date,
+						Address = address,
+						Bins = matchedBins,
+					};
 
-						var binDay = new BinDay
-						{
-							Date = date,
-							Address = address,
-							Bins = matchedBins,
-						};
-
-						binDays.Add(binDay);
-					}
+					binDays.Add(binDay);
 				}
 
 				return new GetBinDaysResponse
