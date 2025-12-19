@@ -1,0 +1,12 @@
+{
+  "browser": {
+    "browserName": "firefox",
+    "contextOptions": {
+      "recordHar": {
+        "path": "./.agent/playwright/out/requests.har",
+        "content": "embed"
+      }
+    },
+    "trace": "on"
+  }
+}

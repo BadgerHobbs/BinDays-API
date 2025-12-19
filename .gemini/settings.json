@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--config",
+        "./.agent/playwright/playwright-config.json"
+      ]
+    }
+  },
+  "context": {
+    "fileFiltering": {
+      "respectGitIgnore": false,
+      "enableRecursiveFileSearch": true
+    }
+  },
+  "ui": {
+    "showModelInfoInChat": true
+  },
+  "general": {
+    "previewFeatures": true
+  }
+}

@@ -1,0 +1,65 @@
+description = "Implements a new C# council collector using a collector JSON and a HAR file."
+prompt = """
+# Task: Implement a new C# Bin Day Collector and Integration Test
+
+You are a senior C# developer specializing in the BinDays API project. Your task is to implement a new council bin day collector based on a collector JSON file provided by the user (e.g. `BroadlandDistrictCouncil.json`).
+
+You must strictly adhere to the project's conventions. The implementation must be robust, maintainable, and thoroughly tested.
+
+**Collector Filename:** `{{args}}`
+
+---
+## Core Instructions & Style Guide
+
+Your implementation **MUST** follow the existing patterns and style of the project.
+
+**1. Style and Conventions:**
+   - Adhere strictly to the C# Style Guide: `@{.gemini/styleguide.md}`
+   - Pay close attention to the **"Collector Implementation and Design"** section, especially regarding:
+     - Stateless, multi-step request design.
+     - Avoiding browser emulation; replicate HTTP requests directly.
+     - Minimal exception handling (fail-fast philosophy).
+     - Using `Regex` for HTML parsing and `System.Text.Json` for JSON.
+     - Correctly defining `_binTypes` and using `ProcessingUtilities`.
+
+**2. Existing Implementations:**
+   - Before writing any code, analyze the existing collectors to understand the established patterns. You have access to them here: `@{BinDays.Api.Collectors/Collectors/Councils/}`
+   - Note the different base classes used (`GovUkCollectorBase`, `FccCollectorBase`, `ITouchVisionCollectorBase`, `BinzoneCollectorBase`). Your first step is to determine if the new collector fits one of these.
+   - The core interfaces are available for your reference:
+     - `@{BinDays.Api.Collectors/Collectors/ICollector.cs}`
+     - `@{BinDays.Api.Collectors/Collectors/Vendors/}`
+
+**3. Debugging:**
+   - If your tests fail, use the debugging guide to help diagnose issues with HTTP requests: `@{.agent/docs/DEBUGGING.md}`
+
+---
+## Your Implementation Plan
+
+1.  **Setup Branch:**
+    *   Create a new branch `collector/{{args}}` from the current branch (e.g. `!{git switch -c collector/{{args}}}`).
+
+2.  **Analyze Inputs:**
+    *   Read and parse the collector information json file located at `./.agent/playwright/out/{{args}}.json`.
+    *   Extract `postcode`, `councilName`, `councilWebsite`, `govUkId`, `harFilePath`, and the `collections` data.
+    *   Read and analyze the corresponding HAR file from `harFilePath`.
+
+3.  **Choose a Base Class:**
+    *   Based on the HAR file and existing examples, determine the most appropriate base class to inherit from. If the request flow is unique, inherit from `GovUkCollectorBase` and implement the logic from scratch.
+
+4.  **Implement the Collector Class:**
+    *   Create the new collector class file at `BinDays.Api.Collectors/Collectors/Councils/{councilName}.cs`.
+    *   Implement the `ICollector` interface.
+    *   Use the HAR file and the `steps` from the JSON to meticulously reconstruct the `GetAddresses` and `GetBinDays` methods. This involves creating `ClientSideRequest` objects for each step of the process.
+    *   Define the `_binTypes` collection based on the `collections` data. Ensure the `Keys` match the data found in the HTTP responses.
+
+5.  **Create the Integration Test:**
+    *   Create a new test file at `BinDays.Api.IntegrationTests/Collectors/Councils/{councilName}Tests.cs`.
+    *   Use the provided test template from the style guide, providing the `postcode` as the test data.
+
+6.  **Verify and Run:**
+    *   Execute the new integration test to confirm your implementation is correct.
+      `!{dotnet test --filter "FullyQualifiedName~{councilName}Tests.GetBinDaysTest"}`
+    *   If the test fails, use the HTTP logging feature described in the debugging guide to compare the requests made by your collector against the HAR file. Fix any discrepancies and re-run the test until it passes.
+
+Begin the process now.
+"""
