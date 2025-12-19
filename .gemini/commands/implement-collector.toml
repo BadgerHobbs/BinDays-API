@@ -14,7 +14,7 @@ You must strictly adhere to the project's conventions. The implementation must b
 Your implementation **MUST** follow the existing patterns and style of the project.
 
 **1. Style and Conventions:**
-   - Adhere strictly to the C# Style Guide: `@{.gemini/styleguide.md}`
+   - Adhere strictly to the C# Style Guide: `@{.gemini/STYLEGUIDE.md}`
    - Pay close attention to the **"Collector Implementation and Design"** section, especially regarding:
      - Stateless, multi-step request design.
      - Avoiding browser emulation; replicate HTTP requests directly.
