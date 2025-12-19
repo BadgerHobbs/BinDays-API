@@ -1,6 +1,5 @@
 namespace BinDays.Api.Initialisation
 {
-	using Autofac;
 	using BinDays.Api.Collectors.Collectors;
 	using BinDays.Api.Collectors.Services;
 

@@ -1,5 +1,4 @@
 using BinDays.Api.Incidents;
-using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
