@@ -91,7 +91,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// Regex for extracting date and bin information from the bin details slider.
 		/// Uses [\s\S]+? to match across newlines and include HTML tags (like anchors) within the description.
 		/// </summary>
-		[GeneratedRegex(@"class=""binextra"">\s*(?<date>[^<]+?)\s*-<br>\s*(?<bins>[\s\S]+?)<br>")]
+		[GeneratedRegex(@"class=""binextra"">[\s\S]*?(?<date>[^<>\n-]+?)\s*-<br>\s*(?<bins>[\s\S]+?)(?=<br>)")]
 		private static partial Regex BinDetailsRegex();
 
 		/// <summary>
