@@ -4,7 +4,7 @@ The documentation outlines how to configure Gemini CLI to automatically implemen
 
 ### Configuration
 
-#### Install Node.JS
+#### Install Node.js
 
 Install [Node.js](https://nodejs.org/en/download/) as per the documentation for your respective operating system.
 
@@ -36,7 +36,7 @@ npm install -g @google/gemini-cli@latest
 
 ##### Run Gemini CLI
 
-Use the following command to run the Gemini CLI. It is reccomended to run with the additional flags to both automatically accept confirmation prompts as well as use an appropriate model.
+Use the following command to run the Gemini CLI. It is recommended to run with the additional flags to both automatically accept confirmation prompts as well as use an appropriate model.
 
 ```bash
 gemini -y --model gemini-3-flash-preview
@@ -44,7 +44,7 @@ gemini -y --model gemini-3-flash-preview
 
 ##### Run Custom Command
 
-Inside the Gemini CLI, run the following command to fetch the collector network data using Playwright MCP server. Replace `<Postcode>` with a valid postocde for the collector you want to add.
+Inside the Gemini CLI, run the following command to fetch the collector network data using Playwright MCP server. Replace `<Postcode>` with a valid postcode for the collector you want to add.
 
 ```bash
 /fetch-collector-data <Postcode>
@@ -61,7 +61,7 @@ This command will:
 
 ##### Run Gemini CLI
 
-Use the following command to run the Gemini CLI. It is reccomended to run with the additional flags to both automatically accept confirmation prompts as well as use an appropriate model.
+Use the following command to run the Gemini CLI. It is recommended to run with the additional flags to both automatically accept confirmation prompts as well as use an appropriate model.
 
 ```bash
 gemini -y --model gemini-3-pro-preview
