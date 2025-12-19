@@ -21,7 +21,7 @@ Search existing issues first to avoid duplicates.
 
 ## Adding a New Council Collector
 
-Adding new councils is the most common contribution. Before you start, please familiarize yourself with the project's coding conventions and design philosophy by reading our comprehensive **[C# Style Guide](/.gemini/styleguide.md)**.
+Adding new councils is the most common contribution. Before you start, please familiarize yourself with the project's coding conventions and design philosophy by reading our comprehensive **[C# Style Guide](/.gemini/STYLEGUIDE.md)**.
 
 The style guide covers everything you need to know, including:
 
@@ -35,7 +35,7 @@ The style guide covers everything you need to know, including:
 
 1.  **Prerequisites:** Ensure you have the .NET SDK and an IDE installed.
 2.  **Reverse-Engineer:** Use your browser's developer tools to analyze the network traffic for the council's bin day lookup service.
-3.  **Implement:** Create your collector and integration test classes, following the patterns in the **[C# Style Guide](/.gemini/styleguide.md)**.
+3.  **Implement:** Create your collector and integration test classes, following the patterns in the **[C# Style Guide](/.gemini/STYLEGUIDE.md)**.
 4.  **Test:** Run your new integration test to verify that the collector works correctly.
     ```bash
     dotnet test --filter "Name~MyNewCouncil"

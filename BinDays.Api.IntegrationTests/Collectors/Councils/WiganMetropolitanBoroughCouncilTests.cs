@@ -10,7 +10,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 
 	public class WiganMetropolitanBoroughCouncilTests
 	{
-		private readonly IntegrationTestClient _client = new();
+		private readonly IntegrationTestClient _client;
 		private static readonly ICollector _collector = new WiganMetropolitanBoroughCouncil();
 		private readonly CollectorService _collectorService = new([_collector]);
 		private readonly ITestOutputHelper _outputHelper;
@@ -18,6 +18,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		public WiganMetropolitanBoroughCouncilTests(ITestOutputHelper outputHelper)
 		{
 			_outputHelper = outputHelper;
+			_client = new IntegrationTestClient(outputHelper);
 		}
 
 		[Theory]
