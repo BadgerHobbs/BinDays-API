@@ -1,0 +1,151 @@
+name: Implement New Collector
+
+on:
+  workflow_dispatch:
+    inputs:
+      postcode:
+        description: 'Postcode for the new collector'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-data:
+    runs-on: self-hosted
+    outputs:
+      collector_name: ${{ steps.get-collector-name.outputs.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli@latest
+
+      - name: Install Playwright MCP and dependencies
+        run: |
+          npm install -g @playwright/mcp@latest
+          # Install dependencies and firefox
+          npx playwright install firefox
+          # Attempt to install system deps (might require sudo, or be pre-installed)
+          # On self-hosted, we'll try to skip deps install if possible or handle it gracefully
+          npx playwright install-deps firefox || echo "Warning: Failed to install deps, hoping they are present."
+
+      - name: Ensure output directory exists
+        run: mkdir -p .agent/playwright/out
+
+      - name: Fetch Collector Data (Gemini)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          # Pipe the command into gemini
+          # Using --yolo to auto-approve, --model as recommended in docs
+          echo "/fetch-collector-data ${{ inputs.postcode }}" | gemini -y --model gemini-2.0-flash
+
+      - name: Get Collector Name
+        id: get-collector-name
+        run: |
+          # Find the generated JSON file. Excluding known files if any.
+          # We expect exactly one new JSON file in .agent/playwright/out/
+          # typically named <CollectorName>.json
+
+          FILE=$(find .agent/playwright/out -name "*.json" -type f -print -quit)
+
+          if [ -z "$FILE" ]; then
+            echo "No JSON file found!"
+            exit 1
+          fi
+
+          BASENAME=$(basename "$FILE" .json)
+          echo "Found collector: $BASENAME"
+          echo "name=$BASENAME" >> $GITHUB_OUTPUT
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: collector-data
+          path: .agent/playwright/out/
+
+  implement-collector:
+    needs: fetch-data
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli@latest
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: collector-data
+          path: .agent/playwright/out
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Implement Collector (Gemini)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          COLLECTOR_NAME="${{ needs.fetch-data.outputs.collector_name }}"
+          echo "Implementing collector: $COLLECTOR_NAME"
+
+          # Pipe the command
+          echo "/implement-collector $COLLECTOR_NAME" | gemini -y --model gemini-2.0-pro-exp-02-05
+
+      - name: Push Changes
+        env:
+          COLLECTOR_NAME: ${{ needs.fetch-data.outputs.collector_name }}
+        run: |
+          BRANCH_NAME="collector/$COLLECTOR_NAME"
+
+          CURRENT_BRANCH=$(git branch --show-current)
+          echo "Current branch: $CURRENT_BRANCH"
+
+          # Check if we need to switch branch (if Gemini created it but we aren't on it, or if Gemini failed to create it)
+          if [ "$CURRENT_BRANCH" != "$BRANCH_NAME" ]; then
+             # Try to check it out if it exists
+             if git show-ref --verify --quiet refs/heads/$BRANCH_NAME; then
+                git checkout $BRANCH_NAME
+             else
+                # If not exists, maybe create it?
+                # But Gemini *should* have created it as per instructions.
+                # If Gemini failed to create it, we should probably create it to save work.
+                git checkout -b $BRANCH_NAME
+             fi
+          fi
+
+          # Stage and commit
+          git add .
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "Implement collector: $COLLECTOR_NAME"
+          fi
+
+          git push -u origin $BRANCH_NAME
