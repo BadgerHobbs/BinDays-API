@@ -18,6 +18,12 @@ namespace BinDays.Api.Collectors.Utilities
 		private static partial Regex CookieRegex();
 
 		/// <summary>
+		/// Regex to match whitespace.
+		/// </summary>
+		[GeneratedRegex(@"\s+")]
+		private static partial Regex WhitespaceRegex();
+
+		/// <summary>
 		/// Converts a dictionary of string key-value pairs into a URL-encoded form data string.
 		/// </summary>
 		/// <param name="dictionary">The dictionary to convert.</param>
@@ -153,8 +159,8 @@ namespace BinDays.Api.Collectors.Utilities
 				return postcode;
 			}
 
-			// Remove all existing spaces and convert to uppercase
-			string formattedPostcode = postcode.Replace(" ", "").ToUpper();
+			// Remove all existing whitespace and convert to uppercase
+			string formattedPostcode = WhitespaceRegex().Replace(postcode, "").ToUpper();
 
 			// Insert a space before the last three characters
 			if (formattedPostcode.Length > 3)
