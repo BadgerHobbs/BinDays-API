@@ -7,6 +7,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using System.Collections.Generic;
 	using System.Globalization;
 	using System.Text.Json;
+	using System.Text.Json.Nodes;
 
 	/// <summary>
 	/// Collector implementation for South Gloucestershire Council.
@@ -17,7 +18,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		public string Name => "South Gloucestershire Council";
 
 		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://beta.southglos.gov.uk/waste-and-recycling-collection-dates/");
+		public Uri WebsiteUrl => new("https://apps.southglos.gov.uk/forms/waste-and-recycling-collection-dates");
 
 		/// <inheritdoc/>
 		public override string GovUkId => "south-gloucestershire";
@@ -29,22 +30,30 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		{
 			new()
 			{
+				Name = "Black bin",
+				Colour = BinColour.Black,
+				Keys = new List<string>() { "Refuse" }.AsReadOnly(),
+			},
+			new()
+			{
+				Name = "Food waste",
+				Colour = BinColour.Brown,
+				Keys = new List<string>() { "Food" }.AsReadOnly(),
+				Type = BinType.Bin,
+			},
+			new()
+			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "C", "R" }.AsReadOnly(),
+				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
+				Type = BinType.Box,
 			},
 			new()
 			{
-				Name = "Food Waste",
-				Colour = BinColour.Grey,
-				Keys = new List<string>() { "C", "R" }.AsReadOnly(),
-				Type = BinType.Caddy,
-			},
-			new()
-			{
-				Name = "General Waste",
-				Colour = BinColour.Black,
-				Keys = new List<string>() { "R" }.AsReadOnly(),
+				Name = "Garden waste",
+				Colour = BinColour.Green,
+				Keys = new List<string>() { "Garden" }.AsReadOnly(),
+				Type = BinType.Bin,
 			},
 		}.AsReadOnly();
 
@@ -73,26 +82,20 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process addresses from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				var addresses = new List<Address>();
-
 				// Parse response content as JSON array
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+				var rawAddresses = JsonSerializer.Deserialize<JsonArray>(clientSideResponse.Content)!;
 
 				// Iterate through each address json, and create a new address object
-				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
+				var addresses = new List<Address>();
+				foreach (var rawAddress in rawAddresses)
 				{
-					string? property = addressElement.GetProperty("Property").GetString();
-					string? street = addressElement.GetProperty("Street").GetString();
-					string? town = addressElement.GetProperty("Town").GetString();
-					string? uprn = addressElement.GetProperty("Uprn").GetString();
-
 					var address = new Address
 					{
-						Property = property?.Trim(),
-						Street = street?.Trim(),
-						Town = town?.Trim(),
+						Property = rawAddress!["Property"]!.GetValue<string>(),
+						Street = rawAddress!["Street"]!.GetValue<string>(),
+						Town = rawAddress!["Town"]!.GetValue<string>(),
 						Postcode = postcode,
-						Uid = uprn,
+						Uid = rawAddress!["Uprn"]!.GetValue<string>(),
 					};
 
 					addresses.Add(address);
@@ -116,7 +119,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Prepare client-side request for getting bin days
 			if (clientSideResponse == null)
 			{
-				var requestUrl = $"https://webapps.southglos.gov.uk/Webservices/SGC.RefuseCollectionService/RefuseCollectionService.svc/getCollections/{address.Uid}";
+				var requestUrl = $"https://api.southglos.gov.uk/wastecomp/GetCollectionDetails?uprn={address.Uid}";
 
 				var clientSideRequest = new ClientSideRequest
 				{
@@ -135,35 +138,26 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 1)
 			{
+				// Parse response content as JSON object
+				var responseJson = JsonSerializer.Deserialize<JsonObject>(clientSideResponse.Content)!;
+				var rawBinDayCollections = responseJson["value"]!.AsArray();
 
-				// Parse response content as JSON object (within an array)
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-				var rawBinDaysObject = jsonDoc.RootElement[0];
-
-				// Iterate through each property (collection type and date)
+				// Iterate through each collection type result
 				var binDays = new List<BinDay>();
-				foreach (var rawBinDay in rawBinDaysObject.EnumerateObject())
+				foreach (var rawBinDayCollection in rawBinDayCollections)
 				{
-					// Skip if name is 'CalendarName' or if date is empty
-					if (rawBinDay.Name == "CalendarName" || rawBinDay.Value.GetString() == string.Empty)
-					{
-						continue;
-					}
+					var serviceName = rawBinDayCollection!["hso_servicename"]!.GetValue<string>();
+					var nextCollection = rawBinDayCollection["hso_nextcollection"]!.GetValue<string>();
 
-					// Parse the date (e.g. "15/04/2025")
-					var date = DateOnly.ParseExact(
-						rawBinDay.Value.GetString()!,
-						"dd/MM/yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					// Find matching bin types based on the service name containing a key (case-insensitive)
+					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, serviceName);
 
-					// Find all matching bin types based on the date key
-					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, rawBinDay.Name[0].ToString());
+					// Parse the date string (e.g. "2026-01-08T07:00:00+00:00")
+					var date = DateTimeOffset.Parse(nextCollection, CultureInfo.InvariantCulture).Date;
 
 					var binDay = new BinDay
 					{
-						Date = date,
+						Date = DateOnly.FromDateTime(date),
 						Address = address,
 						Bins = matchedBins,
 					};
