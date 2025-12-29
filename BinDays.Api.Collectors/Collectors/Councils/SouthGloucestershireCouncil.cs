@@ -89,17 +89,13 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (var rawAddress in rawAddresses)
 				{
-					string property = rawAddress!["Property"]!.GetValue<string>().Trim();
-					string street = rawAddress!["Street"]!.GetValue<string>().Trim();
-					string town = rawAddress!["Town"]!.GetValue<string>().Trim();
-					string fullPostcode = rawAddress!["Postcode"]!.GetValue<string>().Trim();
-					string uprn = rawAddress!["Uprn"]!.GetValue<string>();
-
 					var address = new Address
 					{
-						Property = $"{property} {street}, {town}",
-						Postcode = fullPostcode,
-						Uid = uprn,
+						Property = rawAddress!["Property"]!.GetValue<string>(),
+						Street = rawAddress!["Street"]!.GetValue<string>(),
+						Town = rawAddress!["Town"]!.GetValue<string>(),
+						Postcode = postcode,
+						Uid = rawAddress!["Uprn"]!.GetValue<string>(),
 					};
 
 					addresses.Add(address);
