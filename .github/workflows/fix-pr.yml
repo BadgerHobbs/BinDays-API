@@ -1,0 +1,151 @@
+name: Fix PR Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check_trigger:
+    name: Check Trigger
+    runs-on: ubuntu-latest
+    if: |
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/fix')
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      pr_number: ${{ github.event.issue.number }}
+      comment_body: ${{ github.event.comment.body }}
+      head_ref: ${{ steps.get_pr_details.outputs.head_ref }}
+    steps:
+      - name: Check permissions
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.payload.comment.user.login
+            });
+            const hasWriteAccess = ['admin', 'write'].includes(permission.permission);
+            core.setOutput('should_run', hasWriteAccess.toString());
+            if (!hasWriteAccess) {
+              core.info(`User ${context.payload.comment.user.login} does not have write access`);
+            }
+
+      - name: Get PR Details
+        id: get_pr_details
+        if: steps.check.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.issue.number
+            });
+            core.setOutput('head_ref', pr.head.ref);
+
+      - name: React to comment
+        if: steps.check.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'eyes'
+            });
+
+  fix_pr:
+    name: Fix PR
+    needs: check_trigger
+    if: needs.check_trigger.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    env:
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout PR Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.check_trigger.outputs.head_ref }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install AI Tools
+        uses: ./.github/actions/install-ai-tools
+        with:
+          codex_config: ${{ secrets.CODEX_CONFIG }}
+
+      - name: Prepare Prompt
+        run: |
+           cat << 'EOF' > comment_body.txt
+           ${{ needs.check_trigger.outputs.comment_body }}
+           EOF
+           
+           COMMENT_BODY=$(cat comment_body.txt)
+           
+           PROMPT=$(cat .agent/prompts/fix-pr-comment.md)
+           PROMPT="${PROMPT//\$PR_NUMBER/${{ needs.check_trigger.outputs.pr_number }}}"
+           PROMPT="${PROMPT//\$REPO_NAME/${{ github.repository }}}"
+           PROMPT="${PROMPT//\$COMMENT_BODY/$COMMENT_BODY}"
+           
+           echo "$PROMPT" > final_prompt.md
+
+      - name: Run Codex
+        run: |
+          PROMPT=$(cat final_prompt.md)
+          codex exec --skip-git-repo-check --full-auto "$PROMPT"
+
+      - name: Commit changes
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if [[ -n $(git status -s) ]]; then
+            git add .
+            git commit -m "Auto-fix based on comment"
+            git push origin HEAD:${{ needs.check_trigger.outputs.head_ref }}
+            echo "changes_pushed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes_pushed=false" >> $GITHUB_OUTPUT
+            echo "No changes to commit."
+          fi
+
+      - name: Post Response
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let responseBody = '';
+            try {
+              responseBody = fs.readFileSync('pr_response.txt', 'utf8');
+            } catch (e) {
+              // If failure, check if it was due to codex
+              responseBody = 'Task completed (no summary file generated). Please check the logs.';
+            }
+            
+            const changesPushed = '${{ steps.commit.outputs.changes_pushed }}' === 'true';
+            if (changesPushed) {
+               responseBody += '\n\n**Note:** Changes have been pushed to this branch.';
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.check_trigger.outputs.pr_number }},
+              body: responseBody
+            });
