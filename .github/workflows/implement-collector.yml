@@ -251,7 +251,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              body: `Collector implementation complete! Created PR #${pr.number}: ${pr.html_url}`
+              body: `Collector implementation complete! Created PR #${pr.number}`
             });
 
   report_failure:
