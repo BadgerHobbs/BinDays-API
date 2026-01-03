@@ -133,12 +133,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 		/// <inheritdoc/>
 		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		{
+			if (clientSideResponse == null)
 			{
-				if (clientSideResponse == null)
-				{
-					var sanitizedPostcode = (address.Postcode ?? string.Empty)
-						.Replace(" ", string.Empty)
-						.ToUpperInvariant();
+				var sanitizedPostcode = (address.Postcode ?? string.Empty)
+					.Replace(" ", string.Empty)
+					.ToUpperInvariant();
 
 				var clientSideRequest = new ClientSideRequest
 				{
@@ -172,7 +172,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					if (!eventsByBin.TryGetValue(binName, out var dates))
 					{
-						dates = new List<DateOnly>();
+						dates = [];
 						eventsByBin[binName] = dates;
 					}
 
