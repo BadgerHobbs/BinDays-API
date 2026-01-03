@@ -1,0 +1,66 @@
+name: 'Install AI Tools'
+description: 'Installs Playwright MCP Server and Codex CLI for AI-powered automation'
+
+inputs:
+  codex_config:
+    description: 'Codex TOML configuration content'
+    required: false
+  playwright_config:
+    description: 'Playwright MCP configuration JSON content'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install Codex CLI
+      shell: bash
+      run: npm install -g @openai/codex
+
+    - name: Configure Codex
+      if: inputs.codex_config != ''
+      shell: bash
+      env:
+        CODEX_CONFIG_CONTENT: ${{ inputs.codex_config }}
+      run: |
+        mkdir -p ~/.codex
+        printf '%s\n' "$CODEX_CONFIG_CONTENT" > ~/.codex/config.toml
+
+    - name: Install Playwright browsers
+      shell: bash
+      run: npx playwright install chromium --with-deps
+
+    - name: Configure Playwright MCP
+      if: inputs.playwright_config != ''
+      shell: bash
+      env:
+        PLAYWRIGHT_CONFIG_CONTENT: ${{ inputs.playwright_config }}
+      run: |
+        mkdir -p .agent/playwright
+        printf '%s\n' "$PLAYWRIGHT_CONFIG_CONTENT" > .agent/playwright/config.json
+
+    - name: Add Playwright MCP to Codex
+      shell: bash
+      run: |
+        if [ -f ".agent/playwright/config.json" ]; then
+          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless --config .agent/playwright/config.json
+        else
+          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless
+        fi
+
+    - name: Verify installations
+      shell: bash
+      run: |
+        echo "Checking installed versions..."
+        echo "Codex CLI:"
+        codex --version || echo "Codex CLI installed"
+        echo "Node.js:"
+        node --version
+        echo "Codex config:"
+        cat ~/.codex/config.toml 2>/dev/null || echo "No config file"
+        echo "Playwright config:"
+        cat .agent/playwright/config.json 2>/dev/null || echo "No Playwright config"

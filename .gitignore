@@ -42,3 +42,7 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
+
+# Agent automation output files
+.agent/playwright/out/
+!.agent/playwright/out/.gitkeep

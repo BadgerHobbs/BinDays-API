@@ -1,0 +1,282 @@
+name: Implement New Collector
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  check_trigger:
+    name: Check Trigger
+    runs-on: ubuntu-latest
+    if: |
+      github.event.issue.pull_request == null &&
+      contains(github.event.issue.labels.*.name, 'New Collector') &&
+      (github.event.comment.body == '/implement' || github.event.comment.body == '/implement-collector')
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      issue_number: ${{ steps.get_issue.outputs.issue_number }}
+      issue_body: ${{ steps.get_issue.outputs.issue_body }}
+      council_name: ${{ steps.get_issue.outputs.council_name }}
+      council_name_pascal: ${{ steps.get_issue.outputs.council_name_pascal }}
+    steps:
+      - name: Check if comment author has write access
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: permission } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.payload.comment.user.login
+            });
+            const hasWriteAccess = ['admin', 'write'].includes(permission.permission);
+            core.setOutput('should_run', hasWriteAccess.toString());
+            if (!hasWriteAccess) {
+              core.info(`User ${context.payload.comment.user.login} does not have write access`);
+            }
+
+      - name: Get issue details
+        id: get_issue
+        if: steps.check.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.payload.issue.number;
+            const issueBody = context.payload.issue.body;
+            const issueTitle = context.payload.issue.title;
+
+            core.setOutput('issue_number', issueNumber);
+            core.setOutput('issue_body', issueBody);
+
+            // Use issue title as council name and convert to PascalCase
+            const councilNamePascal = issueTitle
+              .replace(/[^a-zA-Z0-9\s]/g, '')
+              .split(/\s+/)
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join('');
+
+            core.setOutput('council_name', issueTitle);
+            core.setOutput('council_name_pascal', councilNamePascal);
+            core.info(`Issue Number: ${issueNumber}`);
+            core.info(`Council Name: ${issueTitle}`);
+            core.info(`Council Name (PascalCase): ${councilNamePascal}`);
+
+      - name: Add reaction to comment
+        if: steps.check.outputs.should_run == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+
+  implement_collector:
+    name: Implement Collector
+    needs: check_trigger
+    if: needs.check_trigger.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    env:
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install AI Tools
+        uses: ./.github/actions/install-ai-tools
+        with:
+          codex_config: ${{ secrets.CODEX_CONFIG }}
+          playwright_config: |
+            {
+              "browser": {
+                "browserName": "chromium",
+                "launchOptions": {
+                  "headless": true
+                },
+                "contextOptions": {
+                  "recordHar": {
+                    "path": "./.agent/playwright/out/requests.har",
+                    "content": "embed"
+                  }
+                }
+              },
+              "outputDir": "./.agent/playwright/out",
+              "saveTrace": true
+            }
+
+      - name: Create output directory
+        run: mkdir -p .agent/playwright/out
+
+      - name: Write issue body to file
+        run: |
+          cat << 'ISSUE_EOF' > .agent/playwright/out/issue_body.txt
+          ${{ needs.check_trigger.outputs.issue_body }}
+          ISSUE_EOF
+
+      - name: Implement collector with Codex
+        env:
+          ISSUE_TITLE: ${{ needs.check_trigger.outputs.council_name }}
+          ISSUE_NUMBER: ${{ needs.check_trigger.outputs.issue_number }}
+          BINDAYS_ENABLE_HTTP_LOGGING: "true"
+        run: |
+          ISSUE_BODY=$(cat .agent/playwright/out/issue_body.txt)
+
+          # Read the prompt template and substitute variables
+          PROMPT=$(cat .agent/prompts/implement-collector.md)
+          PROMPT="${PROMPT//\$ISSUE_TITLE/$ISSUE_TITLE}"
+          PROMPT="${PROMPT//\$ISSUE_BODY/$ISSUE_BODY}"
+          PROMPT="${PROMPT//\$ISSUE_NUMBER/$ISSUE_NUMBER}"
+
+          # Run Codex with the prompt
+          echo "Running Codex to implement collector..."
+          codex exec --skip-git-repo-check --full-auto "$PROMPT"
+
+      - name: Verify implementation
+        run: |
+          COLLECTOR_NAME="${{ needs.check_trigger.outputs.council_name_pascal }}"
+
+          echo "Checking for implementation files..."
+
+          if [ ! -f "BinDays.Api.Collectors/Collectors/Councils/${COLLECTOR_NAME}.cs" ]; then
+            echo "Error: Collector class file not found"
+            exit 1
+          fi
+
+          if [ ! -f "BinDays.Api.IntegrationTests/Collectors/Councils/${COLLECTOR_NAME}Tests.cs" ]; then
+            echo "Error: Test class file not found"
+            exit 1
+          fi
+
+          echo "Implementation files verified successfully"
+
+      - name: Run final integration tests
+        env:
+          BINDAYS_ENABLE_HTTP_LOGGING: "true"
+        run: |
+          COLLECTOR_NAME="${{ needs.check_trigger.outputs.council_name_pascal }}"
+
+          echo "Running integration tests for ${COLLECTOR_NAME}..."
+          dotnet test --filter "FullyQualifiedName~${COLLECTOR_NAME}Tests.GetBinDaysTest" \
+            --logger "console;verbosity=detailed" \
+            BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: collector-data
+          path: |
+            .agent/playwright/out/*.json
+            .agent/playwright/out/*.har
+            .agent/playwright/out/*.zip
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Create branch and commit
+        id: commit
+        run: |
+          COLLECTOR_NAME="${{ needs.check_trigger.outputs.council_name_pascal }}"
+          ISSUE_NUMBER="${{ needs.check_trigger.outputs.issue_number }}"
+          BRANCH_NAME="collector/${COLLECTOR_NAME}-issue-${ISSUE_NUMBER}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH_NAME"
+          git add "BinDays.Api.Collectors/Collectors/Councils/${COLLECTOR_NAME}.cs"
+          git add "BinDays.Api.IntegrationTests/Collectors/Councils/${COLLECTOR_NAME}Tests.cs"
+
+          git commit -m "Add collector for ${COLLECTOR_NAME}
+
+          Closes #${ISSUE_NUMBER}
+
+          Generated with Codex CLI"
+
+          git push origin "$BRANCH_NAME"
+
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const councilName = '${{ needs.check_trigger.outputs.council_name }}';
+            const councilNamePascal = '${{ needs.check_trigger.outputs.council_name_pascal }}';
+            const branchName = '${{ steps.commit.outputs.branch_name }}';
+            const issueNumber = ${{ needs.check_trigger.outputs.issue_number }};
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Add collector for ${councilName}`,
+              head: branchName,
+              base: 'main',
+              body: `## Summary
+
+            This PR adds a new bin collection data collector for **${councilName}**.
+
+            - Implements \`ICollector\` interface
+            - Adds integration tests
+            - Successfully tested with example postcode from issue
+
+            Closes #${issueNumber}
+
+            ## Test Plan
+
+            - [ ] Integration tests pass
+            - [ ] Verify bin collection dates are accurate
+            - [ ] Test with additional postcodes in the council area
+
+            ---
+
+            Generated automatically by Codex CLI`
+            });
+
+            core.info(`Created PR #${pr.number}: ${pr.html_url}`);
+
+            // Comment on the issue with the PR link
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `Collector implementation complete! Created PR #${pr.number}`
+            });
+
+  report_failure:
+    name: Report Failure
+    needs: [check_trigger, implement_collector]
+    if: failure() && needs.check_trigger.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on issue about failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = ${{ needs.check_trigger.outputs.issue_number }};
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `The automated collector implementation failed. Please check the [workflow run](${runUrl}) for details.
+
+            Common issues:
+            - Council website may have changed or is using an unsupported pattern
+            - The provided postcode may not return valid results
+            - Network/timeout issues during website navigation
+
+            A developer may need to implement this collector manually.`
+            });
