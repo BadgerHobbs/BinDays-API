@@ -214,7 +214,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var remainingCalendars = calendarLinks.Skip(1).Select(link => link.Url).ToList();
 				var metadata = new Dictionary<string, string>();
 
-				if (remainingCalendars.Any())
+				if (remainingCalendars.Count != 0)
 				{
 					metadata.Add("calendarUrls", string.Join("|", remainingCalendars));
 				}
@@ -262,7 +262,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 					metadata["binData"] = SerializeBinData(binData);
 
-					if (calendars.Any())
+					if (calendars.Count != 0)
 					{
 						metadata["calendarUrls"] = string.Join("|", calendars);
 					}
