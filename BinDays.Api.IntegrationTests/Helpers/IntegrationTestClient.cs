@@ -24,7 +24,11 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		{
 			_outputHelper = outputHelper;
 
-			var enableHttpLogging = Environment.GetEnvironmentVariable("BINDAYS_ENABLE_HTTP_LOGGING") == "true";
+			var enableHttpLogging = string.Equals(
+				Environment.GetEnvironmentVariable("BINDAYS_ENABLE_HTTP_LOGGING"),
+				"true",
+				StringComparison.OrdinalIgnoreCase
+			);
 
 			// Client that automatically follows redirects
 			var handlerWithRedirects = new HttpClientHandler
@@ -33,9 +37,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = true,
 			};
-			_httpClientWithRedirects = enableHttpLogging
-				? new HttpClient(new LoggingHttpHandler(outputHelper, handlerWithRedirects))
-				: new HttpClient(handlerWithRedirects);
+			_httpClientWithRedirects = CreateClient(handlerWithRedirects, enableHttpLogging, outputHelper);
 
 			// Client that does NOT automatically follow redirects
 			var handlerWithoutRedirects = new HttpClientHandler
@@ -44,9 +46,21 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = false,
 			};
-			_httpClientWithoutRedirects = enableHttpLogging
-				? new HttpClient(new LoggingHttpHandler(outputHelper, handlerWithoutRedirects))
-				: new HttpClient(handlerWithoutRedirects);
+			_httpClientWithoutRedirects = CreateClient(handlerWithoutRedirects, enableHttpLogging, outputHelper);
+		}
+
+		/// <summary>
+		/// Creates an <see cref="HttpClient"/> instance, optionally wrapping it with a <see cref="LoggingHttpHandler"/>.
+		/// </summary>
+		/// <param name="handler">The <see cref="HttpClientHandler"/> to use for the client.</param>
+		/// <param name="enableLogging">A boolean indicating whether HTTP logging should be enabled.</param>
+		/// <param name="outputHelper">The <see cref="ITestOutputHelper"/> for logging output.</param>
+		/// <returns>A new <see cref="HttpClient"/> instance.</returns>
+		private static HttpClient CreateClient(HttpClientHandler handler, bool enableLogging, ITestOutputHelper outputHelper)
+		{
+			return enableLogging
+				? new HttpClient(new LoggingHttpHandler(outputHelper, handler))
+				: new HttpClient(handler);
 		}
 
 		/// <summary>
