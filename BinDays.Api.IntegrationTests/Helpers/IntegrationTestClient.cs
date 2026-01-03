@@ -1,10 +1,12 @@
 namespace BinDays.Api.IntegrationTests.Helpers
 {
 	using BinDays.Api.Collectors.Models;
+	using System;
 	using System.Linq;
 	using System.Net;
 	using System.Net.Http;
 	using System.Text;
+	using Xunit.Abstractions;
 
 	/// <summary>
 	/// A client helper for executing multi-step requests during integration tests.
@@ -13,12 +15,21 @@ namespace BinDays.Api.IntegrationTests.Helpers
 	{
 		private readonly HttpClient _httpClientWithRedirects;
 		private readonly HttpClient _httpClientWithoutRedirects;
+		private readonly ITestOutputHelper _outputHelper;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="IntegrationTestClient"/> class.
 		/// </summary>
-		public IntegrationTestClient()
+		public IntegrationTestClient(ITestOutputHelper outputHelper)
 		{
+			_outputHelper = outputHelper;
+
+			var enableHttpLogging = string.Equals(
+				Environment.GetEnvironmentVariable("BINDAYS_ENABLE_HTTP_LOGGING"),
+				"true",
+				StringComparison.OrdinalIgnoreCase
+			);
+
 			// Client that automatically follows redirects
 			var handlerWithRedirects = new HttpClientHandler
 			{
@@ -26,7 +37,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = true,
 			};
-			_httpClientWithRedirects = new HttpClient(handlerWithRedirects);
+			_httpClientWithRedirects = CreateClient(handlerWithRedirects, enableHttpLogging, outputHelper);
 
 			// Client that does NOT automatically follow redirects
 			var handlerWithoutRedirects = new HttpClientHandler
@@ -35,7 +46,21 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				CookieContainer = new CookieContainer(),
 				AllowAutoRedirect = false,
 			};
-			_httpClientWithoutRedirects = new HttpClient(handlerWithoutRedirects);
+			_httpClientWithoutRedirects = CreateClient(handlerWithoutRedirects, enableHttpLogging, outputHelper);
+		}
+
+		/// <summary>
+		/// Creates an <see cref="HttpClient"/> instance, optionally wrapping it with a <see cref="LoggingHttpHandler"/>.
+		/// </summary>
+		/// <param name="handler">The <see cref="HttpClientHandler"/> to use for the client.</param>
+		/// <param name="enableLogging">A boolean indicating whether HTTP logging should be enabled.</param>
+		/// <param name="outputHelper">The <see cref="ITestOutputHelper"/> for logging output.</param>
+		/// <returns>A new <see cref="HttpClient"/> instance.</returns>
+		private static HttpClient CreateClient(HttpClientHandler handler, bool enableLogging, ITestOutputHelper outputHelper)
+		{
+			return enableLogging
+				? new HttpClient(new LoggingHttpHandler(outputHelper, handler))
+				: new HttpClient(handler);
 		}
 
 		/// <summary>

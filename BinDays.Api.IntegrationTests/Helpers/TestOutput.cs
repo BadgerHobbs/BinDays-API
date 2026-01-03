@@ -191,7 +191,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// <param name="totalWidth">The total desired width of the resulting string.</param>
 		/// <param name="padChar">The character used for padding on either side of the text.</param>
 		/// <returns>A string with the text centered using the specified padding character.</returns>
-		private static string CreateCenteredHeader(string text, int totalWidth, char padChar)
+		internal static string CreateCenteredHeader(string text, int totalWidth, char padChar)
 		{
 			if (string.IsNullOrEmpty(text))
 			{
