@@ -138,7 +138,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				foreach (Match addressMatch in addressMatches)
 				{
-					var property = Regex.Replace(addressMatch.Groups["Address"].Value, "\\s+", " ").Trim();
+					var property = MyRegex().Replace(addressMatch.Groups["Address"].Value, " ").Trim();
 
 					addresses.Add(new Address
 					{
@@ -241,7 +241,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var remainingCalendarMetadata = metadata.GetValueOrDefault(RemainingCalendarsMetadataKey);
 				var remainingCalendarUrls = string.IsNullOrWhiteSpace(remainingCalendarMetadata)
-					? new List<string>()
+					? []
 					: remainingCalendarMetadata.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
 
 				if (remainingCalendarUrls.Count > 0)
@@ -403,5 +403,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 			throw new InvalidOperationException($"Unknown bin code: {code}");
 		}
+
+		[GeneratedRegex("\\s+")]
+		private static partial Regex MyRegex();
 	}
 }
