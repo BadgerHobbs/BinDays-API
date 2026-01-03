@@ -36,6 +36,7 @@ The workflow requires the following secrets to be configured in the repository:
 |--------|-------------|
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI API key for Codex CLI |
 | `CODEX_CONFIG` | Codex TOML configuration |
+| `GH_PAT_IMPLEMENT_COLLECTOR` | **Personal Access Token (Fine-grained)** used to create Pull Requests.<br>Required to trigger the "Integration Tests" workflow which does not run when PRs are created by the default `GITHUB_TOKEN`.<br><br>**Required Repository Permissions:**<br>- `Pull requests`: Read and write<br>- `Issues`: Read and write<br>- `Contents`: Read-only |
 
 ### Example CODEX_CONFIG
 

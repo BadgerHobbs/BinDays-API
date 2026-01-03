@@ -170,7 +170,18 @@ jobs:
           echo "Running integration tests for ${COLLECTOR_NAME}..."
           dotnet test --filter "FullyQualifiedName~${COLLECTOR_NAME}Tests.GetBinDaysTest" \
             --logger "console;verbosity=detailed" \
-            BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+            BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj | tee test_output.txt
+
+          # Extract summary
+          SUMMARY=$(sed -n '/==================== Test Summary ====================/,/======================================================/p' test_output.txt)
+
+          if [ -z "$SUMMARY" ]; then
+            SUMMARY="Test summary could not be extracted."
+          fi
+
+          echo "TEST_SUMMARY<<EOF" >> $GITHUB_ENV
+          echo "$SUMMARY" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Upload artifacts
         if: always()
@@ -189,7 +200,7 @@ jobs:
         run: |
           COLLECTOR_NAME="${{ needs.check_trigger.outputs.council_name_pascal }}"
           ISSUE_NUMBER="${{ needs.check_trigger.outputs.issue_number }}"
-          BRANCH_NAME="collector/${COLLECTOR_NAME}-issue-${ISSUE_NUMBER}"
+          BRANCH_NAME="collector/${COLLECTOR_NAME}-issue-${ISSUE_NUMBER}-$(date +%s)"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -211,11 +222,13 @@ jobs:
       - name: Create Pull Request
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GH_PAT_IMPLEMENT_COLLECTOR || secrets.GITHUB_TOKEN }}
           script: |
             const councilName = '${{ needs.check_trigger.outputs.council_name }}';
             const councilNamePascal = '${{ needs.check_trigger.outputs.council_name_pascal }}';
             const branchName = '${{ steps.commit.outputs.branch_name }}';
             const issueNumber = ${{ needs.check_trigger.outputs.issue_number }};
+            const testSummary = process.env.TEST_SUMMARY;
 
             const { data: pr } = await github.rest.pulls.create({
               owner: context.repo.owner,
@@ -233,11 +246,11 @@ jobs:
 
             Closes #${issueNumber}
 
-            ## Test Plan
+            ## Test Summary
 
-            - [ ] Integration tests pass
-            - [ ] Verify bin collection dates are accurate
-            - [ ] Test with additional postcodes in the council area
+            \`\`\`text
+            ${testSummary}
+            \`\`\`
 
             ---
 
