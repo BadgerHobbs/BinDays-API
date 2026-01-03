@@ -7,6 +7,7 @@ You are an AI agent tasked with implementing a new UK council bin day collector 
 **Council Name (from issue title):** `$ISSUE_TITLE`
 
 **GitHub Issue Content:**
+
 ```
 $ISSUE_BODY
 ```
@@ -22,6 +23,7 @@ $ISSUE_BODY
 The **Council Name** is provided in the issue title above.
 
 Parse the GitHub issue body to extract:
+
 - **GOV.UK URL**: Extract the council ID from the URL (e.g., `west-devon` from `https://www.gov.uk/rubbish-collection-day/west-devon`)
 - **Council Website**: The main council website URL
 - **Bin Collection Page**: The direct link to look up bin collections
@@ -31,17 +33,20 @@ Parse the GitHub issue body to extract:
 ### 1.2 Create PascalCase Name
 
 Convert the council name to PascalCase for use in filenames and class names:
+
 - "West Devon Borough Council" → "WestDevonBoroughCouncil"
 - "Bristol City Council" → "BristolCityCouncil"
 
 ### 1.3 Setup Output Directory
 
 Ensure the output directory exists:
+
 ```bash
 mkdir -p .agent/playwright/out
 ```
 
 Delete any existing HAR file:
+
 ```bash
 rm -f .agent/playwright/out/requests.har
 ```
@@ -61,6 +66,7 @@ Use the Playwright MCP server to:
 5. Navigate to the page showing bin collection dates
 
 **Record each interaction step** for later reference:
+
 - `goto` - Initial navigation
 - `click` - Button clicks, cookie accepts
 - `fill` - Form field inputs
@@ -69,6 +75,7 @@ Use the Playwright MCP server to:
 ### 2.2 Scrape Bin Collection Data
 
 On the final page showing bin collections:
+
 1. Analyze the page structure (tables, divs, lists)
 2. Extract for each collection:
    - Date of collection
@@ -81,6 +88,7 @@ On the final page showing bin collections:
 1. Close the Playwright browser session (this saves the HAR file automatically)
 
 2. Clean the HAR file to reduce context:
+
    ```bash
    node .agent/scripts/clean-har.js .agent/playwright/out/requests.har .agent/playwright/out/{CouncilName}.cleaned.har
    ```
@@ -105,6 +113,7 @@ On the final page showing bin collections:
 ### 3.1 Study Existing Patterns
 
 Before writing code, analyze:
+
 - The style guide in `.gemini/styleguide.md`
 - Existing collectors in `BinDays.Api.Collectors/Collectors/Councils/`
 - Base classes in `BinDays.Api.Collectors/Collectors/Vendors/`
@@ -113,6 +122,7 @@ Before writing code, analyze:
 ### 3.2 Choose Base Class
 
 Determine the appropriate base class:
+
 - `GovUkCollectorBase` - Most common, for custom implementations
 - `FccCollectorBase` - For councils using FCC Environment services
 - `ITouchVisionCollectorBase` - For councils using iTouchVision
@@ -125,6 +135,7 @@ If unsure, use `GovUkCollectorBase`.
 Create `BinDays.Api.Collectors/Collectors/Councils/{CouncilName}.cs`:
 
 Key implementation details:
+
 - **Stateless design**: Each request step is independent
 - **Use `if/else if` pattern**: Based on `clientSideResponse.RequestId`
 - **Extract tokens/cookies**: From HTML using `[GeneratedRegex]` attributes
@@ -183,18 +194,20 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 ### 4.1 Run Tests
 
 ```bash
-dotnet test --no-restore --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+dotnet test --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
 ```
 
 ### 4.2 Debug Failures
 
 If tests fail, enable HTTP logging:
+
 ```bash
 export BINDAYS_ENABLE_HTTP_LOGGING=true
-dotnet test --no-restore --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+dotnet test --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
 ```
 
 Compare the logged requests against the HAR file:
+
 - Check URLs match exactly
 - Verify headers (especially cookies, content-type, CSRF tokens)
 - Compare request body format and content
@@ -205,6 +218,7 @@ See `DEBUGGING.md` for detailed debugging instructions.
 ### 4.3 Fix and Retry
 
 Common issues:
+
 - **Missing cookies**: Extract from `set-cookie` header using `ProcessingUtilities.ParseSetCookieHeaderForRequestCookie`
 - **Missing CSRF token**: Extract from HTML with regex
 - **Wrong date format**: Check the exact format in responses and adjust `ParseExact` pattern
