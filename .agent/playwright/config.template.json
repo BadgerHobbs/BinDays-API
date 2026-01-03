@@ -1,0 +1,16 @@
+{
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "headless": true
+    },
+    "contextOptions": {
+      "recordHar": {
+        "path": "./.agent/playwright/out/requests.har",
+        "content": "embed"
+      }
+    }
+  },
+  "outputDir": "./.agent/playwright/out",
+  "saveTrace": true
+}
