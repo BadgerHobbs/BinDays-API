@@ -80,7 +80,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 					Options = new ClientSideOptions
 					{
-						Metadata = new Dictionary<string, string>(),
+						Metadata = [],
 					},
 				};
 
@@ -322,7 +322,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					},
 					Options = new ClientSideOptions
 					{
-						Metadata = new Dictionary<string, string>(),
+						Metadata = [],
 					},
 				};
 
@@ -673,9 +673,11 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var fullAddress = rows.GetProperty("FULLADDR").GetString()!.Trim();
 				var usrn = rows.GetProperty("USRN").GetString()!.Trim();
 
-				var metadata = new Dictionary<string, string>(clientSideResponse.Options.Metadata);
-				metadata["fullAddress"] = fullAddress;
-				metadata["usrn"] = usrn;
+				var metadata = new Dictionary<string, string>(clientSideResponse.Options.Metadata)
+				{
+					["fullAddress"] = fullAddress,
+					["usrn"] = usrn
+				};
 
 				var cookies = metadata.GetValueOrDefault("cookies", string.Empty);
 				var sid = metadata.GetValueOrDefault("sid", string.Empty);
@@ -802,7 +804,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						var workPack = workPackElement.GetString()!.Trim();
 						var serviceDetail = serviceDetailElement.GetString()!.Trim();
 
-						var match = Regex.Match(serviceDetail, @"(?<label>.+)/(?<date>\d{2}/\d{2}/\d{4})");
+						var match = MyRegex().Match(serviceDetail);
 
 						if (!match.Success)
 						{
@@ -810,7 +812,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						}
 
 						var collectionDate = DateOnly.ParseExact(match.Groups["date"].Value, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-						var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, new HashSet<Bin>());
+						var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, []);
 
 						if (workPack.StartsWith("Waste-Black", StringComparison.OrdinalIgnoreCase))
 						{
@@ -846,7 +848,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						Date = kvp.Key,
 						Address = address,
-						Bins = kvp.Value.ToList(),
+						Bins = [.. kvp.Value],
 					})
 					.ToList();
 
@@ -882,7 +884,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						var workPack = workPackElement.GetString()!.Trim();
 						var serviceDetail = serviceDetailElement.GetString()!.Trim();
 
-						var match = Regex.Match(serviceDetail, @"(?<label>.+)/(?<date>\d{2}/\d{2}/\d{4})");
+						var match = MyRegex().Match(serviceDetail);
 
 						if (!match.Success)
 						{
@@ -890,7 +892,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						}
 
 						var collectionDate = DateOnly.ParseExact(match.Groups["date"].Value, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-						var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, new HashSet<Bin>());
+						var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, []);
 
 						if (workPack.StartsWith("Waste-Black", StringComparison.OrdinalIgnoreCase))
 						{
@@ -914,7 +916,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						Date = kvp.Key,
 						Address = address,
-						Bins = kvp.Value.ToList(),
+						Bins = [.. kvp.Value],
 					})
 					.ToList();
 
@@ -957,14 +959,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						UPRNMF = new { value = address.Uid },
 						FULLADDR2 = new { value = fullAddress2 },
 					},
-						["Calendar"] = new Dictionary<string, object?>
+					["Calendar"] = new Dictionary<string, object?>
 						{
 							{ "FULLADDR", new { value = fullAddress } },
 							{ "token", new { value = tokenValue } },
 							{ "uPRN", new { value = address.Uid } },
 							{ "calstartDate", new { value = calendarStartDate } },
 							{ "calendDate", new { value = calendarEndDate } },
-							{ "details", details ?? Array.Empty<object>() },
+							{ "details", details ?? [] },
 						{ "text1", new { value = string.Empty } },
 						{ "Results", new { value = string.Empty } },
 						{ "UPRN", new { value = address.Uid } },
@@ -1107,5 +1109,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 			return rootElement.GetProperty("auth-session").GetString()!;
 		}
+
+		[GeneratedRegex(@"(?<label>.+)/(?<date>\d{2}/\d{2}/\d{4})")]
+		private static partial Regex MyRegex();
 	}
 }
