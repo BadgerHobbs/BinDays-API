@@ -1,0 +1,206 @@
+name: Schedule Collector Implementation
+
+on:
+  schedule:
+    # Run daily at 10:00 UTC (after integration tests at 09:00)
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  select_and_implement:
+    name: Select and Trigger Implementation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find open New Collector issues
+        id: find_issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Find all open issues with "New Collector" label
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'New Collector',
+              state: 'open',
+              sort: 'created',
+              direction: 'asc', // Oldest first
+              per_page: 100
+            });
+
+            core.info(`Found ${issues.length} open issue(s) with "New Collector" label`);
+
+            if (issues.length === 0) {
+              core.info('No open New Collector issues found. Nothing to do.');
+              core.setOutput('has_issues', 'false');
+              return;
+            }
+
+            // Filter out issues that might already be in progress
+            // (have a recent /implement comment or linked PR)
+            const eligibleIssues = [];
+
+            for (const issue of issues) {
+              core.info(`Checking issue #${issue.number}: ${issue.title}`);
+
+              // Check issue was created from the council request template and has required fields filled in
+              const body = issue.body || '';
+
+              // Helper to extract content after a section header (excludes quoted template instructions)
+              const getSectionContent = (sectionHeader) => {
+                const regex = new RegExp(sectionHeader + '\\s*\\n([\\s\\S]*?)(?=####|###|$)', 'i');
+                const match = body.match(regex);
+                if (!match) return '';
+                // Remove quoted lines (template instructions) and trim
+                return match[1]
+                  .split('\n')
+                  .filter(line => !line.trim().startsWith('>'))
+                  .join('\n')
+                  .trim();
+              };
+
+              const govUkId = getSectionContent('#### 1\\. GOV\\.UK ID');
+              const councilName = getSectionContent('#### 2\\. GOV\\.UK Council Name');
+              const councilWebsite = getSectionContent('#### 4\\. Council Website');
+              const binCollectionPage = getSectionContent('#### 5\\. Bin Collection Page');
+              const examplePostcode = getSectionContent('#### 6\\. Example Postcode');
+              const binTypes = getSectionContent('#### 7\\. Bin Types & Colours');
+
+              const missingFields = [];
+              if (!govUkId) missingFields.push('GOV.UK ID');
+              if (!councilName) missingFields.push('Council Name');
+              if (!councilWebsite) missingFields.push('Council Website');
+              if (!binCollectionPage) missingFields.push('Bin Collection Page');
+              if (!examplePostcode) missingFields.push('Example Postcode');
+              if (!binTypes) missingFields.push('Bin Types');
+
+              if (missingFields.length > 0) {
+                core.info(`  - Skipping: missing fields: ${missingFields.join(', ')}`);
+                continue;
+              }
+
+              // Validate bin collection page is a URL
+              if (!/https?:\/\/[^\s]+/.test(binCollectionPage)) {
+                core.info(`  - Skipping: bin collection page is not a valid URL`);
+                continue;
+              }
+
+              // Validate example postcode format
+              if (!/[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}/i.test(examplePostcode)) {
+                core.info(`  - Skipping: example postcode is not valid`);
+                continue;
+              }
+
+              // Check for linked pull requests
+              const { data: timeline } = await github.rest.issues.listEventsForTimeline({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                per_page: 100
+              });
+
+              const hasLinkedPR = timeline.some(event =>
+                event.event === 'cross-referenced' &&
+                event.source?.issue?.pull_request
+              );
+
+              if (hasLinkedPR) {
+                core.info(`  - Skipping: has linked PR`);
+                continue;
+              }
+
+              // Check comments for previous implementation attempts and failures
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                per_page: 100
+              });
+
+              // Check if there's a previous failed implementation attempt
+              // The failure comment contains "The automated collector implementation failed"
+              const hasFailedAttempt = comments.some(comment =>
+                comment.body?.includes('The automated collector implementation failed')
+              );
+
+              if (hasFailedAttempt) {
+                core.info(`  - Skipping: has previous failed implementation attempt (requires manual intervention)`);
+                continue;
+              }
+
+              // Check for recent /implement comments (within last 24 hours)
+              // This prevents re-triggering while an implementation is still in progress
+              const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+              const hasRecentImplementComment = comments.some(comment => {
+                const commentDate = new Date(comment.created_at);
+                const isRecent = commentDate > oneDayAgo;
+                const isImplementCommand = comment.body === '/implement' || comment.body === '/implement-collector';
+                return isRecent && isImplementCommand;
+              });
+
+              if (hasRecentImplementComment) {
+                core.info(`  - Skipping: has recent /implement comment (may still be in progress)`);
+                continue;
+              }
+
+              core.info(`  - Eligible for implementation`);
+              eligibleIssues.push(issue);
+            }
+
+            if (eligibleIssues.length === 0) {
+              core.info('No eligible issues found (all have linked PRs, failed attempts, or recent implementation triggers).');
+              core.setOutput('has_issues', 'false');
+              return;
+            }
+
+            // Select the oldest eligible issue
+            const selectedIssue = eligibleIssues[0];
+            core.info(`Selected issue #${selectedIssue.number}: ${selectedIssue.title}`);
+
+            core.setOutput('has_issues', 'true');
+            core.setOutput('issue_number', selectedIssue.number);
+            core.setOutput('issue_title', selectedIssue.title);
+
+      - name: Trigger implementation
+        if: steps.find_issues.outputs.has_issues == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT_IMPLEMENT_COLLECTOR }}
+          script: |
+            const issueNumber = ${{ steps.find_issues.outputs.issue_number }};
+            const issueTitle = `${{ steps.find_issues.outputs.issue_title }}`;
+
+            core.info(`Triggering implementation for issue #${issueNumber}: ${issueTitle}`);
+
+            // Post /implement comment to trigger the implement-collector workflow
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: '/implement'
+            });
+
+            core.info(`Posted /implement comment on issue #${issueNumber}`);
+
+            // Add a summary
+            await core.summary
+              .addHeading('Scheduled Collector Implementation')
+              .addTable([
+                [{data: 'Issue', header: true}, {data: 'Title', header: true}],
+                [`#${issueNumber}`, issueTitle]
+              ])
+              .addLink('View Issue', `https://github.com/${context.repo.owner}/${context.repo.repo}/issues/${issueNumber}`)
+              .write();
+
+      - name: Summary (no issues)
+        if: steps.find_issues.outputs.has_issues != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await core.summary
+              .addHeading('Scheduled Collector Implementation')
+              .addRaw('No eligible New Collector issues found.')
+              .write();
