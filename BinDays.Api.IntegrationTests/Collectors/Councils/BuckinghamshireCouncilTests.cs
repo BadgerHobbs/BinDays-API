@@ -22,7 +22,10 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 		}
 
 		[Theory]
-		[InlineData("HP22 5XA")]
+		[InlineData("HP22 5XA")] // Aylesbury Vale
+		[InlineData("HP13 5AW")] // Wycombe
+		[InlineData("HP9 1BG")]  // South Bucks
+		[InlineData("HP7 0NQ")]  // Chiltern
 		public async Task GetBinDaysTest(string postcode)
 		{
 			await TestSteps.EndToEnd(

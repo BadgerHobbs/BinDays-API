@@ -150,10 +150,12 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				var collectionDayArray = jsonDoc.RootElement.GetProperty("collectionDay");
 				var binDays = new List<BinDay>();
 
+				var binTypes = GetBinTypes(address);
+
 				foreach (var collectionItem in collectionDayArray.EnumerateArray())
 				{
 					var binType = collectionItem.GetProperty("binType").GetString()!;
-					var matchedBins = ProcessingUtilities.GetMatchingBins(BinTypes, binType);
+					var matchedBins = ProcessingUtilities.GetMatchingBins(binTypes, binType);
 
 					var dateStrings = new[]
 					{
@@ -192,6 +194,16 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 
 			// Throw exception for invalid request
 			throw new InvalidOperationException("Invalid client-side request.");
+		}
+
+		/// <summary>
+		/// Gets the bin types for a given address and response content.
+		/// </summary>
+		/// <param name="address">The address.</param>
+		/// <returns>A collection of bin types.</returns>
+		protected virtual ReadOnlyCollection<Bin> GetBinTypes(Address address)
+		{
+			return BinTypes;
 		}
 
 		/// <summary>
