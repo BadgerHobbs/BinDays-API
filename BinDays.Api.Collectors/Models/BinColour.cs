@@ -1,82 +1,81 @@
-namespace BinDays.Api.Collectors.Models
+namespace BinDays.Api.Collectors.Models;
+
+using BinDays.Api.Converters;
+using System.Text.Json.Serialization;
+
+/// <summary>
+/// Represents the colour of a bin.
+/// </summary>
+/// <remarks>
+/// For compatibility with the BinDays-App, this enum is serialized to a
+/// space-separated string (e.g. LightBlue -> "Light Blue").
+/// </remarks>
+[JsonConverter(typeof(SpacedPascalCaseEnumConverter<BinColour>))]
+public enum BinColour
 {
-	using BinDays.Api.Converters;
-	using System.Text.Json.Serialization;
+	/// <summary>
+	/// Red bin.
+	/// </summary>
+	Red,
 
 	/// <summary>
-	/// Represents the colour of a bin.
+	/// Green bin.
 	/// </summary>
-	/// <remarks>
-	/// For compatibility with the BinDays-App, this enum is serialized to a
-	/// space-separated string (e.g. LightBlue -> "Light Blue").
-	/// </remarks>
-	[JsonConverter(typeof(SpacedPascalCaseEnumConverter<BinColour>))]
-	public enum BinColour
-	{
-		/// <summary>
-		/// Red bin.
-		/// </summary>
-		Red,
+	Green,
 
-		/// <summary>
-		/// Green bin.
-		/// </summary>
-		Green,
+	/// <summary>
+	/// Light green bin.
+	/// </summary>
+	LightGreen,
 
-		/// <summary>
-		/// Light green bin.
-		/// </summary>
-		LightGreen,
+	/// <summary>
+	/// Blue bin.
+	/// </summary>
+	Blue,
 
-		/// <summary>
-		/// Blue bin.
-		/// </summary>
-		Blue,
+	/// <summary>
+	/// Light blue bin.
+	/// </summary>
+	LightBlue,
 
-		/// <summary>
-		/// Light blue bin.
-		/// </summary>
-		LightBlue,
+	/// <summary>
+	/// Black bin.
+	/// </summary>
+	Black,
 
-		/// <summary>
-		/// Black bin.
-		/// </summary>
-		Black,
+	/// <summary>
+	/// Grey bin.
+	/// </summary>
+	Grey,
 
-		/// <summary>
-		/// Grey bin.
-		/// </summary>
-		Grey,
+	/// <summary>
+	/// Yellow bin.
+	/// </summary>
+	Yellow,
 
-		/// <summary>
-		/// Yellow bin.
-		/// </summary>
-		Yellow,
+	/// <summary>
+	/// Orange bin.
+	/// </summary>
+	Orange,
 
-		/// <summary>
-		/// Orange bin.
-		/// </summary>
-		Orange,
+	/// <summary>
+	/// Purple bin.
+	/// </summary>
+	Purple,
 
-		/// <summary>
-		/// Purple bin.
-		/// </summary>
-		Purple,
+	/// <summary>
+	/// Pink bin.
+	/// </summary>
+	Pink,
 
-		/// <summary>
-		/// Pink bin.
-		/// </summary>
-		Pink,
+	/// <summary>
+	/// Brown bin.
+	/// </summary>
+	Brown,
 
-		/// <summary>
-		/// Brown bin.
-		/// </summary>
-		Brown,
-
-		/// <summary>
-		/// White bin.
-		/// </summary>
-		White,
-	}
+	/// <summary>
+	/// White bin.
+	/// </summary>
+	White,
 }
 

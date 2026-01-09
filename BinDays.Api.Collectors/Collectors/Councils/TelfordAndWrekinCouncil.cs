@@ -1,191 +1,190 @@
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+/// <summary>
+/// Collector implementation for Telford and Wrekin Council.
+/// </summary>
+internal sealed partial class TelfordAndWrekinCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Text.Json;
-	using System.Text.RegularExpressions;
+	/// <inheritdoc/>
+	public string Name => "Telford & Wrekin Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.telford.gov.uk");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "telford-and-wrekin";
 
 	/// <summary>
-	/// Collector implementation for Telford and Wrekin Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class TelfordAndWrekinCouncil : GovUkCollectorBase, ICollector
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
+		new()
+		{
+			Name = "General Waste",
+			Colour = BinColour.Black,
+			Keys = [ "Red Top Container" ],
+		},
+		new()
+		{
+			Name = "Recycling",
+			Colour = BinColour.Purple,
+			Keys = [ "Purple / Blue Containers" ],
+		},
+		new()
+		{
+			Name = "Cardboard",
+			Colour = BinColour.Blue,
+			Keys = [ "Purple / Blue Containers" ],
+			Type = BinType.Bag,
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Silver Containers" ],
+			Type = BinType.Caddy,
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Green,
+			Keys = [ "Green Container" ],
+		},
+	];
+
+	/// <summary>
+	/// Regex for removing the st|nd|rd|th from the date part
+	/// </summary>
+	[GeneratedRegex(@"(?<=\d)(st|nd|rd|th)")]
+	private static partial Regex CollectionDateRegex();
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		/// <inheritdoc/>
-		public string Name => "Telford & Wrekin Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.telford.gov.uk");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "telford-and-wrekin";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = [
-			new()
-			{
-				Name = "General Waste",
-				Colour = BinColour.Black,
-				Keys = [ "Red Top Container" ],
-			},
-			new()
-			{
-				Name = "Recycling",
-				Colour = BinColour.Purple,
-				Keys = [ "Purple / Blue Containers" ],
-			},
-			new()
-			{
-				Name = "Cardboard",
-				Colour = BinColour.Blue,
-				Keys = [ "Purple / Blue Containers" ],
-				Type = BinType.Bag,
-			},
-			new()
-			{
-				Name = "Food Waste",
-				Colour = BinColour.Grey,
-				Keys = [ "Silver Containers" ],
-				Type = BinType.Caddy,
-			},
-			new()
-			{
-				Name = "Garden Waste",
-				Colour = BinColour.Green,
-				Keys = [ "Green Container" ],
-			},
-		];
-
-		/// <summary>
-		/// Regex for removing the st|nd|rd|th from the date part
-		/// </summary>
-		[GeneratedRegex(@"(?<=\d)(st|nd|rd|th)")]
-		private static partial Regex CollectionDateRegex();
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting addresses
-			if (clientSideResponse == null)
+			var requestUrl = $"https://dac.telford.gov.uk/BinDayFinder/Find/PostcodeSearch?postcode={postcode}";
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = $"https://dac.telford.gov.uk/BinDayFinder/Find/PostcodeSearch?postcode={postcode}";
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+			};
 
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-				};
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 1)
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				using var jsonDoc = JsonDocument.Parse(JsonSerializer.Deserialize<string>(clientSideResponse.Content)!);
-				var rawAddresses = jsonDoc.RootElement.GetProperty("properties");
+				NextClientSideRequest = clientSideRequest
+			};
 
-				var addresses = new List<Address>();
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			using var jsonDoc = JsonDocument.Parse(JsonSerializer.Deserialize<string>(clientSideResponse.Content)!);
+			var rawAddresses = jsonDoc.RootElement.GetProperty("properties");
 
-				foreach (var addressElement in rawAddresses.EnumerateArray())
+			var addresses = new List<Address>();
+
+			foreach (var addressElement in rawAddresses.EnumerateArray())
+			{
+				var address = new Address
 				{
-					var address = new Address
-					{
-						Property = addressElement.GetProperty("Description").GetString(),
-						Postcode = postcode,
-						Uid = addressElement.GetProperty("UPRN").GetString(),
-					};
-					addresses.Add(address);
-				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
+					Property = addressElement.GetProperty("Description").GetString(),
+					Postcode = postcode,
+					Uid = addressElement.GetProperty("UPRN").GetString(),
 				};
-
-				return getAddressesResponse;
+				addresses.Add(address);
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting bin days
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting bin days
-			if (clientSideResponse == null)
+			var requestUrl = $"https://dac.telford.gov.uk/BinDayFinder/Find/PropertySearch?uprn={address.Uid}";
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = $"https://dac.telford.gov.uk/BinDayFinder/Find/PropertySearch?uprn={address.Uid}";
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+			};
 
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 1)
+			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				using var jsonDoc = JsonDocument.Parse(JsonSerializer.Deserialize<string>(clientSideResponse.Content)!);
-				var rawBinDays = jsonDoc.RootElement.GetProperty("bincollections");
+				NextClientSideRequest = clientSideRequest
+			};
 
-				var binDays = new List<BinDay>();
+			return getBinDaysResponse;
+		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			using var jsonDoc = JsonDocument.Parse(JsonSerializer.Deserialize<string>(clientSideResponse.Content)!);
+			var rawBinDays = jsonDoc.RootElement.GetProperty("bincollections");
 
-				foreach (var rawBinDay in rawBinDays.EnumerateArray())
+			var binDays = new List<BinDay>();
+
+			foreach (var rawBinDay in rawBinDays.EnumerateArray())
+			{
+				var dateString = rawBinDay.GetProperty("nextDate").GetString()!;
+
+				if (string.IsNullOrEmpty(dateString))
 				{
-					var dateString = rawBinDay.GetProperty("nextDate").GetString()!;
-
-					if (string.IsNullOrEmpty(dateString))
-					{
-						continue;
-					}
-
-					// Strip the st|nd|rd|th and remove day of the week
-					dateString = CollectionDateRegex().Replace(dateString, "");
-
-					// Parse the date (e.g. "Monday 15th December")
-					var date = dateString.ParseDateInferringYear("dddd d MMMM");
-
-					var binType = rawBinDay.GetProperty("name").GetString()!;
-					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
-
-					var binDay = new BinDay
-					{
-						Date = date,
-						Address = address,
-						Bins = matchedBinTypes,
-					};
-					binDays.Add(binDay);
+					continue;
 				}
 
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
+				// Strip the st|nd|rd|th and remove day of the week
+				dateString = CollectionDateRegex().Replace(dateString, "");
 
-				return getBinDaysResponse;
+				// Parse the date (e.g. "Monday 15th December")
+				var date = dateString.ParseDateInferringYear("dddd d MMMM");
+
+				var binType = rawBinDay.GetProperty("name").GetString()!;
+				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
+
+				var binDay = new BinDay
+				{
+					Date = date,
+					Address = address,
+					Bins = matchedBinTypes,
+				};
+				binDays.Add(binDay);
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
 		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }

@@ -310,199 +310,198 @@ This section provides complete code templates for new collectors and their corre
 ### Example Standard Collector Template (GovUkCollectorBase)
 
 ```c#
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
+
+/// <summary>
+/// Collector implementation for My New Council.
+/// </summary>
+internal sealed partial class MyNewCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Text.RegularExpressions;
+	/// <inheritdoc/>
+	public string Name => "My New Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.mynewcouncil.gov.uk/");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "my-new-council";
 
 	/// <summary>
-	/// Collector implementation for My New Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class MyNewCouncil : GovUkCollectorBase, ICollector
+	private readonly IReadOnlyCollection<Bin> _binTypes =
+	[
+		new()
+		{
+			Name = "Rubbish",
+			Colour = BinColour.Grey,
+			Keys = [ "RUBBISH_KEY" ],
+		},
+		new()
+		{
+			Name = "Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "RECYCLING_KEY" ],
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Green,
+			Keys = [ "GARDEN_KEY" ],
+			Type = BinType.Bag,
+		},
+	];
+
+	/// <summary>
+	/// Regex for the addresses from the data.
+	/// </summary>
+	[GeneratedRegex(@"<option\s+value=""(?<uid>[^""]+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
+	private static partial Regex AddressRegex();
+
+	/// <summary>
+	/// Regex for the bin days from the data.
+	/// </summary>
+	[GeneratedRegex(@"<tr>\s*<td>(?<date>[^<]+)</td>\s*<td>(?<service>[^<]+)</td>\s*</tr>")]
+	private static partial Regex BinDaysRegex();
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		/// <inheritdoc/>
-		public string Name => "My New Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.mynewcouncil.gov.uk/");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "my-new-council";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes =
-		[
-			new()
-			{
-				Name = "Rubbish",
-				Colour = BinColour.Grey,
-				Keys = [ "RUBBISH_KEY" ],
-			},
-			new()
-			{
-				Name = "Recycling",
-				Colour = BinColour.Blue,
-				Keys = [ "RECYCLING_KEY" ],
-			},
-			new()
-			{
-				Name = "Garden Waste",
-				Colour = BinColour.Green,
-				Keys = [ "GARDEN_KEY" ],
-				Type = BinType.Bag,
-			},
-		];
-
-		/// <summary>
-		/// Regex for the addresses from the data.
-		/// </summary>
-		[GeneratedRegex(@"<option\s+value=""(?<uid>[^""]+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
-		private static partial Regex AddressRegex();
-
-		/// <summary>
-		/// Regex for the bin days from the data.
-		/// </summary>
-		[GeneratedRegex(@"<tr>\s*<td>(?<date>[^<]+)</td>\s*<td>(?<service>[^<]+)</td>\s*</tr>")]
-		private static partial Regex BinDaysRegex();
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting addresses
-			if (clientSideResponse == null)
+			// Prepare client-side request
+			var clientSideRequest = new ClientSideRequest
 			{
-				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = "https://www.mynewcouncil.gov.uk/bin-collections",
-					Method = "GET",
-					Headers = new() {
-						{"user-agent", Constants.UserAgent},
-					},
-				};
+				RequestId = 1,
+				Url = "https://www.mynewcouncil.gov.uk/bin-collections",
+				Method = "GET",
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+				},
+			};
 
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 1)
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				// Get addresses from response
-				var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+				NextClientSideRequest = clientSideRequest
+			};
 
-				// Iterate through each address, and create a new address object
-				var addresses = new List<Address>();
-				foreach (Match rawAddress in rawAddresses)
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Get addresses from response
+			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+
+			// Iterate through each address, and create a new address object
+			var addresses = new List<Address>();
+			foreach (Match rawAddress in rawAddresses)
+			{
+				var uid = rawAddress.Groups["uid"].Value;
+
+				// Exclude placeholder/invalid options
+				if (uid == "-1")
 				{
-					var uid = rawAddress.Groups["uid"].Value;
-
-					// Exclude placeholder/invalid options
-					if (uid == "-1")
-					{
-						continue;
-					}
-
-					var address = new Address
-					{
-						Property = rawAddress.Groups["address"].Value.Trim(),
-						Postcode = postcode,
-						Uid = uid,
-					};
-
-					addresses.Add(address);
+					continue;
 				}
 
-				var getAddressesResponse = new GetAddressesResponse
+				var address = new Address
 				{
-					Addresses = [.. addresses],
+					Property = rawAddress.Groups["address"].Value.Trim(),
+					Postcode = postcode,
+					Uid = uid,
 				};
 
-				return getAddressesResponse;
+				addresses.Add(address);
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting bin days
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting bin days
-			if (clientSideResponse == null)
+			// Prepare client-side request
+			var clientSideRequest = new ClientSideRequest
 			{
-				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = $"https://www.mynewcouncil.gov.uk/bin-collections?uprn={address.Uid}",
-					Method = "GET",
-					Headers = new() {
-						{"user-agent", Constants.UserAgent},
-					},
-				};
+				RequestId = 1,
+				Url = $"https://www.mynewcouncil.gov.uk/bin-collections?uprn={address.Uid}",
+				Method = "GET",
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+				},
+			};
 
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 1)
+			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				// Get bin days from response
-				var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
+				NextClientSideRequest = clientSideRequest
+			};
 
-				// Iterate through each bin day, and create a new bin day object
-				var binDays = new List<BinDay>();
-				foreach (Match rawBinDay in rawBinDays)
-				{
-					var service = rawBinDay.Groups["service"].Value.Trim();
-					var collectionDate = rawBinDay.Groups["date"].Value.Trim();
-
-					var date = DateOnly.ParseExact(
-						collectionDate,
-						"dd/MM/yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					// Get matching bin types from the service using the keys
-					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-
-					var binDay = new BinDay
-					{
-						Date = date,
-						Address = address,
-						Bins = matchedBinTypes,
-					};
-
-					binDays.Add(binDay);
-				}
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
-			}
-
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			return getBinDaysResponse;
 		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Get bin days from response
+			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
+
+			// Iterate through each bin day, and create a new bin day object
+			var binDays = new List<BinDay>();
+			foreach (Match rawBinDay in rawBinDays)
+			{
+				var service = rawBinDay.Groups["service"].Value.Trim();
+				var collectionDate = rawBinDay.Groups["date"].Value.Trim();
+
+				var date = DateOnly.ParseExact(
+					collectionDate,
+					"dd/MM/yyyy",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+
+				// Get matching bin types from the service using the keys
+				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+
+				var binDay = new BinDay
+				{
+					Date = date,
+					Address = address,
+					Bins = matchedBinTypes,
+				};
+
+				binDays.Add(binDay);
+			}
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
+		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }
 ```
@@ -512,59 +511,58 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 For collectors using shared vendor platforms (like ITouchVision, FCC, or Binzone), inherit from the appropriate vendor base class. These implementations are much simpler:
 
 ```c#
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using System;
+using System.Collections.Generic;
+
+/// <summary>
+/// Collector implementation for My Vendor Council.
+/// </summary>
+internal sealed class MyVendorCouncil : ITouchVisionCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using System;
-	using System.Collections.Generic;
+	/// <inheritdoc/>
+	public string Name => "My Vendor Council";
 
-	/// <summary>
-	/// Collector implementation for My Vendor Council.
-	/// </summary>
-	internal sealed class MyVendorCouncil : ITouchVisionCollectorBase, ICollector
-	{
-		/// <inheritdoc/>
-		public string Name => "My Vendor Council";
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.myvendorcouncil.gov.uk/");
 
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.myvendorcouncil.gov.uk/");
+	/// <inheritdoc/>
+	public override string GovUkId => "my-vendor-council";
 
-		/// <inheritdoc/>
-		public override string GovUkId => "my-vendor-council";
+	/// <inheritdoc/>
+	protected override int ClientId => 123;
 
-		/// <inheritdoc/>
-		protected override int ClientId => 123;
+	/// <inheritdoc/>
+	protected override int CouncilId => 45678;
 
-		/// <inheritdoc/>
-		protected override int CouncilId => 45678;
+	/// <inheritdoc/>
+	protected override string ApiBaseUrl => "https://iweb.itouchvision.com/portal/itouchvision/";
 
-		/// <inheritdoc/>
-		protected override string ApiBaseUrl => "https://iweb.itouchvision.com/portal/itouchvision/";
-
-		/// <inheritdoc/>
-		protected override IReadOnlyCollection<Bin> BinTypes =>
-		[
-			new()
-			{
-				Name = "Rubbish",
-				Colour = BinColour.Black,
-				Keys = [ "Rubbish" ],
-			},
-			new()
-			{
-				Name = "Recycling",
-				Colour = BinColour.Blue,
-				Keys = [ "Recycling" ],
-			},
-			new()
-			{
-				Name = "Garden Waste",
-				Colour = BinColour.Brown,
-				Keys = [ "Garden Waste" ],
-			},
-		];
-	}
+	/// <inheritdoc/>
+	protected override IReadOnlyCollection<Bin> BinTypes =>
+	[
+		new()
+		{
+			Name = "Rubbish",
+			Colour = BinColour.Black,
+			Keys = [ "Rubbish" ],
+		},
+		new()
+		{
+			Name = "Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "Recycling" ],
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Brown,
+			Keys = [ "Garden Waste" ],
+		},
+	];
 }
 ```
 
@@ -578,40 +576,39 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 ### Example Integration Test Template
 
 ```c#
-namespace BinDays.Api.IntegrationTests.Collectors.Councils
+namespace BinDays.Api.IntegrationTests.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors;
+using BinDays.Api.Collectors.Collectors.Councils;
+using BinDays.Api.Collectors.Services;
+using BinDays.Api.IntegrationTests.Helpers;
+using System.Threading.Tasks;
+using Xunit;
+using Xunit.Abstractions;
+
+public class MyNewCouncilTests
 {
-	using BinDays.Api.Collectors.Collectors;
-	using BinDays.Api.Collectors.Collectors.Councils;
-	using BinDays.Api.Collectors.Services;
-	using BinDays.Api.IntegrationTests.Helpers;
-	using System.Threading.Tasks;
-	using Xunit;
-	using Xunit.Abstractions;
+	private readonly IntegrationTestClient _client = new();
+	private static readonly ICollector _collector = new MyNewCouncil();
+	private readonly CollectorService _collectorService = new([_collector]);
+	private readonly ITestOutputHelper _outputHelper;
 
-	public class MyNewCouncilTests
+	public MyNewCouncilTests(ITestOutputHelper outputHelper)
 	{
-		private readonly IntegrationTestClient _client = new();
-		private static readonly ICollector _collector = new MyNewCouncil();
-		private readonly CollectorService _collectorService = new([_collector]);
-		private readonly ITestOutputHelper _outputHelper;
+		_outputHelper = outputHelper;
+	}
 
-		public MyNewCouncilTests(ITestOutputHelper outputHelper)
-		{
-			_outputHelper = outputHelper;
-		}
-
-		[Theory]
-		[InlineData("ABCD EFG")]
-		public async Task GetBinDaysTest(string postcode)
-		{
-			await TestSteps.EndToEnd(
-				_client,
-				_collectorService,
-				_collector,
-				postcode,
-				_outputHelper
-			);
-		}
+	[Theory]
+	[InlineData("ABCD EFG")]
+	public async Task GetBinDaysTest(string postcode)
+	{
+		await TestSteps.EndToEnd(
+			_client,
+			_collectorService,
+			_collector,
+			postcode,
+			_outputHelper
+		);
 	}
 }
 ```

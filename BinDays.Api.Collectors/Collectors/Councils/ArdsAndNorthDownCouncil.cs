@@ -1,200 +1,199 @@
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text.Json;
+
+/// <summary>
+/// Collector implementation for Ards and North Down Council.
+/// </summary>
+internal sealed partial class ArdsAndNorthDownCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Linq;
-	using System.Text.Json;
+	/// <inheritdoc/>
+	public string Name => "Ards and North Down Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.ardsandnorthdown.gov.uk/article/1141/Bins-and-recycling");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "ards-and-north-down";
 
 	/// <summary>
-	/// Collector implementation for Ards and North Down Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class ArdsAndNorthDownCouncil : GovUkCollectorBase, ICollector
-	{
-		/// <inheritdoc/>
-		public string Name => "Ards and North Down Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.ardsandnorthdown.gov.uk/article/1141/Bins-and-recycling");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "ards-and-north-down";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = [
-			new()
-			{
-				Name = "General Waste",
-				Colour = BinColour.Grey,
-				Keys = [ "General waste bin" ],
-			},
-			new()
-			{
-				Name = "Garden and Food Waste",
-				Colour = BinColour.Brown,
-				Keys = [ "Garden and food waste bin" ],
-			},
-			new()
-			{
-				Name = "Recycling",
-				Colour = BinColour.Blue,
-				Keys = [ "Recycling bin" ],
-			},
-			new()
-			{
-				Name = "Glass",
-				Colour = BinColour.Yellow,
-				Keys = [ "Glass container" ],
-				Type = BinType.Box,
-			},
-		];
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
+		new()
 		{
-			// Prepare client-side request for getting addresses
-			if (clientSideResponse == null)
+			Name = "General Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "General waste bin" ],
+		},
+		new()
+		{
+			Name = "Garden and Food Waste",
+			Colour = BinColour.Brown,
+			Keys = [ "Garden and food waste bin" ],
+		},
+		new()
+		{
+			Name = "Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "Recycling bin" ],
+		},
+		new()
+		{
+			Name = "Glass",
+			Colour = BinColour.Yellow,
+			Keys = [ "Glass container" ],
+			Type = BinType.Box,
+		},
+	];
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
+		{
+			var requestUrl = $"https://ardsandnorthdownbincalendar.azurewebsites.net/api/addresses/{postcode}";
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = $"https://ardsandnorthdownbincalendar.azurewebsites.net/api/addresses/{postcode}";
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+			};
 
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-				};
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 1)
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				var addresses = new List<Address>();
+				NextClientSideRequest = clientSideRequest
+			};
 
-				// Parse response content as JSON array
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var addresses = new List<Address>();
 
-				// Iterate through each address json, and create a new address object
-				foreach (var addressElement in jsonDoc.RootElement.GetProperty("addresses").EnumerateArray())
+			// Parse response content as JSON array
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+
+			// Iterate through each address json, and create a new address object
+			foreach (var addressElement in jsonDoc.RootElement.GetProperty("addresses").EnumerateArray())
+			{
+				var property = addressElement.GetProperty("addressText").GetString();
+				var uprn = addressElement.GetProperty("uprn").GetString();
+
+				// Remove postcode from property (e.g.'1 OLD MILL COURT, NEWTOWNARDS, BT23 4JG')
+				property = property?.Replace($", {postcode}", "", StringComparison.OrdinalIgnoreCase).Trim();
+
+				var address = new Address
 				{
-					var property = addressElement.GetProperty("addressText").GetString();
-					var uprn = addressElement.GetProperty("uprn").GetString();
-
-					// Remove postcode from property (e.g.'1 OLD MILL COURT, NEWTOWNARDS, BT23 4JG')
-					property = property?.Replace($", {postcode}", "", StringComparison.OrdinalIgnoreCase).Trim();
-
-					var address = new Address
-					{
-						Property = property,
-						Postcode = postcode,
-						Uid = uprn,
-					};
-					addresses.Add(address);
-				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
+					Property = property,
+					Postcode = postcode,
+					Uid = uprn,
 				};
-
-				return getAddressesResponse;
+				addresses.Add(address);
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting bin days
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting bin days
-			if (clientSideResponse == null)
+			var requestUrl = $"https://ardsandnorthdownbincalendar.azurewebsites.net/api/collectiondates/{address.Uid}";
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = $"https://ardsandnorthdownbincalendar.azurewebsites.net/api/collectiondates/{address.Uid}";
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+			};
 
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 1)
+			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				// Parse response content as JSON object
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-				var rawBinDaysObject = jsonDoc.RootElement;
+				NextClientSideRequest = clientSideRequest
+			};
 
-				// Iterate through all bin type keys and get associated collection date
-				var binDays = new List<BinDay>();
+			return getBinDaysResponse;
+		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Parse response content as JSON object
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			var rawBinDaysObject = jsonDoc.RootElement;
 
-				foreach (var week in new[] { "lastWeek", "thisWeek", "nextWeek" })
+			// Iterate through all bin type keys and get associated collection date
+			var binDays = new List<BinDay>();
+
+			foreach (var week in new[] { "lastWeek", "thisWeek", "nextWeek" })
+			{
+				foreach (var dayEntry in rawBinDaysObject.GetProperty(week).EnumerateArray())
 				{
-					foreach (var dayEntry in rawBinDaysObject.GetProperty(week).EnumerateArray())
+					var collectionDate = dayEntry.GetProperty("date").GetString();
+					ArgumentNullException.ThrowIfNull(collectionDate);
+
+					// Parse the date (e.g. "2024-07-29T00:00:00")
+					var date = DateOnly.ParseExact(
+						collectionDate,
+						"yyyy-MM-ddTHH:mm:ss",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					);
+
+					var binsForDay = new List<Bin>();
+					foreach (var binEntry in dayEntry.GetProperty("bins").EnumerateArray())
 					{
-						var collectionDate = dayEntry.GetProperty("date").GetString();
-						ArgumentNullException.ThrowIfNull(collectionDate);
+						var keyVal = binEntry.GetProperty("name").GetString();
+						ArgumentNullException.ThrowIfNull(keyVal);
 
-						// Parse the date (e.g. "2024-07-29T00:00:00")
-						var date = DateOnly.ParseExact(
-							collectionDate,
-							"yyyy-MM-ddTHH:mm:ss",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
+						var binType = _binTypes.Single(b => b.Keys.Contains(keyVal));
+						binsForDay.Add(binType);
+					}
 
-						var binsForDay = new List<Bin>();
-						foreach (var binEntry in dayEntry.GetProperty("bins").EnumerateArray())
+					if (binsForDay.Count != 0)
+					{
+						var binDay = new BinDay
 						{
-							var keyVal = binEntry.GetProperty("name").GetString();
-							ArgumentNullException.ThrowIfNull(keyVal);
+							Date = date,
+							Address = address,
+							Bins = [.. binsForDay],
+						};
 
-							var binType = _binTypes.Single(b => b.Keys.Contains(keyVal));
-							binsForDay.Add(binType);
-						}
-
-						if (binsForDay.Count != 0)
-						{
-							var binDay = new BinDay
-							{
-								Date = date,
-								Address = address,
-								Bins = [.. binsForDay],
-							};
-
-							binDays.Add(binDay);
-						}
+						binDays.Add(binDay);
 					}
 				}
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
 		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }

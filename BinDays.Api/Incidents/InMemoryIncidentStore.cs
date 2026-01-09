@@ -1,35 +1,34 @@
-namespace BinDays.Api.Incidents
+namespace BinDays.Api.Incidents;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+/// <summary>
+/// In-memory fallback for development environments where Redis is not configured.
+/// </summary>
+internal sealed class InMemoryIncidentStore : IIncidentStore
 {
-	using System;
-	using System.Collections.Generic;
-	using System.Linq;
+	private readonly object _lock = new();
+	private readonly List<IncidentRecord> _records = [];
 
-	/// <summary>
-	/// In-memory fallback for development environments where Redis is not configured.
-	/// </summary>
-	internal sealed class InMemoryIncidentStore : IIncidentStore
+	/// <inheritdoc/>
+	public void RecordIncident(IncidentRecord incident)
 	{
-		private readonly object _lock = new();
-		private readonly List<IncidentRecord> _records = [];
+		ArgumentNullException.ThrowIfNull(incident);
 
-		/// <inheritdoc/>
-		public void RecordIncident(IncidentRecord incident)
+		lock (_lock)
 		{
-			ArgumentNullException.ThrowIfNull(incident);
-
-			lock (_lock)
-			{
-				_records.Add(incident);
-			}
+			_records.Add(incident);
 		}
+	}
 
-		/// <inheritdoc/>
-		public IReadOnlyList<IncidentRecord> GetIncidents()
+	/// <inheritdoc/>
+	public IReadOnlyList<IncidentRecord> GetIncidents()
+	{
+		lock (_lock)
 		{
-			lock (_lock)
-			{
-				return [.. _records.OrderByDescending(record => record.OccurredUtc)];
-			}
+			return [.. _records.OrderByDescending(record => record.OccurredUtc)];
 		}
 	}
 }

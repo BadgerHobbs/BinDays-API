@@ -1,295 +1,294 @@
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
+
+/// <summary>
+/// Collector implementation for Oxford City Council.
+/// </summary>
+internal sealed partial class OxfordCityCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Text.RegularExpressions;
+	/// <inheritdoc/>
+	public string Name => "Oxford City Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.oxford.gov.uk/mybinday");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "oxford";
 
 	/// <summary>
-	/// Collector implementation for Oxford City Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class OxfordCityCouncil : GovUkCollectorBase, ICollector
-	{
-		/// <inheritdoc/>
-		public string Name => "Oxford City Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.oxford.gov.uk/mybinday");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "oxford";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = [
-			new()
-			{
-				Name = "Rubbish",
-				Colour = BinColour.Green,
-				Keys = [ "residual" ],
-			},
-			new()
-			{
-				Name = "Mixed Recycling",
-				Colour = BinColour.Blue,
-				Keys = [ "recycling" ],
-			},
-			new()
-			{
-				Name = "Garden Waste",
-				Colour = BinColour.Brown,
-				Keys = [ "garden" ],
-			},
-			new()
-			{
-				Name = "Food Waste",
-				Colour = BinColour.Green,
-				Keys = [ "food" ],
-			},
-		];
-
-		/// <summary>
-		/// Regex for the session token value from an input field.
-		/// </summary>
-		[GeneratedRegex(@"name=""__token"" value=""([^""]+)""")]
-		private static partial Regex TokenRegex();
-
-		/// <summary>
-		/// Regex for the addresses from the options elements.
-		/// </summary>
-		[GeneratedRegex(@"<option\s+value=""(?<uid>\d+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
-		private static partial Regex AddressRegex();
-
-		/// <summary>
-		/// Regex for the bin days from the page elements.
-		/// </summary>
-		[GeneratedRegex(@"<p>\s*<img alt=""(?<binType>[^""]+)""[^>]*>\s*(?:Your next [^:]+ collections:\s*(?<collectionDates>[^<]+)|(?<collectionDates>No [^<]+? Collections at this Property))<\/p>")]
-		private static partial Regex BinDaysRegex();
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
+		new()
 		{
-			// Prepare client-side request for getting token
-			if (clientSideResponse == null)
+			Name = "Rubbish",
+			Colour = BinColour.Green,
+			Keys = [ "residual" ],
+		},
+		new()
+		{
+			Name = "Mixed Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "recycling" ],
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Brown,
+			Keys = [ "garden" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Green,
+			Keys = [ "food" ],
+		},
+	];
+
+	/// <summary>
+	/// Regex for the session token value from an input field.
+	/// </summary>
+	[GeneratedRegex(@"name=""__token"" value=""([^""]+)""")]
+	private static partial Regex TokenRegex();
+
+	/// <summary>
+	/// Regex for the addresses from the options elements.
+	/// </summary>
+	[GeneratedRegex(@"<option\s+value=""(?<uid>\d+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
+	private static partial Regex AddressRegex();
+
+	/// <summary>
+	/// Regex for the bin days from the page elements.
+	/// </summary>
+	[GeneratedRegex(@"<p>\s*<img alt=""(?<binType>[^""]+)""[^>]*>\s*(?:Your next [^:]+ collections:\s*(?<collectionDates>[^<]+)|(?<collectionDates>No [^<]+? Collections at this Property))<\/p>")]
+	private static partial Regex BinDaysRegex();
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting token
+		if (clientSideResponse == null)
+		{
+			// Prepare client-side request
+			var clientSideRequest = new ClientSideRequest
 			{
-				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = "https://www.oxford.gov.uk/xfp/form/142",
-					Method = "GET",
-					Headers = new() {
-						{"user-agent", Constants.UserAgent},
-					},
-				};
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Prepare client-side request for getting addresses
-			else if (clientSideResponse.RequestId == 1)
-			{
-				// Get token from response
-				var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
-
-				// Prepare client-side request
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-				{
-					{"__token", token},
-					{"page", "12"},
-					{"locale", "en_GB"},
-					{"injectedParams", "{'formID': '142'}"},
-					{"q6ad4e3bf432c83230a0347a6eea6c805c672efeb_0_0", postcode},
-					{"callback", "{ 'action': 'ic', 'element': 'q6ad4e3bf432c83230a0347a6eea6c805c672efeb', 'data': 0, 'tableRow': -1 }"},
-				});
-
-				var requestHeaders = new Dictionary<string, string> {
+				RequestId = 1,
+				Url = "https://www.oxford.gov.uk/xfp/form/142",
+				Method = "GET",
+				Headers = new() {
 					{"user-agent", Constants.UserAgent},
-					{"content-type", "application/x-www-form-urlencoded"},
-				};
+				},
+			};
 
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 2,
-					Url = "https://www.oxford.gov.uk/xfp/form/142",
-					Method = "POST",
-					Headers = requestHeaders,
-					Body = requestBody,
-				};
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 2)
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				// Get addresses from response
-				var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+				NextClientSideRequest = clientSideRequest
+			};
 
-				// Iterate through each address, and create a new address object
-				var addresses = new List<Address>();
-				foreach (Match rawAddress in rawAddresses)
+			return getAddressesResponse;
+		}
+		// Prepare client-side request for getting addresses
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Get token from response
+			var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+
+			// Prepare client-side request
+			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
+			{
+				{"__token", token},
+				{"page", "12"},
+				{"locale", "en_GB"},
+				{"injectedParams", "{'formID': '142'}"},
+				{"q6ad4e3bf432c83230a0347a6eea6c805c672efeb_0_0", postcode},
+				{"callback", "{ 'action': 'ic', 'element': 'q6ad4e3bf432c83230a0347a6eea6c805c672efeb', 'data': 0, 'tableRow': -1 }"},
+			});
+
+			var requestHeaders = new Dictionary<string, string> {
+				{"user-agent", Constants.UserAgent},
+				{"content-type", "application/x-www-form-urlencoded"},
+			};
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = "https://www.oxford.gov.uk/xfp/form/142",
+				Method = "POST",
+				Headers = requestHeaders,
+				Body = requestBody,
+			};
+
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 2)
+		{
+			// Get addresses from response
+			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+
+			// Iterate through each address, and create a new address object
+			var addresses = new List<Address>();
+			foreach (Match rawAddress in rawAddresses)
+			{
+				var uid = rawAddress.Groups["uid"].Value;
+
+				// Exclude placeholder/invalid options
+				if (uid == "-1" || uid == "111111")
 				{
-					var uid = rawAddress.Groups["uid"].Value;
+					continue;
+				}
 
-					// Exclude placeholder/invalid options
-					if (uid == "-1" || uid == "111111")
-					{
-						continue;
-					}
+				var address = new Address
+				{
+					Property = rawAddress.Groups["address"].Value,
+					Postcode = postcode,
+					Uid = uid,
+				};
 
-					var address = new Address
+				addresses.Add(address);
+			}
+
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
+		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting token
+		if (clientSideResponse == null)
+		{
+			// Prepare client-side request
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = "https://www.oxford.gov.uk/xfp/form/142",
+				Method = "GET",
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getBinDaysResponse;
+		}
+		// Prepare client-side request for getting bin days
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Get token from response
+			var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+
+			// Prepare client-side request
+			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
+			{
+				{"__token", token},
+				{"page", "12"},
+				{"locale", "en_GB"},
+				{"q6ad4e3bf432c83230a0347a6eea6c805c672efeb_0_0", address.Postcode!},
+				{"q6ad4e3bf432c83230a0347a6eea6c805c672efeb_1_0", address.Uid!},
+				{"next", "Next"},
+			});
+
+			var requestHeaders = new Dictionary<string, string> {
+				{"user-agent", Constants.UserAgent},
+				{"content-type", "application/x-www-form-urlencoded"},
+			};
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = "https://www.oxford.gov.uk/xfp/form/142",
+				Method = "POST",
+				Headers = requestHeaders,
+				Body = requestBody,
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getBinDaysResponse;
+		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 2)
+		{
+			// Get bin days from response
+			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
+
+			// Iterate through each bin day, and create a new bin day object
+			var binDays = new List<BinDay>();
+			foreach (Match rawBinDay in rawBinDays)
+			{
+				var binType = rawBinDay.Groups["binType"].Value;
+				var collectionDates = rawBinDay.Groups["collectionDates"].Value
+					.Split(",")
+					.Select(x => x.Trim())
+					.Where(x => !string.IsNullOrWhiteSpace(x));
+
+				// Skip if there are no collection dates (e.g. 'No Garden Collections at this Property')
+				if (collectionDates.Any(x => x.StartsWith("No ")))
+				{
+					continue;
+				}
+
+				foreach (var collectionDate in collectionDates)
+				{
+					// Parse the date (e.g. 'Thursday 19 June 2025' or 'Thursday 04 Sep 2025')
+					var date = DateOnly.ParseExact(
+						collectionDate,
+						["dddd dd MMMM yyyy", "dddd dd MMM yyyy"],
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					);
+
+					// Get matching bin types from the type using the keys
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
+
+					var binDay = new BinDay
 					{
-						Property = rawAddress.Groups["address"].Value,
-						Postcode = postcode,
-						Uid = uid,
+						Date = date,
+						Address = address,
+						Bins = matchedBinTypes,
 					};
 
-					addresses.Add(address);
+					binDays.Add(binDay);
 				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
-				};
-
-				return getAddressesResponse;
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
-		{
-			// Prepare client-side request for getting token
-			if (clientSideResponse == null)
-			{
-				// Prepare client-side request
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = "https://www.oxford.gov.uk/xfp/form/142",
-					Method = "GET",
-					Headers = new() {
-						{"user-agent", Constants.UserAgent},
-					},
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Prepare client-side request for getting bin days
-			else if (clientSideResponse.RequestId == 1)
-			{
-				// Get token from response
-				var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
-
-				// Prepare client-side request
-				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-				{
-					{"__token", token},
-					{"page", "12"},
-					{"locale", "en_GB"},
-					{"q6ad4e3bf432c83230a0347a6eea6c805c672efeb_0_0", address.Postcode!},
-					{"q6ad4e3bf432c83230a0347a6eea6c805c672efeb_1_0", address.Uid!},
-					{"next", "Next"},
-				});
-
-				var requestHeaders = new Dictionary<string, string> {
-					{"user-agent", Constants.UserAgent},
-					{"content-type", "application/x-www-form-urlencoded"},
-				};
-
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 2,
-					Url = "https://www.oxford.gov.uk/xfp/form/142",
-					Method = "POST",
-					Headers = requestHeaders,
-					Body = requestBody,
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 2)
-			{
-				// Get bin days from response
-				var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
-
-				// Iterate through each bin day, and create a new bin day object
-				var binDays = new List<BinDay>();
-				foreach (Match rawBinDay in rawBinDays)
-				{
-					var binType = rawBinDay.Groups["binType"].Value;
-					var collectionDates = rawBinDay.Groups["collectionDates"].Value
-						.Split(",")
-						.Select(x => x.Trim())
-						.Where(x => !string.IsNullOrWhiteSpace(x));
-
-					// Skip if there are no collection dates (e.g. 'No Garden Collections at this Property')
-					if (collectionDates.Any(x => x.StartsWith("No ")))
-					{
-						continue;
-					}
-
-					foreach (var collectionDate in collectionDates)
-					{
-						// Parse the date (e.g. 'Thursday 19 June 2025' or 'Thursday 04 Sep 2025')
-						var date = DateOnly.ParseExact(
-							collectionDate,
-							["dddd dd MMMM yyyy", "dddd dd MMM yyyy"],
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
-
-						// Get matching bin types from the type using the keys
-						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
-
-						var binDay = new BinDay
-						{
-							Date = date,
-							Address = address,
-							Bins = matchedBinTypes,
-						};
-
-						binDays.Add(binDay);
-					}
-				}
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
-			}
-
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
-		}
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }

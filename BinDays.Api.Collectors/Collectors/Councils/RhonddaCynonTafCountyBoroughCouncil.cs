@@ -1,230 +1,229 @@
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text.RegularExpressions;
+
+/// <summary>
+/// Collector implementation for Rhondda Cynon Taf County Borough Council.
+/// </summary>
+internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Linq;
-	using System.Text.RegularExpressions;
+	/// <inheritdoc/>
+	public string Name => "Rhondda Cynon Taf County Borough Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/BinCollectionDays.aspx");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "rhondda-cynon-taff";
 
 	/// <summary>
-	/// Collector implementation for Rhondda Cynon Taf County Borough Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollectorBase, ICollector
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
+		new()
+		{
+			Name = "Recycling",
+			Colour = BinColour.White,
+			Keys = [ "recycling" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.LightGreen,
+			Keys = [ "food waste" ],
+		},
+		new()
+		{
+			Name = "Green Waste",
+			Colour = BinColour.Green,
+			Keys = [ "green waste", "garden waste" ],
+		},
+		new()
+		{
+			Name = "General Waste",
+			Colour = BinColour.Black,
+			Keys = [ "black bags" ],
+		},
+	];
+
+	/// <summary>
+	/// Regex for the addresses from the options elements.
+	/// </summary>
+	[GeneratedRegex(@"<option\s+value=""(?<uid>[^""]+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
+	private static partial Regex AddressRegex();
+
+	/// <summary>
+	/// Regex for extracting bin type and date string from the next collection table rows.
+	/// </summary>
+	[GeneratedRegex(@"<tr>\s*<td[^>]*><a[^>]*>(?<bintype>[^<]+)</a></td><td>(?<datestring>[^<]+)</td></tr>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+	private static partial Regex NextCollectionRowRegex();
+
+	/// <summary>
+	/// Regex for removing the st|nd|rd|th from the date part
+	/// </summary>
+	[GeneratedRegex(@"(?<=\d)(st|nd|rd|th)")]
+	private static partial Regex CollectionDateRegex();
+
+	/// <summary>
+	/// Regex for removing double spaces
+	/// </summary>
+	[GeneratedRegex(@"\s{2,}")]
+	private static partial Regex DoubleSpaceRegex();
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		/// <inheritdoc/>
-		public string Name => "Rhondda Cynon Taf County Borough Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/BinCollectionDays.aspx");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "rhondda-cynon-taff";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = [
-			new()
-			{
-				Name = "Recycling",
-				Colour = BinColour.White,
-				Keys = [ "recycling" ],
-			},
-			new()
-			{
-				Name = "Food Waste",
-				Colour = BinColour.LightGreen,
-				Keys = [ "food waste" ],
-			},
-			new()
-			{
-				Name = "Green Waste",
-				Colour = BinColour.Green,
-				Keys = [ "green waste", "garden waste" ],
-			},
-			new()
-			{
-				Name = "General Waste",
-				Colour = BinColour.Black,
-				Keys = [ "black bags" ],
-			},
-		];
-
-		/// <summary>
-		/// Regex for the addresses from the options elements.
-		/// </summary>
-		[GeneratedRegex(@"<option\s+value=""(?<uid>[^""]+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
-		private static partial Regex AddressRegex();
-
-		/// <summary>
-		/// Regex for extracting bin type and date string from the next collection table rows.
-		/// </summary>
-		[GeneratedRegex(@"<tr>\s*<td[^>]*><a[^>]*>(?<bintype>[^<]+)</a></td><td>(?<datestring>[^<]+)</td></tr>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
-		private static partial Regex NextCollectionRowRegex();
-
-		/// <summary>
-		/// Regex for removing the st|nd|rd|th from the date part
-		/// </summary>
-		[GeneratedRegex(@"(?<=\d)(st|nd|rd|th)")]
-		private static partial Regex CollectionDateRegex();
-
-		/// <summary>
-		/// Regex for removing double spaces
-		/// </summary>
-		[GeneratedRegex(@"\s{2,}")]
-		private static partial Regex DoubleSpaceRegex();
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting addresses
-			if (clientSideResponse == null)
+			var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?&Postcode={postcode}";
+
+			var requestHeaders = new Dictionary<string, string> {
+				{"user-agent", Constants.UserAgent},
+			};
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?&Postcode={postcode}";
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+				Headers = requestHeaders,
+			};
 
-				var requestHeaders = new Dictionary<string, string> {
-					{"user-agent", Constants.UserAgent},
-				};
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
 
-				var clientSideRequest = new ClientSideRequest
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Get addresses from response
+			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+
+			// Iterate through each address, and create a new address object
+			var addresses = new List<Address>();
+			foreach (Match rawAddress in rawAddresses)
+			{
+				var uid = rawAddress.Groups["uid"].Value;
+				var fullAddress = rawAddress.Groups["address"].Value.Trim();
+
+				var address = new Address
 				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-					Headers = requestHeaders,
+					Property = fullAddress,
+					Postcode = postcode,
+					Uid = uid,
 				};
 
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
+				addresses.Add(address);
 			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 1)
+
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				// Get addresses from response
-				var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+				Addresses = [.. addresses],
+			};
 
-				// Iterate through each address, and create a new address object
-				var addresses = new List<Address>();
-				foreach (Match rawAddress in rawAddresses)
+			return getAddressesResponse;
+		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting bin days
+		if (clientSideResponse == null)
+		{
+			// Use live URL as per legacy implementation, not base website URL
+			var requestUrl = $"https://live-rctcbc.cloud.contensis.com/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?uprn={address.Uid!}";
+
+			var requestHeaders = new Dictionary<string, string> {
+				{"user-agent", Constants.UserAgent},
+			};
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+				Headers = requestHeaders,
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getBinDaysResponse;
+		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var binDays = new List<BinDay>();
+			var collectionRows = NextCollectionRowRegex().Matches(clientSideResponse.Content);
+
+			foreach (Match row in collectionRows)
+			{
+				var binTypeText = row.Groups["bintype"].Value.Trim().ToLowerInvariant();
+				var dateString = row.Groups["datestring"].Value.Trim();
+
+				// Extract the date part (e.g. "Tuesday 29th of April 2025")
+				// Assumes format like "x days' time, Day d[th] of Month yyyy" or just "Day d[th] of Month yyyy"
+				var datePart = dateString.Split(',').Last().Trim();
+
+				// Strip the st|nd|rd|th from the date part
+				datePart = CollectionDateRegex().Replace(datePart, "");
+
+				// Strip 'of' from the date part
+				datePart = datePart.Replace("of ", "");
+
+				// Remove double spaces
+				datePart = DoubleSpaceRegex().Replace(datePart, " ");
+
+				// Parse the date (e.g. "Tuesday 8 July 2025")
+				var collectionDate = DateOnly.ParseExact(
+					datePart,
+					"dddd d MMMM yyyy",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+
+				// Find matching bin types
+				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeText);
+
+				// If bins are matched, create or update BinDay entry
+				if (matchedBins.Count > 0)
 				{
-					var uid = rawAddress.Groups["uid"].Value;
-					var fullAddress = rawAddress.Groups["address"].Value.Trim();
-
-					var address = new Address
+					var binDay = new BinDay
 					{
-						Property = fullAddress,
-						Postcode = postcode,
-						Uid = uid,
+						Date = collectionDate,
+						Address = address,
+						Bins = [.. matchedBins]
 					};
-
-					addresses.Add(address);
+					binDays.Add(binDay);
 				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
-				};
-
-				return getAddressesResponse;
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
-		{
-			// Prepare client-side request for getting bin days
-			if (clientSideResponse == null)
-			{
-				// Use live URL as per legacy implementation, not base website URL
-				var requestUrl = $"https://live-rctcbc.cloud.contensis.com/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?uprn={address.Uid!}";
-
-				var requestHeaders = new Dictionary<string, string> {
-					{"user-agent", Constants.UserAgent},
-				};
-
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-					Headers = requestHeaders,
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 1)
-			{
-				var binDays = new List<BinDay>();
-				var collectionRows = NextCollectionRowRegex().Matches(clientSideResponse.Content);
-
-				foreach (Match row in collectionRows)
-				{
-					var binTypeText = row.Groups["bintype"].Value.Trim().ToLowerInvariant();
-					var dateString = row.Groups["datestring"].Value.Trim();
-
-					// Extract the date part (e.g. "Tuesday 29th of April 2025")
-					// Assumes format like "x days' time, Day d[th] of Month yyyy" or just "Day d[th] of Month yyyy"
-					var datePart = dateString.Split(',').Last().Trim();
-
-					// Strip the st|nd|rd|th from the date part
-					datePart = CollectionDateRegex().Replace(datePart, "");
-
-					// Strip 'of' from the date part
-					datePart = datePart.Replace("of ", "");
-
-					// Remove double spaces
-					datePart = DoubleSpaceRegex().Replace(datePart, " ");
-
-					// Parse the date (e.g. "Tuesday 8 July 2025")
-					var collectionDate = DateOnly.ParseExact(
-						datePart,
-						"dddd d MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					// Find matching bin types
-					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeText);
-
-					// If bins are matched, create or update BinDay entry
-					if (matchedBins.Count > 0)
-					{
-						var binDay = new BinDay
-						{
-							Date = collectionDate,
-							Address = address,
-							Bins = [.. matchedBins]
-						};
-						binDays.Add(binDay);
-					}
-				}
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
-			}
-
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
-		}
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }

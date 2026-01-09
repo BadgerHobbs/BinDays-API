@@ -1,37 +1,36 @@
-namespace BinDays.Api.IntegrationTests.Collectors.Councils
+namespace BinDays.Api.IntegrationTests.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors;
+using BinDays.Api.Collectors.Collectors.Councils;
+using BinDays.Api.Collectors.Services;
+using BinDays.Api.IntegrationTests.Helpers;
+using System.Threading.Tasks;
+using Xunit;
+using Xunit.Abstractions;
+
+public class SomersetCouncilTests
 {
-	using BinDays.Api.Collectors.Collectors;
-	using BinDays.Api.Collectors.Collectors.Councils;
-	using BinDays.Api.Collectors.Services;
-	using BinDays.Api.IntegrationTests.Helpers;
-	using System.Threading.Tasks;
-	using Xunit;
-	using Xunit.Abstractions;
+	private readonly IntegrationTestClient _client;
+	private static readonly ICollector _collector = new SomersetCouncil();
+	private readonly CollectorService _collectorService = new([_collector]);
+	private readonly ITestOutputHelper _outputHelper;
 
-	public class SomersetCouncilTests
+	public SomersetCouncilTests(ITestOutputHelper outputHelper)
 	{
-		private readonly IntegrationTestClient _client;
-		private static readonly ICollector _collector = new SomersetCouncil();
-		private readonly CollectorService _collectorService = new([_collector]);
-		private readonly ITestOutputHelper _outputHelper;
+		_outputHelper = outputHelper;
+		_client = new IntegrationTestClient(outputHelper);
+	}
 
-		public SomersetCouncilTests(ITestOutputHelper outputHelper)
-		{
-			_outputHelper = outputHelper;
-			_client = new IntegrationTestClient(outputHelper);
-		}
-
-		[Theory]
-		[InlineData("TA1 3AL")]
-		public async Task GetBinDaysTest(string postcode)
-		{
-			await TestSteps.EndToEnd(
-				_client,
-				_collectorService,
-				_collector,
-				postcode,
-				_outputHelper
-			);
-		}
+	[Theory]
+	[InlineData("TA1 3AL")]
+	public async Task GetBinDaysTest(string postcode)
+	{
+		await TestSteps.EndToEnd(
+			_client,
+			_collectorService,
+			_collector,
+			postcode,
+			_outputHelper
+		);
 	}
 }

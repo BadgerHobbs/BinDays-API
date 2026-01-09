@@ -1,38 +1,37 @@
-namespace BinDays.Api.IntegrationTests.Collectors
+namespace BinDays.Api.IntegrationTests.Collectors;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Exceptions;
+using BinDays.Api.Collectors.Services;
+using BinDays.Api.IntegrationTests.Helpers;
+using Xunit;
+using Xunit.Abstractions;
+
+public sealed class MultiAddressCollectorTests
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Exceptions;
-	using BinDays.Api.Collectors.Services;
-	using BinDays.Api.IntegrationTests.Helpers;
-	using Xunit;
-	using Xunit.Abstractions;
+	private readonly IntegrationTestClient _client;
+	private readonly CollectorService _collectorService = new([]);
+	private const string _postcode = "SS9 3RE";
+	private readonly ITestOutputHelper _outputHelper;
 
-	public sealed class MultiAddressCollectorTests
+	public MultiAddressCollectorTests(ITestOutputHelper outputHelper)
 	{
-		private readonly IntegrationTestClient _client;
-		private readonly CollectorService _collectorService = new([]);
-		private const string _postcode = "SS9 3RE";
-		private readonly ITestOutputHelper _outputHelper;
+		_outputHelper = outputHelper;
+		_client = new IntegrationTestClient(outputHelper);
+	}
 
-		public MultiAddressCollectorTests(ITestOutputHelper outputHelper)
+	[Fact]
+	public async Task GetCollectorTest()
+	{
+		await Assert.ThrowsAsync<UnsupportedCollectorException>(async () =>
 		{
-			_outputHelper = outputHelper;
-			_client = new IntegrationTestClient(outputHelper);
-		}
-
-		[Fact]
-		public async Task GetCollectorTest()
-		{
-			await Assert.ThrowsAsync<UnsupportedCollectorException>(async () =>
-			{
-				await _client.ExecuteRequestCycleAsync(
-					initialFunc: () => GovUkCollectorBase.GetCollector(_collectorService, _postcode, null),
-					subsequentFunc: (csr) => GovUkCollectorBase.GetCollector(_collectorService, _postcode, csr),
-					nextRequestExtractor: (resp) => resp.NextClientSideRequest,
-					resultExtractor: (resp) => resp.Collector,
-					errorMessage: $"Could not retrieve collector for postcode {_postcode}."
-				);
-			});
-		}
+			await _client.ExecuteRequestCycleAsync(
+				initialFunc: () => GovUkCollectorBase.GetCollector(_collectorService, _postcode, null),
+				subsequentFunc: (csr) => GovUkCollectorBase.GetCollector(_collectorService, _postcode, csr),
+				nextRequestExtractor: (resp) => resp.NextClientSideRequest,
+				resultExtractor: (resp) => resp.Collector,
+				errorMessage: $"Could not retrieve collector for postcode {_postcode}."
+			);
+		});
 	}
 }

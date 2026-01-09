@@ -1,210 +1,209 @@
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+/// <summary>
+/// Collector implementation for Teignbridge District Council.
+/// </summary>
+internal sealed partial class TeignbridgeDistrictCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Text.Json;
-	using System.Text.RegularExpressions;
+	/// <inheritdoc/>
+	public string Name => "Teignbridge District Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.teignbridge.gov.uk/recycling-and-waste/bin-and-box-collections/when-are-my-bins-and-boxes-collected/");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "teignbridge";
 
 	/// <summary>
-	/// Collector implementation for Teignbridge District Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class TeignbridgeDistrictCouncil : GovUkCollectorBase, ICollector
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
+		new()
+		{
+			Name = "Household Waste",
+			Colour = BinColour.Black,
+			Keys = [ "refuse" ],
+			Type = BinType.Bin,
+
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Blue,
+			Keys = [ "food waste" ],
+			Type = BinType.Container,
+		},
+		new()
+		{
+			Name = "Plastic and Metals",
+			Colour = BinColour.Black,
+			Keys = [ "black box" ],
+			Type = BinType.Box,
+		},
+		new()
+		{
+			Name = "Cardboard and Glass Recycling",
+			Colour = BinColour.Green,
+			Keys = [ "green box" ],
+			Type = BinType.Box,
+		},
+		new()
+		{
+			Name = "Paper Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "paper" ],
+			Type = BinType.Sack,
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Purple,
+			Keys = [ "garden waste" ],
+		},
+	];
+
+	/// <summary>
+	/// Regex for the bin collections from the page elements.
+	/// </summary>
+	[GeneratedRegex(@"(?s)<h3 class=""binCollectionH3"">\s*(?<CollectionDate>\d{1,2}\s+\w+\s+\d{4})\s*<span class=""binDayDescriptor"">\w+</span>\s*</h3>\s*<div class=""binInfoContainer"">\s*(?:<div class=""binInfoLine"">.*?</span>\s*(?:</a>\s*)?(?<BinType>[^<]+?)</div>\s*)+\s*</div>")]
+	private static partial Regex BinCollectionsRegex();
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		/// <inheritdoc/>
-		public string Name => "Teignbridge District Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.teignbridge.gov.uk/recycling-and-waste/bin-and-box-collections/when-are-my-bins-and-boxes-collected/");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "teignbridge";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = [
-			new()
-			{
-				Name = "Household Waste",
-				Colour = BinColour.Black,
-				Keys = [ "refuse" ],
-				Type = BinType.Bin,
-
-			},
-			new()
-			{
-				Name = "Food Waste",
-				Colour = BinColour.Blue,
-				Keys = [ "food waste" ],
-				Type = BinType.Container,
-			},
-			new()
-			{
-				Name = "Plastic and Metals",
-				Colour = BinColour.Black,
-				Keys = [ "black box" ],
-				Type = BinType.Box,
-			},
-			new()
-			{
-				Name = "Cardboard and Glass Recycling",
-				Colour = BinColour.Green,
-				Keys = [ "green box" ],
-				Type = BinType.Box,
-			},
-			new()
-			{
-				Name = "Paper Recycling",
-				Colour = BinColour.Blue,
-				Keys = [ "paper" ],
-				Type = BinType.Sack,
-			},
-			new()
-			{
-				Name = "Garden Waste",
-				Colour = BinColour.Purple,
-				Keys = [ "garden waste" ],
-			},
-		];
-
-		/// <summary>
-		/// Regex for the bin collections from the page elements.
-		/// </summary>
-		[GeneratedRegex(@"(?s)<h3 class=""binCollectionH3"">\s*(?<CollectionDate>\d{1,2}\s+\w+\s+\d{4})\s*<span class=""binDayDescriptor"">\w+</span>\s*</h3>\s*<div class=""binInfoContainer"">\s*(?:<div class=""binInfoLine"">.*?</span>\s*(?:</a>\s*)?(?<BinType>[^<]+?)</div>\s*)+\s*</div>")]
-		private static partial Regex BinCollectionsRegex();
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting addresses
-			if (clientSideResponse == null)
+			var requestUrl = $"https://www.teignbridge.gov.uk/repositories/hidden-pages/address-finder?qtype=bins&term={postcode}";
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = $"https://www.teignbridge.gov.uk/repositories/hidden-pages/address-finder?qtype=bins&term={postcode}";
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+			};
 
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-				};
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 1)
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				// Parse response content as JSON array
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+				NextClientSideRequest = clientSideRequest
+			};
 
-				// Iterate through each address json, and create a new address object
-				var addresses = new List<Address>();
-				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Parse response content as JSON array
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+
+			// Iterate through each address json, and create a new address object
+			var addresses = new List<Address>();
+			foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
+			{
+				var property = addressElement.GetProperty("label").GetString();
+				var uprn = addressElement.GetProperty("UPRN").GetString();
+
+				var address = new Address
 				{
-					var property = addressElement.GetProperty("label").GetString();
-					var uprn = addressElement.GetProperty("UPRN").GetString();
-
-					var address = new Address
-					{
-						Property = property?.Trim(),
-						Postcode = postcode,
-						Uid = uprn,
-					};
-
-					addresses.Add(address);
-				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
+					Property = property?.Trim(),
+					Postcode = postcode,
+					Uid = uprn,
 				};
 
-				return getAddressesResponse;
+				addresses.Add(address);
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting bin days
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting bin days
-			if (clientSideResponse == null)
+			var requestUrl = $"https://www.teignbridge.gov.uk/repositories/hidden-pages/bin-finder?uprn={address.Uid}";
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = $"https://www.teignbridge.gov.uk/repositories/hidden-pages/bin-finder?uprn={address.Uid}";
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+			};
 
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 1)
+			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				// Get bin collections from response
-				var rawBinCollections = BinCollectionsRegex().Matches(clientSideResponse.Content);
+				NextClientSideRequest = clientSideRequest
+			};
 
-				// Iterate through each bin collection, and create a new bin day object
-				var binDays = new List<BinDay>();
-				foreach (Match rawBinCollection in rawBinCollections)
-				{
-					var dateString = rawBinCollection.Groups["CollectionDate"].Value;
-
-					// Parse the date (e.g. '12 June 2025')
-					var date = DateOnly.ParseExact(
-						dateString,
-						"d MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					// Get the bin types from the collection
-					var rawBinTypes = rawBinCollection.Groups["BinType"].Captures;
-
-					// Get matching bin types from the type using the keys
-					var matchedBinTypes = rawBinTypes
-						.SelectMany(rawBinType => ProcessingUtilities.GetMatchingBins(_binTypes, rawBinType.Value))
-						.Distinct()
-						.ToArray();
-
-					var binDay = new BinDay
-					{
-						Date = date,
-						Address = address,
-						Bins = matchedBinTypes,
-					};
-
-					binDays.Add(binDay);
-				}
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
-			}
-
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			return getBinDaysResponse;
 		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Get bin collections from response
+			var rawBinCollections = BinCollectionsRegex().Matches(clientSideResponse.Content);
+
+			// Iterate through each bin collection, and create a new bin day object
+			var binDays = new List<BinDay>();
+			foreach (Match rawBinCollection in rawBinCollections)
+			{
+				var dateString = rawBinCollection.Groups["CollectionDate"].Value;
+
+				// Parse the date (e.g. '12 June 2025')
+				var date = DateOnly.ParseExact(
+					dateString,
+					"d MMMM yyyy",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+
+				// Get the bin types from the collection
+				var rawBinTypes = rawBinCollection.Groups["BinType"].Captures;
+
+				// Get matching bin types from the type using the keys
+				var matchedBinTypes = rawBinTypes
+					.SelectMany(rawBinType => ProcessingUtilities.GetMatchingBins(_binTypes, rawBinType.Value))
+					.Distinct()
+					.ToArray();
+
+				var binDay = new BinDay
+				{
+					Date = date,
+					Address = address,
+					Bins = matchedBinTypes,
+				};
+
+				binDays.Add(binDay);
+			}
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
+		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }

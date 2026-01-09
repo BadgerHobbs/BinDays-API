@@ -1,366 +1,365 @@
-﻿namespace BinDays.Api.Controllers
+﻿namespace BinDays.Api.Controllers;
+
+using BinDays.Api.Collectors.Exceptions;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Services;
+using BinDays.Api.Collectors.Utilities;
+using BinDays.Api.Incidents;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using System;
+using System.Linq;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+
+/// <summary>
+/// API controller for managing collectors.
+/// </summary>
+[ApiController]
+public class CollectorsController : ControllerBase
 {
-	using BinDays.Api.Collectors.Exceptions;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Services;
-	using BinDays.Api.Collectors.Utilities;
-	using BinDays.Api.Incidents;
-	using Microsoft.AspNetCore.Http;
-	using Microsoft.AspNetCore.Mvc;
-	using Microsoft.Extensions.Caching.Distributed;
-	using Microsoft.Extensions.Logging;
-	using Newtonsoft.Json;
-	using System;
-	using System.Linq;
-	using System.Net.Http;
-	using System.Security.Cryptography;
-	using System.Text;
+	/// <summary>
+	/// Service for returning specific or all collectors.
+	/// </summary>
+	private readonly CollectorService _collectorService;
 
 	/// <summary>
-	/// API controller for managing collectors.
+	/// Logger for the controller.
 	/// </summary>
-	[ApiController]
-	public class CollectorsController : ControllerBase
+	private readonly ILogger<CollectorsController> _logger;
+
+	/// <summary>
+	/// Store for recording failed incidents.
+	/// </summary>
+	private readonly IIncidentStore _incidentStore;
+
+	/// <summary>
+	/// Distributed cache for storing responses.
+	/// </summary>
+	private readonly IDistributedCache _cache;
+
+	private readonly JsonSerializerSettings _jsonSerializerSettings = new()
 	{
-		/// <summary>
-		/// Service for returning specific or all collectors.
-		/// </summary>
-		private readonly CollectorService _collectorService;
+		TypeNameHandling = TypeNameHandling.Auto,
+	};
 
-		/// <summary>
-		/// Logger for the controller.
-		/// </summary>
-		private readonly ILogger<CollectorsController> _logger;
+	/// <summary>
+	/// Initializes a new instance of the <see cref="CollectorsController"/> class.
+	/// </summary>
+	/// <param name="collectorService">Service for retrieving collector information.</param>
+	/// <param name="logger">Logger for the controller.</param>
+	/// <param name="cache">Distributed cache for storing responses.</param>
+	/// <param name="incidentStore">Store for recording failed incidents.</param>
+	public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IDistributedCache cache, IIncidentStore incidentStore)
+	{
+		_collectorService = collectorService;
+		_logger = logger;
+		_cache = cache;
+		_incidentStore = incidentStore;
+	}
 
-		/// <summary>
-		/// Store for recording failed incidents.
-		/// </summary>
-		private readonly IIncidentStore _incidentStore;
+	/// <summary>
+	/// Formats a postcode string for use in a cache key by converting it to uppercase and removing spaces.
+	/// </summary>
+	/// <param name="postcode">The postcode string to format.</param>
+	/// <returns>The formatted postcode string for cache key usage.</returns>
+	private static string FormatPostcodeForCacheKey(string postcode)
+	{
+		return postcode.ToUpperInvariant().Replace(" ", string.Empty);
+	}
 
-		/// <summary>
-		/// Distributed cache for storing responses.
-		/// </summary>
-		private readonly IDistributedCache _cache;
-
-		private readonly JsonSerializerSettings _jsonSerializerSettings = new()
+	/// <summary>
+	/// Attempts to retrieve and deserialize an object from the cache. 
+	/// Handles deserialization errors by evicting the bad cache entry.
+	/// </summary>
+	/// <typeparam name="T">The type to deserialize into.</typeparam>
+	/// <param name="cacheKey">The cache key.</param>
+	/// <returns>The deserialized object or null if not found or invalid.</returns>
+	private T? TryGetFromCache<T>(string cacheKey) where T : class
+	{
+		if (_cache.GetString(cacheKey) is string cachedResult)
 		{
-			TypeNameHandling = TypeNameHandling.Auto,
+			try
+			{
+				return JsonConvert.DeserializeObject<T>(cachedResult, _jsonSerializerSettings);
+			}
+			catch (Exception ex)
+			{
+				_logger.LogWarning(ex, "Failed to deserialize cached data for key '{CacheKey}'. Evicting invalid cache entry.", cacheKey);
+				_cache.Remove(cacheKey);
+			}
+		}
+
+		return null;
+	}
+
+	/// <summary>
+	/// Gets all the collectors.
+	/// </summary>
+	/// <returns>An enumerable collection of collectors or an error response.</returns>
+	[HttpGet]
+	[Route("/collectors")]
+	public IActionResult GetCollectors()
+	{
+		try
+		{
+			var result = _collectorService.GetCollectors();
+			return Ok(result);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "An unexpected error occurred while retrieving all collectors.");
+			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching collectors. Please try again later.");
+		}
+	}
+
+	/// <summary>
+	/// Gets the collector for a given postcode, potentially requiring multiple steps via client-side responses.
+	/// </summary>
+	/// <param name="postcode">The postcode to search for.</param>
+	/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
+	/// <returns>The response containing either the next client-side request to make or the collector, or an error response.</returns>
+	[HttpPost]
+	[Route("/collector")]
+	public IActionResult GetCollector(string postcode, [FromBody] ClientSideResponse? clientSideResponse)
+	{
+		postcode = ProcessingUtilities.FormatPostcode(postcode);
+
+		var cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
+		var cachedResponse = TryGetFromCache<GetCollectorResponse>(cacheKey);
+
+		if (cachedResponse != null)
+		{
+			_logger.LogInformation("Returning cached collector {CollectorName} for postcode: {Postcode}.", cachedResponse.Collector!.Name, postcode);
+			return Ok(cachedResponse);
+		}
+
+		try
+		{
+			var result = _collectorService.GetCollector(postcode, clientSideResponse);
+
+			// Cache result if successful and no next client-side request
+			if (result.NextClientSideRequest == null)
+			{
+				_logger.LogInformation("Successfully retrieved collector {CollectorName} for postcode: {Postcode}.", result.Collector!.Name, postcode);
+
+				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
+			}
+
+			return Ok(result);
+		}
+		catch (InvalidPostcodeException ex)
+		{
+			_logger.LogWarning(ex, "Invalid postcode provided: {Postcode}.", postcode);
+			return BadRequest("The supplied postcode is invalid.");
+		}
+		catch (UnsupportedCollectorException ex)
+		{
+			_logger.LogWarning(ex, "Unsupported collector {CollectorName} for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.CollectorName, ex.GovUkId, postcode);
+			return NotFound($"{ex.CollectorName} is not currently supported.");
+		}
+		catch (GovUkIdNotFoundException ex)
+		{
+			_logger.LogWarning(ex, "No gov.uk ID found for postcode: {Postcode}.", postcode);
+			return NotFound("No collector found for the specified postcode.");
+		}
+		catch (SupportedCollectorNotFoundException ex)
+		{
+			_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.GovUkId, postcode);
+			return NotFound("No supported collector found for the specified postcode.");
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "An unexpected error occurred while retrieving collector for postcode: {Postcode}.", postcode);
+			RecordIncident(null, IncidentOperation.GetCollector, ex);
+			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching the collector for the specified postcode. Please try again later.");
+		}
+	}
+
+	/// <summary>
+	/// Gets addresses for a given gov.uk ID and postcode.
+	/// </summary>
+	/// <param name="govUkId">The gov.uk identifier for the collector.</param>
+	/// <param name="postcode">The postcode to search addresses for.</param>
+	/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
+	/// <returns>A response containing addresses, or an error response.</returns>
+	[HttpPost]
+	[Route("/{govUkId}/addresses")]
+	public IActionResult GetAddresses(string govUkId, string postcode, [FromBody] ClientSideResponse? clientSideResponse)
+	{
+		postcode = ProcessingUtilities.FormatPostcode(postcode);
+
+		var cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
+		var cachedResponse = TryGetFromCache<GetAddressesResponse>(cacheKey);
+
+		if (cachedResponse != null)
+		{
+			_logger.LogInformation("Returning {AddressCount} cached addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", cachedResponse.Addresses!.Count, govUkId, postcode);
+			return Ok(cachedResponse);
+		}
+
+		try
+		{
+			var result = _collectorService.GetAddresses(govUkId, postcode, clientSideResponse);
+
+			// Cache result if successful and no next client-side request
+			if (result.NextClientSideRequest == null)
+			{
+				_logger.LogInformation("Successfully retrieved {AddressCount} addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", result.Addresses!.Count, govUkId, postcode);
+
+				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
+			}
+
+			return Ok(result);
+		}
+		catch (SupportedCollectorNotFoundException ex)
+		{
+			_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
+			return NotFound("No supported collector found for the specified gov.uk ID.");
+		}
+		catch (AddressesNotFoundException ex)
+		{
+			_logger.LogWarning(ex, "No addresses found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
+			return NotFound("No addresses found for the specified postcode.");
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "An unexpected error occurred while retrieving addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
+			RecordIncident(govUkId, IncidentOperation.GetAddresses, ex);
+			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching addresses. Please try again later.");
+		}
+	}
+
+	/// <summary>
+	/// Gets bin days for a given gov.uk ID, postcode, and unique address identifier.
+	/// </summary>
+	/// <param name="govUkId">The gov.uk identifier for the collector.</param>
+	/// <param name="postcode">The postcode of the address.</param>
+	/// <param name="uid">The unique identifier of the address.</param>
+	/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
+	/// <returns>A response containing bin days, or an error response.</returns>
+	[HttpPost]
+	[Route("/{govUkId}/bin-days")]
+	public IActionResult GetBinDays(string govUkId, string postcode, string uid, [FromBody] ClientSideResponse? clientSideResponse)
+	{
+		postcode = ProcessingUtilities.FormatPostcode(postcode);
+
+		var cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
+		var cachedResponse = TryGetFromCache<GetBinDaysResponse>(cacheKey);
+
+		if (cachedResponse != null)
+		{
+			_logger.LogInformation("Returning {BinDayCount} cached bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", cachedResponse.BinDays!.Count, govUkId, postcode, uid);
+			return Ok(cachedResponse);
+		}
+
+		try
+		{
+			var address = new Address
+			{
+				Postcode = postcode,
+				Uid = uid
+			};
+
+			var result = _collectorService.GetBinDays(govUkId, address, clientSideResponse);
+
+			// Cache result if successful and no next client-side request
+			if (result.NextClientSideRequest == null)
+			{
+				_logger.LogInformation("Successfully retrieved {BinDayCount} bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", result.BinDays!.Count, govUkId, postcode, uid);
+
+				// Cache until the day after the earliest bin day, or for 1 day if no bin days are returned.
+				var earliestBinDayDate = result.BinDays?.OrderBy(binDay => binDay.Date).FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
+				var cacheExpiration = (earliestBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
+
+				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
+			}
+
+			return Ok(result);
+		}
+		catch (SupportedCollectorNotFoundException ex)
+		{
+			_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
+			return NotFound("No supported collector found for the specified gov.uk ID.");
+		}
+		catch (BinDaysNotFoundException ex)
+		{
+			_logger.LogWarning(ex, "No bin days found for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+			return NotFound("No bin days found for the specified address.");
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "An unexpected error occurred while retrieving bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+			RecordIncident(govUkId, IncidentOperation.GetBinDays, ex);
+			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching bin days. Please try again later.");
+		}
+	}
+
+	/// <summary>
+	/// Records an unexpected incident for diagnostics.
+	/// </summary>
+	/// <param name="govUkId">The collector identifier, if known.</param>
+	/// <param name="operation">The operation that was being performed.</param>
+	/// <param name="exception">The triggering exception.</param>
+	private void RecordIncident(string? govUkId, IncidentOperation operation, Exception exception)
+	{
+		var normalisedGovUkId = string.IsNullOrWhiteSpace(govUkId) ? string.Empty : govUkId.Trim().ToLowerInvariant();
+
+		var incident = new IncidentRecord
+		{
+			IncidentId = Guid.NewGuid(),
+			GovUkId = normalisedGovUkId,
+			OccurredUtc = DateTime.UtcNow,
+			Category = Classify(exception),
+			Operation = operation,
+			MessageHash = ComputeHash(exception),
+			ExceptionType = exception.GetType().FullName ?? exception.GetType().Name,
 		};
 
-		/// <summary>
-		/// Initializes a new instance of the <see cref="CollectorsController"/> class.
-		/// </summary>
-		/// <param name="collectorService">Service for retrieving collector information.</param>
-		/// <param name="logger">Logger for the controller.</param>
-		/// <param name="cache">Distributed cache for storing responses.</param>
-		/// <param name="incidentStore">Store for recording failed incidents.</param>
-		public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IDistributedCache cache, IIncidentStore incidentStore)
+		try
 		{
-			_collectorService = collectorService;
-			_logger = logger;
-			_cache = cache;
-			_incidentStore = incidentStore;
+			_incidentStore.RecordIncident(incident);
 		}
-
-		/// <summary>
-		/// Formats a postcode string for use in a cache key by converting it to uppercase and removing spaces.
-		/// </summary>
-		/// <param name="postcode">The postcode string to format.</param>
-		/// <returns>The formatted postcode string for cache key usage.</returns>
-		private static string FormatPostcodeForCacheKey(string postcode)
+		catch (Exception storeException)
 		{
-			return postcode.ToUpperInvariant().Replace(" ", string.Empty);
+			_logger.LogError(storeException, "Failed to record incident for collector {GovUkId}.", normalisedGovUkId);
 		}
+	}
 
-		/// <summary>
-		/// Attempts to retrieve and deserialize an object from the cache. 
-		/// Handles deserialization errors by evicting the bad cache entry.
-		/// </summary>
-		/// <typeparam name="T">The type to deserialize into.</typeparam>
-		/// <param name="cacheKey">The cache key.</param>
-		/// <returns>The deserialized object or null if not found or invalid.</returns>
-		private T? TryGetFromCache<T>(string cacheKey) where T : class
+	/// <summary>
+	/// Classifies an exception into an incident category.
+	/// </summary>
+	/// <param name="exception">The exception to classify.</param>
+	/// <returns>The incident category.</returns>
+	private static IncidentCategory Classify(Exception exception)
+	{
+		return exception switch
 		{
-			if (_cache.GetString(cacheKey) is string cachedResult)
-			{
-				try
-				{
-					return JsonConvert.DeserializeObject<T>(cachedResult, _jsonSerializerSettings);
-				}
-				catch (Exception ex)
-				{
-					_logger.LogWarning(ex, "Failed to deserialize cached data for key '{CacheKey}'. Evicting invalid cache entry.", cacheKey);
-					_cache.Remove(cacheKey);
-				}
-			}
+			HttpRequestException or TimeoutException or TaskCanceledException => IncidentCategory.CollectorFailure,
+			System.Text.Json.JsonException or FormatException or InvalidOperationException => IncidentCategory.IntegrationChanged,
+			_ => IncidentCategory.SystemFailure,
+		};
+	}
 
-			return null;
-		}
+	/// <summary>
+	/// Computes a deterministic hash for an exception.
+	/// </summary>
+	/// <param name="exception">The exception to hash.</param>
+	/// <returns>A hexadecimal hash string.</returns>
+	private static string ComputeHash(Exception exception)
+	{
+		var payload = Encoding.UTF8.GetBytes(
+			$"{exception.GetType().FullName}|{exception.TargetSite?.ToString() ?? "UnknownTarget"}|{exception.Message}"
+		);
+		var hash = SHA256.HashData(payload);
 
-		/// <summary>
-		/// Gets all the collectors.
-		/// </summary>
-		/// <returns>An enumerable collection of collectors or an error response.</returns>
-		[HttpGet]
-		[Route("/collectors")]
-		public IActionResult GetCollectors()
-		{
-			try
-			{
-				var result = _collectorService.GetCollectors();
-				return Ok(result);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "An unexpected error occurred while retrieving all collectors.");
-				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching collectors. Please try again later.");
-			}
-		}
-
-		/// <summary>
-		/// Gets the collector for a given postcode, potentially requiring multiple steps via client-side responses.
-		/// </summary>
-		/// <param name="postcode">The postcode to search for.</param>
-		/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
-		/// <returns>The response containing either the next client-side request to make or the collector, or an error response.</returns>
-		[HttpPost]
-		[Route("/collector")]
-		public IActionResult GetCollector(string postcode, [FromBody] ClientSideResponse? clientSideResponse)
-		{
-			postcode = ProcessingUtilities.FormatPostcode(postcode);
-
-			var cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
-			var cachedResponse = TryGetFromCache<GetCollectorResponse>(cacheKey);
-
-			if (cachedResponse != null)
-			{
-				_logger.LogInformation("Returning cached collector {CollectorName} for postcode: {Postcode}.", cachedResponse.Collector!.Name, postcode);
-				return Ok(cachedResponse);
-			}
-
-			try
-			{
-				var result = _collectorService.GetCollector(postcode, clientSideResponse);
-
-				// Cache result if successful and no next client-side request
-				if (result.NextClientSideRequest == null)
-				{
-					_logger.LogInformation("Successfully retrieved collector {CollectorName} for postcode: {Postcode}.", result.Collector!.Name, postcode);
-
-					var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
-					_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
-				}
-
-				return Ok(result);
-			}
-			catch (InvalidPostcodeException ex)
-			{
-				_logger.LogWarning(ex, "Invalid postcode provided: {Postcode}.", postcode);
-				return BadRequest("The supplied postcode is invalid.");
-			}
-			catch (UnsupportedCollectorException ex)
-			{
-				_logger.LogWarning(ex, "Unsupported collector {CollectorName} for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.CollectorName, ex.GovUkId, postcode);
-				return NotFound($"{ex.CollectorName} is not currently supported.");
-			}
-			catch (GovUkIdNotFoundException ex)
-			{
-				_logger.LogWarning(ex, "No gov.uk ID found for postcode: {Postcode}.", postcode);
-				return NotFound("No collector found for the specified postcode.");
-			}
-			catch (SupportedCollectorNotFoundException ex)
-			{
-				_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.GovUkId, postcode);
-				return NotFound("No supported collector found for the specified postcode.");
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "An unexpected error occurred while retrieving collector for postcode: {Postcode}.", postcode);
-				RecordIncident(null, IncidentOperation.GetCollector, ex);
-				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching the collector for the specified postcode. Please try again later.");
-			}
-		}
-
-		/// <summary>
-		/// Gets addresses for a given gov.uk ID and postcode.
-		/// </summary>
-		/// <param name="govUkId">The gov.uk identifier for the collector.</param>
-		/// <param name="postcode">The postcode to search addresses for.</param>
-		/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
-		/// <returns>A response containing addresses, or an error response.</returns>
-		[HttpPost]
-		[Route("/{govUkId}/addresses")]
-		public IActionResult GetAddresses(string govUkId, string postcode, [FromBody] ClientSideResponse? clientSideResponse)
-		{
-			postcode = ProcessingUtilities.FormatPostcode(postcode);
-
-			var cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
-			var cachedResponse = TryGetFromCache<GetAddressesResponse>(cacheKey);
-
-			if (cachedResponse != null)
-			{
-				_logger.LogInformation("Returning {AddressCount} cached addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", cachedResponse.Addresses!.Count, govUkId, postcode);
-				return Ok(cachedResponse);
-			}
-
-			try
-			{
-				var result = _collectorService.GetAddresses(govUkId, postcode, clientSideResponse);
-
-				// Cache result if successful and no next client-side request
-				if (result.NextClientSideRequest == null)
-				{
-					_logger.LogInformation("Successfully retrieved {AddressCount} addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", result.Addresses!.Count, govUkId, postcode);
-
-					var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
-					_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
-				}
-
-				return Ok(result);
-			}
-			catch (SupportedCollectorNotFoundException ex)
-			{
-				_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
-				return NotFound("No supported collector found for the specified gov.uk ID.");
-			}
-			catch (AddressesNotFoundException ex)
-			{
-				_logger.LogWarning(ex, "No addresses found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
-				return NotFound("No addresses found for the specified postcode.");
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "An unexpected error occurred while retrieving addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
-				RecordIncident(govUkId, IncidentOperation.GetAddresses, ex);
-				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching addresses. Please try again later.");
-			}
-		}
-
-		/// <summary>
-		/// Gets bin days for a given gov.uk ID, postcode, and unique address identifier.
-		/// </summary>
-		/// <param name="govUkId">The gov.uk identifier for the collector.</param>
-		/// <param name="postcode">The postcode of the address.</param>
-		/// <param name="uid">The unique identifier of the address.</param>
-		/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
-		/// <returns>A response containing bin days, or an error response.</returns>
-		[HttpPost]
-		[Route("/{govUkId}/bin-days")]
-		public IActionResult GetBinDays(string govUkId, string postcode, string uid, [FromBody] ClientSideResponse? clientSideResponse)
-		{
-			postcode = ProcessingUtilities.FormatPostcode(postcode);
-
-			var cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
-			var cachedResponse = TryGetFromCache<GetBinDaysResponse>(cacheKey);
-
-			if (cachedResponse != null)
-			{
-				_logger.LogInformation("Returning {BinDayCount} cached bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", cachedResponse.BinDays!.Count, govUkId, postcode, uid);
-				return Ok(cachedResponse);
-			}
-
-			try
-			{
-				var address = new Address
-				{
-					Postcode = postcode,
-					Uid = uid
-				};
-
-				var result = _collectorService.GetBinDays(govUkId, address, clientSideResponse);
-
-				// Cache result if successful and no next client-side request
-				if (result.NextClientSideRequest == null)
-				{
-					_logger.LogInformation("Successfully retrieved {BinDayCount} bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", result.BinDays!.Count, govUkId, postcode, uid);
-
-					// Cache until the day after the earliest bin day, or for 1 day if no bin days are returned.
-					var earliestBinDayDate = result.BinDays?.OrderBy(binDay => binDay.Date).FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
-					var cacheExpiration = (earliestBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
-
-					var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
-					_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
-				}
-
-				return Ok(result);
-			}
-			catch (SupportedCollectorNotFoundException ex)
-			{
-				_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
-				return NotFound("No supported collector found for the specified gov.uk ID.");
-			}
-			catch (BinDaysNotFoundException ex)
-			{
-				_logger.LogWarning(ex, "No bin days found for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
-				return NotFound("No bin days found for the specified address.");
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "An unexpected error occurred while retrieving bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
-				RecordIncident(govUkId, IncidentOperation.GetBinDays, ex);
-				return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching bin days. Please try again later.");
-			}
-		}
-
-		/// <summary>
-		/// Records an unexpected incident for diagnostics.
-		/// </summary>
-		/// <param name="govUkId">The collector identifier, if known.</param>
-		/// <param name="operation">The operation that was being performed.</param>
-		/// <param name="exception">The triggering exception.</param>
-		private void RecordIncident(string? govUkId, IncidentOperation operation, Exception exception)
-		{
-			var normalisedGovUkId = string.IsNullOrWhiteSpace(govUkId) ? string.Empty : govUkId.Trim().ToLowerInvariant();
-
-			var incident = new IncidentRecord
-			{
-				IncidentId = Guid.NewGuid(),
-				GovUkId = normalisedGovUkId,
-				OccurredUtc = DateTime.UtcNow,
-				Category = Classify(exception),
-				Operation = operation,
-				MessageHash = ComputeHash(exception),
-				ExceptionType = exception.GetType().FullName ?? exception.GetType().Name,
-			};
-
-			try
-			{
-				_incidentStore.RecordIncident(incident);
-			}
-			catch (Exception storeException)
-			{
-				_logger.LogError(storeException, "Failed to record incident for collector {GovUkId}.", normalisedGovUkId);
-			}
-		}
-
-		/// <summary>
-		/// Classifies an exception into an incident category.
-		/// </summary>
-		/// <param name="exception">The exception to classify.</param>
-		/// <returns>The incident category.</returns>
-		private static IncidentCategory Classify(Exception exception)
-		{
-			return exception switch
-			{
-				HttpRequestException or TimeoutException or TaskCanceledException => IncidentCategory.CollectorFailure,
-				System.Text.Json.JsonException or FormatException or InvalidOperationException => IncidentCategory.IntegrationChanged,
-				_ => IncidentCategory.SystemFailure,
-			};
-		}
-
-		/// <summary>
-		/// Computes a deterministic hash for an exception.
-		/// </summary>
-		/// <param name="exception">The exception to hash.</param>
-		/// <returns>A hexadecimal hash string.</returns>
-		private static string ComputeHash(Exception exception)
-		{
-			var payload = Encoding.UTF8.GetBytes(
-				$"{exception.GetType().FullName}|{exception.TargetSite?.ToString() ?? "UnknownTarget"}|{exception.Message}"
-			);
-			var hash = SHA256.HashData(payload);
-
-			return Convert.ToHexString(hash);
-		}
+		return Convert.ToHexString(hash);
 	}
 }

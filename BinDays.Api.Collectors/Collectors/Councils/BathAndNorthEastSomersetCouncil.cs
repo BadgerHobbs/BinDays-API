@@ -1,189 +1,188 @@
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text.Json;
+
+/// <summary>
+/// Collector implementation for Bath and North East Somerset Council.
+/// </summary>
+internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Linq;
-	using System.Text.Json;
+	/// <inheritdoc/>
+	public string Name => "Bath and North East Somerset Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.bathnes.gov.uk/webforms/waste/collectionday/");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "bath-and-north-east-somerset";
 
 	/// <summary>
-	/// Collector implementation for Bath and North East Somerset Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBase, ICollector
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
+		new()
+		{
+			Name = "General Waste",
+			Colour = BinColour.Black,
+			Keys = [ "residualNextDate" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "recyclingNextDate" ],
+		},
+		new()
+		{
+			Name = "Card & Brown Paper",
+			Colour = BinColour.Blue,
+			Keys = [ "recyclingNextDate" ],
+			Type = BinType.Bag,
+		},
+		new()
+		{
+			Name = "Metal, Glass, Paper & Plastic",
+			Colour = BinColour.Green,
+			Keys = [ "recyclingNextDate" ],
+			Type = BinType.Box,
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Green,
+			Keys = [ "organicNextDate" ],
+		},
+	];
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		/// <inheritdoc/>
-		public string Name => "Bath and North East Somerset Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.bathnes.gov.uk/webforms/waste/collectionday/");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "bath-and-north-east-somerset";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = [
-			new()
-			{
-				Name = "General Waste",
-				Colour = BinColour.Black,
-				Keys = [ "residualNextDate" ],
-			},
-			new()
-			{
-				Name = "Food Waste",
-				Colour = BinColour.Grey,
-				Keys = [ "recyclingNextDate" ],
-			},
-			new()
-			{
-				Name = "Card & Brown Paper",
-				Colour = BinColour.Blue,
-				Keys = [ "recyclingNextDate" ],
-				Type = BinType.Bag,
-			},
-			new()
-			{
-				Name = "Metal, Glass, Paper & Plastic",
-				Colour = BinColour.Green,
-				Keys = [ "recyclingNextDate" ],
-				Type = BinType.Box,
-			},
-			new()
-			{
-				Name = "Garden Waste",
-				Colour = BinColour.Green,
-				Keys = [ "organicNextDate" ],
-			},
-		];
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting addresses
-			if (clientSideResponse == null)
+			var requestUrl = $"https://www.bathnes.gov.uk/webapi/api/AddressesAPI/v2/search/{postcode}/150/true";
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = $"https://www.bathnes.gov.uk/webapi/api/AddressesAPI/v2/search/{postcode}/150/true";
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+			};
 
-				var clientSideRequest = new ClientSideRequest
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var addresses = new List<Address>();
+
+			// Parse response content as JSON array
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+
+			// Iterate through each address json, and create a new address object
+			foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
+			{
+				var property = addressElement.GetProperty("full_Address").ToString();
+				var uprn = addressElement.GetProperty("uprn").ToString().Split('.').First();
+
+				var address = new Address
 				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
+					Property = property?.Trim(),
+					Postcode = postcode,
+					Uid = uprn,
 				};
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
+				addresses.Add(address);
 			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 1)
+
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				var addresses = new List<Address>();
+				Addresses = [.. addresses],
+			};
 
-				// Parse response content as JSON array
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			return getAddressesResponse;
+		}
 
-				// Iterate through each address json, and create a new address object
-				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting bin days
+		if (clientSideResponse == null)
+		{
+			var requestUrl = $"https://www.bathnes.gov.uk/webapi/api/BinsAPI/v2/getbartecroute/{address.Uid}/true";
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getBinDaysResponse;
+		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Parse response content as JSON object
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			var rawBinDaysObject = jsonDoc.RootElement;
+
+			// Iterate through all bin type keys and get associated collection date
+			var binDays = new List<BinDay>();
+			foreach (var binType in _binTypes)
+			{
+				foreach (var key in binType.Keys)
 				{
-					var property = addressElement.GetProperty("full_Address").ToString();
-					var uprn = addressElement.GetProperty("uprn").ToString().Split('.').First();
+					var collectionDate = rawBinDaysObject.GetProperty(key).ToString();
 
-					var address = new Address
+					// Parse the date (e.g. "2024-07-29T00:00:00")
+					var date = DateOnly.ParseExact(
+						collectionDate,
+						"yyyy-MM-ddTHH:mm:ss",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					);
+
+					var binDay = new BinDay
 					{
-						Property = property?.Trim(),
-						Postcode = postcode,
-						Uid = uprn,
+						Date = date,
+						Address = address,
+						Bins = [binType],
 					};
-					addresses.Add(address);
+
+					binDays.Add(binDay);
 				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
-				};
-
-				return getAddressesResponse;
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
-		{
-			// Prepare client-side request for getting bin days
-			if (clientSideResponse == null)
-			{
-				var requestUrl = $"https://www.bathnes.gov.uk/webapi/api/BinsAPI/v2/getbartecroute/{address.Uid}/true";
-
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 1)
-			{
-				// Parse response content as JSON object
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-				var rawBinDaysObject = jsonDoc.RootElement;
-
-				// Iterate through all bin type keys and get associated collection date
-				var binDays = new List<BinDay>();
-				foreach (var binType in _binTypes)
-				{
-					foreach (var key in binType.Keys)
-					{
-						var collectionDate = rawBinDaysObject.GetProperty(key).ToString();
-
-						// Parse the date (e.g. "2024-07-29T00:00:00")
-						var date = DateOnly.ParseExact(
-							collectionDate,
-							"yyyy-MM-ddTHH:mm:ss",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
-
-						var binDay = new BinDay
-						{
-							Date = date,
-							Address = address,
-							Bins = [binType],
-						};
-
-						binDays.Add(binDay);
-					}
-				}
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
-			}
-
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
-		}
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }

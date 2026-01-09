@@ -1,280 +1,279 @@
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.Json;
+
+/// <summary>
+/// Collector implementation for Dorset Council.
+/// </summary>
+internal sealed partial class DorsetCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Text.Json;
+	/// <inheritdoc/>
+	public string Name => "Dorset Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.dorsetcouncil.gov.uk/my-local-information");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "dorset";
 
 	/// <summary>
-	/// Collector implementation for Dorset Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class DorsetCouncil : GovUkCollectorBase, ICollector
-	{
-		/// <inheritdoc/>
-		public string Name => "Dorset Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.dorsetcouncil.gov.uk/my-local-information");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "dorset";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = [
-			new()
-			{
-				Name = "Refuse",
-				Colour = BinColour.Black,
-				Keys = [ "Refuse" ],
-			},
-			new()
-			{
-				Name = "Recycling",
-				Colour = BinColour.Green,
-				Keys = [ "Recycling" ],
-			},
-			new()
-			{
-				Name = "Food Waste",
-				Colour = BinColour.Brown,
-				Keys = [ "Food" ],
-				Type = BinType.Caddy
-			},
-			new()
-			{
-				Name = "Garden Waste",
-				Colour = BinColour.Brown,
-				Keys = [ "Garden" ],
-			},
-		];
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
+		new()
 		{
-			// Prepare client-side request for getting addresses
-			if (clientSideResponse == null)
+			Name = "Refuse",
+			Colour = BinColour.Black,
+			Keys = [ "Refuse" ],
+		},
+		new()
+		{
+			Name = "Recycling",
+			Colour = BinColour.Green,
+			Keys = [ "Recycling" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Brown,
+			Keys = [ "Food" ],
+			Type = BinType.Caddy
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Brown,
+			Keys = [ "Garden" ],
+		},
+	];
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
+		{
+			var requestUrl = "https://www.dorsetcouncil.gov.uk/api/jsonws/invoke";
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var requestUrl = "https://www.dorsetcouncil.gov.uk/api/jsonws/invoke";
-
-				var clientSideRequest = new ClientSideRequest
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "POST",
+				Body = JsonSerializer.Serialize(new Dictionary<string, object>
 				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "POST",
-					Body = JsonSerializer.Serialize(new Dictionary<string, object>
+					["/placecube_digitalplace.addresscontext/search-address-by-postcode"] = new
 					{
-						["/placecube_digitalplace.addresscontext/search-address-by-postcode"] = new
-						{
-							companyId = "35001",
-							postcode = postcode.Replace(" ", String.Empty),
-							fallbackToNationalLookup = false
-						}
-					}),
-				};
+						companyId = "35001",
+						postcode = postcode.Replace(" ", String.Empty),
+						fallbackToNationalLookup = false
+					}
+				}),
+			};
 
-				var getAddressesResponse = new GetAddressesResponse
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			// Parse response content as JSON array
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+
+			// Iterate through each address json, and create a new address object
+			var addresses = new List<Address>();
+			foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
+			{
+				var address = new Address
 				{
-					NextClientSideRequest = clientSideRequest
+					Property = addressElement.GetProperty("fullAddress").GetString()!.Trim(),
+					Postcode = postcode,
+					Uid = addressElement.GetProperty("UPRN").GetString()!.Trim(),
 				};
 
-				return getAddressesResponse;
+				addresses.Add(address);
 			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 1)
-			{
-				// Parse response content as JSON array
-				using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
-				// Iterate through each address json, and create a new address object
-				var addresses = new List<Address>();
-				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
+		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting recycling bin days
+		if (clientSideResponse == null)
+		{
+			var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/recyclingday/{address.Uid}";
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = requestUrl,
+				Method = "GET",
+				Headers = new()
 				{
-					var address = new Address
+					{ "user-agent", Constants.UserAgent },
+					{ "accept", "application/json" }
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getBinDaysResponse;
+		}
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/refuseday/{address.Uid}";
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = requestUrl,
+				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "accept", "application/json" }
+				},
+				Options = new ClientSideOptions
+				{
+					Metadata = {
+						{ "recyclingday", clientSideResponse.Content },
+					}
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+
+			};
+
+			return getBinDaysResponse;
+		}
+		else if (clientSideResponse.RequestId == 2)
+		{
+			var metadata = clientSideResponse.Options.Metadata;
+			metadata.Add("refuseday", clientSideResponse.Content);
+
+			var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/foodwasteday/{address.Uid}";
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 3,
+				Url = requestUrl,
+				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "accept", "application/json" }
+				},
+				Options = new ClientSideOptions
+				{
+					Metadata = metadata
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+
+			};
+
+			return getBinDaysResponse;
+		}
+		else if (clientSideResponse.RequestId == 3)
+		{
+			var metadata = clientSideResponse.Options.Metadata;
+			metadata.Add("foodwasteday", clientSideResponse.Content);
+
+			var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/gardenwasteday/{address.Uid}";
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 4,
+				Url = requestUrl,
+				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "accept", "application/json" }
+				},
+				Options = new ClientSideOptions
+				{
+					Metadata = metadata
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getBinDaysResponse;
+		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 4)
+		{
+			clientSideResponse.Options.Metadata.Add("gardenwasteday", clientSideResponse.Content);
+
+			var binDays = new List<BinDay>();
+			foreach (var metadata in clientSideResponse.Options.Metadata)
+			{
+				using var jsonDoc = JsonDocument.Parse(metadata.Value);
+				var resultsElement = jsonDoc.RootElement.GetProperty("values");
+				foreach (var binTypeElement in resultsElement.EnumerateArray())
+				{
+					// Determine matching bin types from the description
+					var dateEl = binTypeElement.GetProperty("dateNextVisit");
+					var type = binTypeElement.GetProperty("type").GetString()!;
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, type);
+
+					var date = DateOnly.ParseExact(
+						dateEl.GetString()!,
+						"yyyy-MM-dd",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					);
+
+					var binDay = new BinDay
 					{
-						Property = addressElement.GetProperty("fullAddress").GetString()!.Trim(),
-						Postcode = postcode,
-						Uid = addressElement.GetProperty("UPRN").GetString()!.Trim(),
+						Date = date,
+						Address = address,
+						Bins = matchedBinTypes,
 					};
 
-					addresses.Add(address);
+					binDays.Add(binDay);
 				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
-				};
-
-				return getAddressesResponse;
 			}
 
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
-		{
-			// Prepare client-side request for getting recycling bin days
-			if (clientSideResponse == null)
-			{
-				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/recyclingday/{address.Uid}";
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = requestUrl,
-					Method = "GET",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-						{ "accept", "application/json" }
-					},
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			else if (clientSideResponse.RequestId == 1)
-			{
-				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/refuseday/{address.Uid}";
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 2,
-					Url = requestUrl,
-					Method = "GET",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-						{ "accept", "application/json" }
-					},
-					Options = new ClientSideOptions
-					{
-						Metadata = {
-							{ "recyclingday", clientSideResponse.Content },
-						}
-					},
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-
-				};
-
-				return getBinDaysResponse;
-			}
-			else if (clientSideResponse.RequestId == 2)
-			{
-				var metadata = clientSideResponse.Options.Metadata;
-				metadata.Add("refuseday", clientSideResponse.Content);
-
-				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/foodwasteday/{address.Uid}";
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 3,
-					Url = requestUrl,
-					Method = "GET",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-						{ "accept", "application/json" }
-					},
-					Options = new ClientSideOptions
-					{
-						Metadata = metadata
-					},
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-
-				};
-
-				return getBinDaysResponse;
-			}
-			else if (clientSideResponse.RequestId == 3)
-			{
-				var metadata = clientSideResponse.Options.Metadata;
-				metadata.Add("foodwasteday", clientSideResponse.Content);
-
-				var requestUrl = $"https://geoapi.dorsetcouncil.gov.uk/v1/Services/gardenwasteday/{address.Uid}";
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 4,
-					Url = requestUrl,
-					Method = "GET",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-						{ "accept", "application/json" }
-					},
-					Options = new ClientSideOptions
-					{
-						Metadata = metadata
-					},
-				};
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 4)
-			{
-				clientSideResponse.Options.Metadata.Add("gardenwasteday", clientSideResponse.Content);
-
-				var binDays = new List<BinDay>();
-				foreach (var metadata in clientSideResponse.Options.Metadata)
-				{
-					using var jsonDoc = JsonDocument.Parse(metadata.Value);
-					var resultsElement = jsonDoc.RootElement.GetProperty("values");
-					foreach (var binTypeElement in resultsElement.EnumerateArray())
-					{
-						// Determine matching bin types from the description
-						var dateEl = binTypeElement.GetProperty("dateNextVisit");
-						var type = binTypeElement.GetProperty("type").GetString()!;
-						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, type);
-
-						var date = DateOnly.ParseExact(
-							dateEl.GetString()!,
-							"yyyy-MM-dd",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
-
-						var binDay = new BinDay
-						{
-							Date = date,
-							Address = address,
-							Bins = matchedBinTypes,
-						};
-
-						binDays.Add(binDay);
-					}
-				}
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
-			}
-
-			// Throw exception for invalid request
-			throw new InvalidOperationException("Invalid client-side request.");
-		}
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }

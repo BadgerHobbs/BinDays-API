@@ -1,203 +1,202 @@
-namespace BinDays.Api.Collectors.Collectors.Councils
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
+
+/// <summary>
+/// Collector implementation for Pembrokeshire County Council.
+/// </summary>
+internal sealed partial class PembrokeshireCountyCouncil : GovUkCollectorBase, ICollector
 {
-	using BinDays.Api.Collectors.Collectors.Vendors;
-	using BinDays.Api.Collectors.Models;
-	using BinDays.Api.Collectors.Utilities;
-	using System;
-	using System.Collections.Generic;
-	using System.Globalization;
-	using System.Text.RegularExpressions;
+	/// <inheritdoc/>
+	public string Name => "Pembrokeshire County Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://www.pembrokeshire.gov.uk/waste-and-recycling");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "pembrokeshire";
 
 	/// <summary>
-	/// Collector implementation for Pembrokeshire County Council.
+	/// The list of bin types for this collector.
 	/// </summary>
-	internal sealed partial class PembrokeshireCountyCouncil : GovUkCollectorBase, ICollector
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Green,
+			Type = BinType.Caddy,
+			Keys = [ "Green Food Waste Caddy" ]
+		},
+		new()
+		{
+			Name = "Paper",
+			Colour = BinColour.Blue,
+			Type = BinType.Box,
+			Keys = [ "Blue Box" ]
+		},
+		new()
+		{
+			Name = "Glass",
+			Colour = BinColour.Green,
+			Type = BinType.Box,
+			Keys = [ "Green Box" ]
+		},
+		new()
+		{
+			Name = "Card and Cardboard",
+			Colour = BinColour.Blue,
+			Type = BinType.Bag,
+			Keys = [ "Blue Bag" ]
+		},
+		new()
+		{
+			Name = "Metal Packaging, Plastic packaging and cartons",
+			Colour = BinColour.Red,
+			Type = BinType.Bag,
+			Keys = [ "Red Bag" ]
+		},
+		new()
+		{
+			Name = "Residual Waste",
+			Colour = BinColour.Black,
+			Type = BinType.Bag,
+			Keys = [ "Black/Grey Bag" ]
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Brown,
+			Type = BinType.Bin,
+			Keys = [ "Garden Waste Bin" ]
+		},
+	];
+
+	/// <summary>
+	/// Regex for the addresses from the options elements.
+	/// </summary>
+	[GeneratedRegex(@"<option value=""(?<uid>\d+)"">(?<address>.*?)<\/option>")]
+	private static partial Regex AddressesRegex();
+
+	/// <summary>
+	/// Regex for the bin days from the page elements.
+	/// </summary>
+	[GeneratedRegex(@"(?s)<div class=""col-6 col-md-4 text-center mb-3"">\s*<img[^>]*>\s*<br />\s*(?<binType>.+?)\s*<br />\s*<strong>(?<date>\d{2}\/\d{2}\/\d{4})<\/strong>")]
+	private static partial Regex BinDaysRegex();
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		/// <inheritdoc/>
-		public string Name => "Pembrokeshire County Council";
-
-		/// <inheritdoc/>
-		public Uri WebsiteUrl => new("https://www.pembrokeshire.gov.uk/waste-and-recycling");
-
-		/// <inheritdoc/>
-		public override string GovUkId => "pembrokeshire";
-
-		/// <summary>
-		/// The list of bin types for this collector.
-		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = [
-			new()
-			{
-				Name = "Food Waste",
-				Colour = BinColour.Green,
-				Type = BinType.Caddy,
-				Keys = [ "Green Food Waste Caddy" ]
-			},
-			new()
-			{
-				Name = "Paper",
-				Colour = BinColour.Blue,
-				Type = BinType.Box,
-				Keys = [ "Blue Box" ]
-			},
-			new()
-			{
-				Name = "Glass",
-				Colour = BinColour.Green,
-				Type = BinType.Box,
-				Keys = [ "Green Box" ]
-			},
-			new()
-			{
-				Name = "Card and Cardboard",
-				Colour = BinColour.Blue,
-				Type = BinType.Bag,
-				Keys = [ "Blue Bag" ]
-			},
-			new()
-			{
-				Name = "Metal Packaging, Plastic packaging and cartons",
-				Colour = BinColour.Red,
-				Type = BinType.Bag,
-				Keys = [ "Red Bag" ]
-			},
-			new()
-			{
-				Name = "Residual Waste",
-				Colour = BinColour.Black,
-				Type = BinType.Bag,
-				Keys = [ "Black/Grey Bag" ]
-			},
-			new()
-			{
-				Name = "Garden Waste",
-				Colour = BinColour.Brown,
-				Type = BinType.Bin,
-				Keys = [ "Garden Waste Bin" ]
-			},
-		];
-
-		/// <summary>
-		/// Regex for the addresses from the options elements.
-		/// </summary>
-		[GeneratedRegex(@"<option value=""(?<uid>\d+)"">(?<address>.*?)<\/option>")]
-		private static partial Regex AddressesRegex();
-
-		/// <summary>
-		/// Regex for the bin days from the page elements.
-		/// </summary>
-		[GeneratedRegex(@"(?s)<div class=""col-6 col-md-4 text-center mb-3"">\s*<img[^>]*>\s*<br />\s*(?<binType>.+?)\s*<br />\s*<strong>(?<date>\d{2}\/\d{2}\/\d{4})<\/strong>")]
-		private static partial Regex BinDaysRegex();
-
-		/// <inheritdoc/>
-		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting addresses
-			if (clientSideResponse == null)
+			var clientSideRequest = new ClientSideRequest
 			{
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = $"https://nearest.pembrokeshire.gov.uk/search/?query={postcode}",
-					Method = "GET",
-					Headers = new() {
-						{"user-agent", Constants.UserAgent},
-					},
-				};
+				RequestId = 1,
+				Url = $"https://nearest.pembrokeshire.gov.uk/search/?query={postcode}",
+				Method = "GET",
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+				},
+			};
 
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getAddressesResponse;
-			}
-			// Process addresses from response
-			else if (clientSideResponse.RequestId == 1)
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				var rawAddresses = AddressesRegex().Matches(clientSideResponse.Content);
-				var addresses = new List<Address>();
+				NextClientSideRequest = clientSideRequest
+			};
 
-				foreach (Match rawAddress in rawAddresses)
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var rawAddresses = AddressesRegex().Matches(clientSideResponse.Content);
+			var addresses = new List<Address>();
+
+			foreach (Match rawAddress in rawAddresses)
+			{
+				addresses.Add(new Address
 				{
-					addresses.Add(new Address
-					{
-						Property = rawAddress.Groups["address"].Value.Trim(),
-						Postcode = postcode,
-						Uid = rawAddress.Groups["uid"].Value,
-					});
-				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
-				};
-
-				return getAddressesResponse;
+					Property = rawAddress.Groups["address"].Value.Trim(),
+					Postcode = postcode,
+					Uid = rawAddress.Groups["uid"].Value,
+				});
 			}
 
-			throw new InvalidOperationException("Invalid client-side request.");
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
 		}
 
-		/// <inheritdoc/>
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting bin days
+		if (clientSideResponse == null)
 		{
-			// Prepare client-side request for getting bin days
-			if (clientSideResponse == null)
+			var clientSideRequest = new ClientSideRequest
 			{
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = $"https://nearest.pembrokeshire.gov.uk/property/{address.Uid}",
-					Method = "GET",
-					Headers = new() {
-						{"user-agent", Constants.UserAgent},
-					},
-				};
+				RequestId = 1,
+				Url = $"https://nearest.pembrokeshire.gov.uk/property/{address.Uid}",
+				Method = "GET",
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+				},
+			};
 
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest
-				};
-
-				return getBinDaysResponse;
-			}
-			// Process bin days from response
-			else if (clientSideResponse.RequestId == 1)
+			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content);
-				var binDays = new List<BinDay>();
+				NextClientSideRequest = clientSideRequest
+			};
 
-				foreach (Match rawBinDay in rawBinDays)
-				{
-					var binType = rawBinDay.Groups["binType"].Value;
-					var date = rawBinDay.Groups["date"].Value;
-
-					var collectionDate = DateOnly.ParseExact(
-						date,
-						"dd/MM/yyyy",
-						CultureInfo.InvariantCulture
-					);
-
-					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
-
-					binDays.Add(new BinDay
-					{
-						Date = collectionDate,
-						Address = address,
-						Bins = matchedBinTypes,
-					});
-				}
-
-				var getBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-				};
-
-				return getBinDaysResponse;
-			}
-
-			throw new InvalidOperationException("Invalid client-side request.");
+			return getBinDaysResponse;
 		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content);
+			var binDays = new List<BinDay>();
+
+			foreach (Match rawBinDay in rawBinDays)
+			{
+				var binType = rawBinDay.Groups["binType"].Value;
+				var date = rawBinDay.Groups["date"].Value;
+
+				var collectionDate = DateOnly.ParseExact(
+					date,
+					"dd/MM/yyyy",
+					CultureInfo.InvariantCulture
+				);
+
+				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
+
+				binDays.Add(new BinDay
+				{
+					Date = collectionDate,
+					Address = address,
+					Bins = matchedBinTypes,
+				});
+			}
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
+		}
+
+		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }
