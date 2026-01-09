@@ -4,7 +4,6 @@ namespace BinDays.Api.Collectors.Services
 	using BinDays.Api.Collectors.Collectors.Vendors;
 	using BinDays.Api.Collectors.Exceptions;
 	using BinDays.Api.Collectors.Models;
-	using System.Collections.ObjectModel;
 
 	/// <summary>
 	/// Service for returning specific or all collectors.
@@ -14,7 +13,7 @@ namespace BinDays.Api.Collectors.Services
 		/// <summary>
 		/// The list of collectors acquired via dependency injection.
 		/// </summary>
-		private readonly ReadOnlyCollection<ICollector> _collectors;
+		private readonly IReadOnlyCollection<ICollector> _collectors;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="CollectorService"/> class.
@@ -23,14 +22,14 @@ namespace BinDays.Api.Collectors.Services
 		/// <exception cref="ArgumentNullException">Thrown when collectors is null.</exception>
 		public CollectorService(IEnumerable<ICollector> collectors)
 		{
-			_collectors = new ReadOnlyCollection<ICollector>([.. collectors]);
+			_collectors = [.. collectors];
 		}
 
 		/// <summary>
 		/// Gets the collectors.
 		/// </summary>
 		/// <returns>The collectors.</returns>
-		public ReadOnlyCollection<ICollector> GetCollectors()
+		public IReadOnlyCollection<ICollector> GetCollectors()
 		{
 			return _collectors;
 		}

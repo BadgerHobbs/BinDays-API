@@ -11,9 +11,9 @@ namespace BinDays.Api.Incidents
 	/// </summary>
 	internal sealed class RedisIncidentStore : IIncidentStore
 	{
-		private const string IndexKey = "health:incidents";
-		private static readonly TimeSpan RetentionWindow = TimeSpan.FromDays(90);
-		private static readonly JsonSerializerOptions SerializerOptions = new()
+		private const string _indexKey = "health:incidents";
+		private static readonly TimeSpan _retentionWindow = TimeSpan.FromDays(90);
+		private static readonly JsonSerializerOptions _serializerOptions = new()
 		{
 			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 			Converters = { new JsonStringEnumConverter() },
@@ -36,13 +36,13 @@ namespace BinDays.Api.Incidents
 			ArgumentNullException.ThrowIfNull(incident);
 
 			var db = _connectionMultiplexer.GetDatabase();
-			var payload = JsonSerializer.Serialize(incident, SerializerOptions);
+			var payload = JsonSerializer.Serialize(incident, _serializerOptions);
 
-			var cutoffScore = ToScore(DateTime.UtcNow - RetentionWindow);
+			var cutoffScore = ToScore(DateTime.UtcNow - _retentionWindow);
 
 			var transaction = db.CreateTransaction();
-			_ = transaction.SortedSetRemoveRangeByScoreAsync(IndexKey, double.NegativeInfinity, cutoffScore);
-			_ = transaction.SortedSetAddAsync(IndexKey, payload, ToScore(incident.OccurredUtc));
+			_ = transaction.SortedSetRemoveRangeByScoreAsync(_indexKey, double.NegativeInfinity, cutoffScore);
+			_ = transaction.SortedSetAddAsync(_indexKey, payload, ToScore(incident.OccurredUtc));
 			transaction.Execute();
 		}
 
@@ -50,7 +50,7 @@ namespace BinDays.Api.Incidents
 		public IReadOnlyList<IncidentRecord> GetIncidents()
 		{
 			var db = _connectionMultiplexer.GetDatabase();
-			var entries = db.SortedSetRangeByScore(IndexKey, order: Order.Descending);
+			var entries = db.SortedSetRangeByScore(_indexKey, order: Order.Descending);
 
 			if (entries.Length == 0)
 			{
@@ -59,7 +59,7 @@ namespace BinDays.Api.Incidents
 
 			var incidents = entries
 				.Where(e => e.HasValue)
-				.Select(e => JsonSerializer.Deserialize<IncidentRecord>(e!, SerializerOptions))
+				.Select(e => JsonSerializer.Deserialize<IncidentRecord>(e!, _serializerOptions))
 				.OfType<IncidentRecord>()
 				.ToList();
 

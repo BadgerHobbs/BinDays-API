@@ -25,41 +25,40 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "General Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "Red Top Container" }.AsReadOnly(),
+				Keys = [ "Red Top Container" ],
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Purple,
-				Keys = new List<string>() { "Purple / Blue Containers" }.AsReadOnly(),
+				Keys = [ "Purple / Blue Containers" ],
 			},
 			new()
 			{
 				Name = "Cardboard",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "Purple / Blue Containers" }.AsReadOnly(),
+				Keys = [ "Purple / Blue Containers" ],
 				Type = BinType.Bag,
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "Silver Containers" }.AsReadOnly(),
+				Keys = [ "Silver Containers" ],
 				Type = BinType.Caddy,
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Green Container" }.AsReadOnly(),
+				Keys = [ "Green Container" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for removing the st|nd|rd|th from the date part
@@ -110,7 +109,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;

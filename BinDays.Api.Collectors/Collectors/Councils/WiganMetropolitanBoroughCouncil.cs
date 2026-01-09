@@ -25,33 +25,32 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Black Bin",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "BlackBin" }.AsReadOnly(),
+				Keys = [ "BlackBin" ],
 			},
 			new()
 			{
 				Name = "Brown Bin",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "BrownBin" }.AsReadOnly(),
+				Keys = [ "BrownBin" ],
 			},
 			new()
 			{
 				Name = "Green Bin",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "GreenBin" }.AsReadOnly(),
+				Keys = [ "GreenBin" ],
 			},
 			new()
 			{
 				Name = "Blue Bin",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "BlueBin" }.AsReadOnly(),
+				Keys = [ "BlueBin" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the viewstate token values from input fields.
@@ -154,7 +153,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -228,7 +227,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 				var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 
-				string requestCookies = clientSideResponse.Headers["set-cookie"];
+				var requestCookies = clientSideResponse.Headers["set-cookie"];
 
 				var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{

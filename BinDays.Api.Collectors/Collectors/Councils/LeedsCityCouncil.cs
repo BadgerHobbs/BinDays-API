@@ -30,27 +30,26 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "General Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "Black" }.AsReadOnly(),
+				Keys = [ "Black" ],
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Brown" }.AsReadOnly(),
+				Keys = [ "Brown" ],
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Green" }.AsReadOnly(),
+				Keys = [ "Green" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -87,8 +86,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
 				{
-					string? property = addressElement.GetProperty("displayAddress").GetString();
-					string? uprn = addressElement.GetProperty("uprn").GetString();
+					var property = addressElement.GetProperty("displayAddress").GetString();
+					var uprn = addressElement.GetProperty("uprn").GetString();
 
 					var address = new Address
 					{
@@ -102,7 +101,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -147,8 +146,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var binDays = new List<BinDay>();
 				foreach (var binDayElement in jsonDoc.RootElement.EnumerateArray())
 				{
-					string type = binDayElement.GetProperty("type").GetString()!;
-					string dateString = binDayElement.GetProperty("date").GetString()!;
+					var type = binDayElement.GetProperty("type").GetString()!;
+					var dateString = binDayElement.GetProperty("date").GetString()!;
 
 					// Skip if type 'unknown'
 					if (type == "Unknown")

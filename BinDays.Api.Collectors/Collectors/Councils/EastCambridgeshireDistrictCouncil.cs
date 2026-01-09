@@ -26,28 +26,27 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Household Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "Black Bag" }.AsReadOnly(),
+				Keys = [ "Black Bag" ],
 				Type = BinType.Bag,
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "Blue Bin" }.AsReadOnly(),
+				Keys = [ "Blue Bin" ],
 			},
 			new()
 			{
 				Name = "Garden & Food Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Green or Brown Bin" }.AsReadOnly(),
+				Keys = [ "Green or Brown Bin" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for parsing addresses from the XML response.
@@ -152,7 +151,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				return new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 			}
 

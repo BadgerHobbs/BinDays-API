@@ -4,7 +4,6 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
 	using System.Globalization;
 	using System.Security.Cryptography;
 	using System.Text;
@@ -33,7 +32,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		protected abstract ReadOnlyCollection<Bin> BinTypes { get; }
+		protected abstract IReadOnlyCollection<Bin> BinTypes { get; }
 
 		/// <summary>
 		/// Shared AES Key used by this vendor.
@@ -80,7 +79,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			// Process addresses from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				string decryptedJson = Decrypt(clientSideResponse.Content);
+				var decryptedJson = Decrypt(clientSideResponse.Content);
 				using var jsonDoc = JsonDocument.Parse(decryptedJson);
 
 				var adressElements = jsonDoc.RootElement.GetProperty("ADDRESS");
@@ -99,7 +98,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -144,7 +143,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 			// Process bin days from response
 			else if (clientSideResponse.RequestId == 1)
 			{
-				string decryptedJson = Decrypt(clientSideResponse.Content);
+				var decryptedJson = Decrypt(clientSideResponse.Content);
 				using var jsonDoc = JsonDocument.Parse(decryptedJson);
 
 				var collectionDayArray = jsonDoc.RootElement.GetProperty("collectionDay");
@@ -201,7 +200,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// </summary>
 		/// <param name="address">The address.</param>
 		/// <returns>A collection of bin types.</returns>
-		protected virtual ReadOnlyCollection<Bin> GetBinTypes(Address address)
+		protected virtual IReadOnlyCollection<Bin> GetBinTypes(Address address)
 		{
 			return BinTypes;
 		}
@@ -213,14 +212,14 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// <returns>The encrypted data as a lowercase hexadecimal string.</returns>
 		private static string Encrypt(string plainText)
 		{
-			byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+			var plainBytes = Encoding.UTF8.GetBytes(plainText);
 
-			using Aes aesAlg = Aes.Create();
+			using var aesAlg = Aes.Create();
 			aesAlg.Key = _aesKey;
 			aesAlg.IV = _aesIv;
 			aesAlg.Mode = CipherMode.CBC;
 			aesAlg.Padding = PaddingMode.PKCS7;
-			byte[] encryptedBytes = aesAlg.EncryptCbc(plainBytes, _aesIv);
+			var encryptedBytes = aesAlg.EncryptCbc(plainBytes, _aesIv);
 
 			return Convert.ToHexString(encryptedBytes).ToLowerInvariant();
 		}
@@ -232,15 +231,15 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// <returns>The decrypted plain text string.</returns>
 		private static string Decrypt(string hex)
 		{
-			byte[] encryptedBytes = Convert.FromHexString(hex);
+			var encryptedBytes = Convert.FromHexString(hex);
 
-			using Aes aesAlg = Aes.Create();
+			using var aesAlg = Aes.Create();
 			aesAlg.Key = _aesKey;
 			aesAlg.IV = _aesIv;
 			aesAlg.Mode = CipherMode.CBC;
 			aesAlg.Padding = PaddingMode.PKCS7;
 
-			byte[] decryptedBytes = aesAlg.DecryptCbc(encryptedBytes, _aesIv);
+			var decryptedBytes = aesAlg.DecryptCbc(encryptedBytes, _aesIv);
 
 			return Encoding.UTF8.GetString(decryptedBytes);
 		}

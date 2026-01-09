@@ -31,14 +31,14 @@ namespace BinDays.Api.Converters
 				throw new JsonException($"Expected a string to deserialize to enum {typeof(TEnum)} but got {reader.TokenType}.");
 			}
 
-			string? value = reader.GetString();
+			var value = reader.GetString();
 			if (string.IsNullOrEmpty(value))
 			{
 				throw new JsonException("Cannot convert an empty string to an enum.");
 			}
 
 			// Convert "Light Blue" back to "LightBlue" to allow parsing
-			string enumMemberName = value.Replace(" ", string.Empty);
+			var enumMemberName = value.Replace(" ", string.Empty);
 
 			if (Enum.TryParse(enumMemberName, ignoreCase: true, out TEnum result))
 			{
@@ -57,8 +57,8 @@ namespace BinDays.Api.Converters
 		public override void Write(Utf8JsonWriter writer, TEnum value, JsonSerializerOptions options)
 		{
 			// Convert "LightBlue" to "Light Blue" using the source-generated Regex
-			string pascalCaseString = value.ToString();
-			string spacedString = PascalCaseSplitter().Replace(pascalCaseString, " $1");
+			var pascalCaseString = value.ToString();
+			var spacedString = PascalCaseSplitter().Replace(pascalCaseString, " $1");
 			writer.WriteStringValue(spacedString);
 		}
 	}

@@ -25,33 +25,32 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Rubbish",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "residual" }.AsReadOnly(),
+				Keys = [ "residual" ],
 			},
 			new()
 			{
 				Name = "Mixed Recycling",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "recycling" }.AsReadOnly(),
+				Keys = [ "recycling" ],
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "garden" }.AsReadOnly(),
+				Keys = [ "garden" ],
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "food" }.AsReadOnly(),
+				Keys = [ "food" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the session token value from an input field.
@@ -163,7 +162,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;

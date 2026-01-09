@@ -26,13 +26,12 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Household Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "refuse" }.AsReadOnly(),
+				Keys = [ "refuse" ],
 				Type = BinType.Bin,
 
 			},
@@ -40,37 +39,37 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "food waste" }.AsReadOnly(),
+				Keys = [ "food waste" ],
 				Type = BinType.Container,
 			},
 			new()
 			{
 				Name = "Plastic and Metals",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "black box" }.AsReadOnly(),
+				Keys = [ "black box" ],
 				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Cardboard and Glass Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "green box" }.AsReadOnly(),
+				Keys = [ "green box" ],
 				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Paper Recycling",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "paper" }.AsReadOnly(),
+				Keys = [ "paper" ],
 				Type = BinType.Sack,
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Purple,
-				Keys = new List<string>() { "garden waste" }.AsReadOnly(),
+				Keys = [ "garden waste" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the bin collections from the page elements.
@@ -110,8 +109,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
 				{
-					string? property = addressElement.GetProperty("label").GetString();
-					string? uprn = addressElement.GetProperty("UPRN").GetString();
+					var property = addressElement.GetProperty("label").GetString();
+					var uprn = addressElement.GetProperty("UPRN").GetString();
 
 					var address = new Address
 					{
@@ -125,7 +124,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -184,8 +183,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					var matchedBinTypes = rawBinTypes
 						.SelectMany(rawBinType => ProcessingUtilities.GetMatchingBins(_binTypes, rawBinType.Value))
 						.Distinct()
-						.ToList()
-						.AsReadOnly();
+						.ToArray();
 
 					var binDay = new BinDay
 					{

@@ -14,7 +14,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// <summary>
 		/// Base url for gov.uk bin/rubbish collection days.
 		/// </summary>
-		private const string GovUkBaseUrl = "https://www.gov.uk/rubbish-collection-day";
+		private const string _govUkBaseUrl = "https://www.gov.uk/rubbish-collection-day";
 
 		/// <summary>
 		/// Gets the gov.uk id of the collector.
@@ -24,7 +24,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// <summary>
 		/// Gets the gov.uk url of the collector.
 		/// </summary>
-		public virtual Uri GovUkUrl => new($"{GovUkBaseUrl}/{GovUkId}");
+		public virtual Uri GovUkUrl => new($"{_govUkBaseUrl}/{GovUkId}");
 
 		/// <summary>
 		/// Regex for the gov.uk ID from the first address.
@@ -67,7 +67,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = 1,
-					Url = GovUkBaseUrl,
+					Url = _govUkBaseUrl,
 					Method = "POST",
 					Body = requestBody
 				};
@@ -99,7 +99,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					var clientSideRequest = new ClientSideRequest
 					{
 						RequestId = 2,
-						Url = $"{GovUkBaseUrl}/{firstAddressGovUkId}",
+						Url = $"{_govUkBaseUrl}/{firstAddressGovUkId}",
 						Method = "GET",
 					};
 

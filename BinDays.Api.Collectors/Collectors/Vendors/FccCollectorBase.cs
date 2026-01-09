@@ -4,7 +4,6 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
 	using System.Globalization;
 	using System.Linq;
 	using System.Text.Json;
@@ -29,7 +28,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		protected abstract ReadOnlyCollection<Bin> BinTypes { get; }
+		protected abstract IReadOnlyCollection<Bin> BinTypes { get; }
 
 		/// <summary>
 		/// Regex for the fcc_session_token value from an input field.
@@ -131,7 +130,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -167,7 +166,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 				var sessionId = SessionTokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
 
 				// Fallback logic for cookie extraction if regex fails
-				if (string.IsNullOrEmpty(sessionId) && clientSideResponse.Headers.TryGetValue("set-cookie", out string? cookie))
+				if (string.IsNullOrEmpty(sessionId) && clientSideResponse.Headers.TryGetValue("set-cookie", out var cookie))
 				{
 					if (cookie.Contains("fcc_session_cookie"))
 					{

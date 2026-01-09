@@ -26,33 +26,32 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.White,
-				Keys = new List<string>() { "recycling" }.AsReadOnly(),
+				Keys = [ "recycling" ],
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.LightGreen,
-				Keys = new List<string>() { "food waste" }.AsReadOnly(),
+				Keys = [ "food waste" ],
 			},
 			new()
 			{
 				Name = "Green Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "green waste", "garden waste" }.AsReadOnly(),
+				Keys = [ "green waste", "garden waste" ],
 			},
 			new()
 			{
 				Name = "General Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "black bags" }.AsReadOnly(),
+				Keys = [ "black bags" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the addresses from the options elements.
@@ -130,7 +129,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -210,7 +209,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{
 							Date = collectionDate,
 							Address = address,
-							Bins = matchedBins.AsReadOnly()
+							Bins = [.. matchedBins]
 						};
 						binDays.Add(binDay);
 					}

@@ -31,48 +31,47 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "General Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "General Waste" }.AsReadOnly(),
+				Keys = [ "General Waste" ],
 			},
 			new()
 			{
 				Name = "Cans & Plastics Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Green Recycling Box" }.AsReadOnly(),
+				Keys = [ "Green Recycling Box" ],
 				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Brown Paper & Cardboard Recycling",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "Blue Sack" }.AsReadOnly(),
+				Keys = [ "Blue Sack" ],
 				Type = BinType.Bag,
 			},
 			new()
 			{
 				Name = "Paper & Glass Recycling",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "Black Recycling Box" }.AsReadOnly(),
+				Keys = [ "Black Recycling Box" ],
 				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Food Waste Bin" }.AsReadOnly(),
+				Keys = [ "Food Waste Bin" ],
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Garden Waste Bin" }.AsReadOnly(),
+				Keys = [ "Garden Waste Bin" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -115,8 +114,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (var rawAddress in rawAddresses)
 				{
-					string fullAddress = rawAddress!["addressFull"]!.GetValue<string>().Trim();
-					string uid = rawAddress!["GAZ_ID"]!.GetValue<string>();
+					var fullAddress = rawAddress!["addressFull"]!.GetValue<string>().Trim();
+					var uid = rawAddress!["GAZ_ID"]!.GetValue<string>();
 
 					var address = new Address
 					{
@@ -130,7 +129,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;

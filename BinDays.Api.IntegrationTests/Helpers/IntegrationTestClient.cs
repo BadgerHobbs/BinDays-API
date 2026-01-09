@@ -93,13 +93,13 @@ namespace BinDays.Api.IntegrationTests.Helpers
 					? initialFunc()
 					: subsequentFunc(clientSideResponse);
 
-				TResult? result = resultExtractor(apiResponse);
+				var result = resultExtractor(apiResponse);
 				if (result != null)
 				{
 					return result;
 				}
 
-				ClientSideRequest? nextRequest = nextRequestExtractor(apiResponse);
+				var nextRequest = nextRequestExtractor(apiResponse);
 				if (nextRequest != null)
 				{
 					clientSideResponse = await SendClientSideRequestAsync(nextRequest);
@@ -125,14 +125,14 @@ namespace BinDays.Api.IntegrationTests.Helpers
 
 			if (!string.IsNullOrEmpty(request.Body))
 			{
-				string mediaTypeOnly = "application/octet-stream";
-				Encoding requestEncoding = Encoding.UTF8;
+				var mediaTypeOnly = "application/octet-stream";
+				var requestEncoding = Encoding.UTF8;
 
 				var contentTypeKey = headersToSend.Keys.FirstOrDefault(k => k.Equals("content-type", StringComparison.OrdinalIgnoreCase));
 
 				if (contentTypeKey != null)
 				{
-					string fullContentType = headersToSend[contentTypeKey];
+					var fullContentType = headersToSend[contentTypeKey];
 					headersToSend.Remove(contentTypeKey);
 
 					var parts = fullContentType.Split(';');

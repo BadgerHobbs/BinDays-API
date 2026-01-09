@@ -26,40 +26,39 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Non-Recyclable Waste",
 				Colour = BinColour.Purple,
-				Keys = new List<string>() { "Non-Recyclable Waste" }.AsReadOnly(),
+				Keys = [ "Non-Recyclable Waste" ],
 			},
 			new()
 			{
 				Name = "Mixed Recycling",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
+				Keys = [ "Recycling" ],
 			},
 			new()
 			{
 				Name = "Cardboard & Paper",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "Cardboard" }.AsReadOnly(),
+				Keys = [ "Cardboard" ],
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Food waste" }.AsReadOnly(),
+				Keys = [ "Food waste" ],
 				Type = BinType.Caddy
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Garden Waste" }.AsReadOnly(),
+				Keys = [ "Garden Waste" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the CSRF token
@@ -220,7 +219,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;

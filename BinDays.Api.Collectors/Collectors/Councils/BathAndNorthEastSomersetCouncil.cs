@@ -26,41 +26,40 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "General Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "residualNextDate" }.AsReadOnly(),
+				Keys = [ "residualNextDate" ],
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "recyclingNextDate" }.AsReadOnly(),
+				Keys = [ "recyclingNextDate" ],
 			},
 			new()
 			{
 				Name = "Card & Brown Paper",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "recyclingNextDate" }.AsReadOnly(),
+				Keys = [ "recyclingNextDate" ],
 				Type = BinType.Bag,
 			},
 			new()
 			{
 				Name = "Metal, Glass, Paper & Plastic",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "recyclingNextDate" }.AsReadOnly(),
+				Keys = [ "recyclingNextDate" ],
 				Type = BinType.Box,
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "organicNextDate" }.AsReadOnly(),
+				Keys = [ "organicNextDate" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -95,8 +94,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Iterate through each address json, and create a new address object
 				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
 				{
-					string? property = addressElement.GetProperty("full_Address").ToString();
-					string? uprn = addressElement.GetProperty("uprn").ToString().Split('.').First();
+					var property = addressElement.GetProperty("full_Address").ToString();
+					var uprn = addressElement.GetProperty("uprn").ToString().Split('.').First();
 
 					var address = new Address
 					{
@@ -109,7 +108,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -168,7 +167,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 						{
 							Date = date,
 							Address = address,
-							Bins = new List<Bin>() { binType }.AsReadOnly(),
+							Bins = [binType],
 						};
 
 						binDays.Add(binDay);

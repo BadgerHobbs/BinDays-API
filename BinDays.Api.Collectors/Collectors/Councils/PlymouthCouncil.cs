@@ -32,27 +32,26 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Domestic",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "DO" }.AsReadOnly(),
+				Keys = [ "DO" ],
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "RE" }.AsReadOnly(),
+				Keys = [ "RE" ],
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "GA", "OR" }.AsReadOnly(),
+				Keys = [ "GA", "OR" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -144,14 +143,14 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				{
 					var addressData = property.Value;
 
-					string flat = addressData.GetProperty("flat").ToString();
-					string house = addressData.GetProperty("house").ToString();
-					string street = addressData.GetProperty("street").ToString();
-					string town = addressData.GetProperty("town").ToString();
-					string uprn = addressData.GetProperty("uprn").ToString();
+					var flat = addressData.GetProperty("flat").ToString();
+					var house = addressData.GetProperty("house").ToString();
+					var street = addressData.GetProperty("street").ToString();
+					var town = addressData.GetProperty("town").ToString();
+					var uprn = addressData.GetProperty("uprn").ToString();
 
 					// Combine flat and house for property, ensuring no double spaces
-					string addressProperty = $"{flat} {house}".Trim().Replace("  ", " ");
+					var addressProperty = $"{flat} {house}".Trim().Replace("  ", " ");
 
 					var address = new Address
 					{
@@ -167,7 +166,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -289,8 +288,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				{
 					var binDayData = property.Value;
 
-					string? dateString = binDayData.GetProperty("Date").ToString();
-					string? roundType = binDayData.GetProperty("Round_Type").ToString();
+					var dateString = binDayData.GetProperty("Date").ToString();
+					var roundType = binDayData.GetProperty("Round_Type").ToString();
 
 					// Parse date (e.g. '2025-05-07T00:00:00')
 					var date = DateOnly.ParseExact(
@@ -307,7 +306,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						Date = date,
 						Address = address,
-						Bins = matchedBins.AsReadOnly()
+						Bins = [.. matchedBins]
 					};
 
 					binDays.Add(binDay);

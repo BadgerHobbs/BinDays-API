@@ -27,34 +27,33 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Refuse",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "Refuse collection" }.AsReadOnly(),
+				Keys = [ "Refuse collection" ],
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Recycling collection" }.AsReadOnly(),
+				Keys = [ "Recycling collection" ],
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "Food waste collection" }.AsReadOnly(),
+				Keys = [ "Food waste collection" ],
 				Type = BinType.Caddy
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Garden waste collection" }.AsReadOnly(),
+				Keys = [ "Garden waste collection" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the bin days from the results html.
@@ -100,8 +99,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				var addresses = new List<Address>();
 				foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
 				{
-					string? property = addressElement.GetProperty("label").GetString();
-					string? uprn = addressElement.GetProperty("UPRN").GetString();
+					var property = addressElement.GetProperty("label").GetString();
+					var uprn = addressElement.GetProperty("UPRN").GetString();
 
 					var address = new Address
 					{
@@ -115,7 +114,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;

@@ -26,34 +26,33 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "General Waste",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "General waste bin" }.AsReadOnly(),
+				Keys = [ "General waste bin" ],
 			},
 			new()
 			{
 				Name = "Garden and Food Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Garden and food waste bin" }.AsReadOnly(),
+				Keys = [ "Garden and food waste bin" ],
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "Recycling bin" }.AsReadOnly(),
+				Keys = [ "Recycling bin" ],
 			},
 			new()
 			{
 				Name = "Glass",
 				Colour = BinColour.Yellow,
-				Keys = new List<string>() { "Glass container" }.AsReadOnly(),
+				Keys = [ "Glass container" ],
 				Type = BinType.Box,
 			},
-		}.AsReadOnly();
+		];
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -88,8 +87,8 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Iterate through each address json, and create a new address object
 				foreach (var addressElement in jsonDoc.RootElement.GetProperty("addresses").EnumerateArray())
 				{
-					string? property = addressElement.GetProperty("addressText").GetString();
-					string? uprn = addressElement.GetProperty("uprn").GetString();
+					var property = addressElement.GetProperty("addressText").GetString();
+					var uprn = addressElement.GetProperty("uprn").GetString();
 
 					// Remove postcode from property (e.g.'1 OLD MILL COURT, NEWTOWNARDS, BT23 4JG')
 					property = property?.Replace($", {postcode}", "", StringComparison.OrdinalIgnoreCase).Trim();
@@ -105,7 +104,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -178,7 +177,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 							{
 								Date = date,
 								Address = address,
-								Bins = binsForDay.AsReadOnly(),
+								Bins = [.. binsForDay],
 							};
 
 							binDays.Add(binDay);

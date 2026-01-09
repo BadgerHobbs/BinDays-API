@@ -25,27 +25,26 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Non-recyclable waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Green bin" }.AsReadOnly(),
+				Keys = [ "Green bin" ],
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "Grey bin" }.AsReadOnly(),
+				Keys = [ "Grey bin" ],
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Brown bin" }.AsReadOnly(),
+				Keys = [ "Brown bin" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the viewstate token values from input fields.
@@ -147,7 +146,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;

@@ -25,48 +25,47 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Rubbish",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "grey bin" }.AsReadOnly(),
+				Keys = [ "grey bin" ],
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "green bin" }.AsReadOnly(),
+				Keys = [ "green bin" ],
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "food bin" }.AsReadOnly(),
+				Keys = [ "food bin" ],
 				Type = BinType.Caddy,
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "garden waste bin" }.AsReadOnly(),
+				Keys = [ "garden waste bin" ],
 			},
 			new()
 			{
 				Name = "Small Electrical Items",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "small electrical items" }.AsReadOnly(),
+				Keys = [ "small electrical items" ],
 				Type = BinType.Bag,
 			},
 			new()
 			{
 				Name = "Textiles",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "textiles" }.AsReadOnly(),
+				Keys = [ "textiles" ],
 				Type = BinType.Bag,
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the ebz/ebs token value from a URL.
@@ -210,7 +209,7 @@ namespace BinDays.Api.Collectors.Collectors.Vendors
 					});
 				}
 
-				return new GetAddressesResponse { Addresses = addresses.AsReadOnly() };
+				return new GetAddressesResponse { Addresses = [.. addresses] };
 			}
 
 			throw new InvalidOperationException("Invalid client-side request.");

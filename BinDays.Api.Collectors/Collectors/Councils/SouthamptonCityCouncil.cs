@@ -25,33 +25,32 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
+				Keys = [ "Recycling" ],
 			},
 			new()
 			{
 				Name = "Glass",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "Glass" }.AsReadOnly(),
+				Keys = [ "Glass" ],
 			},
 			new()
 			{
 				Name = "General",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "General" }.AsReadOnly(),
+				Keys = [ "General" ],
 			},
 			new()
 			{
 				Name = "Garden",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Garden" }.AsReadOnly(),
+				Keys = [ "Garden" ],
 			},
-		}.AsReadOnly();
+		];
 
 		/// <summary>
 		/// Regex for the ufprt token values from input fields.
@@ -172,7 +171,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;

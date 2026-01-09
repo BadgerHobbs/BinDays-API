@@ -4,7 +4,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using BinDays.Api.Collectors.Models;
 	using System;
 	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
 
 	/// <summary>
 	/// Collector implementation for South Hams District Council.
@@ -27,26 +26,25 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		protected override string CollectionDetailsEndpoint => "mycollections/getcollectiondetails";
 
 		/// <inheritdoc/>
-		protected override ReadOnlyCollection<Bin> BinTypes => new List<Bin>()
-		{
+		protected override IReadOnlyCollection<Bin> BinTypes => [
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
+				Keys = [ "Recycling" ],
 			},
 			new()
 			{
 				Name = "Refuse",
 				Colour = BinColour.Grey,
-				Keys = new List<string>() { "Refuse" }.AsReadOnly(),
+				Keys = [ "Refuse" ],
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Garden" }.AsReadOnly(),
+				Keys = [ "Garden" ],
 			},
-		}.AsReadOnly();
+		];
 	}
 }

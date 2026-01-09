@@ -123,7 +123,6 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			// Use the validation helper
 			TestValidation.ValidateAddressesResult(
 				addresses,
-				expectedPostcode: postcode,
 				ensureUidPresent: true
 			);
 

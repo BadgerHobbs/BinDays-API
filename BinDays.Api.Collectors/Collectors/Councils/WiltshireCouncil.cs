@@ -5,7 +5,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using BinDays.Api.Collectors.Utilities;
 	using System;
 	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
 	using System.Globalization;
 	using System.Text.Json;
 	using System.Text.RegularExpressions;
@@ -34,34 +33,33 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <summary>
 		/// The list of bin types for this collector.
 		/// </summary>
-		private readonly IReadOnlyCollection<Bin> _binTypes = new List<Bin>()
-		{
+		private readonly IReadOnlyCollection<Bin> _binTypes = [
 			new()
 			{
 				Name = "Household Waste",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "Household waste" }.AsReadOnly(),
+				Keys = [ "Household waste" ],
 			},
 			new()
 			{
 				Name = "Mixed Dry Recycling",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "Mixed dry recycling" }.AsReadOnly(),
+				Keys = [ "Mixed dry recycling" ],
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Garden" }.AsReadOnly(),
+				Keys = [ "Garden" ],
 			},
 			new()
 			{
 				Name = "Glass Recycling",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "black box" }.AsReadOnly(),
+				Keys = [ "black box" ],
 				Type = BinType.Box,
 			},
-		}.AsReadOnly();
+		];
 
 		/// <inheritdoc/>
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -107,10 +105,10 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 				// Iterate through each address json, and create a new address object
 				foreach (var addressElement in rawAddresses.EnumerateArray())
 				{
-					string? property = addressElement.GetProperty("PropertyNameAndNumber").GetString();
-					string? street = addressElement.GetProperty("Street").GetString();
-					string? town = addressElement.GetProperty("Town").GetString();
-					string? uprn = addressElement.GetProperty("UPRN").GetString();
+					var property = addressElement.GetProperty("PropertyNameAndNumber").GetString();
+					var street = addressElement.GetProperty("Street").GetString();
+					var town = addressElement.GetProperty("Town").GetString();
+					var uprn = addressElement.GetProperty("UPRN").GetString();
 
 					var address = new Address
 					{
@@ -126,7 +124,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 
 				var getAddressesResponse = new GetAddressesResponse
 				{
-					Addresses = addresses.AsReadOnly(),
+					Addresses = [.. addresses],
 				};
 
 				return getAddressesResponse;
@@ -237,7 +235,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		/// <param name="responseContent">The string containing the response data, including the model JSON.</param>
 		/// <param name="address">The address associated with these bin days.</param>
 		/// <returns>A read-only collection of future BinDay objects parsed from the JSON.</returns>
-		private ReadOnlyCollection<BinDay> ParseBinDays(string responseContent, Address address)
+		private IReadOnlyCollection<BinDay> ParseBinDays(string responseContent, Address address)
 		{
 			var binDays = new List<BinDay>();
 
@@ -268,7 +266,7 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 					{
 						Date = date,
 						Address = address,
-						Bins = new List<Bin>() { binType }.AsReadOnly()
+						Bins = [binType]
 					};
 					binDays.Add(binDay);
 				}

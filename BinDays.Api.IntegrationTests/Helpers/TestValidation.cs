@@ -29,13 +29,11 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		/// Validates the result of a GetAddresses operation.
 		/// </summary>
 		/// <param name="addresses">The collection of addresses returned by the operation.</param>
-		/// <param name="expectedPostcode">The postcode that was searched for.</param>
 		/// <param name="expectedMinCount">The minimum number of addresses expected.</param>
 		/// <param name="ensureUidPresent">If true, asserts that all addresses have a non-empty Uid.</param>
 		/// <param name="expectedUidToContain">Optional: An specific Uid that must be present in the results.</param>
 		public static void ValidateAddressesResult(
 			IReadOnlyCollection<Address>? addresses,
-			string expectedPostcode,
 			int expectedMinCount = 1,
 			bool ensureUidPresent = true,
 			string? expectedUidToContain = null)
@@ -79,7 +77,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 
 			if (ensureFutureDates)
 			{
-				DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
+				var today = DateOnly.FromDateTime(DateTime.UtcNow);
 				Assert.True(binDays.All(bd => bd.Date >= today), "All bin dates should be today or in the future.");
 			}
 

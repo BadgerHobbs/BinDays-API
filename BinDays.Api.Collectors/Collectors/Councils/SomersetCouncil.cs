@@ -4,7 +4,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 	using BinDays.Api.Collectors.Models;
 	using System;
 	using System.Collections.Generic;
-	using System.Collections.ObjectModel;
 
 	/// <summary>
 	/// Collector implementation for Somerset Council.
@@ -30,33 +29,32 @@ namespace BinDays.Api.Collectors.Collectors.Councils
 		protected override string ApiBaseUrl => "https://iweb.itouchvision.com/portal/itouchvision/";
 
 		/// <inheritdoc/>
-		protected override ReadOnlyCollection<Bin> BinTypes => new List<Bin>()
-		{
+		protected override IReadOnlyCollection<Bin> BinTypes => [
 			new()
 			{
 				Name = "Rubbish",
 				Colour = BinColour.Black,
-				Keys = new List<string>() { "Rubbish" }.AsReadOnly(),
+				Keys = [ "Rubbish" ],
 			},
 			new()
 			{
 				Name = "Recycling",
 				Colour = BinColour.Blue,
-				Keys = new List<string>() { "Recycling" }.AsReadOnly(),
+				Keys = [ "Recycling" ],
 			},
 			new()
 			{
 				Name = "Food Waste",
 				Colour = BinColour.Brown,
-				Keys = new List<string>() { "Food", "Recycling" }.AsReadOnly(),
+				Keys = [ "Food", "Recycling" ],
 				Type = BinType.Caddy,
 			},
 			new()
 			{
 				Name = "Garden Waste",
 				Colour = BinColour.Green,
-				Keys = new List<string>() { "Garden" }.AsReadOnly(),
+				Keys = [ "Garden" ],
 			},
-		}.AsReadOnly();
+		];
 	}
 }

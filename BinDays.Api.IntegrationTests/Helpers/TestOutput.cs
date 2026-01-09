@@ -75,7 +75,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		private static void AppendAddressDetails(StringBuilder summaryBuilder, IReadOnlyCollection<Address> addresses)
 		{
 			var addressCount = addresses?.Count ?? 0;
-			string addressHeaderText = $" Addresses ({addressCount}) ";
+			var addressHeaderText = $" Addresses ({addressCount}) ";
 			summaryBuilder.AppendLine(CreateCenteredHeader(addressHeaderText, _borderWidth, '-'));
 			summaryBuilder.AppendLine();
 
@@ -87,7 +87,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 			{
 				foreach (var address in addresses.Take(_maxAddressesToShow))
 				{
-					string addressLine = string.Join(", ",
+					var addressLine = string.Join(", ",
 						new[] { address.Property, address.Street, address.Town, address.Postcode, address.Uid }
 						.Where(part => !string.IsNullOrWhiteSpace(part)));
 
@@ -111,7 +111,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		private static void AppendBinDayDetails(StringBuilder summaryBuilder, IReadOnlyCollection<BinDay> binDays)
 		{
 			var binDaysCount = binDays?.Count ?? 0;
-			string binDaysHeaderText = $" Bin Days ({binDaysCount}) ";
+			var binDaysHeaderText = $" Bin Days ({binDaysCount}) ";
 			summaryBuilder.AppendLine(CreateCenteredHeader(binDaysHeaderText, _borderWidth, '-'));
 			summaryBuilder.AppendLine();
 
@@ -136,7 +136,7 @@ namespace BinDays.Api.IntegrationTests.Helpers
 		{
 			foreach (var binDay in orderedBinDays.Take(_maxBinDaysToShow))
 			{
-				int binsOnThisDay = binDay.Bins?.Count ?? 0;
+				var binsOnThisDay = binDay.Bins?.Count ?? 0;
 				summaryBuilder.AppendLine($"{_primaryIndent}{binDay.Date:dd/MM/yyyy} ({binsOnThisDay} bins):");
 
 				if (binDay.Bins != null && binsOnThisDay > 0)
@@ -203,9 +203,9 @@ namespace BinDays.Api.IntegrationTests.Helpers
 				return text;
 			}
 
-			int paddingNeeded = totalWidth - text.Length;
-			int leftPadding = paddingNeeded / 2;
-			int rightPadding = paddingNeeded - leftPadding;
+			var paddingNeeded = totalWidth - text.Length;
+			var leftPadding = paddingNeeded / 2;
+			var rightPadding = paddingNeeded - leftPadding;
 
 			var headerBuilder = new StringBuilder(totalWidth);
 			headerBuilder.Append(padChar, leftPadding);

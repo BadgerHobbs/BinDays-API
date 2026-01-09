@@ -32,7 +32,7 @@ namespace BinDays.Api.Collectors.Utilities
 			int[] yearsToTry = [today.Year, today.Year + 1, today.Year - 1];
 
 			DateOnly? bestMatch = null;
-			int minDistanceInDays = int.MaxValue;
+			var minDistanceInDays = int.MaxValue;
 
 			foreach (var year in yearsToTry)
 			{
@@ -41,7 +41,7 @@ namespace BinDays.Api.Collectors.Utilities
 				if (DateOnly.TryParseExact($"{input} {year}", formatWithYear, CultureInfo.InvariantCulture, DateTimeStyles.None, out var candidate))
 				{
 					// Calculate how many days away this date is from today (absolute value)
-					int distance = Math.Abs(candidate.DayNumber - today.DayNumber);
+					var distance = Math.Abs(candidate.DayNumber - today.DayNumber);
 
 					if (distance < minDistanceInDays)
 					{

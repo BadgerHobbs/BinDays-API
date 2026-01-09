@@ -2,7 +2,6 @@ namespace BinDays.Api.Collectors.Utilities
 {
 	using BinDays.Api.Collectors.Models;
 	using System;
-	using System.Collections.ObjectModel;
 	using System.Text.RegularExpressions;
 	using System.Web;
 
@@ -46,7 +45,7 @@ namespace BinDays.Api.Collectors.Utilities
 		/// </summary>
 		/// <param name="binDays">The collection of BinDay objects to process.</param>
 		/// <returns>A read-only collection of processed BinDay objects.</returns>
-		public static ReadOnlyCollection<BinDay> ProcessBinDays(IEnumerable<BinDay> binDays)
+		public static IReadOnlyCollection<BinDay> ProcessBinDays(IEnumerable<BinDay> binDays)
 		{
 			// Filter out bin days in the past
 			var futureBinDays = GetFutureBinDays(binDays);
@@ -62,7 +61,7 @@ namespace BinDays.Api.Collectors.Utilities
 		/// </summary>
 		/// <param name="binDays">The collection of BinDay objects to merge.</param>
 		/// <returns>A read-only collection of merged BinDay objects.</returns>
-		public static ReadOnlyCollection<BinDay> MergeBinDays(IEnumerable<BinDay> binDays)
+		public static IReadOnlyCollection<BinDay> MergeBinDays(IEnumerable<BinDay> binDays)
 		{
 			var mergedBinDays = new List<BinDay>();
 
@@ -86,12 +85,12 @@ namespace BinDays.Api.Collectors.Utilities
 				{
 					Date = group.Key,
 					Address = group.First().Address,
-					Bins = mergedBins.DistinctBy(b => b.Name).ToList().AsReadOnly()
+					Bins = [.. mergedBins.DistinctBy(b => b.Name)]
 				};
 				mergedBinDays.Add(mergedBinDay);
 			}
 
-			return mergedBinDays.AsReadOnly();
+			return [.. mergedBinDays];
 		}
 
 		/// <summary>
@@ -99,7 +98,7 @@ namespace BinDays.Api.Collectors.Utilities
 		/// </summary>
 		/// <param name="binDays">The collection of BinDay objects to filter.</param>
 		/// <returns>A read-only collection of BinDay objects with dates in the future.</returns>
-		public static ReadOnlyCollection<BinDay> GetFutureBinDays(IEnumerable<BinDay> binDays)
+		public static IReadOnlyCollection<BinDay> GetFutureBinDays(IEnumerable<BinDay> binDays)
 		{
 			var futureBinDays = new List<BinDay>();
 			var today = DateOnly.FromDateTime(DateTime.Now);
@@ -115,7 +114,7 @@ namespace BinDays.Api.Collectors.Utilities
 			// Sort bin days in ascending order by date
 			futureBinDays.Sort((a, b) => a.Date.CompareTo(b.Date));
 
-			return futureBinDays.AsReadOnly();
+			return [.. futureBinDays];
 		}
 
 		/// <summary>
@@ -160,7 +159,7 @@ namespace BinDays.Api.Collectors.Utilities
 			}
 
 			// Remove all existing whitespace and convert to uppercase
-			string formattedPostcode = WhitespaceRegex().Replace(postcode, "").ToUpper();
+			var formattedPostcode = WhitespaceRegex().Replace(postcode, "").ToUpper();
 
 			// Insert a space before the last three characters
 			if (formattedPostcode.Length > 3)
@@ -177,13 +176,13 @@ namespace BinDays.Api.Collectors.Utilities
 		/// <param name="bins">The collection of all possible Bin objects.</param>
 		/// <param name="service">The service string to match against the bin keys.</param>
 		/// <returns>A read-only collection of Bin objects that match the given service.</returns>
-		public static ReadOnlyCollection<Bin> GetMatchingBins(IReadOnlyCollection<Bin> bins, string service)
+		public static IReadOnlyCollection<Bin> GetMatchingBins(IReadOnlyCollection<Bin> bins, string service)
 		{
-			return bins.Where(bin =>
+			return [.. bins.Where(bin =>
 				bin.Keys.Any(key =>
 					service.Contains(key, StringComparison.OrdinalIgnoreCase)
 				)
-			).ToList().AsReadOnly();
+			)];
 		}
 	}
 }
