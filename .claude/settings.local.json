@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet script:*)",
+      "Bash(pwsh replace-readonly.ps1)",
+      "Bash(powershell -ExecutionPolicy Bypass -File replace-readonly.ps1)",
+      "Bash(powershell -ExecutionPolicy Bypass -File replace-readonly-variables.ps1:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(dotnet format:*)"
+    ]
+  }
+}

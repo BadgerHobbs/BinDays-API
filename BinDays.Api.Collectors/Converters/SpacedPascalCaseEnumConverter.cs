@@ -1,9 +1,9 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
-
 namespace BinDays.Api.Converters
 {
+	using System.Text.Json;
+	using System.Text.Json.Serialization;
+	using System.Text.RegularExpressions;
+
 	/// <summary>
 	/// Converts a PascalCase enum to and from a space-separated string during JSON serialization.
 	/// E.g. Enum member "LightBlue" is serialized to "Light Blue".

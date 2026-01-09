@@ -1,8 +1,8 @@
-using BinDays.Api.Collectors.Utilities;
-using Xunit;
-
 namespace BinDays.Api.IntegrationTests.Utilities
 {
+	using BinDays.Api.Collectors.Utilities;
+	using Xunit;
+
 	public class ProcessingUtilitiesTests
 	{
 		[Theory]

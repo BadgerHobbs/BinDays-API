@@ -1,7 +1,7 @@
-using System.Text.Json.Serialization;
-
 namespace BinDays.Api.Collectors.Models
 {
+	using System.Text.Json.Serialization;
+
 	/// <summary>
 	/// Represents the type of a bin.
 	/// </summary>

@@ -103,7 +103,7 @@ csharp_style_conditional_delegate_call = true
 
 # Modifier preferences
 csharp_prefer_static_local_function = true
-csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,required,volatile,async
+csharp_preferred_modifier_order = required,public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:suggestion
 
 # Code-block preferences
 csharp_prefer_braces = true
@@ -132,7 +132,7 @@ csharp_style_unused_value_expression_statement_preference = discard_variable
 dotnet_style_prefer_collection_expression = true:suggestion
 
 # 'using' directive preferences
-csharp_using_directive_placement = outside_namespace
+csharp_using_directive_placement = inside_namespace:suggestion
 
 # New line preferences
 csharp_style_allow_blank_line_after_colon_in_constructor_initializer_experimental = true

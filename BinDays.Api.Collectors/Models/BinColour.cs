@@ -1,8 +1,8 @@
-using BinDays.Api.Converters;
-using System.Text.Json.Serialization;
-
 namespace BinDays.Api.Collectors.Models
 {
+	using BinDays.Api.Converters;
+	using System.Text.Json.Serialization;
+
 	/// <summary>
 	/// Represents the colour of a bin.
 	/// </summary>
