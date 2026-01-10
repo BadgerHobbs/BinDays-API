@@ -89,7 +89,7 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 	/// Regex for extracting date and bin information from the bin details slider.
 	/// Uses [\s\S]+? to match across newlines and include HTML tags (like anchors) within the description.
 	/// </summary>
-	[GeneratedRegex(@"<br>\s*(?<date>[^<>\n-]+?)\s*-<br>\s*(?<bins>[\s\S]+?)</div>")]
+	[GeneratedRegex(@"(?:<br>|>)\s*(?<date>[^<>\n-]+?)\s*-<br>\s*(?<bins>[\s\S]+?)</div>")]
 	private static partial Regex BinDetailsRegex();
 
 	/// <summary>
@@ -361,6 +361,12 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 
 				// Remove HTML tags (e.g. hyperlinks for garden waste)
 				binString = HtmlTagRegex().Replace(binString, "");
+
+				// Skip if empty date or bin
+				if (string.IsNullOrWhiteSpace(dateString) || string.IsNullOrWhiteSpace(binString))
+				{
+					continue;
+				}
 
 				// Parse the date (e.g. "Thursday 27 November")
 				var date = dateString.ParseDateInferringYear("dddd d MMMM");

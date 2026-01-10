@@ -23,6 +23,7 @@ public class SouthOxfordshireDistrictCouncilTests
 
 	[Theory]
 	[InlineData("OX11 7NU")]
+	[InlineData("OX9 7DU")]
 	public async Task GetBinDaysTest(string postcode)
 	{
 		await TestSteps.EndToEnd(
