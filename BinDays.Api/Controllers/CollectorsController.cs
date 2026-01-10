@@ -42,11 +42,6 @@ public class CollectorsController : ControllerBase
 	/// </summary>
 	private readonly IDistributedCache _cache;
 
-	private readonly JsonSerializerSettings _jsonSerializerSettings = new()
-	{
-		TypeNameHandling = TypeNameHandling.Auto,
-	};
-
 	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorsController"/> class.
 	/// </summary>
@@ -85,11 +80,11 @@ public class CollectorsController : ControllerBase
 		{
 			try
 			{
-				return JsonConvert.DeserializeObject<T>(cachedResult, _jsonSerializerSettings);
+				return JsonConvert.DeserializeObject<T>(cachedResult);
 			}
 			catch (Exception ex)
 			{
-				_logger.LogWarning(ex, "Failed to deserialize cached data for key '{CacheKey}'. Evicting invalid cache entry. Cached data: {CachedResult}", cacheKey, cachedResult);
+				_logger.LogWarning(ex, "Failed to deserialize cached data for key '{CacheKey}'. Evicting invalid cache entry.", cacheKey);
 				_cache.Remove(cacheKey);
 			}
 		}
@@ -148,7 +143,7 @@ public class CollectorsController : ControllerBase
 				_logger.LogInformation("Successfully retrieved collector {CollectorName} for postcode: {Postcode}.", result.Collector!.Name, postcode);
 
 				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
-				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
 			}
 
 			return Ok(result);
@@ -213,7 +208,7 @@ public class CollectorsController : ControllerBase
 				_logger.LogInformation("Successfully retrieved {AddressCount} addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", result.Addresses!.Count, govUkId, postcode);
 
 				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
-				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
 			}
 
 			return Ok(result);
@@ -279,7 +274,7 @@ public class CollectorsController : ControllerBase
 				var cacheExpiration = (earliestBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
 
 				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
-				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result, _jsonSerializerSettings), cacheEntryOptions);
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
 			}
 
 			return Ok(result);
@@ -362,4 +357,5 @@ public class CollectorsController : ControllerBase
 
 		return Convert.ToHexString(hash);
 	}
+
 }

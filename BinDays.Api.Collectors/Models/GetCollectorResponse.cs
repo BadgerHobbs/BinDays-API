@@ -1,6 +1,7 @@
 ﻿namespace BinDays.Api.Collectors.Models;
 
 using BinDays.Api.Collectors.Collectors;
+using Newtonsoft.Json;
 
 /// <summary>
 /// Represents the response from an collector lookup request.
@@ -17,5 +18,6 @@ public sealed class GetCollectorResponse
 	/// <summary>
 	/// Gets the collector found, if no further client-side requests are required.
 	/// </summary>
+	[JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
 	public ICollector? Collector { get; init; }
 }

@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
   <!-- Required for integration tests -->
   <ItemGroup>
     <InternalsVisibleTo Include="BinDays.Api.IntegrationTests" />
