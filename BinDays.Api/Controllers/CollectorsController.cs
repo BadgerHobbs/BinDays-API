@@ -89,7 +89,7 @@ public class CollectorsController : ControllerBase
 			}
 			catch (Exception ex)
 			{
-				_logger.LogWarning(ex, "Failed to deserialize cached data for key '{CacheKey}'. Evicting invalid cache entry.", cacheKey);
+				_logger.LogWarning(ex, "Failed to deserialize cached data for key '{CacheKey}'. Evicting invalid cache entry. Cached data: {CachedResult}", cacheKey, cachedResult);
 				_cache.Remove(cacheKey);
 			}
 		}
