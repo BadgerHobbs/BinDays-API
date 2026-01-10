@@ -68,13 +68,13 @@ Maintain consistent ordering of class members to improve code readability. Group
    - `WebsiteUrl`
    - `GovUkId` (or vendor-specific overrides for vendor base collectors)
 
-2. **Private Const Fields** (if needed):
-   - API keys, subscription keys, signatures, etc.
-   - Use descriptive names like `_apiKey`, `_apiSubscriptionKey`, `_signature`
-
-3. **Bin Types**:
+2. **Bin Types**:
    - Standard collectors: `private readonly IReadOnlyCollection<Bin> _binTypes`
    - Vendor collectors: `protected override IReadOnlyCollection<Bin> BinTypes`
+
+3. **Private Const Fields** (if needed):
+   - API keys, subscription keys, signatures, etc.
+   - Use descriptive names like `_apiKey`, `_apiSubscriptionKey`, `_signature`
 
 ### Implementation (in this order):
 
