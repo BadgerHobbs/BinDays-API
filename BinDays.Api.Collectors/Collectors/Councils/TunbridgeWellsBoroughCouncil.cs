@@ -108,26 +108,33 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 	[GeneratedRegex(@"sid=(?<sessionId>[a-f0-9]+)")]
 	private static partial Regex SessionIdRegex();
 
+	/// <summary>
+	/// Creates the initial client-side request for AchieveForms.
+	/// </summary>
+	/// <returns>A new <see cref="ClientSideRequest"/> configured for the initial request.</returns>
+	private static ClientSideRequest CreateInitialRequest()
+	{
+		return new ClientSideRequest
+		{
+			RequestId = 1,
+			Url = _achieveFormsUrl,
+			Method = "GET",
+			Headers = new()
+			{
+				{ "User-Agent", Constants.UserAgent },
+			},
+		};
+	}
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _achieveFormsUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
-			};
-
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest,
+				NextClientSideRequest = CreateInitialRequest(),
 			};
 
 			return getAddressesResponse;
@@ -227,20 +234,9 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _achieveFormsUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
-			};
-
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest,
+				NextClientSideRequest = CreateInitialRequest(),
 			};
 
 			return getBinDaysResponse;
@@ -249,7 +245,7 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups[1].Value;
+			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 
 			var requestBody = JsonSerializer.Serialize(new
 			{
