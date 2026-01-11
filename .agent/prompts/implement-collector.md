@@ -194,7 +194,7 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 ### 4.1 Run Tests
 
 ```bash
-dotnet test --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+dotnet test --no-restore --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
 ```
 
 ### 4.2 Debug Failures
@@ -203,7 +203,7 @@ If tests fail, enable HTTP logging:
 
 ```bash
 export BINDAYS_ENABLE_HTTP_LOGGING=true
-dotnet test --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
+dotnet test --no-restore --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
 ```
 
 Compare the logged requests against the HAR file:
