@@ -86,6 +86,13 @@ jobs:
     env:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
     steps:
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -204,8 +211,8 @@ jobs:
           ISSUE_NUMBER="${{ needs.check_trigger.outputs.issue_number }}"
           BRANCH_NAME="collector/${COLLECTOR_NAME}-issue-${ISSUE_NUMBER}-$(date +%s)"
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "Moley-Bot"
+          git config user.email "moley-bot@users.noreply.github.com"
 
           git checkout -b "$BRANCH_NAME"
           git add "BinDays.Api.Collectors/Collectors/Councils/${COLLECTOR_NAME}.cs"
@@ -215,7 +222,7 @@ jobs:
 
           Closes #${ISSUE_NUMBER}
 
-          Generated with Codex CLI"
+          Generated with Codex CLI by Moley-Bot"
 
           git push origin "$BRANCH_NAME"
 
@@ -224,7 +231,7 @@ jobs:
       - name: Create Pull Request
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GH_PAT_IMPLEMENT_COLLECTOR || secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.generate-token.outputs.token }}
           script: |
             const councilName = '${{ needs.check_trigger.outputs.council_name }}';
             const councilNamePascal = '${{ needs.check_trigger.outputs.council_name_pascal }}';
@@ -256,7 +263,7 @@ jobs:
 
             ---
 
-            Generated automatically by Codex CLI`
+            Generated automatically by **Moley-Bot** using Codex CLI`
             });
 
             core.info(`Created PR #${pr.number}: ${pr.html_url}`);
@@ -266,7 +273,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              body: `Collector implementation complete! Created PR #${pr.number}`
+              body: `**Moley-Bot here!** Collector implementation complete! Created PR #${pr.number}`
             });
 
   report_failure:
@@ -286,7 +293,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              body: `The automated collector implementation failed. Please check the [workflow run](${runUrl}) for details.
+              body: `**Moley-Bot here!** Unfortunately, the automated collector implementation failed. Please check the [workflow run](${runUrl}) for details.
 
             Common issues:
             - Council website may have changed or is using an unsupported pattern

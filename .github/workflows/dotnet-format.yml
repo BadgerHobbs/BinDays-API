@@ -17,15 +17,20 @@ jobs:
   dotnet_format:
     name: Dotnet Format
     runs-on: ubuntu-latest
-    env:
-      WORKFLOW_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
 
     steps:
+      - name: Generate GitHub App token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
-          token: ${{ secrets.WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ steps.generate-token.outputs.token }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -33,20 +38,16 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Format code
-        if: env.WORKFLOW_TOKEN != ''
         run: dotnet format --no-restore --severity info
 
       - name: Commit changes
-        if: env.WORKFLOW_TOKEN != ''
         run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Action"
+          git config --global user.email "moley-bot@users.noreply.github.com"
+          git config --global user.name "Moley-Bot"
           git add .
           git diff-index --quiet HEAD -- || (
-            git commit -am "Auto-format code with dotnet format"
+            git commit -am "Auto-format code with dotnet format
+
+            Formatted by Moley-Bot"
             git push
           )
-
-      - name: Verify formatting
-        if: env.WORKFLOW_TOKEN == ''
-        run: dotnet format --no-restore --verify-no-changes --severity info
