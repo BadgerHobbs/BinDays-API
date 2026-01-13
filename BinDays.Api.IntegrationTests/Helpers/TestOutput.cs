@@ -35,6 +35,7 @@ internal static class TestOutput
 		AppendSummaryHeader(summaryBuilder);
 		AppendCollectorDetails(summaryBuilder, collector);
 		AppendAddressDetails(summaryBuilder, addresses);
+		AppendBinTypesDetails(summaryBuilder, binDays);
 		AppendBinDayDetails(summaryBuilder, binDays);
 		AppendSummaryFooter(summaryBuilder);
 
@@ -104,6 +105,48 @@ internal static class TestOutput
 	}
 
 	/// <summary>
+	/// Appends a summary of all unique bin types found across all bin days.
+	/// </summary>
+	/// <param name="summaryBuilder">The StringBuilder to append to.</param>
+	/// <param name="binDays">The collection of bin days.</param>
+	private static void AppendBinTypesDetails(StringBuilder summaryBuilder, IReadOnlyCollection<BinDay> binDays)
+	{
+		const string binTypesHeaderText = " Bin Types ";
+		summaryBuilder.AppendLine(CreateCenteredHeader(binTypesHeaderText, _borderWidth, '-'));
+		summaryBuilder.AppendLine();
+
+		if (binDays == null || binDays.Count == 0)
+		{
+			summaryBuilder.AppendLine($"{_primaryIndent}No bins found.");
+		}
+		else
+		{
+			var uniqueBins = binDays
+				.Where(bd => bd.Bins != null)
+				.SelectMany(bd => bd.Bins)
+				.GroupBy(b => new { b.Name, b.Colour, b.Type })
+				.Select(g => g.First())
+				.OrderBy(b => b.Name)
+				.ToList();
+
+			if (uniqueBins.Count == 0)
+			{
+				summaryBuilder.AppendLine($"{_primaryIndent}No bins found.");
+			}
+			else
+			{
+				foreach (var bin in uniqueBins)
+				{
+					var binDetails = FormatBinDetails(bin);
+					summaryBuilder.AppendLine($"{_primaryIndent}{binDetails}");
+				}
+			}
+		}
+
+		summaryBuilder.AppendLine();
+	}
+
+	/// <summary>
 	/// Appends details about the bin days found to the StringBuilder, showing a limited number and their associated bins.
 	/// </summary>
 	/// <param name="summaryBuilder">The StringBuilder to append to.</param>
@@ -143,7 +186,8 @@ internal static class TestOutput
 			{
 				foreach (var bin in binDay.Bins)
 				{
-					summaryBuilder.AppendLine($"{_secondaryIndent}{bin.Name ?? "Unnamed Bin"}");
+					var binDetails = FormatBinDetails(bin);
+					summaryBuilder.AppendLine($"{_secondaryIndent}{binDetails}");
 				}
 			}
 			else
@@ -153,6 +197,51 @@ internal static class TestOutput
 
 			summaryBuilder.AppendLine();
 		}
+	}
+
+	/// <summary>
+	/// Formats bin details including name, colour, and type.
+	/// </summary>
+	/// <param name="bin">The bin to format.</param>
+	/// <returns>A formatted string with bin details.</returns>
+	private static string FormatBinDetails(Bin bin)
+	{
+		var name = bin.Name ?? "Unnamed Bin";
+		var colour = FormatEnumWithSpaces(bin.Colour.ToString());
+		var type = bin.Type.HasValue ? FormatEnumWithSpaces(bin.Type.Value.ToString()) : null;
+
+		if (type != null)
+		{
+			return $"{name} ({colour} {type})";
+		}
+		else
+		{
+			return $"{name} ({colour})";
+		}
+	}
+
+	/// <summary>
+	/// Formats an enum value by adding spaces between Pascal case words.
+	/// </summary>
+	/// <param name="value">The enum value as a string.</param>
+	/// <returns>A formatted string with spaces between words.</returns>
+	private static string FormatEnumWithSpaces(string value)
+	{
+		if (string.IsNullOrEmpty(value))
+		{
+			return value;
+		}
+
+		var result = new StringBuilder();
+		for (int i = 0; i < value.Length; i++)
+		{
+			if (i > 0 && char.IsUpper(value[i]))
+			{
+				result.Append(' ');
+			}
+			result.Append(value[i]);
+		}
+		return result.ToString();
 	}
 
 	/// <summary>

@@ -85,15 +85,21 @@ On the final page showing bin collections:
 
 ### 2.3 Close Browser and Save Data
 
-1. Close the Playwright browser session (this saves the HAR file automatically)
+1. **Take a screenshot** of the final bin collections page showing the collection dates:
 
-2. Clean the HAR file to reduce context:
+   - Use Playwright's screenshot functionality to capture the page
+   - Save as `.agent/playwright/out/{CouncilName}-screenshot.png`
+   - This screenshot will be included in the pull request to help with verification/validation
+
+2. Close the Playwright browser session (this saves the HAR file automatically)
+
+3. Clean the HAR file to reduce context:
 
    ```bash
    node .agent/scripts/clean-har.js .agent/playwright/out/requests.har .agent/playwright/out/{CouncilName}.cleaned.har
    ```
 
-3. Save collector info as JSON at `.agent/playwright/out/{CouncilName}.json`:
+4. Save collector info as JSON at `.agent/playwright/out/{CouncilName}.json`:
    ```json
    {
      "postcode": "...",
@@ -197,6 +203,13 @@ namespace BinDays.Api.IntegrationTests.Collectors.Councils
 dotnet test --filter "FullyQualifiedName~{CouncilName}Tests.GetBinDaysTest" --logger "console;verbosity=detailed" BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj
 ```
 
+The test output will include:
+
+- Collector name
+- Addresses found
+- **Bin Types**: A summary of all unique bin types with their names, colours, and container types
+- Bin Days: Collection dates with associated bins
+
 ### 4.2 Debug Failures
 
 If tests fail, enable HTTP logging:
@@ -233,10 +246,12 @@ Continue fixing and re-running tests until they pass.
 When tests pass successfully:
 
 1. Verify the output shows valid bin collection dates
-2. Confirm multiple bin types are correctly identified
-3. Report success with the files created:
+2. Confirm bin types are correctly identified with proper names, colours, and container types
+3. Check that the test summary shows all expected bin types for the council
+4. Report success with the files created:
    - `BinDays.Api.Collectors/Collectors/Councils/{CouncilName}.cs`
    - `BinDays.Api.IntegrationTests/Collectors/Councils/{CouncilName}Tests.cs`
+   - `.agent/playwright/out/{CouncilName}-screenshot.png`
 
 ---
 
@@ -247,5 +262,6 @@ When tests pass successfully:
 - **No try/catch for parsing**: Let exceptions propagate for easier debugging
 - **Use existing utilities**: `ProcessingUtilities`, `Constants.UserAgent`, etc.
 - **Follow the style guide**: Check `.gemini/styleguide.md` for conventions
+- **Include screenshot in PR**: The screenshot of the bin collections page taken during Phase 2.3 must be included in the pull request to assist with verification and validation
 
 Begin now by parsing the issue content and navigating to the council website.
