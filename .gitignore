@@ -46,3 +46,7 @@ msbuild.wrn
 # Agent automation output files
 .agent/playwright/out/
 !.agent/playwright/out/.gitkeep
+
+# Claude Code local settings
+.claude/settings.local.json
+tmpclaude-*-cwd
