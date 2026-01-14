@@ -32,10 +32,10 @@ The automation workflow allows new bin collection councils to be implemented aut
 
 The workflow requires the following secrets to be configured in the repository:
 
-| Secret | Description |
-|--------|-------------|
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key for Codex CLI |
-| `CODEX_CONFIG` | Codex TOML configuration |
+| Secret                       | Description                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AZURE_OPENAI_API_KEY`       | Azure OpenAI API key for Codex CLI                                                                                                                                                                                                                                                                                                              |
+| `CODEX_CONFIG`               | Codex TOML configuration                                                                                                                                                                                                                                                                                                                        |
 | `GH_PAT_IMPLEMENT_COLLECTOR` | **Personal Access Token (Fine-grained)** used to create Pull Requests.<br>Required to trigger the "Integration Tests" workflow which does not run when PRs are created by the default `GITHUB_TOKEN`.<br><br>**Required Repository Permissions:**<br>- `Pull requests`: Read and write<br>- `Issues`: Read and write<br>- `Contents`: Read-only |
 
 ### Example CODEX_CONFIG
@@ -70,7 +70,7 @@ Traces can be viewed at [trace.playwright.dev](https://trace.playwright.dev/) by
 ### Triggering the Workflow
 
 1. Create or find an issue with the "New Collector" label
-2. Ensure the issue title is the council name (e.g., "West Devon Borough Council")
+2. Ensure the issue title is the council name (e.g. "West Devon Borough Council")
 3. Ensure the issue follows the council-request template with all required fields filled
 4. Comment `/implement` on the issue
 5. The workflow will run and create a PR if successful
@@ -78,7 +78,8 @@ Traces can be viewed at [trace.playwright.dev](https://trace.playwright.dev/) by
 ### Required Issue Fields
 
 The issue must contain:
-- **GOV.UK ID**: URL from gov.uk/rubbish-collection-day (e.g., `https://www.gov.uk/rubbish-collection-day/west-devon`)
+
+- **GOV.UK ID**: URL from gov.uk/rubbish-collection-day (e.g. `https://www.gov.uk/rubbish-collection-day/west-devon`)
 - **Council Name**: Full name of the council
 - **Bin Collection Page**: Direct link to the council's bin collection lookup page
 - **Example Postcode**: A valid postcode in the council's area
@@ -115,12 +116,14 @@ This is a single unified prompt that takes the GitHub issue body as input and in
 ### clean-har.js
 
 Cleans HAR files to reduce context size by:
+
 - Removing static assets (images, CSS, fonts, JavaScript)
 - Removing analytics/tracking requests
 - Stripping unnecessary headers
 - Removing timing information
 
 Usage:
+
 ```bash
 node .agent/scripts/clean-har.js input.har output.cleaned.har
 ```
@@ -130,6 +133,7 @@ node .agent/scripts/clean-har.js input.har output.cleaned.har
 ### Adding New Vendor Base Classes
 
 If you encounter a council using a common third-party vendor system, consider:
+
 1. Analyzing multiple councils using the same vendor
 2. Creating a new base class in `BinDays.Api.Collectors/Collectors/Vendors/`
 3. Updating the `implement-collector.md` prompt to reference the new base class

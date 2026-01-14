@@ -56,7 +56,7 @@ public static class Extensions
 			return bestMatch.Value;
 		}
 
-		// Fallback: If no year produced a valid date (e.g., Feb 29 on a non-leap year),
+		// Fallback: If no year produced a valid date (e.g. Feb 29 on a non-leap year),
 		// we call ParseExact on the current year to trigger the standard FormatException.
 		return DateOnly.ParseExact($"{input} {today.Year}", formatWithYear, CultureInfo.InvariantCulture, DateTimeStyles.None);
 	}
