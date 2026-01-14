@@ -233,7 +233,7 @@ internal static class TestOutput
 		}
 
 		var result = new StringBuilder();
-		for (int i = 0; i < value.Length; i++)
+		for (var i = 0; i < value.Length; i++)
 		{
 			if (i > 0 && char.IsUpper(value[i]))
 			{
