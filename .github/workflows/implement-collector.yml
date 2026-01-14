@@ -167,7 +167,7 @@ jobs:
 
           # Run Codex with the prompt
           echo "Running Codex to implement collector..."
-          codex exec --skip-git-repo-check --full-auto --dangerously-disable-sandbox "$PROMPT"
+          codex exec --skip-git-repo-check --full-auto --dangerously-bypass-approvals-and-sandbox "$PROMPT"
 
       - name: Verify implementation
         run: |
