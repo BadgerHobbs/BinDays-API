@@ -96,7 +96,7 @@ jobs:
     name: Implement Collector
     needs: check_trigger
     if: needs.check_trigger.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 60
     env:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -167,7 +167,7 @@ jobs:
 
           # Run Codex with the prompt
           echo "Running Codex to implement collector..."
-          codex exec --skip-git-repo-check --full-auto "$PROMPT"
+          codex exec --skip-git-repo-check --full-auto --dangerously-disable-sandbox "$PROMPT"
 
       - name: Verify implementation
         run: |
