@@ -49,7 +49,7 @@ internal abstract class MyBinsAppCollectorBase : GovUkCollectorBase
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -124,7 +124,7 @@ internal abstract class MyBinsAppCollectorBase : GovUkCollectorBase
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -160,6 +160,15 @@ internal abstract class MyBinsAppCollectorBase : GovUkCollectorBase
 
 				// Parse ISO 8601 datetime (e.g. "2026-01-26T16:00:00+00:00")
 				var date = DateOnly.FromDateTime(DateTime.Parse(startString, CultureInfo.InvariantCulture));
+
+				// Brown bins are not collected during winter months (December, January, February)
+				if (binName.Equals("Brown Bin", StringComparison.OrdinalIgnoreCase))
+				{
+					if (date.Month is 12 or 1 or 2)
+					{
+						continue;
+					}
+				}
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(BinTypes, binName);
 

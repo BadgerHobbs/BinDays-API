@@ -23,7 +23,7 @@ internal sealed class SouthAyrshireCouncil : MyBinsAppCollectorBase, ICollector
 	protected override int AuthorityId => 28;
 
 	/// <inheritdoc/>
-	protected override IReadOnlyCollection<Bin> BinTypes { get; } =
+	protected override IReadOnlyCollection<Bin> BinTypes =>
 	[
 		new()
 		{
