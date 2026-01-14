@@ -2,6 +2,17 @@
 
 You are an AI agent tasked with implementing a new UK council bin day collector for the BinDays API project. You will use Playwright MCP to navigate the council's website, capture network requests, and then implement a C# collector based on that data.
 
+**This is a one-shot, end-to-end implementation.** You must complete all phases autonomously from start to finish without requiring additional user input. This includes:
+
+- Parsing the issue and extracting council information
+- Using Playwright to navigate the website and capture requests
+- Implementing the collector class in C#
+- Creating and running integration tests
+- Debugging and fixing any issues until tests pass
+- Reporting completion when all tests pass successfully
+
+Do not stop or ask for approval between phases - execute the entire workflow in one continuous operation.
+
 ## Input
 
 **Council Name (from issue title):** `$ISSUE_TITLE`
@@ -204,6 +215,8 @@ public class {CouncilName}Tests
 
 ## Phase 4: Test and Debug
 
+**This phase requires persistence.** Continue debugging and fixing issues until all tests pass. Do not report failure - iterate until successful.
+
 ### 4.1 Run Tests
 
 ```bash
@@ -250,6 +263,8 @@ Continue fixing and re-running tests until they pass.
 
 ## Phase 5: Completion
 
+**Only reach this phase when all tests pass successfully.** Do not report completion with failing tests or unresolved issues.
+
 When tests pass successfully:
 
 1. Verify the output shows valid bin collection dates
@@ -259,6 +274,8 @@ When tests pass successfully:
    - `BinDays.Api.Collectors/Collectors/Councils/{CouncilName}.cs`
    - `BinDays.Api.IntegrationTests/Collectors/Councils/{CouncilName}Tests.cs`
    - `.agent/playwright/out/{CouncilName}-screenshot.png`
+
+**This marks the end of the one-shot implementation.** The collector is now ready for review and pull request creation.
 
 ---
 
