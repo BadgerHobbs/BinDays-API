@@ -12,5 +12,6 @@
     }
   },
   "outputDir": "./.agent/playwright/out",
-  "saveTrace": true
+  "saveTrace": true,
+  "isolated": true
 }
