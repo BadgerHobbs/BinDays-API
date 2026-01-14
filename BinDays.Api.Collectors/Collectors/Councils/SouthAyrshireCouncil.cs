@@ -4,6 +4,7 @@ using BinDays.Api.Collectors.Collectors.Vendors;
 using BinDays.Api.Collectors.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// Collector implementation for South Ayrshire Council.
@@ -68,4 +69,31 @@ internal sealed class SouthAyrshireCouncil : MyBinsAppCollectorBase, ICollector
 			Keys = [ "Food Caddy" ],
 		},
 	];
+
+	/// <inheritdoc/>
+	public new GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		var response = base.GetBinDays(address, clientSideResponse);
+
+		// Filter out Brown Bin collections during winter months (December, January, February)
+		if (response.BinDays != null)
+		{
+			var filteredBinDays = response.BinDays
+				.Where(binDay =>
+				{
+					var isBrownBin = binDay.Bins.Any(bin => bin.Name == "Garden Waste");
+					var isWinterMonth = binDay.Date.Month is 12 or 1 or 2;
+					return !(isBrownBin && isWinterMonth);
+				})
+				.ToArray();
+
+			return new GetBinDaysResponse
+			{
+				BinDays = filteredBinDays,
+				NextClientSideRequest = response.NextClientSideRequest,
+			};
+		}
+
+		return response;
+	}
 }
