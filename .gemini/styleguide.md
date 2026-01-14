@@ -10,6 +10,7 @@ This style guide outlines the coding conventions for C# code developed for the B
 - **Maintainability:** Code should be easy to modify and extend.
 - **Consistency:** Adhering to a consistent style across all projects improves collaboration and reduces errors.
 - **No Browser Emulation:** Do not use browser emulation tools like Selenium. Instead, replicate the necessary HTTP requests directly. This keeps the collectors lightweight and avoids heavy dependencies.
+- **Return Only Actual Data:** Collectors must return ONLY the collection dates explicitly provided by the council website. Never calculate or infer additional dates based on intervals, patterns, or statements like "and every other week thereafter". The collector's responsibility is to faithfully represent the data source, not to project or compute future dates.
 
 ## File Structure
 
@@ -30,6 +31,7 @@ This style guide outlines the coding conventions for C# code developed for the B
 - **Uri Instantiation:** Use target-typed `new("url")` syntax for Uri properties.
 
 Example:
+
 ```c#
 /// <inheritdoc/>
 public string Name => "My New Council";
@@ -49,6 +51,7 @@ public override string GovUkId => "my-new-council";
 - **Inheritance:** All collectors inherit from `GovUkCollectorBase` (directly or through a vendor base class) and explicitly implement `ICollector`.
 
 Examples:
+
 ```c#
 // Standard collector with regex - requires partial
 internal sealed partial class MyNewCouncil : GovUkCollectorBase, ICollector
@@ -64,11 +67,13 @@ Maintain consistent ordering of class members to improve code readability. Group
 ### Configuration (in this order):
 
 1. **Interface Properties**:
+
    - `Name`
    - `WebsiteUrl`
    - `GovUkId` (or vendor-specific overrides for vendor base collectors)
 
 2. **Bin Types**:
+
    - Standard collectors: `private readonly IReadOnlyCollection<Bin> _binTypes`
    - Vendor collectors: `protected override IReadOnlyCollection<Bin> BinTypes`
 
@@ -79,6 +84,7 @@ Maintain consistent ordering of class members to improve code readability. Group
 ### Implementation (in this order):
 
 4. **Regex Methods** (if using `[GeneratedRegex]`):
+
    - Typical order: `TokenRegex()`, `AddressRegex()`, `BinDaysRegex()`
    - Other helper regexes as needed
 
@@ -87,6 +93,7 @@ Maintain consistent ordering of class members to improve code readability. Group
    - `GetBinDays()`
 
 ### Example structure:
+
 ```c#
 internal sealed partial class MyCouncil : GovUkCollectorBase, ICollector
 {
@@ -134,7 +141,7 @@ A collector must implement the following properties and methods:
 - `GetAddresses(string postcode, ClientSideResponse? clientSideResponse)`: The method to retrieve addresses for a given postcode.
 - `GetBinDays(Address address, ClientSideResponse? clientSideResponse)`: The method to retrieve bin collection days for a given address.
 
-**Vendor Base Class Collector (e.g., inheriting from `ITouchVisionCollectorBase`):**
+**Vendor Base Class Collector (e.g. inheriting from `ITouchVisionCollectorBase`):**
 
 These collectors have a simpler implementation and must define:
 
@@ -173,10 +180,22 @@ Collectors in this project follow a few specific design principles that are impo
 
 ### Data Handling and Parsing
 
+- **Return Only Actual Data:**
+
+  - Collectors must return ONLY the bin collection dates that are explicitly provided by the council website.
+  - **DO NOT** calculate, project, or infer additional collection dates based on:
+    - Observed intervals or patterns (e.g. "these dates are 2 weeks apart")
+    - Statements on the website like "and every other week" or "fortnightly thereafter"
+    - Any other implicit scheduling information
+  - The collector's sole responsibility is to accurately extract and return the data as provided by the source.
+  - If a council website only shows 3 dates, return exactly 3 dates—do not compute future dates.
+  - This principle ensures collectors remain simple, accurate, and maintainable. Projection logic, if needed, belongs at a higher application layer, not in the collector.
+
 - **Parsing Strategy:**
 
   - **For HTML:** Prefer using regular expressions (`Regex`) for extracting data. This keeps dependencies minimal.
-    - Always use `[GeneratedRegex]` attribute with static partial methods (e.g., `AddressRegex()`, `BinDaysRegex()`).
+
+    - Always use `[GeneratedRegex]` attribute with static partial methods (e.g. `AddressRegex()`, `BinDaysRegex()`).
     - Use the null-forgiving operator on regex matches: `Matches(content)!` since we expect matches or want failures to propagate.
     - Name methods with PascalCase and "Regex" suffix: `TokenRegex()`, `AddressRegex()`, `BinDaysRegex()`.
     - Use verbatim strings for regex patterns: `@"pattern"`.
@@ -189,6 +208,7 @@ Collectors in this project follow a few specific design principles that are impo
     - Get properties with `GetProperty("name").GetString()`.
 
 - **Robust Date Parsing:**
+
   - **With Year:** Always use `DateOnly.ParseExact` or `DateTime.ParseExact` with explicit format strings and `CultureInfo.InvariantCulture`:
     ```c#
     var date = DateOnly.ParseExact(
@@ -201,12 +221,14 @@ Collectors in this project follow a few specific design principles that are impo
   - **Without Year:** When the source data lacks a year, use the `ParseDateInferringYear()` extension method (see Common Utilities section below).
 
 - **Data Cleaning:**
+
   - Always `Trim()` strings retrieved from external sources to remove leading/trailing whitespace.
   - Filter out placeholder values explicitly: `if (uid == "-1" || uid == "111111") { continue; }`
 
 - **Handling Secrets:** Store API keys or other secrets as `private const string` fields within the collector class. Do not expose them publicly.
 
 - **Flexible Bin Matching:**
+
   - Use `ProcessingUtilities.GetMatchingBins(_binTypes, sourceKey)` to match bins by their keys.
   - The `_binTypes` collection allows for flexible matching—use the `Keys` property to define one or more identifiers.
   - Matching logic can be case-insensitive or based on partial strings as needed.
@@ -216,14 +238,20 @@ Collectors in this project follow a few specific design principles that are impo
   - `ClientSideRequest.Headers`: Defaults to an empty `Dictionary<string, string>`.
   - `ClientSideRequest.Body`: Defaults to `null`.
   - `NextClientSideRequest`: The `NextClientSideRequest` property in response models like `GetAddressesResponse` and `GetBinDaysResponse` defaults to `null`.
-  - **Avoid Redundant Initializations:** When creating new instances of these models, do not explicitly set these properties to their default values (e.g. avoid `Headers = []` or `NextClientSideRequest = null`).
+  - **Avoid Redundant Initializations:** When creating new instances of these models, do not explicitly set these properties to their default values:
+    - DO NOT set `Headers = []` when you have no headers to add (omit the property entirely)
+    - DO set `Headers = new() { {"key", "value"}, }` when you ARE adding headers (use `new()` for non-empty collections)
+    - DO NOT set `NextClientSideRequest = null` (omit the property entirely)
+    - DO NOT set `Body = null` (omit the property entirely)
 
 - **Enums for Bins:**
+
   - **`BinColour`:** Use the `BinColour` enum for the `Colour` property of the `Bin` model.
   - **`BinType`:** Use the `BinType` enum for the `Type` property of the `Bin` model.
   - This provides type safety and avoids the use of "magic strings."
 
 - **Collection Expressions (C# 12):** Use modern C# 12 collection expression syntax for creating readonly collections.
+
   - **Static Collections:** Use `[item1, item2]` syntax for inline initialization of `IReadOnlyCollection<T>` properties.
     ```c#
     Keys = [ "BIN_ID_IN_DATA" ]
@@ -237,9 +265,11 @@ Collectors in this project follow a few specific design principles that are impo
   - **Benefits:** Collection expressions are more concise, performant, and represent modern C# best practices.
 
 - **Object Initialization Patterns:**
+
   - **Always use multi-line initialization** for objects with 2+ properties. Never use single-line.
   - **Always use trailing commas** after every property in multi-line initializers.
   - **Always use separate variable declarations**, not inline returns:
+
     ```c#
     // Correct
     var clientSideRequest = new ClientSideRequest
@@ -263,15 +293,23 @@ Collectors in this project follow a few specific design principles that are impo
         }
     };
     ```
-  - Use target-typed `new()` for bin objects: `new() { Name = "...", }`
-  - Use dictionary initializer for headers: `new() { {"key", "value"}, }`
+
+  - **Collection/Dictionary Initialization:**
+    - Use `[]` for empty collections (when assigning to properties that expect empty collections)
+    - Use `new()` for non-empty collections and dictionaries (when syntax allows)
+    - Examples:
+      - Bin objects: `new() { Name = "...", Colour = BinColour.Grey, }`
+      - Headers dictionary: `new() { {"key", "value"}, }`
+      - Empty would be: omit the property entirely (don't use `Headers = []`)
 
 - **Common Utilities:**
+
   - **User Agent:** Use `Constants.UserAgent` for user-agent headers, never hard-code.
   - **Form Data:** Use `ProcessingUtilities.ConvertDictionaryToFormData(new() { ... })` to convert dictionaries to URL-encoded form data.
   - **Bin Matching:** Use `ProcessingUtilities.GetMatchingBins(_binTypes, sourceKey)` to find bins by keys.
   - **Bin Day Processing:** Always call `ProcessingUtilities.ProcessBinDays(binDays)` as the final step in `GetBinDays()` to filter future dates and merge by date.
-  - **Date Parsing Without Year:** When source data lacks a year (e.g., "Monday 29 December" or "15 March"), use the `ParseDateInferringYear()` extension method:
+  - **Date Parsing Without Year:** When source data lacks a year (e.g. "Monday 29 December" or "15 March"), use the `ParseDateInferringYear()` extension method:
+
     ```c#
     using BinDays.Api.Collectors.Utilities;
 
@@ -279,9 +317,11 @@ Collectors in this project follow a few specific design principles that are impo
     // or
     var date = dateString.ParseDateInferringYear("d MMM");
     ```
-    This method automatically infers the correct year by checking current, previous, and next years, returning the date chronologically closest to today. Useful for handling year boundaries (e.g., parsing "December 29" on January 1st).
+
+    This method automatically infers the correct year by checking current, previous, and next years, returning the date chronologically closest to today. Useful for handling year boundaries (e.g. parsing "December 29" on January 1st).
 
 - **Iteration Patterns:**
+
   - **Regex Matches:** Use `foreach (Match item in regex.Matches(content)!)` pattern.
   - **List Building:** Create mutable list, add items in loop, then convert to readonly:
     ```c#
@@ -567,6 +607,7 @@ internal sealed class MyVendorCouncil : ITouchVisionCollectorBase, ICollector
 ```
 
 **Note:**
+
 - No `GetAddresses()` or `GetBinDays()` methods—handled by the base class.
 - No regex patterns required.
 - Uses `protected override` for all inherited properties.
@@ -588,7 +629,7 @@ using Xunit.Abstractions;
 
 public class MyNewCouncilTests
 {
-	private readonly IntegrationTestClient _client = new();
+	private readonly IntegrationTestClient _client;
 	private static readonly ICollector _collector = new MyNewCouncil();
 	private readonly CollectorService _collectorService = new([_collector]);
 	private readonly ITestOutputHelper _outputHelper;
@@ -596,6 +637,7 @@ public class MyNewCouncilTests
 	public MyNewCouncilTests(ITestOutputHelper outputHelper)
 	{
 		_outputHelper = outputHelper;
+		_client = new IntegrationTestClient(outputHelper);
 	}
 
 	[Theory]

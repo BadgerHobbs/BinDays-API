@@ -24,7 +24,7 @@ The **Council Name** is provided in the issue title above.
 
 Parse the GitHub issue body to extract:
 
-- **GOV.UK URL**: Extract the council ID from the URL (e.g., `west-devon` from `https://www.gov.uk/rubbish-collection-day/west-devon`)
+- **GOV.UK URL**: Extract the council ID from the URL (e.g. `west-devon` from `https://www.gov.uk/rubbish-collection-day/west-devon`)
 - **Council Website**: The main council website URL
 - **Bin Collection Page**: The direct link to look up bin collections
 - **Example Postcode**: A valid postcode for testing
@@ -82,6 +82,14 @@ On the final page showing bin collections:
    - Bin names/descriptions
    - Bin colours (if visible)
    - Container types (bin, box, bag, caddy)
+
+**IMPORTANT:** Only record the actual collection dates shown on the page. Do NOT calculate or infer additional dates based on intervals, even if:
+
+- The pattern suggests regular intervals (e.g. every 2 weeks)
+- The website states "and every other week" or similar
+- You can deduce a schedule from the visible dates
+
+Collectors must return ONLY the true data provided by the council, not computed projections.
 
 ### 2.3 Close Browser and Save Data
 
@@ -154,41 +162,40 @@ Key implementation details:
 Create `BinDays.Api.IntegrationTests/Collectors/Councils/{CouncilName}Tests.cs`:
 
 ```csharp
-namespace BinDays.Api.IntegrationTests.Collectors.Councils
+namespace BinDays.Api.IntegrationTests.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors;
+using BinDays.Api.Collectors.Collectors.Councils;
+using BinDays.Api.Collectors.Services;
+using BinDays.Api.IntegrationTests.Helpers;
+using System.Threading.Tasks;
+using Xunit;
+using Xunit.Abstractions;
+
+public class {CouncilName}Tests
 {
-    using BinDays.Api.Collectors.Collectors;
-    using BinDays.Api.Collectors.Collectors.Councils;
-    using BinDays.Api.Collectors.Services;
-    using BinDays.Api.IntegrationTests.Helpers;
-    using System.Threading.Tasks;
-    using Xunit;
-    using Xunit.Abstractions;
+    private readonly IntegrationTestClient _client;
+    private static readonly ICollector _collector = new {CouncilName}();
+    private readonly CollectorService _collectorService = new([_collector]);
+    private readonly ITestOutputHelper _outputHelper;
 
-    public class {CouncilName}Tests
+    public {CouncilName}Tests(ITestOutputHelper outputHelper)
     {
-        private readonly IntegrationTestClient _client;
-        private static readonly ICollector _collector = new {CouncilName}();
-        private readonly CollectorService _collectorService = new([_collector]);
-        private readonly ITestOutputHelper _outputHelper;
+        _outputHelper = outputHelper;
+        _client = new IntegrationTestClient(outputHelper);
+    }
 
-        public {CouncilName}Tests(ITestOutputHelper outputHelper)
-        {
-            _outputHelper = outputHelper;
-            _client = new IntegrationTestClient(outputHelper);
-        }
-
-        [Theory]
-        [InlineData("{postcode}")]
-        public async Task GetBinDaysTest(string postcode)
-        {
-            await TestSteps.EndToEnd(
-                _client,
-                _collectorService,
-                _collector,
-                postcode,
-                _outputHelper
-            );
-        }
+    [Theory]
+    [InlineData("{postcode}")]
+    public async Task GetBinDaysTest(string postcode)
+    {
+        await TestSteps.EndToEnd(
+            _client,
+            _collectorService,
+            _collector,
+            postcode,
+            _outputHelper
+        );
     }
 }
 ```
@@ -262,6 +269,7 @@ When tests pass successfully:
 - **No try/catch for parsing**: Let exceptions propagate for easier debugging
 - **Use existing utilities**: `ProcessingUtilities`, `Constants.UserAgent`, etc.
 - **Follow the style guide**: Check `.gemini/styleguide.md` for conventions
+- **Return only actual data**: Collectors must return ONLY the collection dates explicitly provided by the council website. Never calculate or infer additional dates based on intervals, patterns, or statements like "and every other week"
 - **Include screenshot in PR**: The screenshot of the bin collections page taken during Phase 2.3 must be included in the pull request to assist with verification and validation
 
 Begin now by parsing the issue content and navigating to the council website.

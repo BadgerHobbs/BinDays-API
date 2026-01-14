@@ -26,7 +26,7 @@ dotnet test --filter "FullyQualifiedName~WestDevonBoroughCouncilTests.GetBinDays
 
 ### Running Tests with Logging in Bash
 
-If you are using Bash (e.g., Git Bash, WSL), you can use the following commands:
+If you are using Bash (e.g. Git Bash, WSL), you can use the following commands:
 
 ```bash
 export BINDAYS_ENABLE_HTTP_LOGGING="true"
