@@ -96,7 +96,7 @@ jobs:
     name: Implement Collector
     needs: check_trigger
     if: needs.check_trigger.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 60
     env:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -235,10 +235,6 @@ jobs:
           git add "BinDays.Api.Collectors/Collectors/Councils/${COLLECTOR_NAME}.cs"
           git add "BinDays.Api.IntegrationTests/Collectors/Councils/${COLLECTOR_NAME}Tests.cs"
 
-          # Add screenshot if it exists
-          if [ -f ".agent/playwright/out/${COLLECTOR_NAME}-screenshot.png" ]; then
-            git add ".agent/playwright/out/${COLLECTOR_NAME}-screenshot.png"
-          fi
 
           git commit -m "Add collector for ${COLLECTOR_NAME}
 
@@ -282,10 +278,6 @@ jobs:
             \`\`\`text
             ${testSummary}
             \`\`\`
-
-            ## Bin Collections Page Screenshot
-
-            ![${councilNamePascal} Bin Collections](.agent/playwright/out/${councilNamePascal}-screenshot.png)
 
             ---
 
