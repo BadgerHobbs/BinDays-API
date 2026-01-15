@@ -178,11 +178,15 @@ jobs:
 
           ISSUE_BODY=$(cat .agent/playwright/out/issue_body.txt)
 
+          # Read the style guide for injection
+          STYLE_GUIDE=$(cat .gemini/styleguide.md)
+
           # Read the prompt template and substitute variables
           PROMPT=$(cat .agent/prompts/implement-collector.md)
           PROMPT="${PROMPT//\$ISSUE_TITLE/$ISSUE_TITLE}"
           PROMPT="${PROMPT//\$ISSUE_BODY/$ISSUE_BODY}"
           PROMPT="${PROMPT//\$ISSUE_NUMBER/$ISSUE_NUMBER}"
+          PROMPT="${PROMPT//\$STYLE_GUIDE/$STYLE_GUIDE}"
 
           # Run Codex with the prompt
           echo "Running Codex to implement collector..."

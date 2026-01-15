@@ -161,6 +161,25 @@ Collectors in this project follow a few specific design principles that are impo
 
 - **Stateless by Design:** Because all requests to council websites originate from the client application (the user's device), the API itself is stateless. This means you cannot save state, such as authentication tokens or session cookies, between the different steps of a collector's process (e.g. between `GetAddresses` and `GetBinDays`). Each step is an independent transaction.
 
+- **Managing State Across Request Steps:** While the collector itself is stateless, you often need to pass data (tokens, cookies, session IDs) between client-side request steps. Use the `ClientSideOptions.Metadata` dictionary to carry this state forward:
+
+  ```csharp
+  // Store state in first request
+  Options = new ClientSideOptions
+  {
+      Metadata = {
+          { "cookie", cookie },
+          { "csrfToken", token }
+      }
+  };
+
+  // Retrieve state in subsequent request
+  var cookie = clientSideResponse.Options.Metadata["cookie"];
+  var token = clientSideResponse.Options.Metadata["csrfToken"];
+  ```
+
+  This pattern is commonly used for authentication flows that require cookies, CSRF tokens, or session identifiers to be passed from one step to the next.
+
 - **Step-by-Step Request Implementation:** For collectors that require multiple client-side requests, use a step-by-step implementation based on the `RequestId` of the `clientSideResponse`. This is typically structured as an `if/else if` chain.
 
   - **RequestId Numbering:** Always start RequestId at `1` (not `0`) and increment sequentially.
@@ -207,6 +226,15 @@ Collectors in this project follow a few specific design principles that are impo
     - Iterate arrays with `EnumerateArray()`: `foreach (var element in jsonDoc.RootElement.EnumerateArray())`
     - Get properties with `GetProperty("name").GetString()`.
 
+  - **For Delimited Strings:** Use `Split()` with LINQ to parse comma-separated or delimited data:
+    ```c#
+    var dates = rawBinDay.Groups["dates"].Value
+        .Split(",")
+        .Select(x => x.Trim())
+        .Where(x => !string.IsNullOrWhiteSpace(x));
+    ```
+    This pattern handles whitespace and filters empty values consistently.
+
 - **Robust Date Parsing:**
 
   - **With Year:** Always use `DateOnly.ParseExact` or `DateTime.ParseExact` with explicit format strings and `CultureInfo.InvariantCulture`:
@@ -219,11 +247,49 @@ Collectors in this project follow a few specific design principles that are impo
     );
     ```
   - **Without Year:** When the source data lacks a year, use the `ParseDateInferringYear()` extension method (see Common Utilities section below).
+  - **Multiple Formats:** When dates may appear in slightly different formats from the same source, use the array overload:
+    ```c#
+    var date = DateOnly.ParseExact(
+        dateString,
+        ["dddd dd MMMM yyyy", "dddd dd MMM yyyy"],
+        CultureInfo.InvariantCulture,
+        DateTimeStyles.None
+    );
+    ```
+  - **Ordinal Suffixes:** UK councils frequently use ordinal date formats (e.g., "1st", "2nd", "3rd", "21st"). Remove these suffixes before parsing:
+    ```c#
+    [GeneratedRegex(@"(?<=\d)(st|nd|rd|th)")]
+    private static partial Regex OrdinalSuffixRegex();
+
+    // Usage:
+    dateString = OrdinalSuffixRegex().Replace(dateString, "");
+    var date = DateOnly.ParseExact(dateString, "d MMMM yyyy", CultureInfo.InvariantCulture);
+    ```
 
 - **Data Cleaning:**
 
   - Always `Trim()` strings retrieved from external sources to remove leading/trailing whitespace.
   - Filter out placeholder values explicitly: `if (uid == "-1" || uid == "111111") { continue; }`
+  - Skip invalid or unknown data during iteration using early `continue` statements:
+    ```c#
+    if (type == "Unknown" || string.IsNullOrWhiteSpace(type))
+    {
+        continue;
+    }
+    ```
+  - Clean HTML escape characters when parsing JSON-embedded HTML or regex-extracted content:
+    ```c#
+    var cleanedHtml = jsonProperty.GetString()!.Replace("\\\"", "\"");
+    var decodedText = WebUtility.HtmlDecode(rawText);  // For HTML entities like &nbsp;
+    ```
+
+- **Address Structure:**
+
+  - **Simplified approach recommended:** In most cases, it's simpler to avoid separating addresses into individual component fields (house number, street name, etc.).
+  - The `Address` model uses `Property` for the main address string and `Postcode` as a separate field—this pattern works well for most implementations.
+  - Store the complete address string as provided by the council website in the `Property` field without parsing it into separate house number and street components.
+  - Only separate address components if there's a specific need for your implementation.
+  - This simplified approach reduces complexity, avoids parsing errors, and accurately represents the data as provided by the source.
 
 - **Handling Secrets:** Store API keys or other secrets as `private const string` fields within the collector class. Do not expose them publicly.
 

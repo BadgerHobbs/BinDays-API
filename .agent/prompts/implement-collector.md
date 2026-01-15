@@ -6,12 +6,16 @@ You are an AI agent tasked with implementing a new UK council bin day collector 
 
 - Parsing the issue and extracting council information
 - Using Playwright to navigate the website and capture requests
-- Implementing the collector class in C#
+- **Reading and following the complete style guide (provided in Phase 3.1 below)**
+- Implementing the collector class in C# with **strict style guide compliance**
 - Creating and running integration tests
 - Debugging and fixing any issues until tests pass
-- Reporting completion when all tests pass successfully
+- **Verifying style guide compliance before reporting completion**
+- Reporting completion when all tests pass successfully AND code follows all style guide conventions
 
 Do not stop or ask for approval between phases - execute the entire workflow in one continuous operation.
+
+**CRITICAL: The complete style guide is embedded in this prompt at Phase 3.1. You must read and follow it precisely. Non-compliant code is not acceptable.**
 
 ## Input
 
@@ -181,16 +185,32 @@ Collectors must return ONLY the true data provided by the council, not computed 
 
 ## Phase 3: Implement the Collector
 
-### 3.1 Study Existing Patterns
+### 3.1 Read the Complete Style Guide
 
-Before writing code, analyze:
+**CRITICAL: The full style guide has been provided below. Read it completely before writing any code.**
 
-- The style guide in `.gemini/styleguide.md`
-- Existing collectors in `BinDays.Api.Collectors/Collectors/Councils/`
-- Base classes in `BinDays.Api.Collectors/Collectors/Vendors/`
-- The cleaned HAR file to understand the HTTP request flow
+---
 
-### 3.2 Choose Base Class
+$STYLE_GUIDE
+
+---
+
+**You must follow EVERY convention documented in the style guide above. Non-compliant code will be rejected.**
+
+### 3.2 Study Existing Patterns
+
+Before writing code:
+
+1. **Study 2-3 existing collectors** in `BinDays.Api.Collectors/Collectors/Councils/`
+   - Look for patterns that match your use case (JSON parsing, HTML regex, multi-step flows)
+   - Use them as references for implementation details
+
+2. **Review base classes** in `BinDays.Api.Collectors/Collectors/Vendors/`
+   - Understand which base class to use and how to inherit from it
+
+3. **Analyze the cleaned HAR file** to understand the HTTP request flow
+
+### 3.3 Choose Base Class
 
 Determine the appropriate base class:
 
@@ -201,20 +221,26 @@ Determine the appropriate base class:
 
 If unsure, use `GovUkCollectorBase`.
 
-### 3.3 Implement Collector Class
+### 3.4 Implement Collector Class
 
 Create `BinDays.Api.Collectors/Collectors/Councils/{CouncilName}.cs`:
 
-Key implementation details:
+**YOU MUST STRICTLY FOLLOW ALL CONVENTIONS FROM THE STYLE GUIDE PROVIDED ABOVE.**
 
-- **Stateless design**: Each request step is independent
-- **Use `if/else if` pattern**: Based on `clientSideResponse.RequestId`
-- **Extract tokens/cookies**: From HTML using `[GeneratedRegex]` attributes
-- **Define `_binTypes`**: Map bin identifiers to human-readable names and colours
-- **Use `ProcessingUtilities`**: For cookie parsing, form data, bin matching
-- **Parse dates**: Use `DateOnly.ParseExact` with `CultureInfo.InvariantCulture`
+Refer back to the style guide sections for:
+- Class structure and modifiers
+- Property and method syntax
+- Member ordering
+- Collection and object initialization patterns
+- RequestId handling patterns
+- State management with Metadata
+- Date parsing and data cleaning
+- Regex usage
+- Utility method usage
 
-### 3.4 Create Integration Test
+**If you are unsure about ANY convention, refer back to the style guide before proceeding.**
+
+### 3.5 Create Integration Test
 
 Create `BinDays.Api.IntegrationTests/Collectors/Councils/{CouncilName}Tests.cs`:
 
@@ -311,7 +337,19 @@ Continue fixing and re-running tests until they pass.
 
 **Only reach this phase when all tests pass successfully.** Do not report completion with failing tests or unresolved issues.
 
-When tests pass successfully:
+### 5.1 Final Style Guide Compliance Check
+
+Before reporting completion, perform a final review:
+
+1. **Re-read the style guide in Phase 3.1** and verify your code matches ALL conventions
+2. **Compare against existing collectors** - your code should look stylistically identical
+3. **Verify all key requirements from the style guide are met** (class structure, property syntax, member ordering, collection expressions, object initialization, RequestId pattern, date parsing, utility usage, etc.)
+
+**If any style guide violation is found, fix it before proceeding.**
+
+### 5.2 Report Success
+
+When tests pass AND style guide compliance is verified:
 
 1. Verify the output shows valid bin collection dates
 2. Confirm bin types are correctly identified with proper names, colours, and container types
@@ -327,12 +365,21 @@ When tests pass successfully:
 
 ## Important Guidelines
 
+### HIGHEST PRIORITY: Style Guide Compliance
+
+**THE COMPLETE STYLE GUIDE HAS BEEN PROVIDED IN PHASE 3.1 ABOVE. IT IS THE SINGLE SOURCE OF TRUTH FOR ALL CODE CONVENTIONS.**
+
+- Read the ENTIRE style guide in Phase 3.1 before writing any code
+- Follow EVERY convention documented without exception
+- Non-compliance will result in rejected code
+- When in doubt about ANY implementation detail, refer back to the style guide in Phase 3.1
+
+### Critical Implementation Rules
+
 - **No browser emulation in collector**: The collector must replicate HTTP requests directly, not use Playwright/Selenium
-- **Preserve if/else if pattern**: Don't refactor to other patterns
-- **No try/catch for parsing**: Let exceptions propagate for easier debugging
-- **Use existing utilities**: `ProcessingUtilities`, `Constants.UserAgent`, etc.
-- **Follow the style guide**: Check `.gemini/styleguide.md` for conventions
 - **Return only actual data**: Collectors must return ONLY the collection dates explicitly provided by the council website. Never calculate or infer additional dates based on intervals, patterns, or statements like "and every other week"
 - **Include screenshot in PR**: The screenshot of the bin collections page taken during Phase 2.3 must be included in the pull request to assist with verification and validation
+
+All other implementation rules are documented in the style guide provided in Phase 3.1.
 
 Begin now by parsing the issue content and navigating to the council website.
