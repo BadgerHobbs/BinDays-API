@@ -27,6 +27,52 @@ $ISSUE_BODY
 
 ---
 
+## Phase 0: Pre-flight Verification
+
+Before beginning implementation, verify that all required tools are installed and working correctly.
+
+### 0.1 Verify .NET Build
+
+Test that the .NET SDK is installed and can build the project:
+
+```bash
+dotnet --version
+```
+
+Verify the version is displayed (should be .NET 8.0 or higher).
+
+Build the solution to ensure it compiles:
+
+```bash
+dotnet build
+```
+
+The build must complete successfully with no errors. If the build fails, report the error and stop - do not proceed with implementation.
+
+### 0.2 Verify Playwright MCP
+
+Verify that Playwright MCP server is available and responding:
+
+1. Check that the Playwright MCP server is configured and accessible
+2. Test a simple navigation to verify Playwright is working correctly
+3. Ensure the browser can launch and navigate to a basic URL (e.g., `https://bindays.app`)
+
+If Playwright MCP is not available or fails to navigate, report the error and stop - do not proceed with implementation.
+
+### 0.3 Verify Required Scripts
+
+Check that required helper scripts exist:
+
+```bash
+test -f .agent/scripts/clean-har.js && echo "clean-har.js found" || echo "ERROR: clean-har.js not found"
+```
+
+If any required scripts are missing, report the error and stop.
+
+**Only proceed to Phase 1 if all pre-flight checks pass successfully.**
+
+---
+
 ## Phase 1: Parse Issue and Setup
 
 ### 1.1 Extract Information from Issue
