@@ -97,7 +97,7 @@ jobs:
     needs: check_trigger
     if: needs.check_trigger.outputs.should_run == 'true'
     runs-on: self-hosted
-    timeout-minutes: 60
+    timeout-minutes: 120
     env:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
     steps:
