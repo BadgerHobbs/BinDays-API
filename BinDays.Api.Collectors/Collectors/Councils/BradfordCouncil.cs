@@ -266,16 +266,16 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			addresses.Sort((first, second) =>
 			{
-				var firstNumber = GetAddressNumber(first);
+				var (Length, Value) = GetAddressNumber(first);
 				var secondNumber = GetAddressNumber(second);
 
-				var lengthComparison = secondNumber.Length.CompareTo(firstNumber.Length);
+				var lengthComparison = secondNumber.Length.CompareTo(Length);
 				if (lengthComparison != 0)
 				{
 					return lengthComparison;
 				}
 
-				var valueComparison = firstNumber.Value.CompareTo(secondNumber.Value);
+				var valueComparison = Value.CompareTo(secondNumber.Value);
 				if (valueComparison != 0)
 				{
 					return valueComparison;
@@ -494,9 +494,9 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				"ACTRL:2eDPaBQA:_",
 			};
 
-			foreach (var rawAddress in addressFields)
+			foreach (var (Field, Property) in addressFields)
 			{
-				hidInputs.Add(rawAddress.Field.Replace("CTRL:", "ACTRL:"));
+				hidInputs.Add(Field.Replace("CTRL:", "ACTRL:"));
 			}
 
 			hidInputs.Add("APAGE:E.h");
