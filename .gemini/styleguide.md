@@ -80,6 +80,9 @@ Maintain consistent ordering of class members to improve code readability. Group
 3. **Private Const Fields** (if needed):
    - API keys, subscription keys, signatures, etc.
    - Use descriptive names like `_apiKey`, `_apiSubscriptionKey`, `_signature`
+   - **Only keep constants used 2+ times**: If a constant is referenced only once, inline it directly at the usage site instead of creating a constant
+   - **Never use constants for bin names**: Bin names should be inline strings in the `_binTypes` collection, not extracted as constants
+   - Place all const fields together after bin types, before regex methods
 
 ### Implementation (in this order):
 
@@ -178,7 +181,10 @@ Collectors in this project follow a few specific design principles that are impo
   var token = clientSideResponse.Options.Metadata["csrfToken"];
   ```
 
-  This pattern is commonly used for authentication flows that require cookies, CSRF tokens, or session identifiers to be passed from one step to the next.
+  **Important guidelines for metadata:**
+  - **Only store necessary data**: Don't add metadata keys that aren't used in subsequent requests
+  - **Expect required values**: If metadata is needed for the next step, expect it to exist and use the null-forgiving operator (`!`) rather than making it optional
+  - **Avoid unnecessary keys**: Don't store values in metadata if they can be easily derived or aren't needed
 
 - **Step-by-Step Request Implementation:** For collectors that require multiple client-side requests, use a step-by-step implementation based on the `RequestId` of the `clientSideResponse`. This is typically structured as an `if/else if` chain.
 
@@ -186,7 +192,7 @@ Collectors in this project follow a few specific design principles that are impo
   - **Initial Request Pattern:** Always start with `if (clientSideResponse == null)` for the initial client-side request.
   - **Subsequent Requests:** Use `else if (clientSideResponse.RequestId == X)` for each step in the flow.
   - **Fallthrough Handler:** Always end with `throw new InvalidOperationException("Invalid client-side request.");` to catch invalid states.
-  - **Comment Style:** Use clear comments before each block: `// Prepare client-side request for getting X` or `// Process X from response`.
+  - **Comment Style:** Use clear, specific comments before each block: `// Prepare client-side request for getting addresses` or `// Process bin collection data from response`. Avoid vague comments like "Process data" or "Handle response".
   - **Preserve Existing Logic:** Do not refactor the existing `if/else if` structure. This pattern is intentional and provides a clear, linear flow for debugging and maintaining multi-step processes.
 
 - **Intentionally Brittle and Minimal Exception Handling:** Collectors are intentionally designed to be "brittle"—that is, they are expected to fail loudly and quickly if the council's website changes or if the data format is not what is expected.
@@ -196,6 +202,87 @@ Collectors in this project follow a few specific design principles that are impo
   - **Custom Exceptions:** For predictable, high-level failures (e.g. a postcode not being found in the `gov.uk` service), create and throw a custom exception (e.g. `GovUkIdNotFoundException`) to provide more specific error context.
 
 - **Code Reuse with Base Classes:** If multiple collectors share a significant amount of logic (e.g. interacting with the same third-party service like `gov.uk`), encapsulate the shared logic in a base class to promote code reuse and maintainability.
+
+### Helper Methods
+
+- **Create helpers only for duplication (2-3+ uses)**: Don't extract single-use methods for "organizational purposes"
+- **Single-use helpers are strongly discouraged**: If a method is only called once, it's usually better to keep the code inline for better readability and linear flow
+- Helper methods should reduce code duplication, not just abstract logic used once
+- Examples of good helper methods:
+  - A method that parses the same JSON structure 3 times
+  - A method that builds similar HTTP requests 5 times
+  - A method that generates a JSON payload used 4 times
+- Examples of bad helper methods:
+  - A builder method used only once
+  - A method that just wraps a single operation or line of code
+  - A method created for "organization" but only used once
+  - A method that makes the linear flow harder to follow
+- **Prefer loops over single-use helpers**: If you're repeating logic, consider a loop instead of extracting to a helper method that's only called once
+- Place helper methods at the end of the class after the interface methods (`GetAddresses`, `GetBinDays`)
+- Always add XML documentation (`/// <summary>`) for helper methods
+
+### Request Body Optimization
+
+When building request bodies for API calls, follow these optimization guidelines:
+
+- **Remove empty/null/default/false fields**: Don't include fields in request bodies that have empty strings, null values, default values, or false booleans unless the API strictly requires them
+- **Test minimal payloads**: Start with the minimum required fields and only add optional fields if the API doesn't work without them
+- **Avoid unnecessary encoding**:
+  - Don't URL encode values unless strictly required by the API
+  - Don't escape JSON strings unless necessary
+  - Don't add timestamps unless required for API authentication or request validation
+- **Don't duplicate data unnecessarily**: If you already have address data from a previous request, don't fetch it again in subsequent steps
+- **Question every field**: For each field in a request body, ask "Is this actually required?" Many fields that appear in examples can often be omitted
+- **Keep variable names meaningful**: Use descriptive names like `addressUid` instead of vague names like `value`
+
+Examples:
+```c#
+// Preferred: Minimal request body
+var clientSideRequest = new ClientSideRequest
+{
+    RequestId = 2,
+    Url = apiUrl,
+    Method = "POST",
+    Headers = new()
+    {
+        { "Content-Type", "application/json" },
+        { "User-Agent", Constants.UserAgent },
+    },
+    Body = $$"""
+    {
+        "postcode": "{{postcode}}",
+        "uprn": "{{uprn}}"
+    }
+    """,
+};
+
+// Avoid: Unnecessary fields
+var clientSideRequest = new ClientSideRequest
+{
+    RequestId = 2,
+    Url = apiUrl,
+    Method = "POST",
+    Headers = new()
+    {
+        { "Content-Type", "application/json" },
+        { "User-Agent", Constants.UserAgent },
+    },
+    Body = $$"""
+    {
+        "postcode": "{{postcode}}",
+        "uprn": "{{uprn}}",
+        "timestamp": "{{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}}",
+        "source": "",
+        "validate": false,
+        "returnAll": null
+    }
+    """,
+    Options = new ClientSideOptions
+    {
+        Metadata = new Dictionary<string, string>(),  // Empty metadata
+    },
+};
+```
 
 ### Data Handling and Parsing
 
@@ -218,13 +305,41 @@ Collectors in this project follow a few specific design principles that are impo
     - Use the null-forgiving operator on regex matches: `Matches(content)!` since we expect matches or want failures to propagate.
     - Name methods with PascalCase and "Regex" suffix: `TokenRegex()`, `AddressRegex()`, `BinDaysRegex()`.
     - Use verbatim strings for regex patterns: `@"pattern"`.
-    - Use named capture groups: `(?<name>...)` for extracting data.
+    - Use named capture groups: `(?<name>...)` for extracting data, and reference them by name (`Groups["name"].Value`) instead of by index (`Groups[1].Value`).
+    - **Write clean, efficient regex patterns**: Avoid overly complex patterns that are hard to read. Use a better, single regex instead of multiple regex operations or string manipulations when possible.
     - Requires the class to be declared `partial`.
 
   - **For JSON:** Use the built-in `System.Text.Json` library.
     - When using `JsonDocument`, use `using var` for automatic disposal: `using var jsonDoc = JsonDocument.Parse(content);`
     - Iterate arrays with `EnumerateArray()`: `foreach (var element in jsonDoc.RootElement.EnumerateArray())`
     - Get properties with `GetProperty("name").GetString()`.
+    - **Building JSON payloads**: Use raw string literals with interpolation (`$$"""..."""`) instead of nested Dictionary structures for better readability:
+      ```c#
+      // Preferred: Raw string literal
+      var payload = $$"""
+      {
+          "formId": "{{formId}}",
+          "sessionId": "{{sessionId}}",
+          "formValues": {
+              "postcode": "{{postcode}}",
+              "uprn": "{{uprn}}"
+          }
+      }
+      """;
+
+      // Avoid: Nested dictionaries (harder to read)
+      var payload = new Dictionary<string, object>
+      {
+          { "formId", formId },
+          { "sessionId", sessionId },
+          { "formValues", new Dictionary<string, string>
+              {
+                  { "postcode", postcode },
+                  { "uprn", uprn }
+              }
+          }
+      };
+      ```
 
   - **For Delimited Strings:** Use `Split()` with LINQ to parse comma-separated or delimited data:
     ```c#
@@ -237,14 +352,19 @@ Collectors in this project follow a few specific design principles that are impo
 
 - **Robust Date Parsing:**
 
-  - **With Year:** Always use `DateOnly.ParseExact` or `DateTime.ParseExact` with explicit format strings and `CultureInfo.InvariantCulture`:
+  - **With Year:** Always use `DateOnly.ParseExact` or `DateTime.ParseExact` with explicit format strings and `CultureInfo.InvariantCulture`
+  - **Use multi-line formatting for date parsing**: Always put date parsing on multiple lines for readability, never single-line:
     ```c#
+    // Preferred: Multi-line for readability
     var date = DateOnly.ParseExact(
         dateString,
         "dd/MM/yyyy",
         CultureInfo.InvariantCulture,
         DateTimeStyles.None
     );
+
+    // Avoid: Single line
+    var date = DateOnly.ParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None);
     ```
   - **Without Year:** When the source data lacks a year, use the `ParseDateInferringYear()` extension method (see Common Utilities section below).
   - **Multiple Formats:** When dates may appear in slightly different formats from the same source, use the array overload:
@@ -266,9 +386,51 @@ Collectors in this project follow a few specific design principles that are impo
     var date = DateOnly.ParseExact(dateString, "d MMMM yyyy", CultureInfo.InvariantCulture);
     ```
 
+- **Null Handling and Expected Values:**
+
+  - **Use null-forgiving operator `!` when values are required**: When a value must be non-null for the collector to work properly, use the null-forgiving operator instead of defensive null checks
+  - **Expect required values, don't make them optional**: If cookies, tokens, or metadata are needed for the next step, they should be expected to exist. Use the null-forgiving operator rather than conditional logic
+  - **Don't add try/catch for expected values**: If metadata or response data should always be present, don't wrap access in try/catch blocks. Let failures propagate clearly
+  - This makes collectors fail fast with clear errors rather than silently using fallback values or handling cases that shouldn't occur
+  - Examples:
+    ```c#
+    // Preferred: Fail fast if postcode is null
+    var postcode = address.Postcode!;
+
+    // Avoid: Silently use empty string
+    var postcode = address.Postcode ?? string.Empty;
+
+    // Preferred: Expect cookies to exist
+    clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+    var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+
+    // Avoid: Making cookies optional when they're required
+    var cookies = clientSideResponse.Headers.TryGetValue("set-cookie", out var h)
+        ? ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(h)
+        : string.Empty;
+
+    // Preferred: Expect metadata to exist
+    var token = clientSideResponse.Options.Metadata["csrfToken"];
+
+    // Avoid: Defensive checks for expected metadata
+    try {
+        var token = clientSideResponse.Options.Metadata["csrfToken"];
+    } catch {
+        throw new Exception("Token not found");
+    }
+    ```
+  - Use null-forgiving operator on:
+    - `address.Postcode!` when formatting postcodes
+    - `address.Uid!` when building lookup payloads
+    - JSON property values: `GetProperty("name").GetString()!`
+    - Regex match groups when matches are expected
+    - Dictionary values after `TryGetValue` when the key is expected to exist
+    - Metadata values that are required for subsequent steps
+
 - **Data Cleaning:**
 
   - Always `Trim()` strings retrieved from external sources to remove leading/trailing whitespace.
+  - **Consistent trimming**: If you're trimming multiple related values (e.g., `next`, `future`), make sure to trim all of them consistently, not just some.
   - Filter out placeholder values explicitly: `if (uid == "-1" || uid == "111111") { continue; }`
   - Skip invalid or unknown data during iteration using early `continue` statements:
     ```c#
@@ -287,8 +449,11 @@ Collectors in this project follow a few specific design principles that are impo
 
   - **Simplified approach recommended:** In most cases, it's simpler to avoid separating addresses into individual component fields (house number, street name, etc.).
   - The `Address` model uses `Property` for the main address string and `Postcode` as a separate field—this pattern works well for most implementations.
-  - Store the complete address string as provided by the council website in the `Property` field without parsing it into separate house number and street components.
-  - Only separate address components if there's a specific need for your implementation.
+  - **Store the full address in `Property` field**: Include the complete address (property number, street, town) in the `Property` field
+  - **Omit `Street` and `Town` unless required**: Unless the API strictly requires these fields to be separate, omit them and include everything in the `Property` field
+  - **Don't split addresses unnecessarily**: Avoid complex logic to parse addresses into components using if statements or multiple string operations
+  - **Prefer string joining for composite addresses**: If you must build an address from components, use `string.Join(", ", components.Where(c => !string.IsNullOrWhiteSpace(c)))` instead of multiple if statements
+  - Only separate address components if there's a specific API requirement for your implementation.
   - This simplified approach reduces complexity, avoids parsing errors, and accurately represents the data as provided by the source.
 
 - **Handling Secrets:** Store API keys or other secrets as `private const string` fields within the collector class. Do not expose them publicly.
@@ -334,7 +499,8 @@ Collectors in this project follow a few specific design principles that are impo
 
   - **Always use multi-line initialization** for objects with 2+ properties. Never use single-line.
   - **Always use trailing commas** after every property in multi-line initializers.
-  - **Always use separate variable declarations**, not inline returns:
+  - **Always use separate variable declarations**, not inline returns.
+  - **Closing parenthesis on separate line**: For long method calls with multi-line arguments, put the closing `)` or `);` on its own line:
 
     ```c#
     // Correct
@@ -358,6 +524,25 @@ Collectors in this project follow a few specific design principles that are impo
             RequestId = 1
         }
     };
+
+    // Correct - closing parenthesis on separate line
+    var date = DateOnly.ParseExact(
+        dateString,
+        "dd/MM/yyyy",
+        CultureInfo.InvariantCulture,
+        DateTimeStyles.None
+    );
+
+    var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+        setCookieHeader!
+    );
+
+    // Incorrect - closing parenthesis inline
+    var date = DateOnly.ParseExact(
+        dateString,
+        "dd/MM/yyyy",
+        CultureInfo.InvariantCulture,
+        DateTimeStyles.None);
     ```
 
   - **Collection/Dictionary Initialization:**
@@ -372,6 +557,7 @@ Collectors in this project follow a few specific design principles that are impo
 
   - **User Agent:** Use `Constants.UserAgent` for user-agent headers, never hard-code.
   - **Form Data:** Use `ProcessingUtilities.ConvertDictionaryToFormData(new() { ... })` to convert dictionaries to URL-encoded form data.
+  - **Postcode Formatting:** Use `ProcessingUtilities.FormatPostcode(postcode)` **ONLY ONCE** when the postcode is first received (typically in the initial null check). **Never format the postcode multiple times** throughout the collector—it should already be formatted after the first call.
   - **Bin Matching:** Use `ProcessingUtilities.GetMatchingBins(_binTypes, sourceKey)` to find bins by keys.
   - **Bin Day Processing:** Always call `ProcessingUtilities.ProcessBinDays(binDays)` as the final step in `GetBinDays()` to filter future dates and merge by date.
   - **Date Parsing Without Year:** When source data lacks a year (e.g. "Monday 29 December" or "15 March"), use the `ParseDateInferringYear()` extension method:
@@ -400,6 +586,8 @@ Collectors in this project follow a few specific design principles that are impo
     return [.. addresses];
     ```
   - **Comment Pattern:** Use `// Iterate through each X, and create a new X object` before foreach loops.
+  - **Avoid deep nesting**: Keep nesting to 2-3 levels maximum. If you have deeply nested loops (4+ levels), refactor to make code flatter and more readable.
+  - **Don't sort addresses**: Addresses should be returned in the order received from the API. Don't add unnecessary `.OrderBy()` or sorting operations.
 
 - **Bin Type Structure:**
   - Name the field `_binTypes` (lowercase, underscore prefix).
@@ -408,6 +596,7 @@ Collectors in this project follow a few specific design principles that are impo
   - Required properties: `Name`, `Colour`, `Keys`.
   - Optional property: `Type` (defaults to `BinType.Bin` if omitted).
   - Use trailing commas after each property AND after each bin object in the collection.
+  - **Use descriptive bin names**: Prefer names like "Paper, Glass & Cardboard Recycling" over generic names like "Recycling (Green Box)". Make the name describe what goes in the bin, not just the container type or color.
 
 ## Code Examples
 
