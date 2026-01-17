@@ -206,8 +206,6 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		var formattedPostcode = ProcessingUtilities.FormatPostcode(address.Postcode!);
-
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
@@ -273,7 +271,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			metadata["csrf_token"] = jsonDoc.RootElement.GetProperty("data").GetProperty("csrfToken").GetString()!;
 
 			var payload = BuildLookupPayload(
-				formattedPostcode,
+				address.Postcode!,
 				metadata["sessionId"],
 				metadata["csrf_token"],
 				metadata["reference"],
@@ -299,7 +297,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			metadata["items"] = JsonSerializer.Serialize(organicItems);
 
 			var payload = BuildLookupPayload(
-				formattedPostcode,
+				address.Postcode!,
 				metadata["sessionId"],
 				metadata["csrf_token"],
 				metadata["reference"],
@@ -332,7 +330,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			metadata["items"] = JsonSerializer.Serialize(items);
 
 			var payload = BuildLookupPayload(
-				formattedPostcode,
+				address.Postcode!,
 				metadata["sessionId"],
 				metadata["csrf_token"],
 				metadata["reference"],
