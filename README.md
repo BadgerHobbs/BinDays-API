@@ -2,12 +2,13 @@
 
 [![Integration Tests](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/integration-tests.yml) [![Build and Push Image](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml/badge.svg)](https://github.com/BadgerHobbs/BinDays-API/actions/workflows/build-and-push-image.yml) [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL_3.0-blue.svg)](LICENSE)
 
-![d2](https://github.com/user-attachments/assets/bf4dde68-eb07-4470-a713-fd878f941956)
+![d2(13)](https://github.com/user-attachments/assets/cfaef323-41fe-4211-9174-7694bd8ea992)
 
 <p align="center">
   <a href="https://github.com/BadgerHobbs/BinDays-App">BinDays-App</a> •
   <a href="https://github.com/BadgerHobbs/BinDays-Client">BinDays-Client</a> •
-  <a href="https://github.com/BadgerHobbs/BinDays-API">BinDays-API</a>
+  <a href="https://github.com/BadgerHobbs/BinDays-API">BinDays-API</a> •
+  <a href="https://github.com/BadgerHobbs/BinDays-HomeAssistant">BinDays-HomeAssistant</a>
 </p>
 
 > **Have a question or a problem?** Check the [**Frequently Asked Questions**](FAQS.md) before opening an issue.
