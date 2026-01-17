@@ -320,19 +320,19 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 
 			// Iterate through each bin, and create a new bin info object
 			foreach (var row in rowsData.EnumerateObject())
-				{
-					var rowData = row.Value;
-					var serviceItemId = rowData.GetProperty("ServiceItemID").GetString()!;
+			{
+				var rowData = row.Value;
+				var serviceItemId = rowData.GetProperty("ServiceItemID").GetString()!;
 
-					if (bins.Any(x => x.ServiceItemId == serviceItemId))
+				if (bins.Any(x => x.ServiceItemId == serviceItemId))
 				{
 					continue;
 				}
 
-					var label = rowData.GetProperty("label").GetString()!.Trim();
-					var roundSchedule = rowData.GetProperty("RoundSchedule").GetString()!.Trim();
-					var serviceItemName = rowData.GetProperty("ServiceItemName").GetString()!.Trim();
-					var binTypeService = GetBinTypeService(serviceItemName, label);
+				var label = rowData.GetProperty("label").GetString()!.Trim();
+				var roundSchedule = rowData.GetProperty("RoundSchedule").GetString()!.Trim();
+				var serviceItemName = rowData.GetProperty("ServiceItemName").GetString()!.Trim();
+				var binTypeService = GetBinTypeService(serviceItemName, label);
 
 				bins.Add(new BinInfo(label, roundSchedule, binTypeService, serviceItemId));
 
@@ -413,28 +413,28 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				clientSideResponse.Options.Metadata["binIndex"] = nextIndex.ToString(CultureInfo.InvariantCulture);
 				clientSideResponse.Options.Metadata["binDays"] = JsonSerializer.Serialize(binDays);
 
-					var nextRequest = BuildScheduleRequest(
-						address,
-						bins[nextIndex],
-						clientSideResponse.Options.Metadata["sid"],
-						clientSideResponse.Options.Metadata["cookies"],
-						clientSideResponse.Options.Metadata["govDeliveryCategory"],
-						clientSideResponse.Options.Metadata["fromDate"],
-						clientSideResponse.Options.Metadata["toDate"],
-						clientSideResponse.Options.Metadata["binData"],
-						4,
-						clientSideResponse.Options
-					);
+				var nextRequest = BuildScheduleRequest(
+					address,
+					bins[nextIndex],
+					clientSideResponse.Options.Metadata["sid"],
+					clientSideResponse.Options.Metadata["cookies"],
+					clientSideResponse.Options.Metadata["govDeliveryCategory"],
+					clientSideResponse.Options.Metadata["fromDate"],
+					clientSideResponse.Options.Metadata["toDate"],
+					clientSideResponse.Options.Metadata["binData"],
+					4,
+					clientSideResponse.Options
+				);
 
-					var nextBinDaysResponse = new GetBinDaysResponse
-					{
-						NextClientSideRequest = nextRequest
-					};
+				var nextBinDaysResponse = new GetBinDaysResponse
+				{
+					NextClientSideRequest = nextRequest
+				};
 
-					return nextBinDaysResponse;
-				}
+				return nextBinDaysResponse;
+			}
 
-				var processedBinDays = new List<BinDay>();
+			var processedBinDays = new List<BinDay>();
 			foreach (var binDay in binDays)
 			{
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binDay.BinLabel);
