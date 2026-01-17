@@ -269,10 +269,17 @@ jobs:
 
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
+      - name: Refresh GitHub App token
+        id: refresh-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
       - name: Create Pull Request
         uses: actions/github-script@v7
         with:
-          github-token: ${{ steps.generate-token.outputs.token }}
+          github-token: ${{ steps.refresh-token.outputs.token }}
           script: |
             const councilName = '${{ needs.check_trigger.outputs.council_name }}';
             const councilNamePascal = '${{ needs.check_trigger.outputs.council_name_pascal }}';
