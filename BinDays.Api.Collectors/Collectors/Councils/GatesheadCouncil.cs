@@ -105,7 +105,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				x => x.Groups["value"].Value
 			);
 
-			if (!hiddenFieldValues.ContainsKey("BINCOLLECTIONCHECKER_PAGESESSIONID"))
+			if (!hiddenFieldValues.TryGetValue("BINCOLLECTIONCHECKER_PAGESESSIONID", out var pageSessionId))
 			{
 				var fallbackAddresses = new List<Address>
 				{
@@ -125,7 +125,6 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				return fallbackAddressesResponse;
 			}
 
-			var pageSessionId = hiddenFieldValues["BINCOLLECTIONCHECKER_PAGESESSIONID"];
 			var sessionId = hiddenFieldValues["BINCOLLECTIONCHECKER_SESSIONID"];
 			var nonce = hiddenFieldValues["BINCOLLECTIONCHECKER_NONCE"];
 
@@ -337,7 +336,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				x => x.Groups["value"].Value
 			);
 
-			if (!hiddenFieldValues.ContainsKey("BINCOLLECTIONCHECKER_PAGESESSIONID"))
+			if (!hiddenFieldValues.TryGetValue("BINCOLLECTIONCHECKER_PAGESESSIONID", out var pageSessionId))
 			{
 				var fallbackBinDays = new List<BinDay>
 				{
@@ -387,7 +386,6 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				return fallbackBinDaysResponse;
 			}
 
-			var pageSessionId = hiddenFieldValues["BINCOLLECTIONCHECKER_PAGESESSIONID"];
 			var sessionId = hiddenFieldValues["BINCOLLECTIONCHECKER_SESSIONID"];
 			var nonce = hiddenFieldValues["BINCOLLECTIONCHECKER_NONCE"];
 			var formattedPostcode = clientSideResponse.Options.Metadata["postcode"];
