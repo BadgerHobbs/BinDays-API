@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Web;
 
 /// <summary>
 /// Collector implementation for The Moray Council.
@@ -19,7 +18,7 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 	public string Name => "The Moray Council";
 
 	/// <inheritdoc/>
-	public Uri WebsiteUrl => new("http://www.moray.gov.uk/");
+	public Uri WebsiteUrl => new("https://www.moray.gov.uk/");
 
 	/// <inheritdoc/>
 	public override string GovUkId => "moray";
@@ -31,75 +30,40 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 	[
 		new()
 		{
-			Name = _generalWasteName,
+			Name = "General Waste",
 			Colour = BinColour.Green,
 			Type = BinType.Bin,
-			Keys = [ "Green bin", "General waste" ],
+			Keys = [ "G" ],
 		},
 		new()
 		{
-			Name = _gardenWasteName,
+			Name = "Garden Waste",
 			Colour = BinColour.Brown,
 			Type = BinType.Bin,
-			Keys = [ "Brown bin", "Garden" ],
+			Keys = [ "B" ],
 		},
 		new()
 		{
-			Name = _paperAndCardName,
+			Name = "Paper and Card",
 			Colour = BinColour.Blue,
 			Type = BinType.Bin,
-			Keys = [ "Blue bin", "Paper", "Card" ],
+			Keys = [ "P" ],
 		},
 		new()
 		{
-			Name = _plasticsAndCansName,
+			Name = "Plastics and Cans",
 			Colour = BinColour.Purple,
 			Type = BinType.Bin,
-			Keys = [ "Purple bin", "Cans", "Plastic" ],
+			Keys = [ "C" ],
 		},
 		new()
 		{
-			Name = _glassName,
+			Name = "Glass",
 			Colour = BinColour.Orange,
 			Type = BinType.Box,
-			Keys = [ "Orange box", "Glass" ],
+			Keys = [ "O" ],
 		},
 	];
-
-	/// <summary>
-	/// Key for storing bin days in metadata.
-	/// </summary>
-	private const string _binDaysMetadataKey = "binDays";
-
-	/// <summary>
-	/// Name for the garden waste bin.
-	/// </summary>
-	private const string _gardenWasteName = "Garden Waste";
-
-	/// <summary>
-	/// Name for the general waste bin.
-	/// </summary>
-	private const string _generalWasteName = "General Waste";
-
-	/// <summary>
-	/// Name for the glass bin.
-	/// </summary>
-	private const string _glassName = "Glass";
-
-	/// <summary>
-	/// Name for the paper and card bin.
-	/// </summary>
-	private const string _paperAndCardName = "Paper and Card";
-
-	/// <summary>
-	/// Name for the plastics and cans bin.
-	/// </summary>
-	private const string _plasticsAndCansName = "Plastics and Cans";
-
-	/// <summary>
-	/// Key for storing remaining calendars in metadata.
-	/// </summary>
-	private const string _remainingCalendarsMetadataKey = "remainingCalendars";
 
 	/// <summary>
 	/// Regex for extracting addresses from the results page.
@@ -116,13 +80,19 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 	/// <summary>
 	/// Regex for extracting calendar links.
 	/// </summary>
-	[GeneratedRegex("href=['\\\"](?<url>(?:https?://bindayfinder\\.moray\\.gov\\.uk/)?cal_(?<year>\\d{4})_view\\.php\\?id=(?<id>\\d+))['\\\"]", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+	[GeneratedRegex(
+		"href=['\\\"](?:https?://bindayfinder\\.moray\\.gov\\.uk/)?(?<url>cal_(?<year>\\d{4})_view\\.php\\?id=(?<id>\\d+))['\\\"]",
+		RegexOptions.IgnoreCase | RegexOptions.Singleline
+	)]
 	private static partial Regex CalendarLinksRegex();
 
 	/// <summary>
 	/// Regex for extracting month blocks from the calendar.
 	/// </summary>
-	[GeneratedRegex("<div class=['\\\"]month-header['\\\"]><h2>(?<month>[^<]+)</h2></div>.*?<div class=['\\\"]days-container['\\\"]>(?<days>.*?)</div>\\s*</div>", RegexOptions.Singleline)]
+	[GeneratedRegex(
+		"<div class=['\\\"]month-header['\\\"]><h2>(?<month>[^<]+)</h2></div>.*?<div class=['\\\"]days-container['\\\"]>(?<days>.*?)</div>\\s*</div>",
+		RegexOptions.Singleline
+	)]
 	private static partial Regex CalendarMonthRegex();
 
 	/// <summary>
@@ -143,12 +113,10 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var formattedPostcode = HttpUtility.UrlEncode(ProcessingUtilities.FormatPostcode(postcode));
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://bindayfinder.moray.gov.uk/refuse_roads.php?strname=&pcode={formattedPostcode}",
+				Url = $"https://bindayfinder.moray.gov.uk/refuse_roads.php?strname=&pcode={postcode}",
 				Method = "GET",
 				Headers = new()
 				{
@@ -166,9 +134,10 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var addressMatches = AddressesRegex().Matches(clientSideResponse.Content);
+			var addressMatches = AddressesRegex().Matches(clientSideResponse.Content)!;
 			var addresses = new List<Address>();
 
+			// Iterate through each address, and create a new address object
 			foreach (Match addressMatch in addressMatches)
 			{
 				var property = WhitespaceRegex().Replace(addressMatch.Groups["address"].Value, " ").Trim();
@@ -219,14 +188,15 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 
 			return getBinDaysResponse;
 		}
-		// Process bin days from response
+		// Extract calendar links and prepare first calendar request
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var calendarUrls = CalendarLinksRegex()
-				.Matches(clientSideResponse.Content)
-				.Select(match => NormalizeCalendarUrl(match.Groups["url"].Value))
-				.Distinct()
-				.OrderBy(url => url, StringComparer.OrdinalIgnoreCase)
+			var calendarMatches = CalendarLinksRegex().Matches(clientSideResponse.Content)!;
+			var calendarUrls = calendarMatches
+				.Select(match => $"https://bindayfinder.moray.gov.uk/{match.Groups["url"].Value}")
+				.Distinct(StringComparer.OrdinalIgnoreCase)
+				.Order(StringComparer.OrdinalIgnoreCase)
+				.Take(3)
 				.ToList();
 
 			if (calendarUrls.Count == 0)
@@ -234,17 +204,19 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 				throw new InvalidOperationException("No calendar links found for the selected address.");
 			}
 
-			var remainingCalendars = calendarUrls.Skip(1).ToList();
-			var metadata = new Dictionary<string, string>();
-			if (remainingCalendars.Count > 0)
+			var metadata = new Dictionary<string, string>
 			{
-				metadata.Add(_remainingCalendarsMetadataKey, string.Join(",", remainingCalendars));
-			}
+				{ "binDays", string.Empty },
+				{
+					"remainingCalendars",
+					calendarUrls.Count > 1 ? string.Join(",", calendarUrls.Skip(1)) : string.Empty
+				},
+			};
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = calendarUrls.First(),
+				Url = calendarUrls[0],
 				Method = "GET",
 				Headers = new()
 				{
@@ -263,42 +235,95 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 
 			return getBinDaysResponse;
 		}
-		// Process bin days from response
+		// Parse calendar and either request next calendar or return bin days
 		else if (clientSideResponse.RequestId >= 2)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
 			var binDays = new List<(DateOnly Date, string Code)>();
 
-			if (metadata.TryGetValue(_binDaysMetadataKey, out var existingBinDays))
+			// Parse any existing bin days from metadata
+			var entries = metadata["binDays"].Split(
+				"|",
+				StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+			);
+
+			foreach (var entry in entries)
 			{
-				binDays.AddRange(ParseBinDaysMetadata(existingBinDays));
+				var parts = entry.Split(
+					":",
+					StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+				);
+				var date = DateOnly.ParseExact(parts[0], "yyyy-MM-dd", CultureInfo.InvariantCulture);
+				var code = parts[1];
+
+				binDays.Add((date, code));
 			}
 
-			binDays.AddRange(ParseCalendarContent(clientSideResponse.Content));
-
-			var remainingCalendarMetadata = metadata.GetValueOrDefault(_remainingCalendarsMetadataKey);
-			var remainingCalendarUrls = string.IsNullOrWhiteSpace(remainingCalendarMetadata)
-				? []
-				: remainingCalendarMetadata.Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-
-			if (remainingCalendarUrls.Count > 0)
+			// Parse current calendar content
+			var yearMatch = CalendarYearRegex().Match(clientSideResponse.Content);
+			if (!yearMatch.Success)
 			{
-				var nextCalendarUrl = remainingCalendarUrls.First();
-				var nextRemainingCalendars = remainingCalendarUrls.Skip(1).ToList();
+				throw new InvalidOperationException("Calendar year not found in response.");
+			}
+
+			var year = int.Parse(yearMatch.Groups["year"].Value, CultureInfo.InvariantCulture);
+			var monthMatches = CalendarMonthRegex().Matches(clientSideResponse.Content)!;
+
+			foreach (Match monthMatch in monthMatches)
+			{
+				var monthName = monthMatch.Groups["month"].Value.Trim();
+				var monthNumber = DateTime.ParseExact(monthName, "MMMM", CultureInfo.InvariantCulture).Month;
+				var daysHtml = monthMatch.Groups["days"].Value;
+				var dayMatches = CalendarDayRegex().Matches(daysHtml)!;
+
+				foreach (Match dayMatch in dayMatches)
+				{
+					var className = dayMatch.Groups["class"].Value.Trim();
+					var dayText = dayMatch.Groups["day"].Value.Trim();
+
+					if (string.IsNullOrWhiteSpace(dayText) ||
+						string.IsNullOrWhiteSpace(className) ||
+						string.Equals(className, "blank", StringComparison.OrdinalIgnoreCase))
+					{
+						continue;
+					}
+
+					var date = DateOnly.ParseExact(
+						$"{dayText}-{monthNumber}-{year}",
+						"d-M-yyyy",
+						CultureInfo.InvariantCulture
+					);
+
+					binDays.Add((date, className));
+				}
+			}
+
+			// Check if there are more calendars to process
+			var remainingCalendars = metadata["remainingCalendars"]
+				.Split(
+					",",
+					StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+				)
+				.ToList();
+
+			if (remainingCalendars.Count > 0)
+			{
 				var nextMetadata = new Dictionary<string, string>
 				{
-					{ _binDaysMetadataKey, SerialiseBinDaysMetadata(binDays) },
+					{
+						"binDays",
+						string.Join("|", binDays.Select(bd => $"{bd.Date:yyyy-MM-dd}:{bd.Code}"))
+					},
+					{
+						"remainingCalendars",
+						remainingCalendars.Count > 1 ? string.Join(",", remainingCalendars.Skip(1)) : string.Empty
+					},
 				};
-
-				if (nextRemainingCalendars.Count > 0)
-				{
-					nextMetadata.Add(_remainingCalendarsMetadataKey, string.Join(",", nextRemainingCalendars));
-				}
 
 				var clientSideRequest = new ClientSideRequest
 				{
 					RequestId = clientSideResponse.RequestId + 1,
-					Url = nextCalendarUrl,
+					Url = remainingCalendars[0],
 					Method = "GET",
 					Headers = new()
 					{
@@ -318,11 +343,22 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 				return getBinDaysResponse;
 			}
 
-			var binDayResults = binDays.Select(binDay => new BinDay
+			// All calendars processed, return bin days
+			var binDayResults = binDays.Select(binDay =>
 			{
-				Date = binDay.Date,
-				Address = address,
-				Bins = GetBinsForCode(binDay.Code),
+				var bins = binDay.Code.ToCharArray()
+					.SelectMany(c => _binTypes.Where(bin => bin.Keys.Any(key =>
+						string.Equals(key, c.ToString(), StringComparison.OrdinalIgnoreCase)
+					)))
+					.Distinct()
+					.ToList();
+
+				return new BinDay
+				{
+					Date = binDay.Date,
+					Address = address,
+					Bins = bins,
+				};
 			}).ToList();
 
 			var getBinDaysResponseFinal = new GetBinDaysResponse
@@ -335,109 +371,5 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
-	}
-
-	private static string NormalizeCalendarUrl(string calendarUrl)
-	{
-		if (calendarUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-		{
-			return calendarUrl;
-		}
-
-		return $"https://bindayfinder.moray.gov.uk/{calendarUrl.TrimStart('/')}";
-	}
-
-	private static IReadOnlyCollection<(DateOnly Date, string Code)> ParseCalendarContent(string content)
-	{
-		var yearMatch = CalendarYearRegex().Match(content);
-		if (!yearMatch.Success)
-		{
-			throw new InvalidOperationException("Calendar year not found in response.");
-		}
-
-		var year = int.Parse(yearMatch.Groups["year"].Value, CultureInfo.InvariantCulture);
-
-		var binDays = new List<(DateOnly Date, string Code)>();
-		var monthMatches = CalendarMonthRegex().Matches(content);
-
-		foreach (Match monthMatch in monthMatches)
-		{
-			var monthName = monthMatch.Groups["month"].Value.Trim();
-			var monthNumber = DateTime.ParseExact(monthName, "MMMM", CultureInfo.InvariantCulture).Month;
-			var daysHtml = monthMatch.Groups["days"].Value;
-
-			foreach (Match dayMatch in CalendarDayRegex().Matches(daysHtml))
-			{
-				var className = dayMatch.Groups["class"].Value.Trim();
-				var dayText = dayMatch.Groups["day"].Value.Trim();
-
-				if (string.IsNullOrWhiteSpace(dayText) ||
-					string.IsNullOrWhiteSpace(className) ||
-					string.Equals(className, "blank", StringComparison.OrdinalIgnoreCase))
-				{
-					continue;
-				}
-
-				var date = DateOnly.ParseExact(
-					$"{dayText}-{monthNumber}-{year}",
-					"d-M-yyyy",
-					CultureInfo.InvariantCulture
-				);
-
-				binDays.Add((date, className));
-			}
-		}
-
-		return binDays.AsReadOnly();
-	}
-
-	private static IReadOnlyCollection<(DateOnly Date, string Code)> ParseBinDaysMetadata(string metadata)
-	{
-		var binDays = new List<(DateOnly Date, string Code)>();
-		var entries = metadata.Split("|", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-		foreach (var entry in entries)
-		{
-			var parts = entry.Split(":", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-			if (parts.Length != 2)
-			{
-				continue;
-			}
-
-			var date = DateOnly.ParseExact(parts[0], "yyyy-MM-dd", CultureInfo.InvariantCulture);
-			var code = parts[1];
-
-			binDays.Add((date, code));
-		}
-
-		return binDays.AsReadOnly();
-	}
-
-	private static string SerialiseBinDaysMetadata(IEnumerable<(DateOnly Date, string Code)> binDays)
-	{
-		return string.Join(
-			"|",
-			binDays.Select(binDay => $"{binDay.Date:yyyy-MM-dd}:{binDay.Code}")
-		);
-	}
-
-	private IReadOnlyCollection<Bin> GetBinsForCode(string code)
-	{
-		var upperCode = code.ToUpperInvariant();
-
-		if (upperCode == "B")
-		{
-			return _binTypes.Where(bin => bin.Name == _gardenWasteName).ToList().AsReadOnly();
-		}
-		else if (upperCode == "GPOC")
-		{
-			return _binTypes.Where(bin => bin.Name != _gardenWasteName).ToList().AsReadOnly();
-		}
-		else if (upperCode == "GBPOC")
-		{
-			return _binTypes.ToList().AsReadOnly();
-		}
-
-		throw new InvalidOperationException($"Unknown bin code: {code}");
 	}
 }
