@@ -63,21 +63,6 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 	];
 
 	/// <summary>
-	/// The URL for the initial AchieveForms request.
-	/// </summary>
-	private const string _achieveFormsUrl = "https://tunbridgewells-self.achieveservice.com/AchieveForms/?mode=fill&consentMessage=yes&form_uri=sandbox-publish://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed/AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38/definition.json&process=1&process_uri=sandbox-processes://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed&process_id=AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed";
-
-	/// <summary>
-	/// The identifier for the address lookup integration.
-	/// </summary>
-	private const string _addressLookupId = "11c66af5fbe94";
-
-	/// <summary>
-	/// The identifier for the collections lookup integration.
-	/// </summary>
-	private const string _collectionsLookupId = "6314720683f30";
-
-	/// <summary>
 	/// The identifier for the form used in the requests.
 	/// </summary>
 	private const string _formId = "AF-Form-df7cac1a-c096-4c38-9488-85619a7646bb";
@@ -108,33 +93,26 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 	[GeneratedRegex(@"sid=(?<sessionId>[a-f0-9]+)")]
 	private static partial Regex SessionIdRegex();
 
-	/// <summary>
-	/// Creates the initial client-side request for AchieveForms.
-	/// </summary>
-	/// <returns>A new <see cref="ClientSideRequest"/> configured for the initial request.</returns>
-	private static ClientSideRequest CreateInitialRequest()
-	{
-		return new ClientSideRequest
-		{
-			RequestId = 1,
-			Url = _achieveFormsUrl,
-			Method = "GET",
-			Headers = new()
-			{
-				{ "User-Agent", Constants.UserAgent },
-			},
-		};
-	}
-
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = "https://tunbridgewells-self.achieveservice.com/AchieveForms/?mode=fill&consentMessage=yes&form_uri=sandbox-publish://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed/AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38/definition.json&process=1&process_uri=sandbox-processes://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed&process_id=AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed",
+				Method = "GET",
+				Headers = new()
+				{
+					{ "User-Agent", Constants.UserAgent },
+				},
+			};
+
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = CreateInitialRequest(),
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -159,10 +137,6 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 						gardenSuspended = new { value = "no" },
 						postcode_search = new { value = ProcessingUtilities.FormatPostcode(postcode) },
 						postcodeValid = new { value = "true" },
-						buttonPressed = new { value = string.Empty },
-						selectedAddress = new { value = string.Empty },
-						propertyReference = new { value = string.Empty },
-						siteReference = new { value = string.Empty },
 					},
 				},
 				isPublished = true,
@@ -174,7 +148,7 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"https://tunbridgewells-self.achieveservice.com/apibroker/runLookup?id={_addressLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sessionId}",
+				Url = $"https://tunbridgewells-self.achieveservice.com/apibroker/runLookup?id=11c66af5fbe94&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sessionId}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -209,7 +183,7 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 				var address = new Address
 				{
 					Property = addressData.GetProperty("display").GetString()!.Trim(),
-					Postcode = ProcessingUtilities.FormatPostcode(postcode),
+					Postcode = postcode,
 					Uid = addressData.GetProperty("uprn").GetString()!.Trim(),
 				};
 
@@ -234,9 +208,20 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = "https://tunbridgewells-self.achieveservice.com/AchieveForms/?mode=fill&consentMessage=yes&form_uri=sandbox-publish://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed/AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38/definition.json&process=1&process_uri=sandbox-processes://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed&process_id=AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed",
+				Method = "GET",
+				Headers = new()
+				{
+					{ "User-Agent", Constants.UserAgent },
+				},
+			};
+
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = CreateInitialRequest(),
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -263,20 +248,10 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 						buttonPressed = new { value = "Yes" },
 						addressPicker = new { value = address.Uid },
 						selectedAddress = new { value = address.Property },
-						waitCounter = new { value = "0" },
 						propertyReference = new { value = address.Uid },
 						siteReference = new { value = address.Uid },
-						siteID = new { value = "0" },
-						totalCollections = new { value = "0" },
 						postcodeEntered = new { value = ProcessingUtilities.FormatPostcode(address.Postcode!) },
-						accountSiteType = new { value = string.Empty },
-						classificationCode = new { value = string.Empty },
-						classificationDescription = new { value = string.Empty },
-						custodian = new { value = string.Empty },
-						parishName = new { value = string.Empty },
-						wardName = new { value = string.Empty },
 						referredBy = new { value = "binchecker" },
-						classType = new { value = string.Empty },
 					},
 				},
 				isPublished = true,
@@ -288,7 +263,7 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"https://tunbridgewells-self.achieveservice.com/apibroker/runLookup?id={_collectionsLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sessionId}",
+				Url = $"https://tunbridgewells-self.achieveservice.com/apibroker/runLookup?id=6314720683f30&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sessionId}",
 				Method = "POST",
 				Headers = new()
 				{
