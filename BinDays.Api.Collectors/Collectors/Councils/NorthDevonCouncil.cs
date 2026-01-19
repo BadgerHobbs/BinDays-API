@@ -9,7 +9,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Web;
 
 /// <summary>
 /// Collector implementation for North Devon Council.
@@ -35,14 +34,14 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			Name = "General Waste",
 			Colour = BinColour.Black,
 			Type = BinType.Bin,
-			Keys = [ "Black Bin", "BlackBin" ],
+			Keys = [ "Waste-Black" ],
 		},
 		new()
 		{
 			Name = "Recycling",
 			Colour = BinColour.Green,
 			Type = BinType.Container,
-			Keys = [ "Recycling" ],
+			Keys = [ "Waste-Recycling" ],
 		},
 	];
 
@@ -67,81 +66,26 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 	private const string _stageId = "AF-Stage-0e576350-a6e1-444e-a105-cb020f910845";
 
 	/// <summary>
-	/// Regex for matching individual collection entries.
-	/// </summary>
-	[GeneratedRegex(@"<li class=\""(?<binKey>[^\""]+)\""[^>]*>\s*<span class=\""wasteName\"">(?<dayName>[^<]+)</span>\s*<span class=\""wasteDay\"">(?<day>\d{2})</span>\s*<span class=\""wasteType\"">(?<binLabel>[^<]+)</span>", RegexOptions.Singleline)]
-	private static partial Regex CollectionItemRegex();
-
-	/// <summary>
 	/// Regex to match individual collection entries in work packs.
 	/// </summary>
 	[GeneratedRegex(@"(?<label>.+)/(?<date>\d{2}/\d{2}/\d{4})")]
 	private static partial Regex CollectionDateRegex();
 
-	/// <summary>
-	/// Regex to match month sections and their collection items.
-	/// </summary>
-	[GeneratedRegex(@"<h4>(?<monthYear>[A-Za-z]+\s+\d{4})</h4>(?<items>.*?)(?=<h4>[A-Za-z]+\s+\d{4}</h4>|<h2>|$)", RegexOptions.Singleline)]
-	private static partial Regex MonthSectionRegex();
-
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting session cookies
-		if (clientSideResponse == null)
+		// Handle initial session setup (steps 1-2)
+		var (sessionRequest, shouldContinue) = HandleSessionInitialization(clientSideResponse, 3);
+		if (!shouldContinue)
 		{
-			var clientSideRequest = new ClientSideRequest
+			return new GetAddressesResponse
 			{
-				RequestId = 1,
-				Url = _serviceUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
+				NextClientSideRequest = sessionRequest,
 			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
 		}
-		// Prepare client-side request for getting auth session
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
 
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = "https://my.northdevon.gov.uk/authapi/isauthenticated?uri=https%3A%2F%2Fmy.northdevon.gov.uk%2Fservice%2FWasteRecyclingCollectionCalendar&hostname=my.northdevon.gov.uk&withCredentials=true",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
-					{ "User-Agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata = new Dictionary<string, string>
-					{
-						{ "cookies", requestCookies },
-					},
-				},
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
 		// Prepare client-side request for getting location data
-		else if (clientSideResponse.RequestId == 2)
+		if (clientSideResponse!.RequestId == 2)
 		{
 			var previousCookies = clientSideResponse.Options.Metadata.GetValueOrDefault("cookies", string.Empty);
 			var newCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
@@ -191,6 +135,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			var sid = clientSideResponse.Options.Metadata.GetValueOrDefault("sid", string.Empty);
 			var formattedPostcode = clientSideResponse.Options.Metadata.GetValueOrDefault("postcode", string.Empty);
 
+			// Note: Many fields below are empty but required by the API
 			var requestBody = JsonSerializer.Serialize(new
 			{
 				stopOnFailure = true,
@@ -335,61 +280,20 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting session cookies
-		if (clientSideResponse == null)
+		// Handle initial session setup (steps 1-2)
+		// Note: Session initialization is required for each GetBinDays call as the API
+		// requires fresh session cookies and SID for the multi-step bin collection lookup process
+		var (sessionRequest, shouldContinue) = HandleSessionInitialization(clientSideResponse, 3);
+		if (!shouldContinue)
 		{
-			var clientSideRequest = new ClientSideRequest
+			return new GetBinDaysResponse
 			{
-				RequestId = 1,
-				Url = _serviceUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
+				NextClientSideRequest = sessionRequest,
 			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
 		}
-		// Prepare client-side request for getting auth session
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
 
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = "https://my.northdevon.gov.uk/authapi/isauthenticated?uri=https%3A%2F%2Fmy.northdevon.gov.uk%2Fservice%2FWasteRecyclingCollectionCalendar&hostname=my.northdevon.gov.uk&withCredentials=true",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
-					{ "User-Agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata = new Dictionary<string, string>
-					{
-						{ "cookies", requestCookies },
-					},
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
 		// Prepare client-side request for getting location data
-		else if (clientSideResponse.RequestId == 2)
+		if (clientSideResponse!.RequestId == 2)
 		{
 			var previousCookies = clientSideResponse.Options.Metadata.GetValueOrDefault("cookies", string.Empty);
 			var newCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
@@ -817,55 +721,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 				.GetProperty("transformed")
 				.GetProperty("rows_data");
 
-			var binDaysByDate = new Dictionary<DateOnly, HashSet<Bin>>();
-			var generalWasteBin = _binTypes.First(b => b.Name == "General Waste");
-			var recyclingBin = _binTypes.First(b => b.Name == "Recycling");
-
-			if (rowsData.ValueKind == JsonValueKind.Object)
-			{
-				foreach (var row in rowsData.EnumerateObject())
-				{
-					var value = row.Value;
-					if (!value.TryGetProperty("WorkPack", out var workPackElement) ||
-						!value.TryGetProperty("ServiceDetail", out var serviceDetailElement))
-					{
-						continue;
-					}
-
-					var workPack = workPackElement.GetString()!.Trim();
-					var serviceDetail = serviceDetailElement.GetString()!.Trim();
-
-					var match = CollectionDateRegex().Match(serviceDetail);
-
-					if (!match.Success)
-					{
-						continue;
-					}
-
-					var collectionDate = DateOnly.ParseExact(
-						match.Groups["date"].Value,
-						"dd/MM/yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-					var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, []);
-
-					if (workPack.StartsWith("Waste-Black", StringComparison.OrdinalIgnoreCase))
-					{
-						binsForDate.Add(generalWasteBin);
-					}
-					else if (workPack.StartsWith("Waste-Recycling", StringComparison.OrdinalIgnoreCase))
-					{
-						binsForDate.Add(recyclingBin);
-					}
-					else
-					{
-						continue;
-					}
-
-					binDaysByDate[collectionDate] = binsForDate;
-				}
-			}
+			var binDaysByDate = ParseBinDaysFromRowsData(rowsData);
 
 			if (binDaysByDate.Count == 0)
 			{
@@ -897,7 +753,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 
 			return getBinDaysResponse;
 		}
-		// Process bin days from retry response
+		// Process bin days from retry response (used when initial request returns no data)
 		else if (clientSideResponse.RequestId == 9)
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
@@ -906,55 +762,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 				.GetProperty("transformed")
 				.GetProperty("rows_data");
 
-			var binDaysByDate = new Dictionary<DateOnly, HashSet<Bin>>();
-			var generalWasteBin = _binTypes.First(b => b.Name == "General Waste");
-			var recyclingBin = _binTypes.First(b => b.Name == "Recycling");
-
-			if (rowsData.ValueKind == JsonValueKind.Object)
-			{
-				foreach (var row in rowsData.EnumerateObject())
-				{
-					var value = row.Value;
-					if (!value.TryGetProperty("WorkPack", out var workPackElement) ||
-						!value.TryGetProperty("ServiceDetail", out var serviceDetailElement))
-					{
-						continue;
-					}
-
-					var workPack = workPackElement.GetString()!.Trim();
-					var serviceDetail = serviceDetailElement.GetString()!.Trim();
-
-					var match = CollectionDateRegex().Match(serviceDetail);
-
-					if (!match.Success)
-					{
-						continue;
-					}
-
-					var collectionDate = DateOnly.ParseExact(
-						match.Groups["date"].Value,
-						"dd/MM/yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-					var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, []);
-
-					if (workPack.StartsWith("Waste-Black", StringComparison.OrdinalIgnoreCase))
-					{
-						binsForDate.Add(generalWasteBin);
-					}
-					else if (workPack.StartsWith("Waste-Recycling", StringComparison.OrdinalIgnoreCase))
-					{
-						binsForDate.Add(recyclingBin);
-					}
-					else
-					{
-						continue;
-					}
-
-					binDaysByDate[collectionDate] = binsForDate;
-				}
-			}
+			var binDaysByDate = ParseBinDaysFromRowsData(rowsData);
 
 			var binDays = binDaysByDate
 				.Select(kvp => new BinDay
@@ -977,6 +785,10 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
+	/// <summary>
+	/// Builds the request body for calendar lookup requests.
+	/// Centralizes the complex request body structure used for fetching bin collection data.
+	/// </summary>
 	private static string BuildCalendarRequestBody(
 		Address address,
 		string formattedPostcode,
@@ -1059,6 +871,10 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		});
 	}
 
+	/// <summary>
+	/// Creates a calendar lookup request with the specified parameters.
+	/// Used for requesting bin collection schedules from the API.
+	/// </summary>
 	private static ClientSideRequest CreateCalendarLookupRequest(
 		int requestId,
 		string lookupId,
@@ -1108,6 +924,10 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			noRetry);
 	}
 
+	/// <summary>
+	/// Creates a run lookup request for the API broker.
+	/// Encapsulates the common pattern for API broker requests with timestamp and retry parameters.
+	/// </summary>
 	private static ClientSideRequest CreateRunLookupRequest(
 		int requestId,
 		string lookupId,
@@ -1156,5 +976,118 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		}
 
 		return rootElement.GetProperty("auth-session").GetString()!;
+	}
+
+	/// <summary>
+	/// Handles the initial session and authentication setup (RequestId 1-2).
+	/// </summary>
+	/// <param name="clientSideResponse">The client-side response, or null to start the flow.</param>
+	/// <param name="nextRequestId">The request ID to assign to the next request (3 for GetAddresses, 3 for GetBinDays).</param>
+	/// <returns>A tuple containing the next client-side request and a flag indicating if the flow should continue.</returns>
+	private (ClientSideRequest? clientSideRequest, bool shouldContinue) HandleSessionInitialization(
+		ClientSideResponse? clientSideResponse,
+		int nextRequestId)
+	{
+		// Step 1: Get initial session cookies
+		if (clientSideResponse == null)
+		{
+			return (new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = _serviceUrl,
+				Method = "GET",
+				Headers = new()
+				{
+					{ "User-Agent", Constants.UserAgent },
+				},
+			}, false);
+		}
+
+		// Step 2: Authenticate and get session ID
+		if (clientSideResponse.RequestId == 1)
+		{
+			if (!clientSideResponse.Headers.ContainsKey("set-cookie"))
+			{
+				throw new InvalidOperationException("Expected set-cookie header not found in response.");
+			}
+
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
+
+			return (new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = "https://my.northdevon.gov.uk/authapi/isauthenticated?uri=https%3A%2F%2Fmy.northdevon.gov.uk%2Fservice%2FWasteRecyclingCollectionCalendar&hostname=my.northdevon.gov.uk&withCredentials=true",
+				Method = "GET",
+				Headers = new()
+				{
+					{ "cookie", requestCookies },
+					{ "x-requested-with", "XMLHttpRequest" },
+					{ "User-Agent", Constants.UserAgent },
+				},
+				Options = new ClientSideOptions
+				{
+					Metadata = new Dictionary<string, string>
+					{
+						{ "cookies", requestCookies },
+					},
+				},
+			}, false);
+		}
+
+		// Step 3: Continue with specific method logic
+		return (null, true);
+	}
+
+	/// <summary>
+	/// Parses bin collection days from the API response data.
+	/// </summary>
+	/// <param name="rowsData">The JSON element containing the rows data from the API response.</param>
+	/// <returns>A dictionary mapping collection dates to sets of bins to be collected.</returns>
+	private Dictionary<DateOnly, HashSet<Bin>> ParseBinDaysFromRowsData(JsonElement rowsData)
+	{
+		var binDaysByDate = new Dictionary<DateOnly, HashSet<Bin>>();
+
+		if (rowsData.ValueKind == JsonValueKind.Object)
+		{
+			foreach (var row in rowsData.EnumerateObject())
+			{
+				var value = row.Value;
+				if (!value.TryGetProperty("WorkPack", out var workPackElement) ||
+					!value.TryGetProperty("ServiceDetail", out var serviceDetailElement))
+				{
+					continue;
+				}
+
+				var workPack = workPackElement.GetString()!.Trim();
+				var serviceDetail = serviceDetailElement.GetString()!.Trim();
+
+				var match = CollectionDateRegex().Match(serviceDetail);
+
+				if (!match.Success)
+				{
+					continue;
+				}
+
+				var collectionDate = DateOnly.ParseExact(
+					match.Groups["date"].Value,
+					"dd/MM/yyyy",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+
+				var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, []);
+				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, workPack);
+
+				if (!matchedBins.Any())
+				{
+					continue;
+				}
+
+				binsForDate.UnionWith(matchedBins);
+				binDaysByDate[collectionDate] = binsForDate;
+			}
+		}
+
+		return binDaysByDate;
 	}
 }
