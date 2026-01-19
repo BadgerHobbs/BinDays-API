@@ -1,7 +1,7 @@
 namespace BinDays.Api.Collectors.Collectors.Councils;
 
-using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
