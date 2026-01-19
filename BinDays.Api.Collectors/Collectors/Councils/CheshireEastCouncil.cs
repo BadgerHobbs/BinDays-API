@@ -89,11 +89,9 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
-			var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers.GetValueOrDefault("set-cookie") ?? string.Empty);
-			var requestUrl = $"https://online.cheshireeast.gov.uk/MyCollectionDay/SearchByAjax/Search?postcode={Uri.EscapeDataString(formattedPostcode)}&propertyname=&_={timestamp}";
+			var setCookie = clientSideResponse.Headers["set-cookie"];
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookie);
+			var requestUrl = $"https://online.cheshireeast.gov.uk/MyCollectionDay/SearchByAjax/Search?postcode={postcode}&propertyname=";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -118,22 +116,18 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content);
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
+			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
 			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
 				var addressText = rawAddress.Groups["address"].Value.Trim();
-				var addressParts = addressText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
 				var address = new Address
 				{
-					Property = addressParts.Length > 0 ? addressParts[0] : null,
-					Street = addressParts.Length > 3 ? addressParts[1] : null,
-					Town = addressParts.Length > 3 ? addressParts[2] : addressParts.Length > 2 ? addressParts[1] : null,
-					Postcode = addressParts.Length > 0 ? addressParts[^1] : formattedPostcode,
+					Property = addressText,
+					Postcode = postcode,
 					Uid = rawAddress.Groups["uprn"].Value,
 				};
 
@@ -179,19 +173,12 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 		// Prepare client-side request for getting bin days
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(address.Postcode ?? string.Empty);
-			var onelineAddress = address.Property ?? address.Street ?? address.Town ?? string.Empty;
-			if (!string.IsNullOrWhiteSpace(formattedPostcode))
-			{
-				onelineAddress = string.IsNullOrWhiteSpace(onelineAddress)
-					? formattedPostcode
-					: $"{onelineAddress}, {formattedPostcode}";
-			}
+			// Build the full address string for the API request
+			var onelineAddress = $"{address.Property}, {address.Postcode}";
 
-			var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers.GetValueOrDefault("set-cookie") ?? string.Empty);
-			var requestUrl = $"https://online.cheshireeast.gov.uk/MyCollectionDay/SearchByAjax/GetBartecJobList?uprn={address.Uid}&onelineaddress={Uri.EscapeDataString(onelineAddress)}&_={timestamp}";
+			var setCookie = clientSideResponse.Headers["set-cookie"];
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookie);
+			var requestUrl = $"https://online.cheshireeast.gov.uk/MyCollectionDay/SearchByAjax/GetBartecJobList?uprn={address.Uid}&onelineaddress={onelineAddress}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -216,7 +203,7 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var rawBinDays = BinDayRegex().Matches(clientSideResponse.Content);
+			var rawBinDays = BinDayRegex().Matches(clientSideResponse.Content)!;
 
 			// Iterate through each bin day, and create a new bin day object
 			var binDays = new List<BinDay>();
