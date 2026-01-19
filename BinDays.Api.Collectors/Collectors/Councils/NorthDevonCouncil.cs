@@ -984,7 +984,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 	/// <param name="clientSideResponse">The client-side response, or null to start the flow.</param>
 	/// <param name="nextRequestId">The request ID to assign to the next request (3 for GetAddresses, 3 for GetBinDays).</param>
 	/// <returns>A tuple containing the next client-side request and a flag indicating if the flow should continue.</returns>
-	private (ClientSideRequest? clientSideRequest, bool shouldContinue) HandleSessionInitialization(
+	private static (ClientSideRequest? clientSideRequest, bool shouldContinue) HandleSessionInitialization(
 		ClientSideResponse? clientSideResponse,
 		int nextRequestId)
 	{
@@ -1006,12 +1006,12 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		// Step 2: Authenticate and get session ID
 		if (clientSideResponse.RequestId == 1)
 		{
-			if (!clientSideResponse.Headers.ContainsKey("set-cookie"))
+			if (!clientSideResponse.Headers.TryGetValue("set-cookie", out var value))
 			{
 				throw new InvalidOperationException("Expected set-cookie header not found in response.");
 			}
 
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(value);
 
 			return (new ClientSideRequest
 			{
@@ -1078,7 +1078,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 				var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, []);
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, workPack);
 
-				if (!matchedBins.Any())
+				if (matchedBins.Count == 0)
 				{
 					continue;
 				}
