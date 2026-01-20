@@ -121,10 +121,11 @@ rm -f .agent/playwright/out/requests.har
 Use the Playwright MCP server to:
 
 1. Navigate to the **Bin Collection Page** URL from the issue
-2. Handle any cookie consent dialogs (accept/dismiss)
-3. Fill in the **Example Postcode** from the issue
-4. Submit the form and select an address if prompted
-5. Navigate to the page showing bin collection dates
+2. **Check for anti-bot detection**: If the website is protected by anti-bot measures (CloudFlare, reCaptcha, Imperva, DataDome, or similar), **STOP IMMEDIATELY** and report that the council cannot be implemented due to anti-bot protection. These protections are not currently supported and have no easy workarounds. Do not waste time attempting to bypass them.
+3. Handle any cookie consent dialogs (accept/dismiss)
+4. Fill in the **Example Postcode** from the issue
+5. Submit the form and select an address if prompted
+6. Navigate to the page showing bin collection dates
 
 **Record each interaction step** for later reference:
 
