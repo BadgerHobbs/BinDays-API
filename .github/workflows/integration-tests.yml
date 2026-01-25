@@ -32,71 +32,10 @@ jobs:
 
       - name: List council test file identifiers
         id: list_councils
-        run: |
-          RUN_ALL=true
-          CANDIDATE_COUNCILS=""
-
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "Pull Request detected. Checking for optimization opportunities..."
-            
-            # Use origin/main as default base if github.base_ref is somehow empty
-            BASE_REF="origin/${{ github.base_ref }}"
-            echo "Comparing HEAD against $BASE_REF"
-            
-            CHANGED_FILES=$(git diff --name-only "$BASE_REF" HEAD)
-            
-            COUNCIL_IMPL_PATTERN="^BinDays\.Api\.Collectors/Collectors/Councils/.*\.cs$"
-            COUNCIL_TEST_PATTERN="^BinDays\.Api\.IntegrationTests/Collectors/Councils/.*Tests\.cs$"
-            
-            NON_COUNCIL_CHANGES=$(echo "$CHANGED_FILES" | grep -vE "$COUNCIL_IMPL_PATTERN|$COUNCIL_TEST_PATTERN" || true)
-            
-            if [[ -z "$NON_COUNCIL_CHANGES" && -n "$CHANGED_FILES" ]]; then
-              echo "Only council files changed. Optimizing test run."
-              RUN_ALL=false
-              
-              IMPL_NAMES=$(echo "$CHANGED_FILES" | grep -E "$COUNCIL_IMPL_PATTERN" | sed 's|BinDays.Api.Collectors/Collectors/Councils/||' | sed 's|\.cs$||' || true)
-              TEST_NAMES=$(echo "$CHANGED_FILES" | grep -E "$COUNCIL_TEST_PATTERN" | sed 's|BinDays.Api.IntegrationTests/Collectors/Councils/||' | sed 's|Tests\.cs$||' || true)
-              
-              RAW_LIST=$(echo -e "$IMPL_NAMES\n$TEST_NAMES" | sort | uniq | grep -v "^$")
-              
-              for council in $RAW_LIST; do
-                TEST_FILE="BinDays.Api.IntegrationTests/Collectors/Councils/${council}Tests.cs"
-                if [[ -f "$TEST_FILE" ]]; then
-                  CANDIDATE_COUNCILS+="$council"$'\n'
-                else
-                  echo "Skipping $council: Test file $TEST_FILE not found."
-                fi
-              done
-            else
-               echo "Changes detected outside of council specific files (or no changes). Running all tests."
-               if [[ -n "$NON_COUNCIL_CHANGES" ]]; then
-                 echo "Sample non-council changes:"
-                 echo "$NON_COUNCIL_CHANGES" | head -n 5
-               fi
-            fi
-          fi
-
-          if [[ "$RUN_ALL" == "true" ]]; then
-             TARGET_DIR="BinDays.Api.IntegrationTests/Collectors/Councils"
-             if [[ -d "$TARGET_DIR" ]]; then
-               CANDIDATE_COUNCILS=$(ls "$TARGET_DIR"/*Tests.cs | xargs -n 1 basename | sed 's/Tests\.cs$//')
-             else
-               echo "Error: Test directory not found!"
-               exit 1
-             fi
-          fi
-          
-          JSON_ARRAY=$(echo "$CANDIDATE_COUNCILS" | grep -v "^$" | jq -R . | jq -s .)
-          
-          if [[ "$JSON_ARRAY" == "null" ]]; then
-             JSON_ARRAY="[]"
-          fi
-          
-          FILTERED_JSON=$(echo "$JSON_ARRAY" | jq -c --argjson excluded "$EXCLUDED_COUNCILS" '. - $excluded')
-          
-          echo "Final list of councils to test: $FILTERED_JSON"
-          echo "councils_json=$FILTERED_JSON" >> $GITHUB_OUTPUT
-        shell: bash
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: ./.github/scripts/integration-tests/discover-councils.sh
 
   run_council_tests:
     name: Test ${{ matrix.council }}
@@ -117,22 +56,7 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Workaround for SSL error on self-hosted runner
-        run: |
-          # This is a workaround for an SSL error that occurs on self-hosted runners
-          # when running integration tests for specific councils, such as Teignbridge.
-          # The error "The SSL connection could not be established" is caused by
-          # the council's server using a legacy TLS version. This updates the SSL
-          # config to allow for a less strict security level.
-          #
-          # The script is idempotent and will only modify the openssl.cnf file
-          # if the required configuration is not already present.
-          if ! grep -q "ssl_conf = ssl_sect" /etc/ssl/openssl.cnf; then
-            sudo sed -i '/\[openssl_init\]/a ssl_conf = ssl_sect' /etc/ssl/openssl.cnf
-          fi
-
-          if ! grep -q "\[ssl_sect\]" /etc/ssl/openssl.cnf; then
-            echo -e "\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT@SECLEVEL=1" | sudo tee -a /etc/ssl/openssl.cnf
-          fi
+        run: ./.github/scripts/integration-tests/ssl-workaround.sh
 
       - name: Run Integration Tests for ${{ matrix.council }}
         uses: nick-invision/retry@v3
