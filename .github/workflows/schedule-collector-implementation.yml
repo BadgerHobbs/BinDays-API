@@ -121,9 +121,9 @@ jobs:
               });
 
               // Check if there's a previous failed implementation attempt
-              // The failure comment contains "The automated collector implementation failed"
+              // The failure comment contains "automated collector implementation failed"
               const hasFailedAttempt = comments.some(comment =>
-                comment.body?.includes('The automated collector implementation failed')
+                comment.body?.includes('automated collector implementation failed')
               );
 
               if (hasFailedAttempt) {
