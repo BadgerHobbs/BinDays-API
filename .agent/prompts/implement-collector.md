@@ -156,7 +156,6 @@ Collectors must return ONLY the true data provided by the council, not computed 
 ### 2.3 Close Browser and Save Data
 
 1. **Take a screenshot** of the final bin collections page showing the collection dates:
-
    - Use Playwright's screenshot functionality to capture the page
    - Save as `.agent/playwright/out/{CouncilName}-screenshot.png`
    - This screenshot will be included in the pull request to help with verification/validation
@@ -229,6 +228,7 @@ Create `BinDays.Api.Collectors/Collectors/Councils/{CouncilName}.cs`:
 **YOU MUST STRICTLY FOLLOW ALL CONVENTIONS FROM THE STYLE GUIDE PROVIDED ABOVE.**
 
 Refer back to the style guide sections for:
+
 - Class structure and modifiers
 - Property and method syntax
 - Member ordering
@@ -245,44 +245,12 @@ Refer back to the style guide sections for:
 
 Create `BinDays.Api.IntegrationTests/Collectors/Councils/{CouncilName}Tests.cs`:
 
-```csharp
-namespace BinDays.Api.IntegrationTests.Collectors.Councils;
+**Refer to the "Testing Requirements" section in the style guide (Phase 3.1) for the complete integration test template.**
 
-using BinDays.Api.Collectors.Collectors;
-using BinDays.Api.Collectors.Collectors.Councils;
-using BinDays.Api.Collectors.Services;
-using BinDays.Api.IntegrationTests.Helpers;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
+Use the example template, replacing:
 
-public class {CouncilName}Tests
-{
-    private readonly IntegrationTestClient _client;
-    private static readonly ICollector _collector = new {CouncilName}();
-    private readonly CollectorService _collectorService = new([_collector]);
-    private readonly ITestOutputHelper _outputHelper;
-
-    public {CouncilName}Tests(ITestOutputHelper outputHelper)
-    {
-        _outputHelper = outputHelper;
-        _client = new IntegrationTestClient(outputHelper);
-    }
-
-    [Theory]
-    [InlineData("{postcode}")]
-    public async Task GetBinDaysTest(string postcode)
-    {
-        await TestSteps.EndToEnd(
-            _client,
-            _collectorService,
-            _collector,
-            postcode,
-            _outputHelper
-        );
-    }
-}
-```
+- `MyNewCouncil` with `{CouncilName}`
+- `"ABCD EFG"` with your test postcode from the issue
 
 ---
 
@@ -377,10 +345,10 @@ When tests pass AND style guide compliance is verified:
 
 ### Critical Implementation Rules
 
-- **No browser emulation in collector**: The collector must replicate HTTP requests directly, not use Playwright/Selenium
-- **Return only actual data**: Collectors must return ONLY the collection dates explicitly provided by the council website. Never calculate or infer additional dates based on intervals, patterns, or statements like "and every other week"
-- **Include screenshot in PR**: The screenshot of the bin collections page taken during Phase 2.3 must be included in the pull request to assist with verification and validation
+All implementation rules and conventions are documented in the comprehensive style guide provided in Phase 3.1.
 
-All other implementation rules are documented in the style guide provided in Phase 3.1.
+**Workflow-Specific Requirement:**
+
+- **Include screenshot in PR**: The screenshot of the bin collections page taken during Phase 2.3 must be included in the pull request to assist with verification and validation
 
 Begin now by parsing the issue content and navigating to the council website.
