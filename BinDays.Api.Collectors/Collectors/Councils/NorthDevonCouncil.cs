@@ -87,9 +87,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting location data
 		if (clientSideResponse!.RequestId == 2)
 		{
-			var previousCookies = clientSideResponse.Options.Metadata.GetValueOrDefault("cookies", string.Empty);
-			var newCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var cookies = CombineCookies(previousCookies, newCookies);
+			var cookies = AccumulateCookies(clientSideResponse);
 
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var sid = GetSid(clientSideResponse, jsonDoc.RootElement);
@@ -128,81 +126,17 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for looking up addresses
 		else if (clientSideResponse.RequestId == 3)
 		{
-			var previousCookies = clientSideResponse.Options.Metadata.GetValueOrDefault("cookies", string.Empty);
-			var newCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var cookies = CombineCookies(previousCookies, newCookies);
+			var cookies = AccumulateCookies(clientSideResponse);
 
 			var sid = clientSideResponse.Options.Metadata.GetValueOrDefault("sid", string.Empty);
 			var formattedPostcode = clientSideResponse.Options.Metadata.GetValueOrDefault("postcode", string.Empty);
 
 			// Note: Many fields below are empty but required by the API
-			var requestBody = JsonSerializer.Serialize(new
+			var requestBody = BuildRequestBody(sid, new()
 			{
-				stopOnFailure = true,
-				usePHPIntegrations = true,
-				stage_id = _stageId,
-				stage_name = "Stage 1",
-				formId = _formId,
-				formValues = new Dictionary<string, object?>
-				{
-					["Your address"] = new
-					{
-						qsUPRN = new { value = string.Empty },
-						postcode_search = new { value = formattedPostcode },
-						chooseAddress = new { value = string.Empty },
-						uprnfromlookup = new { value = string.Empty },
-						UPRNMF = new { value = string.Empty },
-						FULLADDR2 = new { value = string.Empty },
-					},
-					["Calendar"] = new Dictionary<string, object?>
-					{
-						{ "FULLADDR", new { value = string.Empty } },
-						{ "token", new { value = string.Empty } },
-						{ "uPRN", new { value = string.Empty } },
-						{ "calstartDate", new { value = string.Empty } },
-						{ "calendDate", new { value = string.Empty } },
-						{ "details", Array.Empty<object>() },
-						{ "text1", new { value = string.Empty } },
-						{ "Results", new { value = string.Empty } },
-						{ "UPRN", new { value = string.Empty } },
-						{ "Alerts", new { value = string.Empty } },
-						{ "liveToken", new { value = string.Empty } },
-						{ "Results2", new { value = string.Empty } },
-						{ "USRN", new { value = string.Empty } },
-						{ "streetEvents", Array.Empty<object>() },
-						{ "EventDescription", new { value = string.Empty } },
-						{ "EventDate", new { value = string.Empty } },
-						{ "EventsDisplay", new { value = string.Empty } },
-						{ "Comments", new { value = string.Empty } },
-						{ "OutText", new { value = string.Empty } },
-						{ "StartDate", new { value = string.Empty } },
-						{ "EndDate", new { value = string.Empty } },
-					},
-					["Print version"] = new
-					{
-						OutText2 = new { value = string.Empty },
-					},
-				},
-				isPublished = true,
-				formName = "WasteRecyclingCalendarForm",
-				processId = _processId,
-				tokens = new
-				{
-					site_url = _serviceUrl,
-					site_path = "/service/WasteRecyclingCollectionCalendar",
-					site_origin = "https://my.northdevon.gov.uk",
-					product = "Self",
-					formLanguage = "en",
-					session_id = sid,
-					formId = _formId,
-					topFormId = _formId,
-					parentFormId = _formId,
-					formName = "WasteRecyclingCalendarForm",
-					topFormName = "WasteRecyclingCalendarForm",
-					parentFormName = "WasteRecyclingCalendarForm",
-					processId = _processId,
-					processName = "WasteRecyclingCollectionCalendar",
-				},
+				["Your address"] = CreateYourAddressFormValues(formattedPostcode),
+				["Calendar"] = CreateEmptyCalendarFormValues(),
+				["Print version"] = new { OutText2 = new { value = string.Empty } },
 			});
 
 			var clientSideRequest = new ClientSideRequest
@@ -295,9 +229,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting location data
 		if (clientSideResponse!.RequestId == 2)
 		{
-			var previousCookies = clientSideResponse.Options.Metadata.GetValueOrDefault("cookies", string.Empty);
-			var newCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var cookies = CombineCookies(previousCookies, newCookies);
+			var cookies = AccumulateCookies(clientSideResponse);
 
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var sid = GetSid(clientSideResponse, jsonDoc.RootElement);
@@ -336,52 +268,12 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting address details
 		else if (clientSideResponse.RequestId == 3)
 		{
-			var previousCookies = clientSideResponse.Options.Metadata.GetValueOrDefault("cookies", string.Empty);
-			var newCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var cookies = CombineCookies(previousCookies, newCookies);
+			var cookies = AccumulateCookies(clientSideResponse);
 
 			var sid = clientSideResponse.Options.Metadata.GetValueOrDefault("sid", string.Empty);
 			var formattedPostcode = clientSideResponse.Options.Metadata.GetValueOrDefault("postcode", string.Empty);
 
-			var requestBody = JsonSerializer.Serialize(new
-			{
-				stopOnFailure = true,
-				usePHPIntegrations = true,
-				stage_id = _stageId,
-				stage_name = "Stage 1",
-				formId = _formId,
-				formValues = new Dictionary<string, object?>
-				{
-					["Your address"] = new
-					{
-						postcode_search = new { value = formattedPostcode },
-						chooseAddress = new { value = address.Uid },
-						uprnfromlookup = new { value = address.Uid },
-						UPRNMF = new { value = address.Uid },
-						FULLADDR2 = new { value = string.Empty },
-					},
-				},
-				isPublished = true,
-				formName = "WasteRecyclingCalendarForm",
-				processId = _processId,
-				tokens = new
-				{
-					site_url = _serviceUrl,
-					site_path = "/service/WasteRecyclingCollectionCalendar",
-					site_origin = "https://my.northdevon.gov.uk",
-					product = "Self",
-					formLanguage = "en",
-					session_id = sid,
-					formId = _formId,
-					topFormId = _formId,
-					parentFormId = _formId,
-					formName = "WasteRecyclingCalendarForm",
-					topFormName = "WasteRecyclingCalendarForm",
-					parentFormName = "WasteRecyclingCalendarForm",
-					processId = _processId,
-					processName = "WasteRecyclingCollectionCalendar",
-				},
-			});
+			var requestBody = BuildRequestBody(sid, new() { ["Your address"] = CreateYourAddressFormValues(formattedPostcode, address.Uid) });
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -431,45 +323,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			var sid = clientSideResponse.Options.Metadata.GetValueOrDefault("sid", string.Empty);
 			var formattedPostcode = clientSideResponse.Options.Metadata.GetValueOrDefault("postcode", string.Empty);
 
-			var requestBody = JsonSerializer.Serialize(new
-			{
-				stopOnFailure = true,
-				usePHPIntegrations = true,
-				stage_id = _stageId,
-				stage_name = "Stage 1",
-				formId = _formId,
-				formValues = new Dictionary<string, object?>
-				{
-					["Your address"] = new
-					{
-						postcode_search = new { value = formattedPostcode },
-						chooseAddress = new { value = address.Uid },
-						uprnfromlookup = new { value = address.Uid },
-						UPRNMF = new { value = address.Uid },
-						FULLADDR2 = new { value = fullAddress2 },
-					},
-				},
-				isPublished = true,
-				formName = "WasteRecyclingCalendarForm",
-				processId = _processId,
-				tokens = new
-				{
-					site_url = _serviceUrl,
-					site_path = "/service/WasteRecyclingCollectionCalendar",
-					site_origin = "https://my.northdevon.gov.uk",
-					product = "Self",
-					formLanguage = "en",
-					session_id = sid,
-					formId = _formId,
-					topFormId = _formId,
-					parentFormId = _formId,
-					formName = "WasteRecyclingCalendarForm",
-					topFormName = "WasteRecyclingCalendarForm",
-					parentFormName = "WasteRecyclingCalendarForm",
-					processId = _processId,
-					processName = "WasteRecyclingCollectionCalendar",
-				},
-			});
+			var requestBody = BuildRequestBody(sid, new() { ["Your address"] = CreateYourAddressFormValues(formattedPostcode, address.Uid, fullAddress2) });
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -527,45 +381,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			var formattedPostcode = metadata.GetValueOrDefault("postcode", string.Empty);
 			var fullAddress2 = metadata.GetValueOrDefault("fullAddress2", string.Empty);
 
-			var requestBody = JsonSerializer.Serialize(new
-			{
-				stopOnFailure = true,
-				usePHPIntegrations = true,
-				stage_id = _stageId,
-				stage_name = "Stage 1",
-				formId = _formId,
-				formValues = new Dictionary<string, object?>
-				{
-					["Your address"] = new
-					{
-						postcode_search = new { value = formattedPostcode },
-						chooseAddress = new { value = address.Uid },
-						uprnfromlookup = new { value = address.Uid },
-						UPRNMF = new { value = address.Uid },
-						FULLADDR2 = new { value = fullAddress2 },
-					},
-				},
-				isPublished = true,
-				formName = "WasteRecyclingCalendarForm",
-				processId = _processId,
-				tokens = new
-				{
-					site_url = _serviceUrl,
-					site_path = "/service/WasteRecyclingCollectionCalendar",
-					site_origin = "https://my.northdevon.gov.uk",
-					product = "Self",
-					formLanguage = "en",
-					session_id = sid,
-					formId = _formId,
-					topFormId = _formId,
-					parentFormId = _formId,
-					formName = "WasteRecyclingCalendarForm",
-					topFormName = "WasteRecyclingCalendarForm",
-					parentFormName = "WasteRecyclingCalendarForm",
-					processId = _processId,
-					processName = "WasteRecyclingCollectionCalendar",
-				},
-			});
+			var requestBody = BuildRequestBody(sid, new() { ["Your address"] = CreateYourAddressFormValues(formattedPostcode, address.Uid, fullAddress2) });
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -617,45 +433,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			var formattedPostcode = metadata.GetValueOrDefault("postcode", string.Empty);
 			var fullAddress2 = metadata.GetValueOrDefault("fullAddress2", string.Empty);
 
-			var requestBody = JsonSerializer.Serialize(new
-			{
-				stopOnFailure = true,
-				usePHPIntegrations = true,
-				stage_id = _stageId,
-				stage_name = "Stage 1",
-				formId = _formId,
-				formValues = new Dictionary<string, object?>
-				{
-					["Your address"] = new
-					{
-						postcode_search = new { value = formattedPostcode },
-						chooseAddress = new { value = address.Uid },
-						uprnfromlookup = new { value = address.Uid },
-						UPRNMF = new { value = address.Uid },
-						FULLADDR2 = new { value = fullAddress2 },
-					},
-				},
-				isPublished = true,
-				formName = "WasteRecyclingCalendarForm",
-				processId = _processId,
-				tokens = new
-				{
-					site_url = _serviceUrl,
-					site_path = "/service/WasteRecyclingCollectionCalendar",
-					site_origin = "https://my.northdevon.gov.uk",
-					product = "Self",
-					formLanguage = "en",
-					session_id = sid,
-					formId = _formId,
-					topFormId = _formId,
-					parentFormId = _formId,
-					formName = "WasteRecyclingCalendarForm",
-					topFormName = "WasteRecyclingCalendarForm",
-					parentFormName = "WasteRecyclingCalendarForm",
-					processId = _processId,
-					processName = "WasteRecyclingCollectionCalendar",
-				},
-			});
+			var requestBody = BuildRequestBody(sid, new() { ["Your address"] = CreateYourAddressFormValues(formattedPostcode, address.Uid, fullAddress2) });
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -715,160 +493,31 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 8)
 		{
-			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-			var rowsData = jsonDoc.RootElement
-				.GetProperty("integration")
-				.GetProperty("transformed")
-				.GetProperty("rows_data");
+			var getBinDaysResponse = ProcessBinDaysFromResponse(clientSideResponse, address);
 
-			var binDaysByDate = ParseBinDaysFromRowsData(rowsData);
-
-			if (binDaysByDate.Count == 0)
+			// If no bin days found, retry the request
+			if (getBinDaysResponse.BinDays?.Count == 0)
 			{
 				var metadata = clientSideResponse.Options.Metadata;
 				var liveToken = metadata.GetValueOrDefault("liveToken", string.Empty);
 				var clientSideRequest = CreateCalendarLookupRequest(9, "61091d927cd81", liveToken, metadata, address, noRetry: false);
 
-				var getBinDaysResponseEmpty = new GetBinDaysResponse
+				return new GetBinDaysResponse
 				{
 					NextClientSideRequest = clientSideRequest,
 				};
-
-				return getBinDaysResponseEmpty;
 			}
-
-			var binDays = binDaysByDate
-				.Select(kvp => new BinDay
-				{
-					Date = kvp.Key,
-					Address = address,
-					Bins = [.. kvp.Value],
-				})
-				.ToList();
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-			};
 
 			return getBinDaysResponse;
 		}
 		// Process bin days from retry response (used when initial request returns no data)
 		else if (clientSideResponse.RequestId == 9)
 		{
-			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-			var rowsData = jsonDoc.RootElement
-				.GetProperty("integration")
-				.GetProperty("transformed")
-				.GetProperty("rows_data");
-
-			var binDaysByDate = ParseBinDaysFromRowsData(rowsData);
-
-			var binDays = binDaysByDate
-				.Select(kvp => new BinDay
-				{
-					Date = kvp.Key,
-					Address = address,
-					Bins = [.. kvp.Value],
-				})
-				.ToList();
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-			};
-
-			return getBinDaysResponse;
+			return ProcessBinDaysFromResponse(clientSideResponse, address);
 		}
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
-	}
-
-	/// <summary>
-	/// Builds the request body for calendar lookup requests.
-	/// Centralizes the complex request body structure used for fetching bin collection data.
-	/// </summary>
-	private static string BuildCalendarRequestBody(
-		Address address,
-		string formattedPostcode,
-		string fullAddress2,
-		string fullAddress,
-		string usrn,
-		string tokenValue,
-		string liveToken,
-		string calendarStartDate,
-		string calendarEndDate,
-		string sid,
-		IEnumerable<object>? details = null)
-	{
-		return JsonSerializer.Serialize(new
-		{
-			stopOnFailure = true,
-			usePHPIntegrations = true,
-			stage_id = _stageId,
-			stage_name = "Stage 1",
-			formId = _formId,
-			formValues = new Dictionary<string, object?>
-			{
-				["Your address"] = new
-				{
-					postcode_search = new { value = formattedPostcode },
-					chooseAddress = new { value = address.Uid },
-					uprnfromlookup = new { value = address.Uid },
-					UPRNMF = new { value = address.Uid },
-					FULLADDR2 = new { value = fullAddress2 },
-				},
-				["Calendar"] = new Dictionary<string, object?>
-				{
-					{ "FULLADDR", new { value = fullAddress } },
-					{ "token", new { value = tokenValue } },
-					{ "uPRN", new { value = address.Uid } },
-					{ "calstartDate", new { value = calendarStartDate } },
-					{ "calendDate", new { value = calendarEndDate } },
-					{ "details", details ?? [] },
-					{ "text1", new { value = string.Empty } },
-					{ "Results", new { value = string.Empty } },
-					{ "UPRN", new { value = address.Uid } },
-					{ "Alerts", new { value = string.Empty } },
-					{ "liveToken", new { value = liveToken } },
-					{ "Results2", new { value = string.Empty } },
-					{ "USRN", new { value = usrn } },
-					{ "streetEvents", Array.Empty<object>() },
-					{ "EventDescription", new { value = string.Empty } },
-					{ "EventDate", new { value = string.Empty } },
-					{ "EventsDisplay", new { value = string.Empty } },
-					{ "Comments", new { value = string.Empty } },
-					{ "OutText", new { value = string.Empty } },
-					{ "StartDate", new { value = calendarStartDate } },
-					{ "EndDate", new { value = calendarEndDate } },
-				},
-				["Print version"] = new
-				{
-					OutText2 = new { value = string.Empty },
-				},
-			},
-			isPublished = true,
-			formName = "WasteRecyclingCalendarForm",
-			processId = _processId,
-			tokens = new
-			{
-				site_url = _serviceUrl,
-				site_path = "/service/WasteRecyclingCollectionCalendar",
-				site_origin = "https://my.northdevon.gov.uk",
-				product = "Self",
-				formLanguage = "en",
-				session_id = sid,
-				formId = _formId,
-				topFormId = _formId,
-				parentFormId = _formId,
-				formName = "WasteRecyclingCalendarForm",
-				topFormName = "WasteRecyclingCalendarForm",
-				parentFormName = "WasteRecyclingCalendarForm",
-				processId = _processId,
-				processName = "WasteRecyclingCollectionCalendar",
-			},
-		});
 	}
 
 	/// <summary>
@@ -901,42 +550,13 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			details = JsonSerializer.Deserialize<List<Dictionary<string, object?>>>(detailsJson);
 		}
 
-		var requestBody = BuildCalendarRequestBody(
-			address,
-			formattedPostcode,
-			fullAddress2,
-			fullAddress,
-			usrn,
-			tokenValue,
-			liveToken,
-			calendarStartDate,
-			calendarEndDate,
-			sid,
-			details);
+		var requestBody = BuildRequestBody(sid, new()
+		{
+			["Your address"] = CreateYourAddressFormValues(formattedPostcode, address.Uid, fullAddress2),
+			["Calendar"] = CreatePopulatedCalendarFormValues(fullAddress, usrn, address.Uid!, tokenValue, liveToken, calendarStartDate, calendarEndDate, details),
+			["Print version"] = new { OutText2 = new { value = string.Empty } },
+		});
 
-		return CreateRunLookupRequest(
-			requestId,
-			lookupId,
-			sid,
-			cookies,
-			requestBody,
-			metadataDictionary,
-			noRetry);
-	}
-
-	/// <summary>
-	/// Creates a run lookup request for the API broker.
-	/// Encapsulates the common pattern for API broker requests with timestamp and retry parameters.
-	/// </summary>
-	private static ClientSideRequest CreateRunLookupRequest(
-		int requestId,
-		string lookupId,
-		string sid,
-		string cookies,
-		string requestBody,
-		Dictionary<string, string> metadata,
-		bool noRetry = true)
-	{
 		var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 		var noRetryValue = noRetry ? "true" : "false";
 
@@ -946,23 +566,103 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			Url = $"https://my.northdevon.gov.uk/apibroker/runLookup?id={lookupId}&repeat_against=&noRetry={noRetryValue}&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={timestamp}&sid={sid}",
 			Method = "POST",
 			Body = requestBody,
-			Headers = new()
-			{
-				{ "content-type", "application/json" },
-				{ "cookie", cookies },
-				{ "x-requested-with", "XMLHttpRequest" },
-				{ "User-Agent", Constants.UserAgent },
-			},
-			Options = new ClientSideOptions
-			{
-				Metadata = metadata,
-			},
+			Headers = new() { { "content-type", "application/json" }, { "cookie", cookies }, { "x-requested-with", "XMLHttpRequest" }, { "User-Agent", Constants.UserAgent } },
+			Options = new ClientSideOptions { Metadata = metadataDictionary },
 		};
 	}
 
-	private static string CombineCookies(params string?[] cookieStrings)
+	private static string BuildRequestBody(string sid, Dictionary<string, object?> formValues) =>
+		JsonSerializer.Serialize(new
+		{
+			stopOnFailure = true,
+			usePHPIntegrations = true,
+			stage_id = _stageId,
+			stage_name = "Stage 1",
+			formId = _formId,
+			formValues,
+			isPublished = true,
+			formName = "WasteRecyclingCalendarForm",
+			processId = _processId,
+			tokens = CreateTokens(sid),
+		});
+
+	private static string AccumulateCookies(ClientSideResponse response)
 	{
-		return string.Join("; ", cookieStrings.Where(c => !string.IsNullOrWhiteSpace(c)));
+		var previousCookies = response.Options.Metadata.GetValueOrDefault("cookies", string.Empty);
+		var newCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(response.Headers["set-cookie"]);
+		return string.Join("; ", new[] { previousCookies, newCookies }.Where(c => !string.IsNullOrWhiteSpace(c)));
+	}
+
+	private static object CreateTokens(string sid) => new
+	{
+		site_url = _serviceUrl,
+		site_path = "/service/WasteRecyclingCollectionCalendar",
+		site_origin = "https://my.northdevon.gov.uk",
+		product = "Self",
+		formLanguage = "en",
+		session_id = sid,
+		formId = _formId,
+		topFormId = _formId,
+		parentFormId = _formId,
+		formName = "WasteRecyclingCalendarForm",
+		topFormName = "WasteRecyclingCalendarForm",
+		parentFormName = "WasteRecyclingCalendarForm",
+		processId = _processId,
+		processName = "WasteRecyclingCollectionCalendar",
+	};
+
+	private static object CreateYourAddressFormValues(string postcode, string? uid = null, string? fullAddr2 = null) => new
+	{
+		qsUPRN = new { value = string.Empty },
+		postcode_search = new { value = postcode },
+		chooseAddress = new { value = uid ?? string.Empty },
+		uprnfromlookup = new { value = uid ?? string.Empty },
+		UPRNMF = new { value = uid ?? string.Empty },
+		FULLADDR2 = new { value = fullAddr2 ?? string.Empty },
+	};
+
+	private static Dictionary<string, object?> CreateEmptyCalendarFormValues() => new()
+	{
+		{ "FULLADDR", new { value = string.Empty } },
+		{ "token", new { value = string.Empty } },
+		{ "uPRN", new { value = string.Empty } },
+		{ "calstartDate", new { value = string.Empty } },
+		{ "calendDate", new { value = string.Empty } },
+		{ "details", Array.Empty<object>() },
+		{ "text1", new { value = string.Empty } },
+		{ "Results", new { value = string.Empty } },
+		{ "UPRN", new { value = string.Empty } },
+		{ "Alerts", new { value = string.Empty } },
+		{ "liveToken", new { value = string.Empty } },
+		{ "Results2", new { value = string.Empty } },
+		{ "USRN", new { value = string.Empty } },
+		{ "streetEvents", Array.Empty<object>() },
+		{ "EventDescription", new { value = string.Empty } },
+		{ "EventDate", new { value = string.Empty } },
+		{ "EventsDisplay", new { value = string.Empty } },
+		{ "Comments", new { value = string.Empty } },
+		{ "OutText", new { value = string.Empty } },
+		{ "StartDate", new { value = string.Empty } },
+		{ "EndDate", new { value = string.Empty } },
+	};
+
+	private static Dictionary<string, object?> CreatePopulatedCalendarFormValues(
+		string fullAddress, string usrn, string uprn, string tokenValue, string liveToken,
+		string startDate, string endDate, IEnumerable<object>? details = null)
+	{
+		var calendar = CreateEmptyCalendarFormValues();
+		calendar["FULLADDR"] = new { value = fullAddress };
+		calendar["token"] = new { value = tokenValue };
+		calendar["uPRN"] = new { value = uprn };
+		calendar["UPRN"] = new { value = uprn };
+		calendar["USRN"] = new { value = usrn };
+		calendar["liveToken"] = new { value = liveToken };
+		calendar["calstartDate"] = new { value = startDate };
+		calendar["calendDate"] = new { value = endDate };
+		calendar["StartDate"] = new { value = startDate };
+		calendar["EndDate"] = new { value = endDate };
+		calendar["details"] = details ?? [];
+		return calendar;
 	}
 
 	private static string GetSid(ClientSideResponse response, JsonElement rootElement)
@@ -1036,6 +736,37 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 
 		// Step 3: Continue with specific method logic
 		return (null, true);
+	}
+
+	/// <summary>
+	/// Processes the bin collection API response into a collection of BinDay objects.
+	/// </summary>
+	/// <param name="clientSideResponse">The client-side response containing the JSON data.</param>
+	/// <param name="address">The address for which bin days are being retrieved.</param>
+	/// <returns>A GetBinDaysResponse containing the processed bin days.</returns>
+	private GetBinDaysResponse ProcessBinDaysFromResponse(ClientSideResponse clientSideResponse, Address address)
+	{
+		using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+		var rowsData = jsonDoc.RootElement
+			.GetProperty("integration")
+			.GetProperty("transformed")
+			.GetProperty("rows_data");
+
+		var binDaysByDate = ParseBinDaysFromRowsData(rowsData);
+
+		var binDays = binDaysByDate
+			.Select(kvp => new BinDay
+			{
+				Date = kvp.Key,
+				Address = address,
+				Bins = [.. kvp.Value],
+			})
+			.ToList();
+
+		return new GetBinDaysResponse
+		{
+			BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+		};
 	}
 
 	/// <summary>
