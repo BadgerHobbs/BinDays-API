@@ -38,21 +38,21 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 		},
 		new()
 		{
-			Name = "Recycling (Plastics/Tins)",
+			Name = "Plastics & Tins Recycling",
 			Colour = BinColour.Green,
 			Type = BinType.Box,
 			Keys = [ "Recycling" ],
 		},
 		new()
 		{
-			Name = "Recycling (Glass/Cardboard)",
+			Name = "Glass & Cardboard Recycling",
 			Colour = BinColour.Orange,
 			Type = BinType.Box,
 			Keys = [ "Recycling" ],
 		},
 		new()
 		{
-			Name = "Recycling (Paper)",
+			Name = "Paper Recycling",
 			Colour = BinColour.Blue,
 			Type = BinType.Bag,
 			Keys = [ "Recycling" ],
