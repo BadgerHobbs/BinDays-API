@@ -223,9 +223,9 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 				{ "Trigger", "submit" },
 				{ "CurrentSectionID", "0" },
 				{ "TriggerCtl", string.Empty },
-				{ "FF1168", address.Uid ?? string.Empty },
+				{ "FF1168", address.Uid! },
 				{ "FF1168lbltxt", "Please select your address" },
-				{ "FF1168-text", address.Postcode ?? string.Empty },
+				{ "FF1168-text", address.Postcode! },
 			});
 
 			var clientSideRequest = new ClientSideRequest
