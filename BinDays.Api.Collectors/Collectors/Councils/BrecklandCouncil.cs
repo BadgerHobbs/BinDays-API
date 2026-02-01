@@ -6,6 +6,7 @@ using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.Json;
 
 /// <summary>
@@ -30,28 +31,26 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Refuse Collection Service", "Refuse" ],
-			Type = BinType.Bin,
+			Keys = [ "Refuse Collection Service" ],
 		},
 		new()
 		{
 			Name = "Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Recycling Collection Service", "Recycling" ],
-			Type = BinType.Bin,
+			Keys = [ "Recycling Collection Service" ],
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Garden Waste Collection Service", "Garden Waste" ],
+			Keys = [ "Garden Waste Collection Service" ],
 			Type = BinType.Sack,
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Grey,
-			Keys = [ "Food Waste Collection Service", "Food Waste" ],
+			Keys = [ "Food Waste Collection Service" ],
 			Type = BinType.Caddy,
 		},
 	];
@@ -79,7 +78,7 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.breckland.gov.uk/apiserver/ajaxlibrary",
 				Method = "POST",
-				Headers = new Dictionary<string, string>
+				Headers = new()
 				{
 					{ "Content-Type", "application/json" },
 					{ "X-Requested-With", "XMLHttpRequest" },
@@ -90,7 +89,7 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 
 			return new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 		}
 		// Process addresses from response
@@ -98,58 +97,26 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
+			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
 			foreach (var addressElement in jsonDoc.RootElement.GetProperty("result").EnumerateArray())
 			{
-				var propertyParts = new List<string>();
+				var number = addressElement.GetProperty("number").GetString()?.Trim();
+				var name = addressElement.GetProperty("name").GetString()?.Trim();
+				var address1 = addressElement.GetProperty("address1").GetString()?.Trim();
+				var address2 = addressElement.GetProperty("address2").GetString()?.Trim();
+				var town = addressElement.GetProperty("town").GetString()?.Trim();
+				var county = addressElement.GetProperty("county").GetString()?.Trim();
+				var postcodeResult = addressElement.GetProperty("postcode").GetString()?.Trim();
 
-				var number = addressElement.GetProperty("number").GetString();
-				if (!string.IsNullOrWhiteSpace(number))
-				{
-					propertyParts.Add(number);
-				}
-
-				var name = addressElement.GetProperty("name").GetString();
-				if (!string.IsNullOrWhiteSpace(name))
-				{
-					propertyParts.Add(name);
-				}
-
-				var address1 = addressElement.GetProperty("address1").GetString();
-				if (!string.IsNullOrWhiteSpace(address1))
-				{
-					propertyParts.Add(address1);
-				}
-
-				var address2 = addressElement.GetProperty("address2").GetString();
-				if (!string.IsNullOrWhiteSpace(address2))
-				{
-					propertyParts.Add(address2);
-				}
-
-				var town = addressElement.GetProperty("town").GetString();
-				if (!string.IsNullOrWhiteSpace(town))
-				{
-					propertyParts.Add(town);
-				}
-
-				var county = addressElement.GetProperty("county").GetString();
-				if (!string.IsNullOrWhiteSpace(county))
-				{
-					propertyParts.Add(county);
-				}
-
-				var postcodeResult = addressElement.GetProperty("postcode").GetString();
-				if (!string.IsNullOrWhiteSpace(postcodeResult))
-				{
-					propertyParts.Add(postcodeResult);
-				}
+				var propertyParts = new[] { number, name, address1, address2, town, county, postcodeResult }
+					.Where(part => !string.IsNullOrWhiteSpace(part));
 
 				var address = new Address
 				{
 					Property = string.Join(", ", propertyParts),
 					Postcode = postcodeResult ?? postcode,
-					Uid = addressElement.GetProperty("uprn").GetString()!,
+					Uid = addressElement.GetProperty("uprn").GetString()!.Trim(),
 				};
 
 				addresses.Add(address);
@@ -188,7 +155,7 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.breckland.gov.uk/apiserver/ajaxlibrary",
 				Method = "POST",
-				Headers = new Dictionary<string, string>
+				Headers = new()
 				{
 					{ "Content-Type", "application/json" },
 					{ "X-Requested-With", "XMLHttpRequest" },
@@ -199,7 +166,7 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 
 			return new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 		}
 		// Process bin days from response
@@ -207,11 +174,12 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
+			// Iterate through each bin day, and create a new bin day object
 			var binDays = new List<BinDay>();
 			foreach (var binDayElement in jsonDoc.RootElement.GetProperty("result").EnumerateArray())
 			{
-				var binType = binDayElement.GetProperty("collectiontype").GetString()!;
-				var collectionDate = binDayElement.GetProperty("nextcollection").GetString()!;
+				var binType = binDayElement.GetProperty("collectiontype").GetString()!.Trim();
+				var collectionDate = binDayElement.GetProperty("nextcollection").GetString()!.Trim();
 
 				var parsedDate = DateTime.ParseExact(
 					collectionDate,
