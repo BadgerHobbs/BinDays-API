@@ -40,5 +40,4 @@ jobs:
             code-review@claude-code-plugins
             feature-dev@claude-code-plugins
           claude_args: |
-            --max-turns 10
             --model claude-sonnet-4-5-20250929
