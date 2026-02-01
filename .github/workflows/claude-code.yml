@@ -37,8 +37,8 @@ jobs:
           plugin_marketplaces: |
             https://github.com/anthropics/claude-code.git
           plugins: |
-            code-review@anthropics-claude-code
-            feature-dev@anthropics-claude-code
+            code-review@claude-code-plugins
+            feature-dev@claude-code-plugins
           claude_args: |
             --max-turns 10
             --model claude-sonnet-4-5-20250929
