@@ -22,7 +22,7 @@ public class TorbayCouncilTests
 	}
 
 	[Theory]
-	[InlineData("TQ1 3DG")]
+	[InlineData("TQ1 1NX")]
 	public async Task GetBinDaysTest(string postcode)
 	{
 		await TestSteps.EndToEnd(
