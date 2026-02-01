@@ -11,7 +11,7 @@ using System.Text.Json;
 /// <summary>
 /// Collector implementation for Wealden District Council.
 /// </summary>
-internal sealed partial class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
+internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 {
 	/// <inheritdoc/>
 	public string Name => "Wealden District Council";
@@ -53,8 +53,7 @@ internal sealed partial class WealdenDistrictCouncil : GovUkCollectorBase, IColl
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode) ?? string.Empty;
-		var sanitizedPostcode = formattedPostcode.Replace(" ", string.Empty);
+		var sanitizedPostcode = postcode.Replace(" ", string.Empty);
 
 		// Prepare client-side request for getting cookies
 		if (clientSideResponse == null)
@@ -80,8 +79,8 @@ internal sealed partial class WealdenDistrictCouncil : GovUkCollectorBase, IColl
 		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]);
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -117,14 +116,15 @@ internal sealed partial class WealdenDistrictCouncil : GovUkCollectorBase, IColl
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var properties = jsonDoc.RootElement.GetProperty("properties").EnumerateArray();
 
+			// Iterate through each property, and create a new address object
 			var addresses = new List<Address>();
 			foreach (var propertyElement in properties)
 			{
 				var address = new Address
 				{
 					Property = propertyElement.GetProperty("address").GetString()!.Trim(),
-					Postcode = formattedPostcode,
-					Uid = propertyElement.GetProperty("uprn").GetString(),
+					Postcode = postcode,
+					Uid = propertyElement.GetProperty("uprn").GetString()!,
 				};
 
 				addresses.Add(address);
@@ -145,8 +145,7 @@ internal sealed partial class WealdenDistrictCouncil : GovUkCollectorBase, IColl
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		var formattedPostcode = ProcessingUtilities.FormatPostcode(address.Postcode ?? string.Empty) ?? string.Empty;
-		var sanitizedPostcode = formattedPostcode.Replace(" ", string.Empty);
+		var sanitizedPostcode = (address.Postcode ?? string.Empty).Replace(" ", string.Empty);
 
 		// Prepare client-side request for getting cookies
 		if (clientSideResponse == null)
@@ -174,8 +173,8 @@ internal sealed partial class WealdenDistrictCouncil : GovUkCollectorBase, IColl
 		// Prepare client-side request for getting bin days
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]);
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 			var cookies = string.IsNullOrWhiteSpace(requestCookies)
 				? $"c_postcode={sanitizedPostcode}"
@@ -217,9 +216,46 @@ internal sealed partial class WealdenDistrictCouncil : GovUkCollectorBase, IColl
 
 			var binDays = new List<BinDay>();
 
-			AddBinDay(collection, "refuseCollectionDate", "Refuse", address, binDays);
-			AddBinDay(collection, "recyclingCollectionDate", "Recycling", address, binDays);
-			AddBinDay(collection, "gardenCollectionDate", "Garden", address, binDays);
+			var binCollectionProperties = new Dictionary<string, string>
+			{
+				{ "refuseCollectionDate", "Refuse" },
+				{ "recyclingCollectionDate", "Recycling" },
+				{ "gardenCollectionDate", "Garden" },
+			};
+
+			// Iterate through each bin collection property, and create a new bin day object
+			foreach (var property in binCollectionProperties)
+			{
+				if (!collection.TryGetProperty(property.Key, out var dateElement))
+				{
+					continue;
+				}
+
+				var dateString = dateElement.GetString();
+
+				if (string.IsNullOrWhiteSpace(dateString))
+				{
+					continue;
+				}
+
+				var date = DateOnly.ParseExact(
+					dateString,
+					"yyyy-MM-dd'T'HH:mm:ss",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+
+				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, property.Value);
+
+				var binDay = new BinDay
+				{
+					Date = date,
+					Address = address,
+					Bins = bins,
+				};
+
+				binDays.Add(binDay);
+			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
@@ -231,38 +267,5 @@ internal sealed partial class WealdenDistrictCouncil : GovUkCollectorBase, IColl
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
-	}
-
-	private void AddBinDay(JsonElement collection, string propertyName, string service, Address address, List<BinDay> binDays)
-	{
-		if (!collection.TryGetProperty(propertyName, out var dateElement))
-		{
-			return;
-		}
-
-		var dateString = dateElement.GetString();
-
-		if (string.IsNullOrWhiteSpace(dateString))
-		{
-			return;
-		}
-
-		var date = DateOnly.ParseExact(
-			dateString,
-			"yyyy-MM-dd'T'HH:mm:ss",
-			CultureInfo.InvariantCulture,
-			DateTimeStyles.None
-		);
-
-		var bins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-
-		var binDay = new BinDay
-		{
-			Date = date,
-			Address = address,
-			Bins = bins,
-		};
-
-		binDays.Add(binDay);
 	}
 }
