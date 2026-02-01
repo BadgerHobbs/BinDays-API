@@ -32,25 +32,25 @@ internal sealed partial class SalfordCityCouncil : GovUkCollectorBase, ICollecto
 		{
 			Name = "Household Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Black bin", "Domestic Waste" ],
+			Keys = [ "Black bin" ],
 		},
 		new()
 		{
 			Name = "Food and Garden Waste",
 			Colour = BinColour.Pink,
-			Keys = [ "Pink lidded bin", "Food and Garden Waste" ],
+			Keys = [ "Pink lidded bin" ],
 		},
 		new()
 		{
 			Name = "Paper and Cardboard",
 			Colour = BinColour.Blue,
-			Keys = [ "Blue bin", "Paper and Card" ],
+			Keys = [ "Blue bin" ],
 		},
 		new()
 		{
 			Name = "Glass, Cans and Plastics",
 			Colour = BinColour.Brown,
-			Keys = [ "Brown bin", "Bottle and Can" ],
+			Keys = [ "Brown bin" ],
 		},
 	];
 
