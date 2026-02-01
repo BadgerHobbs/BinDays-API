@@ -34,13 +34,34 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 			Name = "General Waste",
 			Colour = BinColour.Grey,
 			Type = BinType.Bin,
-			Keys = [ "Domestic", "General", "Refuse" ],
+			Keys = [ "Domestic" ],
 		},
 		new()
 		{
-			Name = "Recycling",
+			Name = "Recycling (Plastics/Tins)",
 			Colour = BinColour.Green,
 			Type = BinType.Box,
+			Keys = [ "Recycling" ],
+		},
+		new()
+		{
+			Name = "Recycling (Glass/Cardboard)",
+			Colour = BinColour.Orange,
+			Type = BinType.Box,
+			Keys = [ "Recycling" ],
+		},
+		new()
+		{
+			Name = "Recycling (Paper)",
+			Colour = BinColour.Blue,
+			Type = BinType.Bag,
+			Keys = [ "Recycling" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Brown,
+			Type = BinType.Bin,
 			Keys = [ "Recycling" ],
 		},
 		new()
@@ -49,13 +70,6 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 			Colour = BinColour.Brown,
 			Type = BinType.Bin,
 			Keys = [ "Garden" ],
-		},
-		new()
-		{
-			Name = "Food Waste",
-			Colour = BinColour.Brown,
-			Type = BinType.Caddy,
-			Keys = [ "Food" ],
 		},
 	];
 
