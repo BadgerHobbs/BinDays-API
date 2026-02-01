@@ -53,6 +53,7 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
+		// Remove spaces from postcode as the Wealden API requires postcodes without spaces in form data and URL parameters
 		var sanitizedPostcode = postcode.Replace(" ", string.Empty);
 
 		// Prepare client-side request for getting cookies
@@ -145,6 +146,7 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
+		// Remove spaces from postcode as the Wealden API requires postcodes without spaces in URL parameters and cookies
 		var sanitizedPostcode = (address.Postcode ?? string.Empty).Replace(" ", string.Empty);
 
 		// Prepare client-side request for getting cookies
