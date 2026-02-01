@@ -80,8 +80,9 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+				clientSideResponse.Headers["set-cookie"]!
+			);
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -175,8 +176,9 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting bin days
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+				clientSideResponse.Headers["set-cookie"]!
+			);
 
 			var cookies = string.IsNullOrWhiteSpace(requestCookies)
 				? $"c_postcode={sanitizedPostcode}"
