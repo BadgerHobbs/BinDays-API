@@ -24,6 +24,9 @@ jobs:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Run Claude Code
         uses: anthropics/claude-code-action@v1
         with:
