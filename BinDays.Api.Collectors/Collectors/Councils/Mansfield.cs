@@ -53,8 +53,10 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 		},
 	];
 
+	/// <summary>
+	/// The form URL for the collector.
+	/// </summary>
 	private const string _formUrl = "https://www.mansfield.gov.uk/xfp/form/1339";
-	private const string _apiKey = "mDc-wN3-B0f-f4P";
 
 	/// <summary>
 	/// Regex for the token from the form.
@@ -175,7 +177,7 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 			var fromDate = DateOnly.FromDateTime(DateTime.Now);
 			var toDate = fromDate.AddDays(364);
 
-			var requestUrl = $"https://portal.mansfield.gov.uk/mdcwhitespacewebservice/WhiteSpaceWS.asmx/GetCollectionByUPRNAndDatePlus?&apiKey={_apiKey}&UPRN={address.Uid}&ColFromDate={fromDate:yyyy-MM-dd}&ColToDate={toDate:yyyy-MM-dd}";
+			var requestUrl = $"https://portal.mansfield.gov.uk/mdcwhitespacewebservice/WhiteSpaceWS.asmx/GetCollectionByUPRNAndDatePlus?&apiKey=mDc-wN3-B0f-f4P&UPRN={address.Uid}&ColFromDate={fromDate:yyyy-MM-dd}&ColToDate={toDate:yyyy-MM-dd}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
