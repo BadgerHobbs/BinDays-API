@@ -86,7 +86,6 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-
 		// Prepare client-side request for getting form tokens and cookies
 		if (clientSideResponse == null)
 		{
@@ -179,7 +178,6 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-
 		// Prepare client-side request for getting form tokens and cookies
 		if (clientSideResponse == null)
 		{
