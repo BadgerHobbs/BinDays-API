@@ -1,5 +1,8 @@
 name: Integration Tests
 
+env:
+  DOTNET_VERSION: "8.0.x"
+
 on:
   schedule:
     # Runs at 09:00 UTC every day to test collectors
@@ -23,6 +26,8 @@ jobs:
     outputs:
       councils_json: ${{ steps.list_councils.outputs.councils_json }}
     env:
+      # JSON array of council names to skip during test discovery (e.g. '["CouncilA","CouncilB"]').
+      # Empty array means no councils are excluded.
       EXCLUDED_COUNCILS: "[]"
     steps:
       - name: Checkout code
@@ -53,7 +58,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Workaround for SSL error on self-hosted runner
         run: ./.github/scripts/integration-tests/ssl-workaround.sh

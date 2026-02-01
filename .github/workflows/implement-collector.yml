@@ -1,5 +1,8 @@
 name: Implement New Collector
 
+env:
+  DOTNET_VERSION: "8.0.x"
+
 on:
   issue_comment:
     types: [created]
@@ -78,7 +81,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
         run: dotnet restore
