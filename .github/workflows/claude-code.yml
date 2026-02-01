@@ -34,9 +34,11 @@ jobs:
           github_token: ${{ steps.generate-token.outputs.token }}
           trigger_phrase: "@claude"
           include_fix_links: true
+          plugin_marketplaces: |
+            https://github.com/anthropics/claude-code.git
           plugins: |
-            code-review@claude-code-plugins
-            feature-dev@claude-code-plugins
+            code-review@anthropics-claude-code
+            feature-dev@anthropics-claude-code
           claude_args: |
             --max-turns 10
             --model claude-sonnet-4-5-20250929
