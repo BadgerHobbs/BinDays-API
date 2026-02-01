@@ -1,6 +1,5 @@
 namespace BinDays.Api.Collectors.Collectors.Councils;
 
-using BinDays.Api.Collectors.Collectors.Vendors;
 using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
@@ -86,7 +85,6 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
 
 		// Prepare client-side request for getting form tokens and cookies
 		if (clientSideResponse == null)
@@ -116,7 +114,7 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
-				{ "query", formattedPostcode },
+				{ "query", postcode },
 				{ "searchNlpg", "False" },
 				{ "classification", string.Empty },
 			});
@@ -153,12 +151,12 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 			foreach (var element in document.RootElement.EnumerateArray())
 			{
 				var uid = element.GetProperty("Key").GetString();
-				var value = element.GetProperty("Value").GetString();
+				var addressText = element.GetProperty("Value").GetString();
 
 				var address = new Address
 				{
-					Property = value?.Trim(),
-					Postcode = formattedPostcode,
+					Property = addressText?.Trim(),
+					Postcode = postcode,
 					Uid = uid,
 				};
 
@@ -167,7 +165,7 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				Addresses = [.. addresses.OrderBy(a => a.Property)],
+				Addresses = [.. addresses],
 			};
 
 			return getAddressesResponse;
@@ -180,7 +178,6 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		var formattedPostcode = ProcessingUtilities.FormatPostcode(address.Postcode ?? string.Empty);
 
 		// Prepare client-side request for getting form tokens and cookies
 		if (clientSideResponse == null)
@@ -212,17 +209,19 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 			var formGuid = FormGuidRegex().Match(clientSideResponse.Content).Groups["formGuid"].Value;
 			var objectTemplateId = ObjectTemplateIdRegex().Match(clientSideResponse.Content).Groups["objectTemplateId"].Value;
 
+			if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(formGuid) || string.IsNullOrWhiteSpace(objectTemplateId))
+			{
+				throw new InvalidOperationException("Failed to extract one or more form tokens from the page. The council website may have changed.");
+			}
+
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
 				{ "__RequestVerificationToken", token },
 				{ "FormGuid", formGuid },
 				{ "ObjectTemplateID", objectTemplateId },
 				{ "Trigger", "submit" },
-				{ "CurrentSectionID", "0" },
-				{ "TriggerCtl", string.Empty },
 				{ "FF1168", address.Uid ?? string.Empty },
-				{ "FF1168lbltxt", "Please select your address" },
-				{ "FF1168-text", formattedPostcode },
+				{ "FF1168-text", address.Postcode ?? string.Empty },
 			});
 
 			var clientSideRequest = new ClientSideRequest
@@ -252,7 +251,7 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 		{
 			// Iterate through each bin day row, and create a new bin day object
 			var binDays = new List<BinDay>();
-			foreach (Match match in BinDayRegex().Matches(clientSideResponse.Content))
+			foreach (Match match in BinDayRegex().Matches(clientSideResponse.Content)!)
 			{
 				var dateString = match.Groups["date"].Value.Trim();
 				var service = match.Groups["service"].Value.Trim();
