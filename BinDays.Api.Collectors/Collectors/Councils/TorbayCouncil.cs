@@ -1,5 +1,6 @@
 namespace BinDays.Api.Collectors.Collectors.Councils;
 
+using BinDays.Api.Collectors.Collectors.Vendors;
 using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
@@ -220,7 +221,10 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 				{ "FormGuid", formGuid },
 				{ "ObjectTemplateID", objectTemplateId },
 				{ "Trigger", "submit" },
+				{ "CurrentSectionID", "0" },
+				{ "TriggerCtl", string.Empty },
 				{ "FF1168", address.Uid ?? string.Empty },
+				{ "FF1168lbltxt", "Please select your address" },
 				{ "FF1168-text", address.Postcode ?? string.Empty },
 			});
 
