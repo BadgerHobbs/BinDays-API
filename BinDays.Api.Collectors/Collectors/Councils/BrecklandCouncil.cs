@@ -87,10 +87,12 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				Body = requestBody,
 			};
 
-			return new GetAddressesResponse
+			var response = new GetAddressesResponse
 			{
 				NextClientSideRequest = clientSideRequest,
 			};
+
+			return response;
 		}
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 1)
@@ -107,25 +109,26 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				var address2 = addressElement.GetProperty("address2").GetString()?.Trim();
 				var town = addressElement.GetProperty("town").GetString()?.Trim();
 				var county = addressElement.GetProperty("county").GetString()?.Trim();
-				var postcodeResult = addressElement.GetProperty("postcode").GetString()?.Trim();
 
-				var propertyParts = new[] { number, name, address1, address2, town, county, postcodeResult }
+				var propertyParts = new[] { number, name, address1, address2, town, county }
 					.Where(part => !string.IsNullOrWhiteSpace(part));
 
 				var address = new Address
 				{
 					Property = string.Join(", ", propertyParts),
-					Postcode = postcodeResult ?? postcode,
+					Postcode = postcode,
 					Uid = addressElement.GetProperty("uprn").GetString()!.Trim(),
 				};
 
 				addresses.Add(address);
 			}
 
-			return new GetAddressesResponse
+			var response = new GetAddressesResponse
 			{
 				Addresses = [.. addresses],
 			};
+
+			return response;
 		}
 
 		// Throw exception for invalid request
@@ -164,10 +167,12 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				Body = requestBody,
 			};
 
-			return new GetBinDaysResponse
+			var response = new GetBinDaysResponse
 			{
 				NextClientSideRequest = clientSideRequest,
 			};
+
+			return response;
 		}
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
@@ -200,10 +205,12 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				binDays.Add(binDay);
 			}
 
-			return new GetBinDaysResponse
+			var response = new GetBinDaysResponse
 			{
 				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
 			};
+
+			return response;
 		}
 
 		// Throw exception for invalid request
