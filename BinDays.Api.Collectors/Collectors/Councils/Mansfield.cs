@@ -97,8 +97,8 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var token = TokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var setCookieHeader = clientSideResponse.Headers["set-cookie"]!;
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
