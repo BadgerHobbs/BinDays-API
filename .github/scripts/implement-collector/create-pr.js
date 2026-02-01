@@ -48,6 +48,16 @@ Generated automatically by **Moley-Bot** using Codex CLI`
 
   core.info(`Created PR #${pr.number}: ${pr.html_url}`);
 
+  // Add "new collector" label to the PR
+  await github.rest.issues.addLabels({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    issue_number: pr.number,
+    labels: ['new collector']
+  });
+
+  core.info(`Added "new collector" label to PR #${pr.number}`);
+
   // Comment on the issue with the PR link
   await github.rest.issues.createComment({
     owner: context.repo.owner,
