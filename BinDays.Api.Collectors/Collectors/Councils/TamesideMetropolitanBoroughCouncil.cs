@@ -123,6 +123,10 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 		var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 		{
 			{ "F01_I02_Postcode", formattedPostcode },
+			{ "F01_I03_Street", string.Empty },
+			{ "F01_I04_Town", string.Empty },
+			{ "Form_1", "Continue" },
+			{ "history", ",1," },
 		});
 
 		return new ClientSideRequest
@@ -286,6 +290,9 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 				{ "F03_I01_SelectAddress", address.Uid! },
 				{ "AdvanceSearch", "Continue" },
 				{ "F01_I02_Postcode", formattedPostcode },
+				{ "F01_I03_Street", string.Empty },
+				{ "F01_I04_Town", string.Empty },
+				{ "history", ",1,3," },
 			});
 
 			var clientSideRequest = new ClientSideRequest
