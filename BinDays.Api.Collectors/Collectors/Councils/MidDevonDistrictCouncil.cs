@@ -33,13 +33,13 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Residual", "Black Bin", "Seagull Sack", "Black Sack" ],
+			Keys = [ "Residual" ],
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Blue,
-			Keys = [ "Food Caddy", "Food Waste" ],
+			Keys = [ "Food Caddy" ],
 			Type = BinType.Caddy,
 		},
 		new()
@@ -52,14 +52,14 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 		{
 			Name = "Glass, Paper, Tins & Plastics Recycling",
 			Colour = BinColour.Black,
-			Keys = [ "Black Recycling Box", "Black Box" ],
+			Keys = [ "Black Recycling Box" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Cardboard & Cartons Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Green Recycling Box", "Green Box", "Recycling Boxes" ],
+			Keys = [ "Green Recycling Box" ],
 			Type = BinType.Box,
 		},
 	];
@@ -84,21 +84,63 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-
-		// Handle initial authentication flow
-		var authRequest = HandleAuthenticationFlow(clientSideResponse, 2);
-		if (authRequest != null)
+		// Prepare client-side request for getting form
+		if (clientSideResponse == null)
 		{
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = _formUrl.ToString(),
+				Method = "GET",
+				Headers = new()
+				{
+					{ "User-Agent", Constants.UserAgent },
+					{ "cookie", "CookiesAccepted=true" },
+				},
+			};
+
 			var response = new GetAddressesResponse
 			{
-				NextClientSideRequest = authRequest,
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return response;
 		}
+		// Get reference token
+		else if (clientSideResponse.RequestId == 1)
+		{
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var metadata = new Dictionary<string, string>
+			{
+				{ "cookie", cookies },
+				{ "sid", SidRegex().Match(clientSideResponse.Content).Groups["sid"].Value },
+				{ "sessionId", SessionIdRegex().Match(cookies).Groups["sessionId"].Value },
+			};
 
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = $"https://my.middevon.gov.uk/api/nextref?_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={metadata["sid"]}",
+				Method = "GET",
+				Headers = new()
+				{
+					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "cookie", metadata["cookie"] },
+					{ "User-Agent", Constants.UserAgent },
+				},
+				Options = new ClientSideOptions { Metadata = metadata },
+			};
+
+			var response = new GetAddressesResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return response;
+		}
 		// Run address lookup
-		if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 2)
 		{
 			var metadata = new Dictionary<string, string>(clientSideResponse.Options.Metadata);
 
@@ -159,20 +201,63 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Handle initial authentication flow
-		var authRequest = HandleAuthenticationFlow(clientSideResponse, 2);
-		if (authRequest != null)
+		// Prepare client-side request for getting form
+		if (clientSideResponse == null)
 		{
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = _formUrl.ToString(),
+				Method = "GET",
+				Headers = new()
+				{
+					{ "User-Agent", Constants.UserAgent },
+					{ "cookie", "CookiesAccepted=true" },
+				},
+			};
+
 			var response = new GetBinDaysResponse
 			{
-				NextClientSideRequest = authRequest,
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return response;
 		}
+		// Get reference token
+		else if (clientSideResponse.RequestId == 1)
+		{
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var metadata = new Dictionary<string, string>
+			{
+				{ "cookie", cookies },
+				{ "sid", SidRegex().Match(clientSideResponse.Content).Groups["sid"].Value },
+				{ "sessionId", SessionIdRegex().Match(cookies).Groups["sessionId"].Value },
+			};
 
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = $"https://my.middevon.gov.uk/api/nextref?_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={metadata["sid"]}",
+				Method = "GET",
+				Headers = new()
+				{
+					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "cookie", metadata["cookie"] },
+					{ "User-Agent", Constants.UserAgent },
+				},
+				Options = new ClientSideOptions { Metadata = metadata },
+			};
+
+			var response = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return response;
+		}
 		// Get organic waste collections
-		if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 2)
 		{
 			var metadata = new Dictionary<string, string>(clientSideResponse.Options.Metadata);
 
@@ -303,59 +388,6 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	}
 
 	/// <summary>
-	/// Handles the initial authentication flow for the AchieveForms API.
-	/// </summary>
-	/// <param name="clientSideResponse">The client-side response from the previous request, or null if this is the initial request.</param>
-	/// <param name="nextRequestId">The request ID to use for the next request.</param>
-	/// <returns>A client-side request for the next step in the authentication flow, or null if authentication is complete.</returns>
-	private static ClientSideRequest? HandleAuthenticationFlow(ClientSideResponse? clientSideResponse, int nextRequestId)
-	{
-		// Prepare client-side request for getting form
-		if (clientSideResponse == null)
-		{
-			return new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _formUrl.ToString(),
-				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-					{ "cookie", "CookiesAccepted=true" },
-				},
-			};
-		}
-		// Get reference token
-		else if (clientSideResponse.RequestId == 1)
-		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
-			var metadata = new Dictionary<string, string>
-			{
-				{ "cookie", cookies },
-				{ "sid", SidRegex().Match(clientSideResponse.Content).Groups["sid"].Value },
-				{ "sessionId", SessionIdRegex().Match(cookies).Groups["sessionId"].Value },
-			};
-
-			return new ClientSideRequest
-			{
-				RequestId = nextRequestId,
-				Url = $"https://my.middevon.gov.uk/api/nextref?_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={metadata["sid"]}",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "X-Requested-With", "XMLHttpRequest" },
-					{ "cookie", metadata["cookie"] },
-					{ "User-Agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions { Metadata = metadata },
-			};
-		}
-
-		return null;
-	}
-
-	/// <summary>
 	/// Parses collection data from the JSON response.
 	/// </summary>
 	private static (List<string> Dates, List<string> Items) ParseCollectionRows(ClientSideResponse clientSideResponse)
@@ -416,79 +448,46 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 		string foodValue = "",
 		string recyclingValue = "")
 	{
-		var formValues = new Dictionary<string, object>
+		return $$"""
 		{
-			["postcode_search"] = new Dictionary<string, object>
-			{
-				["id"] = "AF-Field-7ad337fc-1c73-4658-8c4a-4de6079621b2",
-				["value"] = postcode,
+			"formId": "AF-Form-dc8ffbd6-4832-443b-ba3f-5e8d36bf11d4",
+			"stage_id": "AF-Stage-eb382015-001c-415d-beda-84f796dbb167",
+			"processId": "AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd",
+			"formUri": "sandbox-publish://AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd/AF-Stage-eb382015-001c-415d-beda-84f796dbb167/definition.json",
+			"reference": "{{reference}}",
+			"tokens": {
+				"session_id": "{{sessionId}}",
+				"csrf_token": "{{csrfToken}}",
+				"reference": "{{reference}}"
 			},
-		};
-
-		if (!string.IsNullOrEmpty(addressUid))
-		{
-			formValues["listAddress"] = new Dictionary<string, object>
-			{
-				["id"] = "AF-Field-c2bab0b9-acaa-46a0-a758-8f87e542c71e",
-				["value"] = addressUid,
-			};
+			"formValues": {
+				"Your Address": {
+					"postcode_search": {
+						"id": "AF-Field-7ad337fc-1c73-4658-8c4a-4de6079621b2",
+						"value": "{{postcode}}"
+					},
+					"listAddress": {
+						"id": "AF-Field-c2bab0b9-acaa-46a0-a758-8f87e542c71e",
+						"value": "{{addressUid}}"
+					},
+					"OrganicCollections": {
+						"id": "AF-Field-9f49b399-86a3-45e2-a670-e3719a9b8d75",
+						"value": "{{organicValue}}"
+					},
+					"ResidualCollections": {
+						"id": "AF-Field-12b20af8-6f0d-4b04-9c8d-84b9f5493906",
+						"value": "{{residualValue}}"
+					},
+					"foodCollections": {
+						"id": "AF-Field-257ea732-3255-4a20-8662-dca10c96e6da",
+						"value": "{{foodValue}}"
+					},
+					"RecyclingCollections": {
+						"id": "AF-Field-b2104a22-bba4-4f78-bf62-ccddc2a0bb48",
+						"value": "{{recyclingValue}}"
+					}
+				}
+			}
 		}
-
-		if (!string.IsNullOrEmpty(organicValue))
-		{
-			formValues["OrganicCollections"] = new Dictionary<string, object>
-			{
-				["id"] = "AF-Field-9f49b399-86a3-45e2-a670-e3719a9b8d75",
-				["value"] = organicValue,
-			};
-		}
-
-		if (!string.IsNullOrEmpty(residualValue))
-		{
-			formValues["ResidualCollections"] = new Dictionary<string, object>
-			{
-				["id"] = "AF-Field-12b20af8-6f0d-4b04-9c8d-84b9f5493906",
-				["value"] = residualValue,
-			};
-		}
-
-		if (!string.IsNullOrEmpty(foodValue))
-		{
-			formValues["foodCollections"] = new Dictionary<string, object>
-			{
-				["id"] = "AF-Field-257ea732-3255-4a20-8662-dca10c96e6da",
-				["value"] = foodValue,
-			};
-		}
-
-		if (!string.IsNullOrEmpty(recyclingValue))
-		{
-			formValues["RecyclingCollections"] = new Dictionary<string, object>
-			{
-				["id"] = "AF-Field-b2104a22-bba4-4f78-bf62-ccddc2a0bb48",
-				["value"] = recyclingValue,
-			};
-		}
-
-		var payload = new
-		{
-			formId = "AF-Form-dc8ffbd6-4832-443b-ba3f-5e8d36bf11d4",
-			stage_id = "AF-Stage-eb382015-001c-415d-beda-84f796dbb167",
-			processId = "AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd",
-			formUri = "sandbox-publish://AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd/AF-Stage-eb382015-001c-415d-beda-84f796dbb167/definition.json",
-			reference,
-			tokens = new
-			{
-				session_id = sessionId,
-				csrf_token = csrfToken,
-				reference,
-			},
-			formValues = new Dictionary<string, object>
-			{
-				["Your Address"] = formValues,
-			},
-		};
-
-		return JsonSerializer.Serialize(payload);
-	}
+		""";
 }
