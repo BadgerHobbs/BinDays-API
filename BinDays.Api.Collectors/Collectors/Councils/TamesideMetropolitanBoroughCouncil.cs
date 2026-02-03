@@ -229,24 +229,27 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 		{
 			var binDays = new List<BinDay>();
 
-			// Iterate through each year block and extract all day cells
-			foreach (Match yearMatch in YearRegex().Matches(clientSideResponse.Content)!)
+			// Extract all year blocks from the response
+			var yearMatches = YearRegex().Matches(clientSideResponse.Content)!;
+			foreach (Match yearMatch in yearMatches)
 			{
 				var year = yearMatch.Groups["year"].Value;
 				var yearContent = yearMatch.Groups["content"].Value;
 
-				// Iterate through each month within the year
-				foreach (Match monthMatch in MonthRegex().Matches(yearContent)!)
+				// Extract all month rows from the year block
+				var monthMatches = MonthRegex().Matches(yearContent)!;
+				foreach (Match monthMatch in monthMatches)
 				{
 					var month = monthMatch.Groups["month"].Value.Trim();
 					var cellsContent = monthMatch.Groups["cells"].Value;
 
-					// Extract all day cells and process each one
+					// Extract all day cells from the month row
 					var dayCellMatches = DayCellRegex().Matches(cellsContent)!;
 					foreach (Match dayMatch in dayCellMatches)
 					{
 						var cellContent = dayMatch.Groups["cell"].Value;
-						var day = DayRegex().Match(cellContent).Groups["day"].Value;
+						var dayRegexMatch = DayRegex().Match(cellContent);
+						var day = dayRegexMatch.Groups["day"].Value;
 
 						if (string.IsNullOrWhiteSpace(day))
 						{
@@ -262,9 +265,12 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 
 						// Extract bin types from icons in the cell
 						var bins = new List<Bin>();
-						foreach (Match binIcon in BinIconRegex().Matches(cellContent)!)
+						var binIconMatches = BinIconRegex().Matches(cellContent)!;
+						foreach (Match binIcon in binIconMatches)
 						{
-							bins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, binIcon.Groups["bin"].Value));
+							var binIconValue = binIcon.Groups["bin"].Value;
+							var matchingBins = ProcessingUtilities.GetMatchingBins(_binTypes, binIconValue);
+							bins.AddRange(matchingBins);
 						}
 
 						if (bins.Count == 0)
