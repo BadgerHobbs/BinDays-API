@@ -122,7 +122,7 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 			{
 				var uprn = HttpUtility.UrlDecode(rawAddress.Groups["uprn"].Value).Trim();
 
-				var property = string.Empty;
+				string? property;
 				if (rawAddress.Groups["property"].Success)
 				{
 					property = HttpUtility.UrlDecode(rawAddress.Groups["property"].Value).Trim();
