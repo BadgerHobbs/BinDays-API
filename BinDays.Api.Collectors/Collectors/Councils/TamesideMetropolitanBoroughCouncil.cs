@@ -89,93 +89,6 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 	[GeneratedRegex(@"alt=""(?<bin>[^""]+)""", RegexOptions.Singleline)]
 	private static partial Regex BinIconRegex();
 
-	/// <summary>
-	/// Creates a client-side request for getting the initial session cookie.
-	/// </summary>
-	private static ClientSideRequest CreateSessionCookieRequest()
-	{
-		return new ClientSideRequest
-		{
-			RequestId = 1,
-			Url = "https://public.tameside.gov.uk/forms/bin-dates.asp",
-			Method = "GET",
-			Headers = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-			},
-		};
-	}
-
-	/// <summary>
-	/// Creates a client-side request for posting the postcode.
-	/// </summary>
-	private static ClientSideRequest CreatePostcodeRequest(string postcode, string sessionCookie)
-	{
-		var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
-
-		Dictionary<string, string> requestHeaders = new()
-		{
-			{ "content-type", "application/x-www-form-urlencoded" },
-			{ "cookie", $"cookieconsent_dismissed=yes; {sessionCookie}" },
-			{ "user-agent", Constants.UserAgent },
-		};
-
-		var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-		{
-			{ "F01_I02_Postcode", formattedPostcode },
-			{ "F01_I03_Street", string.Empty },
-			{ "F01_I04_Town", string.Empty },
-			{ "Form_1", "Continue" },
-			{ "history", ",1," },
-		});
-
-		return new ClientSideRequest
-		{
-			RequestId = 2,
-			Url = "https://public.tameside.gov.uk/forms/bin-dates.asp",
-			Method = "POST",
-			Headers = requestHeaders,
-			Body = requestBody,
-		};
-	}
-
-	/// <summary>
-	/// Processes a day cell to extract bin day information.
-	/// </summary>
-	private BinDay? ProcessDayCell(Match dayMatch, string month, string year, Address address)
-	{
-		var day = DayRegex().Match(dayMatch.Groups["cell"].Value).Groups["day"].Value;
-		if (string.IsNullOrWhiteSpace(day))
-		{
-			return null;
-		}
-
-		var date = DateOnly.ParseExact(
-			$"{day} {month} {year}",
-			"d MMMM yyyy",
-			CultureInfo.InvariantCulture,
-			DateTimeStyles.None
-		);
-
-		var bins = new List<Bin>();
-		foreach (Match binIcon in BinIconRegex().Matches(dayMatch.Groups["cell"].Value)!)
-		{
-			bins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, binIcon.Groups["bin"].Value));
-		}
-
-		if (bins.Count == 0)
-		{
-			return null;
-		}
-
-		return new BinDay
-		{
-			Date = date,
-			Address = address,
-			Bins = [.. bins],
-		};
-	}
-
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
@@ -316,24 +229,57 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 		{
 			var binDays = new List<BinDay>();
 
-			// Iterate through each year block, and parse bin days
+			// Iterate through each year block and extract all day cells
 			foreach (Match yearMatch in YearRegex().Matches(clientSideResponse.Content)!)
 			{
 				var year = yearMatch.Groups["year"].Value;
+				var yearContent = yearMatch.Groups["content"].Value;
 
-				// Iterate through each month, and parse the day cells
-				foreach (Match monthMatch in MonthRegex().Matches(yearMatch.Groups["content"].Value)!)
+				// Iterate through each month within the year
+				foreach (Match monthMatch in MonthRegex().Matches(yearContent)!)
 				{
 					var month = monthMatch.Groups["month"].Value.Trim();
 					var cellsContent = monthMatch.Groups["cells"].Value;
 
-					foreach (Match dayMatch in DayCellRegex().Matches(cellsContent)!)
+					// Extract all day cells and process each one
+					var dayCellMatches = DayCellRegex().Matches(cellsContent)!;
+					foreach (Match dayMatch in dayCellMatches)
 					{
-						var binDay = ProcessDayCell(dayMatch, month, year, address);
-						if (binDay != null)
+						var cellContent = dayMatch.Groups["cell"].Value;
+						var day = DayRegex().Match(cellContent).Groups["day"].Value;
+
+						if (string.IsNullOrWhiteSpace(day))
 						{
-							binDays.Add(binDay);
+							continue;
 						}
+
+						var date = DateOnly.ParseExact(
+							$"{day} {month} {year}",
+							"d MMMM yyyy",
+							CultureInfo.InvariantCulture,
+							DateTimeStyles.None
+						);
+
+						// Extract bin types from icons in the cell
+						var bins = new List<Bin>();
+						foreach (Match binIcon in BinIconRegex().Matches(cellContent)!)
+						{
+							bins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, binIcon.Groups["bin"].Value));
+						}
+
+						if (bins.Count == 0)
+						{
+							continue;
+						}
+
+						var binDay = new BinDay
+						{
+							Date = date,
+							Address = address,
+							Bins = [.. bins],
+						};
+
+						binDays.Add(binDay);
 					}
 				}
 			}
@@ -348,5 +294,55 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Creates a client-side request for getting the initial session cookie.
+	/// </summary>
+	private static ClientSideRequest CreateSessionCookieRequest()
+	{
+		return new ClientSideRequest
+		{
+			RequestId = 1,
+			Url = "https://public.tameside.gov.uk/forms/bin-dates.asp",
+			Method = "GET",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+			},
+		};
+	}
+
+	/// <summary>
+	/// Creates a client-side request for posting the postcode.
+	/// </summary>
+	private static ClientSideRequest CreatePostcodeRequest(string postcode, string sessionCookie)
+	{
+		var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
+
+		Dictionary<string, string> requestHeaders = new()
+		{
+			{ "content-type", "application/x-www-form-urlencoded" },
+			{ "cookie", $"cookieconsent_dismissed=yes; {sessionCookie}" },
+			{ "user-agent", Constants.UserAgent },
+		};
+
+		var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
+		{
+			{ "F01_I02_Postcode", formattedPostcode },
+			{ "F01_I03_Street", string.Empty },
+			{ "F01_I04_Town", string.Empty },
+			{ "Form_1", "Continue" },
+			{ "history", ",1," },
+		});
+
+		return new ClientSideRequest
+		{
+			RequestId = 2,
+			Url = "https://public.tameside.gov.uk/forms/bin-dates.asp",
+			Method = "POST",
+			Headers = requestHeaders,
+			Body = requestBody,
+		};
 	}
 }
