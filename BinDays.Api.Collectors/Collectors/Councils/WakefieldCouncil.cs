@@ -50,7 +50,7 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 	/// <summary>
 	/// Regex for the addresses from the address picker links.
 	/// </summary>
-	[GeneratedRegex(@"<a[^>]*?href=""(?<href>[^""]*?where-i-live\?uprn=[^""]+)""[^>]*>(?<label>[^<]+)<\/a>")]
+	[GeneratedRegex(@"<a[^>]*?href=""[^""]*?where-i-live\?uprn=(?<uprn>[^&""]+)(?:&amp;a=(?<property>[^&""]+))?[^""]*""[^>]*>(?<label>[^<]+)<\/a>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
@@ -90,27 +90,20 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for address list
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 				clientSideResponse.Headers.GetValueOrDefault("set-cookie") ?? string.Empty
 			);
 
-			var requestHeaders = new Dictionary<string, string>
-			{
-				{ "user-agent", Constants.UserAgent },
-			};
-
-			if (!string.IsNullOrWhiteSpace(requestCookies))
-			{
-				requestHeaders.Add("cookie", requestCookies);
-			}
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"https://www.wakefield.gov.uk/pick-your-address?where-i-live={Uri.EscapeDataString(formattedPostcode)}",
+				Url = $"https://www.wakefield.gov.uk/pick-your-address?where-i-live={Uri.EscapeDataString(postcode)}",
 				Method = "GET",
-				Headers = requestHeaders,
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "cookie", requestCookies },
+				},
 			};
 
 			return new GetAddressesResponse
@@ -123,26 +116,19 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 		{
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
+			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
-				var href = HttpUtility.HtmlDecode(rawAddress.Groups["href"].Value);
-				var normalisedHref = href.Replace(" ", "%20");
-				var addressUri = normalisedHref.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-					? new Uri(normalisedHref)
-					: new Uri(new Uri("https://www.wakefield.gov.uk"), normalisedHref);
-				var queryParameters = HttpUtility.ParseQueryString(addressUri.Query);
-
-				var uprn = queryParameters["uprn"]!;
-				var property = queryParameters["a"] ?? rawAddress.Groups["label"].Value;
-				var usrn = queryParameters["usrn"];
-				var postcodeValue = ProcessingUtilities.FormatPostcode(queryParameters["p"] ?? postcode);
+				var uprn = HttpUtility.UrlDecode(rawAddress.Groups["uprn"].Value).Trim();
+				var property = rawAddress.Groups["property"].Success
+					? HttpUtility.UrlDecode(rawAddress.Groups["property"].Value).Trim()
+					: rawAddress.Groups["label"].Value.Trim();
 
 				var address = new Address
 				{
 					Property = property,
-					Street = usrn,
-					Postcode = postcodeValue,
+					Postcode = postcode,
 					Uid = uprn,
 				};
 
@@ -164,29 +150,10 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for bin collections page
 		if (clientSideResponse == null)
 		{
-			var queryParameters = new List<string>
-			{
-				$"uprn={address.Uid}",
-				$"a={Uri.EscapeDataString(address.Property!)}",
-			};
-
-			if (!string.IsNullOrWhiteSpace(address.Street))
-			{
-				queryParameters.Add($"usrn={Uri.EscapeDataString(address.Street)}");
-			}
-
-			if (!string.IsNullOrWhiteSpace(address.Postcode))
-			{
-				var formattedPostcode = ProcessingUtilities.FormatPostcode(address.Postcode);
-				queryParameters.Add($"p={Uri.EscapeDataString(formattedPostcode)}");
-			}
-
-			var requestUrl = $"https://www.wakefield.gov.uk/where-i-live?{string.Join("&", queryParameters)}";
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = requestUrl,
+				Url = $"https://www.wakefield.gov.uk/where-i-live?uprn={address.Uid}&a={Uri.EscapeDataString(address.Property!)}",
 				Method = "GET",
 				Headers = new()
 				{
@@ -204,24 +171,37 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 		{
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
 
+			// Iterate through each bin day, and create a new bin day object
 			var binDays = new List<BinDay>();
 			foreach (Match rawBinDay in rawBinDays)
 			{
-				var service = rawBinDay.Groups["service"].Value;
+				var service = rawBinDay.Groups["service"].Value.Trim();
 				var nextCollection = rawBinDay.Groups["next"].Value.Trim();
-				var futureCollections = rawBinDay.Groups["future"].Value;
+				var futureCollections = rawBinDay.Groups["future"].Value.Trim();
 
 				var matchingBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 				var collectionDates = new HashSet<DateOnly>();
 
 				if (!nextCollection.Contains("n/a", StringComparison.OrdinalIgnoreCase))
 				{
-					collectionDates.Add(DateOnly.ParseExact(nextCollection, "dddd, d MMMM yyyy", CultureInfo.InvariantCulture));
+					var date = DateOnly.ParseExact(
+						nextCollection,
+						"dddd, d MMMM yyyy",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					);
+					collectionDates.Add(date);
 				}
 
 				foreach (Match dateMatch in DateRegex().Matches(futureCollections))
 				{
-					collectionDates.Add(DateOnly.ParseExact(dateMatch.Groups["date"].Value, "dddd, d MMMM yyyy", CultureInfo.InvariantCulture));
+					var date = DateOnly.ParseExact(
+						dateMatch.Groups["date"].Value,
+						"dddd, d MMMM yyyy",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					);
+					collectionDates.Add(date);
 				}
 
 				foreach (var collectionDate in collectionDates)
