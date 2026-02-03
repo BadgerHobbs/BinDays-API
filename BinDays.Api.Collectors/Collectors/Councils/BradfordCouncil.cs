@@ -49,14 +49,49 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		},
 	];
 
+	/// <summary>
+	/// The initial URL for the Bradford Council bin collection form.
+	/// </summary>
 	private const string _initialUrl = "https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebd=0&ebp=20&ebz=1_1761729510565";
+
+	/// <summary>
+	/// The form ID for the Bradford Council bin collection form.
+	/// </summary>
 	private const string _formId = "/Forms/COLLECTIONDATES";
+
+	/// <summary>
+	/// The field name for the postcode input.
+	/// </summary>
 	private const string _postcodeField = "CTRL:Q2YAUZ5b:_:A";
+
+	/// <summary>
+	/// The field name for the find address button.
+	/// </summary>
 	private const string _findButton = "CTRL:2eDPaBQA:_";
+
+	/// <summary>
+	/// The field name for the address page.
+	/// </summary>
 	private const string _addressPageField = "CTID-Go9IHRTP-1-A";
+
+	/// <summary>
+	/// The field name for the show collections field.
+	/// </summary>
 	private const string _showCollectionsField = "CTID-PieY14aw-_";
+
+	/// <summary>
+	/// The field name for the show collections button.
+	/// </summary>
 	private const string _showButton = "CTRL:PieY14aw:_";
+
+	/// <summary>
+	/// The hidden inputs for the address search form.
+	/// </summary>
 	private const string _addressHidInputs = "ICTRL:Q2YAUZ5b:_:A,ACTRL:2eDPaBQA:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
+
+	/// <summary>
+	/// The hidden inputs for the show collections form.
+	/// </summary>
 	private const string _showCollectionsHidInputs = "ACTRL:PieY14aw:_,ACTRL:EstZqKRj:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
 
 	/// <summary>
@@ -143,10 +178,8 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for loading the form
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookie);
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookie!);
-			clientSideResponse.Headers.TryGetValue("location", out var location);
-			var redirectUrl = BuildAbsoluteUrl(location!);
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
+			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -176,7 +209,8 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 2)
 		{
 			var (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId) = ParseFormValues(
-				clientSideResponse.Content);
+				clientSideResponse.Content
+			);
 
 			var metadata = new Dictionary<string, string>
 			{
@@ -306,10 +340,8 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for loading the form
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookie);
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookie!);
-			clientSideResponse.Headers.TryGetValue("location", out var location);
-			var redirectUrl = BuildAbsoluteUrl(location!);
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
+			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -339,7 +371,8 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 2)
 		{
 			var (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId) = ParseFormValues(
-				clientSideResponse.Content);
+				clientSideResponse.Content
+			);
 
 			var metadata = new Dictionary<string, string>
 			{
@@ -641,8 +674,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 6)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
-			clientSideResponse.Headers.TryGetValue("location", out var location);
-			var redirectUrl = BuildAbsoluteUrl(location!);
+			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
 
 			var clientSideRequest = new ClientSideRequest
 			{
