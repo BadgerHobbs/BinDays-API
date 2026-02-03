@@ -52,14 +52,14 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 		{
 			Name = "Glass, Paper, Tins & Plastics Recycling",
 			Colour = BinColour.Black,
-			Keys = [ "Black Recycling Box" ],
+			Keys = [ "Black Box" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Cardboard & Cartons Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Green Recycling Box" ],
+			Keys = [ "Green Box" ],
 			Type = BinType.Box,
 		},
 	];
