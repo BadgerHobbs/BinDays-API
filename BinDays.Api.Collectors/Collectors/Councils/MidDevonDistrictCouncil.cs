@@ -27,7 +27,8 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
-	private readonly IReadOnlyCollection<Bin> _binTypes = [
+	private readonly IReadOnlyCollection<Bin> _binTypes =
+	[
 		new()
 		{
 			Name = "General Waste",
@@ -73,13 +74,13 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	/// <summary>
 	/// Regex to extract the sid value from the HTML content.
 	/// </summary>
-	[GeneratedRegex(@"sid=([a-f0-9]+)")]
+	[GeneratedRegex(@"sid=(?<sid>[a-f0-9]+)")]
 	private static partial Regex SidRegex();
 
 	/// <summary>
 	/// Regex to extract the PHP session ID from the cookie string.
 	/// </summary>
-	[GeneratedRegex(@"PHPSESSID=([^;]+)")]
+	[GeneratedRegex(@"PHPSESSID=(?<sessionId>[^;]+)")]
 	private static partial Regex SessionIdRegex();
 
 	/// <inheritdoc/>
@@ -87,63 +88,20 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	{
 		var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
 
-		// Prepare client-side request for getting addresses
-		if (clientSideResponse == null)
+		// Handle initial authentication flow
+		var authRequest = HandleAuthenticationFlow(clientSideResponse, 2);
+		if (authRequest != null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _formUrl.ToString(),
-				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-					{ "cookie", "CookiesAccepted=true" },
-				},
-			};
-
 			var response = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest,
+				NextClientSideRequest = authRequest,
 			};
 
 			return response;
 		}
-		// Get reference token
-		else if (clientSideResponse.RequestId == 1)
-		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
-			var metadata = new Dictionary<string, string>
-			{
-				{ "cookie", cookies },
-				{ "sid", SidRegex().Match(clientSideResponse.Content).Groups[1].Value },
-				{ "sessionId", SessionIdRegex().Match(cookies).Groups[1].Value },
-			};
 
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"https://my.middevon.gov.uk/api/nextref?_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={metadata["sid"]}",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "X-Requested-With", "XMLHttpRequest" },
-					{ "cookie", metadata["cookie"] },
-					{ "User-Agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions { Metadata = metadata },
-			};
-
-			var response = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return response;
-		}
 		// Run address lookup
-		else if (clientSideResponse.RequestId == 2)
+		if (clientSideResponse.RequestId == 2)
 		{
 			var metadata = new Dictionary<string, string>(clientSideResponse.Options.Metadata);
 
@@ -183,7 +141,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 				{
 					Property = data.GetProperty("display").GetString()!,
 					Postcode = formattedPostcode,
-					Uid = data.TryGetProperty("uprn", out var uprnElement) ? uprnElement.GetString() : data.GetProperty("name").GetString(),
+					Uid = data.TryGetProperty("uprn", out var uprnElement) ? uprnElement.GetString() : (data.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null),
 					Street = data.TryGetProperty("street", out var streetElement) ? streetElement.GetString() : null,
 					Town = data.TryGetProperty("town", out var townElement) ? townElement.GetString() : null,
 				};
@@ -206,63 +164,20 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting bin days
-		if (clientSideResponse == null)
+		// Handle initial authentication flow
+		var authRequest = HandleAuthenticationFlow(clientSideResponse, 2);
+		if (authRequest != null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _formUrl.ToString(),
-				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-					{ "cookie", "CookiesAccepted=true" },
-				},
-			};
-
 			var response = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest,
+				NextClientSideRequest = authRequest,
 			};
 
 			return response;
 		}
-		// Get reference token
-		else if (clientSideResponse.RequestId == 1)
-		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
-			var metadata = new Dictionary<string, string>
-			{
-				{ "cookie", cookies },
-				{ "sid", SidRegex().Match(clientSideResponse.Content).Groups[1].Value },
-				{ "sessionId", SessionIdRegex().Match(cookies).Groups[1].Value },
-			};
 
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"https://my.middevon.gov.uk/api/nextref?_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={metadata["sid"]}",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "X-Requested-With", "XMLHttpRequest" },
-					{ "cookie", metadata["cookie"] },
-					{ "User-Agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions { Metadata = metadata },
-			};
-
-			var response = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return response;
-		}
 		// Get organic waste collections
-		else if (clientSideResponse.RequestId == 2)
+		if (clientSideResponse.RequestId == 2)
 		{
 			var metadata = new Dictionary<string, string>(clientSideResponse.Options.Metadata);
 
@@ -367,7 +282,12 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			{
 				var binDay = new BinDay
 				{
-					Date = DateOnly.ParseExact(dates[i], "dd-MMM-yy", CultureInfo.InvariantCulture, DateTimeStyles.None),
+					Date = DateOnly.ParseExact(
+						dates[i],
+						"dd-MMM-yy",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					),
 					Address = address,
 					Bins = ProcessingUtilities.GetMatchingBins(_binTypes, items[i]),
 				};
@@ -385,6 +305,59 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Handles the initial authentication flow for the AchieveForms API.
+	/// </summary>
+	/// <param name="clientSideResponse">The client-side response from the previous request, or null if this is the initial request.</param>
+	/// <param name="nextRequestId">The request ID to use for the next request.</param>
+	/// <returns>A client-side request for the next step in the authentication flow, or null if authentication is complete.</returns>
+	private static ClientSideRequest? HandleAuthenticationFlow(ClientSideResponse? clientSideResponse, int nextRequestId)
+	{
+		// Prepare client-side request for getting form
+		if (clientSideResponse == null)
+		{
+			return new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = _formUrl.ToString(),
+				Method = "GET",
+				Headers = new()
+				{
+					{ "User-Agent", Constants.UserAgent },
+					{ "cookie", "CookiesAccepted=true" },
+				},
+			};
+		}
+		// Get reference token
+		else if (clientSideResponse.RequestId == 1)
+		{
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var metadata = new Dictionary<string, string>
+			{
+				{ "cookie", cookies },
+				{ "sid", SidRegex().Match(clientSideResponse.Content).Groups["sid"].Value },
+				{ "sessionId", SessionIdRegex().Match(cookies).Groups["sessionId"].Value },
+			};
+
+			return new ClientSideRequest
+			{
+				RequestId = nextRequestId,
+				Url = $"https://my.middevon.gov.uk/api/nextref?_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={metadata["sid"]}",
+				Method = "GET",
+				Headers = new()
+				{
+					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "cookie", metadata["cookie"] },
+					{ "User-Agent", Constants.UserAgent },
+				},
+				Options = new ClientSideOptions { Metadata = metadata },
+			};
+		}
+
+		return null;
 	}
 
 	/// <summary>
