@@ -34,7 +34,6 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			Name = "General Waste",
 			Colour = BinColour.Black,
 			Keys = [ "Residual", "Black Bin", "Seagull Sack", "Black Sack" ],
-			Type = BinType.Bin,
 		},
 		new()
 		{
@@ -48,7 +47,6 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
 			Keys = [ "Garden Waste" ],
-			Type = BinType.Bin,
 		},
 		new()
 		{
@@ -86,7 +84,6 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
 
 		// Handle initial authentication flow
 		var authRequest = HandleAuthenticationFlow(clientSideResponse, 2);
@@ -110,7 +107,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			metadata["csrf_token"] = jsonDoc.RootElement.GetProperty("data").GetProperty("csrfToken").GetString()!;
 
 			var payload = BuildLookupPayload(
-				formattedPostcode,
+				postcode,
 				metadata["sessionId"],
 				metadata["csrf_token"],
 				metadata["reference"]
@@ -140,10 +137,8 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 				var address = new Address
 				{
 					Property = data.GetProperty("display").GetString()!,
-					Postcode = formattedPostcode,
-					Uid = data.TryGetProperty("uprn", out var uprnElement) ? uprnElement.GetString() : (data.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null),
-					Street = data.TryGetProperty("street", out var streetElement) ? streetElement.GetString() : null,
-					Town = data.TryGetProperty("town", out var townElement) ? townElement.GetString() : null,
+					Postcode = postcode,
+					Uid = data.GetProperty("uprn").GetString()!,
 				};
 
 				addresses.Add(address);
@@ -411,7 +406,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 	/// Builds the JSON payload for the AchieveForms API lookup request.
 	/// </summary>
 	private static string BuildLookupPayload(
-		string formattedPostcode,
+		string postcode,
 		string sessionId,
 		string csrfToken,
 		string reference,
@@ -421,47 +416,79 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 		string foodValue = "",
 		string recyclingValue = "")
 	{
-		return $$"""
+		var formValues = new Dictionary<string, object>
 		{
-			"formId": "AF-Form-dc8ffbd6-4832-443b-ba3f-5e8d36bf11d4",
-			"stage_id": "AF-Stage-eb382015-001c-415d-beda-84f796dbb167",
-			"processId": "AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd",
-			"formUri": "sandbox-publish://AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd/AF-Stage-eb382015-001c-415d-beda-84f796dbb167/definition.json",
-			"reference": "{{reference}}",
-			"tokens": {
-				"session_id": "{{sessionId}}",
-				"csrf_token": "{{csrfToken}}",
-				"reference": "{{reference}}"
+			["postcode_search"] = new Dictionary<string, object>
+			{
+				["id"] = "AF-Field-7ad337fc-1c73-4658-8c4a-4de6079621b2",
+				["value"] = postcode,
 			},
-			"formValues": {
-				"Your Address": {
-					"postcode_search": {
-						"id": "AF-Field-7ad337fc-1c73-4658-8c4a-4de6079621b2",
-						"value": "{{formattedPostcode}}"
-					},
-					"listAddress": {
-						"id": "AF-Field-c2bab0b9-acaa-46a0-a758-8f87e542c71e",
-						"value": "{{addressUid}}"
-					},
-					"OrganicCollections": {
-						"id": "AF-Field-9f49b399-86a3-45e2-a670-e3719a9b8d75",
-						"value": "{{organicValue}}"
-					},
-					"ResidualCollections": {
-						"id": "AF-Field-12b20af8-6f0d-4b04-9c8d-84b9f5493906",
-						"value": "{{residualValue}}"
-					},
-					"foodCollections": {
-						"id": "AF-Field-257ea732-3255-4a20-8662-dca10c96e6da",
-						"value": "{{foodValue}}"
-					},
-					"RecyclingCollections": {
-						"id": "AF-Field-b2104a22-bba4-4f78-bf62-ccddc2a0bb48",
-						"value": "{{recyclingValue}}"
-					}
-				}
-			}
+		};
+
+		if (!string.IsNullOrEmpty(addressUid))
+		{
+			formValues["listAddress"] = new Dictionary<string, object>
+			{
+				["id"] = "AF-Field-c2bab0b9-acaa-46a0-a758-8f87e542c71e",
+				["value"] = addressUid,
+			};
 		}
-		""";
+
+		if (!string.IsNullOrEmpty(organicValue))
+		{
+			formValues["OrganicCollections"] = new Dictionary<string, object>
+			{
+				["id"] = "AF-Field-9f49b399-86a3-45e2-a670-e3719a9b8d75",
+				["value"] = organicValue,
+			};
+		}
+
+		if (!string.IsNullOrEmpty(residualValue))
+		{
+			formValues["ResidualCollections"] = new Dictionary<string, object>
+			{
+				["id"] = "AF-Field-12b20af8-6f0d-4b04-9c8d-84b9f5493906",
+				["value"] = residualValue,
+			};
+		}
+
+		if (!string.IsNullOrEmpty(foodValue))
+		{
+			formValues["foodCollections"] = new Dictionary<string, object>
+			{
+				["id"] = "AF-Field-257ea732-3255-4a20-8662-dca10c96e6da",
+				["value"] = foodValue,
+			};
+		}
+
+		if (!string.IsNullOrEmpty(recyclingValue))
+		{
+			formValues["RecyclingCollections"] = new Dictionary<string, object>
+			{
+				["id"] = "AF-Field-b2104a22-bba4-4f78-bf62-ccddc2a0bb48",
+				["value"] = recyclingValue,
+			};
+		}
+
+		var payload = new
+		{
+			formId = "AF-Form-dc8ffbd6-4832-443b-ba3f-5e8d36bf11d4",
+			stage_id = "AF-Stage-eb382015-001c-415d-beda-84f796dbb167",
+			processId = "AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd",
+			formUri = "sandbox-publish://AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd/AF-Stage-eb382015-001c-415d-beda-84f796dbb167/definition.json",
+			reference = reference,
+			tokens = new
+			{
+				session_id = sessionId,
+				csrf_token = csrfToken,
+				reference = reference,
+			},
+			formValues = new Dictionary<string, object>
+			{
+				["Your Address"] = formValues,
+			},
+		};
+
+		return JsonSerializer.Serialize(payload);
 	}
 }
