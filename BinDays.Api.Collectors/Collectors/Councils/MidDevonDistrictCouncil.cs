@@ -490,4 +490,4 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			}
 		}
 		""";
-}
+	}
