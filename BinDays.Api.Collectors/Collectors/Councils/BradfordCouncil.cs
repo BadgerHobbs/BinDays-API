@@ -24,16 +24,6 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public override string GovUkId => "bradford";
 
-	private const string _initialUrl = "https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebd=0&ebp=20&ebz=1_1761729510565";
-	private const string _formId = "/Forms/COLLECTIONDATES";
-	private const string _postcodeField = "CTRL:Q2YAUZ5b:_:A";
-	private const string _findButton = "CTRL:2eDPaBQA:_";
-	private const string _addressPageField = "CTID-Go9IHRTP-1-A";
-	private const string _showCollectionsField = "CTID-PieY14aw-_";
-	private const string _showButton = "CTRL:PieY14aw:_";
-	private const string _addressHidInputs = "ICTRL:Q2YAUZ5b:_:A,ACTRL:2eDPaBQA:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
-	private const string _showCollectionsHidInputs = "ACTRL:PieY14aw:_,ACTRL:EstZqKRj:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
-
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
@@ -58,6 +48,16 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 			Keys = [ "Garden waste" ],
 		},
 	];
+
+	private const string _initialUrl = "https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebd=0&ebp=20&ebz=1_1761729510565";
+	private const string _formId = "/Forms/COLLECTIONDATES";
+	private const string _postcodeField = "CTRL:Q2YAUZ5b:_:A";
+	private const string _findButton = "CTRL:2eDPaBQA:_";
+	private const string _addressPageField = "CTID-Go9IHRTP-1-A";
+	private const string _showCollectionsField = "CTID-PieY14aw-_";
+	private const string _showButton = "CTRL:PieY14aw:_";
+	private const string _addressHidInputs = "ICTRL:Q2YAUZ5b:_:A,ACTRL:2eDPaBQA:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
+	private const string _showCollectionsHidInputs = "ACTRL:PieY14aw:_,ACTRL:EstZqKRj:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
 
 	/// <summary>
 	/// Regex for the formstack value from the HTML.
@@ -143,9 +143,10 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for loading the form
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]);
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookie);
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookie!);
+			clientSideResponse.Headers.TryGetValue("location", out var location);
+			var redirectUrl = BuildAbsoluteUrl(location!);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -264,26 +265,6 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				addresses.Add(address);
 			}
 
-			addresses.Sort((first, second) =>
-			{
-				var (Length, Value) = GetAddressNumber(first);
-				var secondNumber = GetAddressNumber(second);
-
-				var lengthComparison = secondNumber.Length.CompareTo(Length);
-				if (lengthComparison != 0)
-				{
-					return lengthComparison;
-				}
-
-				var valueComparison = Value.CompareTo(secondNumber.Value);
-				if (valueComparison != 0)
-				{
-					return valueComparison;
-				}
-
-				return string.Compare(first.Property, second.Property, StringComparison.Ordinal);
-			});
-
 			var getAddressesResponse = new GetAddressesResponse
 			{
 				Addresses = [.. addresses],
@@ -325,9 +306,10 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for loading the form
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]);
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookie);
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookie!);
+			clientSideResponse.Headers.TryGetValue("location", out var location);
+			var redirectUrl = BuildAbsoluteUrl(location!);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -494,9 +476,9 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				"ACTRL:2eDPaBQA:_",
 			};
 
-			foreach (var (Field, Property) in addressFields)
+			foreach (var (field, property) in addressFields)
 			{
-				hidInputs.Add(Field.Replace("CTRL:", "ACTRL:"));
+				hidInputs.Add(field.Replace("CTRL:", "ACTRL:"));
 			}
 
 			hidInputs.Add("APAGE:E.h");
@@ -659,7 +641,8 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 6)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+			clientSideResponse.Headers.TryGetValue("location", out var location);
+			var redirectUrl = BuildAbsoluteUrl(location!);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -724,44 +707,11 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
-	private static (int Length, int Value) GetAddressNumber(Address address)
-	{
-		var digits = GetLeadingNumber(address.Property!);
-
-		if (digits == null)
-		{
-			return (0, 0);
-		}
-
-		return (digits.Length, int.Parse(digits, CultureInfo.InvariantCulture));
-	}
-
-	private static string? GetLeadingNumber(string property)
-	{
-		var digits = string.Empty;
-
-		foreach (var character in property)
-		{
-			if (character == ',')
-			{
-				break;
-			}
-
-			if (char.IsDigit(character))
-			{
-				digits += character;
-				continue;
-			}
-
-			if (!string.IsNullOrWhiteSpace(digits))
-			{
-				break;
-			}
-		}
-
-		return string.IsNullOrWhiteSpace(digits) ? null : digits;
-	}
-
+	/// <summary>
+	/// Builds an absolute URL from a relative URL for the Bradford Council forms website.
+	/// </summary>
+	/// <param name="relativeUrl">The relative URL.</param>
+	/// <returns>An absolute URL.</returns>
 	private static string BuildAbsoluteUrl(string relativeUrl)
 	{
 		if (relativeUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
@@ -772,12 +722,17 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		return $"https://onlineforms.bradford.gov.uk/ufs/{relativeUrl}";
 	}
 
+	/// <summary>
+	/// Parses form values from the HTML response.
+	/// </summary>
+	/// <param name="html">The HTML content to parse.</param>
+	/// <returns>A tuple containing the extracted form values.</returns>
 	private static (string Ebs, string Formstack, string OrigRequestUrl, string PageSequence, string PageId, string FormStateId) ParseFormValues(
 		string html)
 	{
 		var ebs = EbsRegex().Match(html).Groups["value"].Value;
 		var formstack = FormstackRegex().Match(html).Groups["value"].Value;
-		var origRequestUrl = OrigRequestUrlRegex().Match(html).Groups["url"].Value.Replace("&amp;", "&");
+		var origRequestUrl = WebUtility.HtmlDecode(OrigRequestUrlRegex().Match(html).Groups["url"].Value);
 		var pageSequence = PageSequenceRegex().Match(html).Groups["value"].Value;
 		var pageId = PageIdRegex().Match(html).Groups["value"].Value;
 		var formStateId = FormStateRegex().Match(html).Groups["value"].Value;
@@ -785,6 +740,12 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		return (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId);
 	}
 
+	/// <summary>
+	/// Extracts updated HTML content from a JSON response containing the specified identifier.
+	/// </summary>
+	/// <param name="content">The JSON content to parse.</param>
+	/// <param name="identifier">The identifier to search for in the HTML.</param>
+	/// <returns>The extracted and unescaped HTML content.</returns>
 	private static string ExtractUpdatedHtml(string content, string identifier)
 	{
 		using var jsonDoc = JsonDocument.Parse(content);
