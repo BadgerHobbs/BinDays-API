@@ -91,13 +91,13 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers.GetValueOrDefault("set-cookie") ?? string.Empty
+				clientSideResponse.Headers["set-cookie"]
 			);
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"https://www.wakefield.gov.uk/pick-your-address?where-i-live={Uri.EscapeDataString(postcode)}",
+				Url = $"https://www.wakefield.gov.uk/pick-your-address?where-i-live={postcode}",
 				Method = "GET",
 				Headers = new()
 				{
@@ -121,9 +121,16 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 			foreach (Match rawAddress in rawAddresses)
 			{
 				var uprn = HttpUtility.UrlDecode(rawAddress.Groups["uprn"].Value).Trim();
-				var property = rawAddress.Groups["property"].Success
-					? HttpUtility.UrlDecode(rawAddress.Groups["property"].Value).Trim()
-					: rawAddress.Groups["label"].Value.Trim();
+
+				var property = string.Empty;
+				if (rawAddress.Groups["property"].Success)
+				{
+					property = HttpUtility.UrlDecode(rawAddress.Groups["property"].Value).Trim();
+				}
+				else
+				{
+					property = rawAddress.Groups["label"].Value.Trim();
+				}
 
 				var address = new Address
 				{
