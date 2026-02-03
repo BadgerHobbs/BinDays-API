@@ -37,14 +37,14 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 		},
 		new()
 		{
-			Name = "Recycling (Paper/Glass/Cardboard)",
+			Name = "Paper, Glass & Cardboard Recycling",
 			Colour = BinColour.Green,
 			Keys = [ "Recycling and food waste" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
-			Name = "Recycling (Plastics/Tins)",
+			Name = "Plastics & Tins Recycling",
 			Colour = BinColour.Green,
 			Keys = [ "Recycling and food waste" ],
 			Type = BinType.Sack,
@@ -76,20 +76,25 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 	[GeneratedRegex(@"<span class=""collection-[^""]+"">(?<bin>[^<]+)</span>", RegexOptions.IgnoreCase)]
 	private static partial Regex BinNameRegex();
 
+	/// <summary>
+	/// Regex for extracting the day number from a date string.
+	/// </summary>
+	[GeneratedRegex(@"\d+")]
+	private static partial Regex DayNumberRegex();
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var encodedPostcode = WebUtility.UrlEncode(postcode);
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://eastdevon.gov.uk/addressfinder?qtype=bins&term={encodedPostcode}",
+				Url = $"https://eastdevon.gov.uk/addressfinder?qtype=bins&term={postcode}",
 				Method = "GET",
-				Headers = new() {
+				Headers = new()
+				{
 					{"User-Agent", Constants.UserAgent},
 					{"X-Requested-With", "XMLHttpRequest"},
 				},
@@ -152,7 +157,8 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 				RequestId = 1,
 				Url = $"https://eastdevon.gov.uk/recycling-and-waste/recycling-waste-information/when-is-my-bin-collected/future-collections-calendar/?UPRN={address.Uid}",
 				Method = "GET",
-				Headers = new() {
+				Headers = new()
+				{
 					{"User-Agent", Constants.UserAgent},
 				},
 			};
@@ -167,13 +173,11 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var content = clientSideResponse.Content;
-
 			var currentMonth = string.Empty;
 			var binDays = new List<BinDay>();
 
 			// Iterate through each calendar entry, and build bin day objects
-			foreach (Match collectionEntry in CollectionEntryRegex().Matches(content)!)
+			foreach (Match collectionEntry in CollectionEntryRegex().Matches(clientSideResponse.Content)!)
 			{
 				var month = collectionEntry.Groups["month"].Value;
 				if (!string.IsNullOrWhiteSpace(month))
@@ -183,7 +187,7 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 				}
 
 				var dateText = WebUtility.HtmlDecode(collectionEntry.Groups["date"].Value).Trim();
-				var day = dateText.Split(" ", StringSplitOptions.RemoveEmptyEntries)[0];
+				var day = DayNumberRegex().Match(dateText).Value;
 
 				var date = DateOnly.ParseExact(
 					$"{day} {currentMonth}",
