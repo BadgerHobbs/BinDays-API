@@ -67,7 +67,7 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 	/// <summary>
 	/// Regex for parsing month headers and collection entries from the calendar.
 	/// </summary>
-	[GeneratedRegex(@"<li class=""eventmonth""[^>]*><h2>(?<month>[A-Za-z]+\s+\d{4})</h2></li>|<li><span class=""collectiondate[^""]*"">(?<date>[^<]+)</span>(?<bins>.*?)</li>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+	[GeneratedRegex(@"<li class=""eventmonth""[^>]*><h2>(?<month>[A-Za-z]+)(?:\s+\d{4})?</h2></li>|<li><span class=""collectiondate[^""]*"">(?<date>[^<]+)</span>(?<bins>.*?)</li>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
 	private static partial Regex CollectionEntryRegex();
 
 	/// <summary>
@@ -189,12 +189,7 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 				var dateText = WebUtility.HtmlDecode(collectionEntry.Groups["date"].Value).Trim();
 				var day = DayNumberRegex().Match(dateText).Value;
 
-				var date = DateOnly.ParseExact(
-					$"{day} {currentMonth}",
-					"d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = $"{day} {currentMonth}".ParseDateInferringYear("d MMMM");
 
 				var binsHtml = WebUtility.HtmlDecode(collectionEntry.Groups["bins"].Value);
 				var bins = new List<Bin>();
