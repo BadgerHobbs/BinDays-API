@@ -22,7 +22,7 @@ public class WakefieldCouncilTests
 	}
 
 	[Theory]
-	[InlineData("WF5 0RG")]
+	[InlineData("WF5 0AF")]
 	public async Task GetBinDaysTest(string postcode)
 	{
 		await TestSteps.EndToEnd(
