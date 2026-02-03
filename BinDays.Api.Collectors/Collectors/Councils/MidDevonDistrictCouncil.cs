@@ -476,12 +476,12 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			stage_id = "AF-Stage-eb382015-001c-415d-beda-84f796dbb167",
 			processId = "AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd",
 			formUri = "sandbox-publish://AF-Process-2289dd06-9a12-4202-ba09-857fe756f6bd/AF-Stage-eb382015-001c-415d-beda-84f796dbb167/definition.json",
-			reference = reference,
+			reference,
 			tokens = new
 			{
 				session_id = sessionId,
 				csrf_token = csrfToken,
-				reference = reference,
+				reference,
 			},
 			formValues = new Dictionary<string, object>
 			{
