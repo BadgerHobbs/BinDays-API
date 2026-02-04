@@ -24,16 +24,6 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public override string GovUkId => "bradford";
 
-	private const string _initialUrl = "https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebd=0&ebp=20&ebz=1_1761729510565";
-	private const string _formId = "/Forms/COLLECTIONDATES";
-	private const string _postcodeField = "CTRL:Q2YAUZ5b:_:A";
-	private const string _findButton = "CTRL:2eDPaBQA:_";
-	private const string _addressPageField = "CTID-Go9IHRTP-1-A";
-	private const string _showCollectionsField = "CTID-PieY14aw-_";
-	private const string _showButton = "CTRL:PieY14aw:_";
-	private const string _addressHidInputs = "ICTRL:Q2YAUZ5b:_:A,ACTRL:2eDPaBQA:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
-	private const string _showCollectionsHidInputs = "ACTRL:PieY14aw:_,ACTRL:EstZqKRj:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
-
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
@@ -58,6 +48,41 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 			Keys = [ "Garden waste" ],
 		},
 	];
+
+	/// <summary>
+	/// The initial URL for the bin collection dates form.
+	/// </summary>
+	private const string _initialUrl = "https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebd=0&ebp=20&ebz=1_1761729510565";
+
+	/// <summary>
+	/// The form identifier for the collection dates form.
+	/// </summary>
+	private const string _formId = "/Forms/COLLECTIONDATES";
+
+	/// <summary>
+	/// The field identifier for the postcode input.
+	/// </summary>
+	private const string _postcodeField = "CTRL:Q2YAUZ5b:_:A";
+
+	/// <summary>
+	/// The button identifier for finding addresses.
+	/// </summary>
+	private const string _findButton = "CTRL:2eDPaBQA:_";
+
+	/// <summary>
+	/// The field identifier for showing collections.
+	/// </summary>
+	private const string _showCollectionsField = "CTID-PieY14aw-_";
+
+	/// <summary>
+	/// The hidden inputs for the address search request.
+	/// </summary>
+	private const string _addressHidInputs = "ICTRL:Q2YAUZ5b:_:A,ACTRL:2eDPaBQA:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
+
+	/// <summary>
+	/// The hidden inputs for the show collections request.
+	/// </summary>
+	private const string _showCollectionsHidInputs = "ACTRL:PieY14aw:_,ACTRL:EstZqKRj:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
 
 	/// <summary>
 	/// Regex for the formstack value from the HTML.
@@ -135,7 +160,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -160,13 +185,13 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{
 					Metadata = {
 						{ "cookie", cookie },
-					}
+					},
 				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -177,7 +202,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 			var (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId) = ParseFormValues(
 				clientSideResponse.Content);
 
-			var metadata = new Dictionary<string, string>
+			Dictionary<string, string> metadata = new()
 			{
 				{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
 				{ "ebs", ebs },
@@ -203,7 +228,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{_findButton, "Find address"},
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
+			Dictionary<string, string> requestHeaders = new() {
 				{"user-agent", Constants.UserAgent},
 				{"content-type", "application/x-www-form-urlencoded"},
 				{"cookie", metadata["cookie"]},
@@ -224,7 +249,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -303,7 +328,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -328,13 +353,13 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{
 					Metadata = {
 						{ "cookie", cookie },
-					}
+					},
 				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -345,7 +370,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 			var (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId) = ParseFormValues(
 				clientSideResponse.Content);
 
-			var metadata = new Dictionary<string, string>
+			Dictionary<string, string> metadata = new()
 			{
 				{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
 				{ "ebs", ebs },
@@ -371,7 +396,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{_findButton, "Find address"},
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
+			Dictionary<string, string> requestHeaders = new() {
 				{"user-agent", Constants.UserAgent},
 				{"content-type", "application/x-www-form-urlencoded"},
 				{"cookie", metadata["cookie"]},
@@ -392,7 +417,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -425,13 +450,13 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var metadata = clientSideResponse.Options.Metadata;
 
-			var requestBodyDictionary = new Dictionary<string, string>
+			Dictionary<string, string> requestBodyDictionary = new()
 			{
 				{"formid", _formId},
 				{"ebs", metadata["ebs"]},
 				{"origrequrl", metadata["origRequestUrl"]},
 				{"formstack", metadata["formstack"]},
-				{"PAGE:F", _addressPageField},
+				{"PAGE:F", "CTID-Go9IHRTP-1-A"},
 				{"pageSeq", metadata["pageSeq"]},
 				{"pageId", metadata["pageId"]},
 				{"formStateId", metadata["formStateId"]},
@@ -466,7 +491,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			requestBodyDictionary.Add("HID:inputs", string.Join(",", hidInputs));
 
-			var requestHeaders = new Dictionary<string, string> {
+			Dictionary<string, string> requestHeaders = new() {
 				{"user-agent", Constants.UserAgent},
 				{"content-type", "application/x-www-form-urlencoded"},
 				{"cookie", metadata["cookie"]},
@@ -489,7 +514,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -511,10 +536,10 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{"pageId", metadata["pageId"]},
 				{"formStateId", metadata["formStateId"]},
 				{"HID:inputs", _showCollectionsHidInputs},
-				{_showButton, "Show collection dates"},
+				{"CTRL:PieY14aw:_", "Show collection dates"},
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
+			Dictionary<string, string> requestHeaders = new() {
 				{"user-agent", Constants.UserAgent},
 				{"content-type", "application/x-www-form-urlencoded"},
 				{"cookie", metadata["cookie"]},
@@ -535,7 +560,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -560,7 +585,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{"ebReshow", "true"},
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
+			Dictionary<string, string> requestHeaders = new() {
 				{"user-agent", Constants.UserAgent},
 				{"content-type", "application/x-www-form-urlencoded"},
 				{"cookie", metadata["cookie"]},
@@ -582,7 +607,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -606,7 +631,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -656,6 +681,11 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
+	/// <summary>
+	/// Extracts the leading number from an address property for sorting purposes.
+	/// </summary>
+	/// <param name="address">The address to extract the number from.</param>
+	/// <returns>A tuple containing the length and value of the leading number, or (0, 0) if no number is found.</returns>
 	private static (int Length, int Value) GetAddressNumber(Address address)
 	{
 		var digits = GetLeadingNumber(address.Property!);
@@ -668,6 +698,11 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		return (digits.Length, int.Parse(digits, CultureInfo.InvariantCulture));
 	}
 
+	/// <summary>
+	/// Extracts the leading numeric digits from a property string.
+	/// </summary>
+	/// <param name="property">The property string to extract digits from.</param>
+	/// <returns>The leading numeric digits as a string, or null if no digits are found.</returns>
 	private static string? GetLeadingNumber(string property)
 	{
 		var digits = string.Empty;
@@ -694,9 +729,14 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		return string.IsNullOrWhiteSpace(digits) ? null : digits;
 	}
 
+	/// <summary>
+	/// Converts a relative URL to an absolute URL by prepending the Bradford Council forms base URL if needed.
+	/// </summary>
+	/// <param name="relativeUrl">The relative or absolute URL to process.</param>
+	/// <returns>An absolute URL.</returns>
 	private static string BuildAbsoluteUrl(string relativeUrl)
 	{
-		if (relativeUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+		if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
 		{
 			return relativeUrl;
 		}
@@ -704,6 +744,11 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		return $"https://onlineforms.bradford.gov.uk/ufs/{relativeUrl}";
 	}
 
+	/// <summary>
+	/// Parses form values from HTML content using regex patterns.
+	/// </summary>
+	/// <param name="html">The HTML content to parse.</param>
+	/// <returns>A tuple containing the extracted form values (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId).</returns>
 	private static (string Ebs, string Formstack, string OrigRequestUrl, string PageSequence, string PageId, string FormStateId) ParseFormValues(
 		string html)
 	{
@@ -717,6 +762,13 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		return (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId);
 	}
 
+	/// <summary>
+	/// Extracts HTML content from a JSON response containing updated controls.
+	/// </summary>
+	/// <param name="content">The JSON content to parse.</param>
+	/// <param name="identifier">The identifier to search for in the HTML content.</param>
+	/// <returns>The HTML content from the matching control.</returns>
+	/// <exception cref="InvalidOperationException">Thrown when the updated HTML content cannot be found.</exception>
 	private static string ExtractUpdatedHtml(string content, string identifier)
 	{
 		using var jsonDoc = JsonDocument.Parse(content);
