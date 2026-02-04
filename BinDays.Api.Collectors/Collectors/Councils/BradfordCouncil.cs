@@ -178,8 +178,10 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for loading the form
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookie);
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookie ?? string.Empty);
+			clientSideResponse.Headers.TryGetValue("location", out var location);
+			var redirectUrl = BuildAbsoluteUrl(location ?? string.Empty);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -340,8 +342,10 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for loading the form
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookie);
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookie ?? string.Empty);
+			clientSideResponse.Headers.TryGetValue("location", out var location);
+			var redirectUrl = BuildAbsoluteUrl(location ?? string.Empty);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -674,7 +678,8 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 6)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+			clientSideResponse.Headers.TryGetValue("location", out var location);
+			var redirectUrl = BuildAbsoluteUrl(location ?? string.Empty);
 
 			var clientSideRequest = new ClientSideRequest
 			{
