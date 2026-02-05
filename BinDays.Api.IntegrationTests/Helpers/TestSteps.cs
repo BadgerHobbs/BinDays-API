@@ -20,13 +20,15 @@ internal static class TestSteps
 	/// <param name="testCollector">The collector to test.</param>
 	/// <param name="postcode">The postcode to search for.</param>
 	/// <param name="outputHelper">The test output helper.</param>
+	/// <param name="addressIndex">Optional zero-based index of the address to select. Defaults to 0 (first address).</param>
 	/// <returns>A task that represents the asynchronous operation.</returns>
 	public static async Task EndToEnd(
 		IntegrationTestClient client,
 		CollectorService collectorService,
 		ICollector testCollector,
 		string postcode,
-		ITestOutputHelper outputHelper
+		ITestOutputHelper outputHelper,
+		int addressIndex = 0
 	)
 	{
 		// Format postcode to match API controller formatting.
@@ -48,7 +50,7 @@ internal static class TestSteps
 			postcode
 		);
 
-		var selectedAddress = addresses.First();
+		var selectedAddress = addresses.ElementAt(addressIndex);
 
 		// Step 3: Get Bin Days
 		var binDays = await GetBinDaysAsync(
