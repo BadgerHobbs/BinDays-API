@@ -30,7 +30,8 @@ public class BradfordCouncilTests
 			_collectorService,
 			_collector,
 			postcode,
-			_outputHelper
+			_outputHelper,
+			addressIndex: 1
 		);
 	}
 }

@@ -141,121 +141,14 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting the initial token
-		if (clientSideResponse == null)
+		// Handle session initialization (RequestIds null, 1, 2)
+		var sharedRequest = HandleSessionInitialization(postcode, clientSideResponse);
+		if (sharedRequest != null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _initialUrl,
-				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
-				Options = new ClientSideOptions
-				{
-					FollowRedirects = false,
-				},
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		// Prepare client-side request for loading the form
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]);
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = redirectUrl,
-				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-					{"cookie", cookie},
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata = {
-						{ "cookie", cookie },
-					},
-				},
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		// Prepare client-side request for searching for addresses
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId) = ParseFormValues(
-				clientSideResponse.Content);
-
-			Dictionary<string, string> metadata = new()
-			{
-				{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
-				{ "ebs", ebs },
-				{ "formstack", formstack },
-				{ "origRequestUrl", origRequestUrl },
-				{ "pageSeq", pageSequence },
-				{ "pageId", pageId },
-				{ "formStateId", formStateId },
-			};
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{"formid", _formId},
-				{"ebs", ebs},
-				{"origrequrl", origRequestUrl},
-				{"formstack", formstack},
-				{"PAGE:F", "CTID-2eDPaBQA-_"},
-				{"pageSeq", pageSequence},
-				{"pageId", pageId},
-				{"formStateId", formStateId},
-				{_postcodeField, postcode},
-				{"HID:inputs", _addressHidInputs},
-				{_findButton, "Find address"},
-			});
-
-			Dictionary<string, string> requestHeaders = new() {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
-				{"cookie", metadata["cookie"]},
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = $"https://onlineforms.bradford.gov.uk/ufs/ufsajax?ebz={ebs}",
-				Method = "POST",
-				Headers = requestHeaders,
-				Body = requestBody,
-				Options = new ClientSideOptions
-				{
-					Metadata = metadata,
-				},
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
+			return new GetAddressesResponse { NextClientSideRequest = sharedRequest };
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse!.RequestId == 3)
 		{
 			var addressesHtml = ExtractUpdatedHtml(clientSideResponse.Content, "Go9IHRTP");
 
@@ -275,26 +168,6 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				addresses.Add(address);
 			}
 
-			addresses.Sort((first, second) =>
-			{
-				var (Length, Value) = GetAddressNumber(first);
-				var secondNumber = GetAddressNumber(second);
-
-				var lengthComparison = secondNumber.Length.CompareTo(Length);
-				if (lengthComparison != 0)
-				{
-					return lengthComparison;
-				}
-
-				var valueComparison = Value.CompareTo(secondNumber.Value);
-				if (valueComparison != 0)
-				{
-					return valueComparison;
-				}
-
-				return string.Compare(first.Property, second.Property, StringComparison.Ordinal);
-			});
-
 			var getAddressesResponse = new GetAddressesResponse
 			{
 				Addresses = [.. addresses],
@@ -309,121 +182,14 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting the initial token
-		if (clientSideResponse == null)
+		// Handle session initialization (RequestIds null, 1, 2)
+		var sharedRequest = HandleSessionInitialization(address.Postcode!, clientSideResponse);
+		if (sharedRequest != null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _initialUrl,
-				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
-				Options = new ClientSideOptions
-				{
-					FollowRedirects = false,
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for loading the form
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]);
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = redirectUrl,
-				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-					{"cookie", cookie},
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata = {
-						{ "cookie", cookie },
-					},
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for searching for addresses
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId) = ParseFormValues(
-				clientSideResponse.Content);
-
-			Dictionary<string, string> metadata = new()
-			{
-				{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
-				{ "ebs", ebs },
-				{ "formstack", formstack },
-				{ "origRequestUrl", origRequestUrl },
-				{ "pageSeq", pageSequence },
-				{ "pageId", pageId },
-				{ "formStateId", formStateId },
-			};
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{"formid", _formId},
-				{"ebs", ebs},
-				{"origrequrl", origRequestUrl},
-				{"formstack", formstack},
-				{"PAGE:F", "CTID-2eDPaBQA-_"},
-				{"pageSeq", pageSequence},
-				{"pageId", pageId},
-				{"formStateId", formStateId},
-				{_postcodeField, address.Postcode!},
-				{"HID:inputs", _addressHidInputs},
-				{_findButton, "Find address"},
-			});
-
-			Dictionary<string, string> requestHeaders = new() {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
-				{"cookie", metadata["cookie"]},
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = $"https://onlineforms.bradford.gov.uk/ufs/ufsajax?ebz={ebs}",
-				Method = "POST",
-				Headers = requestHeaders,
-				Body = requestBody,
-				Options = new ClientSideOptions
-				{
-					Metadata = metadata,
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
+			return new GetBinDaysResponse { NextClientSideRequest = sharedRequest };
 		}
 		// Prepare client-side request for selecting the address
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse!.RequestId == 3)
 		{
 			var addressesHtml = ExtractUpdatedHtml(clientSideResponse.Content, "Go9IHRTP");
 			var rawAddresses = AddressesRegex().Matches(addressesHtml)!;
@@ -491,12 +257,6 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 			requestBodyDictionary.Add("HID:inputs", string.Join(",", hidInputs));
 
-			Dictionary<string, string> requestHeaders = new() {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
-				{"cookie", metadata["cookie"]},
-			};
-
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(requestBodyDictionary);
 
 			var clientSideRequest = new ClientSideRequest
@@ -504,7 +264,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				RequestId = 4,
 				Url = $"https://onlineforms.bradford.gov.uk/ufs/ufsajax?ebz={metadata["ebs"]}",
 				Method = "POST",
-				Headers = requestHeaders,
+				Headers = CreateFormHeaders(metadata["cookie"]),
 				Body = requestBody,
 				Options = new ClientSideOptions
 				{
@@ -539,18 +299,12 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{"CTRL:PieY14aw:_", "Show collection dates"},
 			});
 
-			Dictionary<string, string> requestHeaders = new() {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
-				{"cookie", metadata["cookie"]},
-			};
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 5,
 				Url = $"https://onlineforms.bradford.gov.uk/ufs/ufsajax?ebz={metadata["ebs"]}",
 				Method = "POST",
-				Headers = requestHeaders,
+				Headers = CreateFormHeaders(metadata["cookie"]),
 				Body = requestBody,
 				Options = new ClientSideOptions
 				{
@@ -585,18 +339,12 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{"ebReshow", "true"},
 			});
 
-			Dictionary<string, string> requestHeaders = new() {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
-				{"cookie", metadata["cookie"]},
-			};
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 6,
 				Url = $"https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebz={metadata["ebs"]}",
 				Method = "POST",
-				Headers = requestHeaders,
+				Headers = CreateFormHeaders(metadata["cookie"]),
 				Body = requestBody,
 				Options = new ClientSideOptions
 				{
@@ -682,52 +430,115 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	}
 
 	/// <summary>
-	/// Extracts the leading number from an address property for sorting purposes.
+	/// Handles the shared session initialization steps (RequestIds null, 1, 2) used by both
+	/// <see cref="GetAddresses"/> and <see cref="GetBinDays"/>.
 	/// </summary>
-	/// <param name="address">The address to extract the number from.</param>
-	/// <returns>A tuple containing the length and value of the leading number, or (0, 0) if no number is found.</returns>
-	private static (int Length, int Value) GetAddressNumber(Address address)
+	/// <param name="postcode">The postcode to search for.</param>
+	/// <param name="clientSideResponse">The client-side response from the previous request, or null for the initial request.</param>
+	/// <returns>A <see cref="ClientSideRequest"/> for RequestIds null/1/2, or null when shared steps are complete.</returns>
+	private static ClientSideRequest? HandleSessionInitialization(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		var digits = GetLeadingNumber(address.Property!);
-
-		if (digits == null)
+		// Prepare client-side request for getting the initial token
+		if (clientSideResponse == null)
 		{
-			return (0, 0);
+			return new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = _initialUrl,
+				Method = "GET",
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+				},
+				Options = new ClientSideOptions
+				{
+					FollowRedirects = false,
+				},
+			};
+		}
+		// Prepare client-side request for loading the form
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+				clientSideResponse.Headers["set-cookie"]);
+			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+
+			return new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = redirectUrl,
+				Method = "GET",
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+					{"cookie", cookie},
+				},
+				Options = new ClientSideOptions
+				{
+					Metadata = {
+						{ "cookie", cookie },
+					},
+				},
+			};
+		}
+		// Prepare client-side request for searching for addresses
+		else if (clientSideResponse.RequestId == 2)
+		{
+			var (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId) = ParseFormValues(
+				clientSideResponse.Content);
+
+			Dictionary<string, string> metadata = new()
+			{
+				{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
+				{ "ebs", ebs },
+				{ "formstack", formstack },
+				{ "origRequestUrl", origRequestUrl },
+				{ "pageSeq", pageSequence },
+				{ "pageId", pageId },
+				{ "formStateId", formStateId },
+			};
+
+			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
+			{
+				{"formid", _formId},
+				{"ebs", ebs},
+				{"origrequrl", origRequestUrl},
+				{"formstack", formstack},
+				{"PAGE:F", "CTID-2eDPaBQA-_"},
+				{"pageSeq", pageSequence},
+				{"pageId", pageId},
+				{"formStateId", formStateId},
+				{_postcodeField, postcode},
+				{"HID:inputs", _addressHidInputs},
+				{_findButton, "Find address"},
+			});
+
+			return new ClientSideRequest
+			{
+				RequestId = 3,
+				Url = $"https://onlineforms.bradford.gov.uk/ufs/ufsajax?ebz={ebs}",
+				Method = "POST",
+				Headers = CreateFormHeaders(metadata["cookie"]),
+				Body = requestBody,
+				Options = new ClientSideOptions
+				{
+					Metadata = metadata,
+				},
+			};
 		}
 
-		return (digits.Length, int.Parse(digits, CultureInfo.InvariantCulture));
+		return null;
 	}
 
 	/// <summary>
-	/// Extracts the leading numeric digits from a property string.
+	/// Creates the standard form POST headers with the given cookie.
 	/// </summary>
-	/// <param name="property">The property string to extract digits from.</param>
-	/// <returns>The leading numeric digits as a string, or null if no digits are found.</returns>
-	private static string? GetLeadingNumber(string property)
+	/// <param name="cookie">The cookie value to include in the headers.</param>
+	/// <returns>A dictionary of HTTP headers for form POST requests.</returns>
+	private static Dictionary<string, string> CreateFormHeaders(string cookie) => new()
 	{
-		var digits = string.Empty;
-
-		foreach (var character in property)
-		{
-			if (character == ',')
-			{
-				break;
-			}
-
-			if (char.IsDigit(character))
-			{
-				digits += character;
-				continue;
-			}
-
-			if (!string.IsNullOrWhiteSpace(digits))
-			{
-				break;
-			}
-		}
-
-		return string.IsNullOrWhiteSpace(digits) ? null : digits;
-	}
+		{ "user-agent", Constants.UserAgent },
+		{ "content-type", "application/x-www-form-urlencoded" },
+		{ "cookie", cookie },
+	};
 
 	/// <summary>
 	/// Converts a relative URL to an absolute URL by prepending the Bradford Council forms base URL if needed.
