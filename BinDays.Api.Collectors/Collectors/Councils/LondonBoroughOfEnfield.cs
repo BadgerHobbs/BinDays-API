@@ -31,7 +31,7 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Residual", "Refuse", "General" ],
+			Keys = [ "Residual" ],
 		},
 		new()
 		{
@@ -43,7 +43,7 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		{
 			Name = "Food Waste Caddy",
 			Colour = BinColour.Brown,
-			Keys = [ "Food", "Caddy" ],
+			Keys = [ "Food" ],
 			Type = BinType.Caddy,
 		},
 		new()
@@ -60,8 +60,6 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
@@ -77,13 +75,6 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 					{ "sec-ch-ua-platform", "\"Windows\"" },
 					{ "upgrade-insecure-requests", "1" },
 				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "postcode", formattedPostcode },
-					},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -96,10 +87,9 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var formattedPostcode = clientSideResponse.Options.Metadata["postcode"];
-			var encodedPostcode = Uri.EscapeDataString(formattedPostcode);
-			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+			var encodedPostcode = Uri.EscapeDataString(postcode);
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -120,13 +110,6 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 					{ "sec-fetch-site", "same-origin" },
 					{ "cookie", requestCookies },
 				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "postcode", formattedPostcode },
-					},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -138,8 +121,6 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		}
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var formattedPostcode = clientSideResponse.Options.Metadata["postcode"];
-
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var resultsElement = jsonDoc.RootElement.GetProperty("results");
 
@@ -152,7 +133,7 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				var address = new Address
 				{
 					Property = lpiElement.GetProperty("ADDRESS").GetString()!.Trim(),
-					Postcode = formattedPostcode,
+					Postcode = postcode,
 					Uid = lpiElement.GetProperty("UPRN").GetString()!.Trim(),
 				};
 
@@ -204,8 +185,8 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
 			var requestUrl = $"https://www.enfield.gov.uk/_design/integrations/bartec/find-my-collection/rest/schedule?uprn={address.Uid!}";
 
 			var clientSideRequest = new ClientSideRequest
