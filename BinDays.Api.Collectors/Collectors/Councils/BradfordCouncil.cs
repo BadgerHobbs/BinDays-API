@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -50,11 +49,6 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	];
 
 	/// <summary>
-	/// The initial URL for the bin collection dates form.
-	/// </summary>
-	private const string _initialUrl = "https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebd=0&ebp=20&ebz=1_1761729510565";
-
-	/// <summary>
 	/// The form identifier for the collection dates form.
 	/// </summary>
 	private const string _formId = "/Forms/COLLECTIONDATES";
@@ -65,19 +59,9 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	private const string _postcodeField = "CTRL:Q2YAUZ5b:_:A";
 
 	/// <summary>
-	/// The button identifier for finding addresses.
-	/// </summary>
-	private const string _findButton = "CTRL:2eDPaBQA:_";
-
-	/// <summary>
 	/// The field identifier for showing collections.
 	/// </summary>
 	private const string _showCollectionsField = "CTID-PieY14aw-_";
-
-	/// <summary>
-	/// The hidden inputs for the address search request.
-	/// </summary>
-	private const string _addressHidInputs = "ICTRL:Q2YAUZ5b:_:A,ACTRL:2eDPaBQA:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h";
 
 	/// <summary>
 	/// The hidden inputs for the show collections request.
@@ -93,7 +77,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	/// <summary>
 	/// Regex for the original request url from the HTML.
 	/// </summary>
-	[GeneratedRegex("name=\"origrequrl\" value=\"(?<url>[^\"]+)\"", RegexOptions.IgnoreCase)]
+	[GeneratedRegex("name=\"origrequrl\" value=\"(?<value>[^\"]+)\"", RegexOptions.IgnoreCase)]
 	private static partial Regex OrigRequestUrlRegex();
 
 	/// <summary>
@@ -135,8 +119,14 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	/// <summary>
 	/// Regex for the bin day dates.
 	/// </summary>
-	[GeneratedRegex("Thu [A-Za-z]{3} \\d{2} \\d{4}")]
+	[GeneratedRegex("[A-Za-z]{3} [A-Za-z]{3} \\d{2} \\d{4}")]
 	private static partial Regex DateRegex();
+
+	/// <summary>
+	/// Regex for the html property value from the JSON response.
+	/// </summary>
+	[GeneratedRegex(@"""html""\s*:\s*""((?:[^""\\]|\\.)*)""", RegexOptions.IgnoreCase)]
+	private static partial Regex HtmlPropertyRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -201,12 +191,14 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 			}
 
 			var selectedAddress = addressFields.Find(x =>
-				string.Equals(x.Field, address.Uid, StringComparison.OrdinalIgnoreCase));
+				string.Equals(x.Field, address.Uid, StringComparison.OrdinalIgnoreCase)
+			);
 
 			if (selectedAddress == default)
 			{
 				selectedAddress = addressFields.Find(x =>
-					string.Equals(x.Property, address.Property, StringComparison.OrdinalIgnoreCase));
+					string.Equals(x.Property, address.Property, StringComparison.OrdinalIgnoreCase)
+				);
 			}
 
 			if (selectedAddress == default)
@@ -264,7 +256,11 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				RequestId = 4,
 				Url = $"https://onlineforms.bradford.gov.uk/ufs/ufsajax?ebz={metadata["ebs"]}",
 				Method = "POST",
-				Headers = CreateFormHeaders(metadata["cookie"]),
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+					{"content-type", "application/x-www-form-urlencoded"},
+					{"cookie", metadata["cookie"]},
+				},
 				Body = requestBody,
 				Options = new ClientSideOptions
 				{
@@ -297,14 +293,19 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{"formStateId", metadata["formStateId"]},
 				{"HID:inputs", _showCollectionsHidInputs},
 				{"CTRL:PieY14aw:_", "Show collection dates"},
-			});
+			}
+			);
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 5,
 				Url = $"https://onlineforms.bradford.gov.uk/ufs/ufsajax?ebz={metadata["ebs"]}",
 				Method = "POST",
-				Headers = CreateFormHeaders(metadata["cookie"]),
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+					{"content-type", "application/x-www-form-urlencoded"},
+					{"cookie", metadata["cookie"]},
+				},
 				Body = requestBody,
 				Options = new ClientSideOptions
 				{
@@ -337,14 +338,19 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{"formStateId", metadata["formStateId"]},
 				{"HID:inputs", _showCollectionsHidInputs},
 				{"ebReshow", "true"},
-			});
+			}
+			);
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 6,
 				Url = $"https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebz={metadata["ebs"]}",
 				Method = "POST",
-				Headers = CreateFormHeaders(metadata["cookie"]),
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+					{"content-type", "application/x-www-form-urlencoded"},
+					{"cookie", metadata["cookie"]},
+				},
 				Body = requestBody,
 				Options = new ClientSideOptions
 				{
@@ -364,12 +370,12 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 6)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+			var location = clientSideResponse.Headers["location"];
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 7,
-				Url = redirectUrl,
+				Url = $"https://onlineforms.bradford.gov.uk/ufs/{location}",
 				Method = "GET",
 				Headers = new() {
 					{"user-agent", Constants.UserAgent},
@@ -444,7 +450,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 			return new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = _initialUrl,
+				Url = "https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebd=0&ebp=20&ebz=1_1761729510565",
 				Method = "GET",
 				Headers = new() {
 					{"user-agent", Constants.UserAgent},
@@ -459,13 +465,14 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]);
-			var redirectUrl = BuildAbsoluteUrl(clientSideResponse.Headers["location"]);
+				clientSideResponse.Headers["set-cookie"]
+			);
+			var location = clientSideResponse.Headers["location"];
 
 			return new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = redirectUrl,
+				Url = $"https://onlineforms.bradford.gov.uk/ufs/{location}",
 				Method = "GET",
 				Headers = new() {
 					{"user-agent", Constants.UserAgent},
@@ -482,8 +489,13 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for searching for addresses
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId) = ParseFormValues(
-				clientSideResponse.Content);
+			var html = clientSideResponse.Content;
+			var ebs = EbsRegex().Match(html).Groups["value"].Value;
+			var formstack = FormstackRegex().Match(html).Groups["value"].Value;
+			var origRequestUrl = OrigRequestUrlRegex().Match(html).Groups["value"].Value.Replace("&amp;", "&");
+			var pageSequence = PageSequenceRegex().Match(html).Groups["value"].Value;
+			var pageId = PageIdRegex().Match(html).Groups["value"].Value;
+			var formStateId = FormStateRegex().Match(html).Groups["value"].Value;
 
 			Dictionary<string, string> metadata = new()
 			{
@@ -507,16 +519,21 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				{"pageId", pageId},
 				{"formStateId", formStateId},
 				{_postcodeField, postcode},
-				{"HID:inputs", _addressHidInputs},
-				{_findButton, "Find address"},
-			});
+				{"HID:inputs", "ICTRL:Q2YAUZ5b:_:A,ACTRL:2eDPaBQA:_,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:P.h,APAGE:S.h,APAGE:R.h"},
+				{"CTRL:2eDPaBQA:_", "Find address"},
+			}
+			);
 
 			return new ClientSideRequest
 			{
 				RequestId = 3,
 				Url = $"https://onlineforms.bradford.gov.uk/ufs/ufsajax?ebz={ebs}",
 				Method = "POST",
-				Headers = CreateFormHeaders(metadata["cookie"]),
+				Headers = new() {
+					{"user-agent", Constants.UserAgent},
+					{"content-type", "application/x-www-form-urlencoded"},
+					{"cookie", metadata["cookie"]},
+				},
 				Body = requestBody,
 				Options = new ClientSideOptions
 				{
@@ -529,51 +546,6 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	}
 
 	/// <summary>
-	/// Creates the standard form POST headers with the given cookie.
-	/// </summary>
-	/// <param name="cookie">The cookie value to include in the headers.</param>
-	/// <returns>A dictionary of HTTP headers for form POST requests.</returns>
-	private static Dictionary<string, string> CreateFormHeaders(string cookie) => new()
-	{
-		{ "user-agent", Constants.UserAgent },
-		{ "content-type", "application/x-www-form-urlencoded" },
-		{ "cookie", cookie },
-	};
-
-	/// <summary>
-	/// Converts a relative URL to an absolute URL by prepending the Bradford Council forms base URL if needed.
-	/// </summary>
-	/// <param name="relativeUrl">The relative or absolute URL to process.</param>
-	/// <returns>An absolute URL.</returns>
-	private static string BuildAbsoluteUrl(string relativeUrl)
-	{
-		if (Uri.IsWellFormedUriString(relativeUrl, UriKind.Absolute))
-		{
-			return relativeUrl;
-		}
-
-		return $"https://onlineforms.bradford.gov.uk/ufs/{relativeUrl}";
-	}
-
-	/// <summary>
-	/// Parses form values from HTML content using regex patterns.
-	/// </summary>
-	/// <param name="html">The HTML content to parse.</param>
-	/// <returns>A tuple containing the extracted form values (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId).</returns>
-	private static (string Ebs, string Formstack, string OrigRequestUrl, string PageSequence, string PageId, string FormStateId) ParseFormValues(
-		string html)
-	{
-		var ebs = EbsRegex().Match(html).Groups["value"].Value;
-		var formstack = FormstackRegex().Match(html).Groups["value"].Value;
-		var origRequestUrl = OrigRequestUrlRegex().Match(html).Groups["url"].Value.Replace("&amp;", "&");
-		var pageSequence = PageSequenceRegex().Match(html).Groups["value"].Value;
-		var pageId = PageIdRegex().Match(html).Groups["value"].Value;
-		var formStateId = FormStateRegex().Match(html).Groups["value"].Value;
-
-		return (ebs, formstack, origRequestUrl, pageSequence, pageId, formStateId);
-	}
-
-	/// <summary>
 	/// Extracts HTML content from a JSON response containing updated controls.
 	/// </summary>
 	/// <param name="content">The JSON content to parse.</param>
@@ -582,18 +554,12 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 	/// <exception cref="InvalidOperationException">Thrown when the updated HTML content cannot be found.</exception>
 	private static string ExtractUpdatedHtml(string content, string identifier)
 	{
-		using var jsonDoc = JsonDocument.Parse(content);
-
-		if (jsonDoc.RootElement.TryGetProperty("updatedControls", out var updatedControls))
+		foreach (Match match in HtmlPropertyRegex().Matches(content))
 		{
-			foreach (var control in updatedControls.EnumerateArray())
+			var html = match.Groups[1].Value;
+			if (html.Contains(identifier, StringComparison.OrdinalIgnoreCase))
 			{
-				if (control.TryGetProperty("html", out var htmlProperty) &&
-					htmlProperty.ValueKind == JsonValueKind.String &&
-					htmlProperty.GetString()!.Contains(identifier, StringComparison.OrdinalIgnoreCase))
-				{
-					return htmlProperty.GetString()!.Replace("\\\"", "\"");
-				}
+				return html.Replace("\\\"", "\"");
 			}
 		}
 
