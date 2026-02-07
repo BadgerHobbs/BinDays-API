@@ -133,7 +133,7 @@ jobs:
           ISSUE_NUMBER: ${{ needs.check_trigger.outputs.issue_number }}
           COLLECTOR_NAME: ${{ needs.check_trigger.outputs.council_name_pascal }}
           BINDAYS_ENABLE_HTTP_LOGGING: "true"
-          MAX_ATTEMPTS: "3"
+          MAX_ATTEMPTS: "5"
         run: ./.github/scripts/implement-collector/implement-with-retries.sh
 
       - name: Run final integration tests
