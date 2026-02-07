@@ -2,6 +2,8 @@
 
 You are investigating integration test failures for the BinDays API project. Scheduled daily integration tests have failed, and you need to analyse each failure, create GitHub issues, and attempt fixes where appropriate.
 
+**IMPORTANT: This is a fully automated, non-interactive task running in a CI/CD pipeline.** There is NO user present to answer questions, provide clarification, or give approval. You cannot ask for help or confirmation - you must make all decisions autonomously and complete the entire task independently.
+
 ## Input
 
 The file `failure-context.json` in the repository root contains:
