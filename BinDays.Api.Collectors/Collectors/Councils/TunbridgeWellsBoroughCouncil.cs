@@ -1,0 +1,329 @@
+namespace BinDays.Api.Collectors.Collectors.Councils;
+
+using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+/// <summary>
+/// Collector implementation for Tunbridge Wells Borough Council.
+/// </summary>
+internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase, ICollector
+{
+	/// <inheritdoc/>
+	public string Name => "Tunbridge Wells Borough Council";
+
+	/// <inheritdoc/>
+	public Uri WebsiteUrl => new("https://tunbridgewells-self.achieveservice.com/service/Check_your_bin_collection_day");
+
+	/// <inheritdoc/>
+	public override string GovUkId => "tunbridge-wells";
+
+	/// <summary>
+	/// The list of bin types for this collector.
+	/// </summary>
+	private readonly IReadOnlyCollection<Bin> _binTypes =
+	[
+		new()
+		{
+			Name = "General Waste",
+			Colour = BinColour.Green,
+			Keys = [ "Refuse" ],
+		},
+		new()
+		{
+			Name = "Recycling Bin",
+			Colour = BinColour.Brown,
+			Keys = [ "Recycling" ],
+		},
+		new()
+		{
+			Name = "Paper Recycling",
+			Colour = BinColour.Green,
+			Keys = [ "Recycling" ],
+			Type = BinType.Box,
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Yellow,
+			Keys = [ "Food", "Recycling", "Refuse" ],
+			Type = BinType.Caddy,
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Black,
+			Keys = [ "Garden" ],
+		},
+	];
+
+	/// <summary>
+	/// The identifier for the form used in the requests.
+	/// </summary>
+	private const string _formId = "AF-Form-df7cac1a-c096-4c38-9488-85619a7646bb";
+
+	/// <summary>
+	/// The name of the form used in the requests.
+	/// </summary>
+	private const string _formName = "Bin day collection checker 2022";
+
+	/// <summary>
+	/// The URI of the form used in the requests.
+	/// </summary>
+	private const string _formUri = "sandbox-publish://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed/AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38/definition.json";
+
+	/// <summary>
+	/// The identifier for the process used in the requests.
+	/// </summary>
+	private const string _processId = "AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed";
+
+	/// <summary>
+	/// The identifier for the stage used in the requests.
+	/// </summary>
+	private const string _stageId = "AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38";
+
+	/// <summary>
+	/// Regex to extract the session identifier (sid) from HTML.
+	/// </summary>
+	[GeneratedRegex(@"sid=(?<sessionId>[a-f0-9]+)")]
+	private static partial Regex SessionIdRegex();
+
+	/// <inheritdoc/>
+	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting addresses
+		if (clientSideResponse == null)
+		{
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = "https://tunbridgewells-self.achieveservice.com/AchieveForms/?mode=fill&consentMessage=yes&form_uri=sandbox-publish://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed/AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38/definition.json&process=1&process_uri=sandbox-processes://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed&process_id=AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed",
+				Method = "GET",
+				Headers = new()
+				{
+					{ "User-Agent", Constants.UserAgent },
+				},
+			};
+
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
+			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
+
+			var requestBody = JsonSerializer.Serialize(new
+			{
+				stopOnFailure = true,
+				usePHPIntegrations = true,
+				stage_id = _stageId,
+				stage_name = "Customer form",
+				formId = _formId,
+				formValues = new
+				{
+					Property = new
+					{
+						gardenSuspended = new { value = "no" },
+						postcode_search = new { value = ProcessingUtilities.FormatPostcode(postcode) },
+						postcodeValid = new { value = "true" },
+					},
+				},
+				isPublished = true,
+				formName = _formName,
+				processId = _processId,
+				formUri = _formUri,
+			});
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = $"https://tunbridgewells-self.achieveservice.com/apibroker/runLookup?id=11c66af5fbe94&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sessionId}",
+				Method = "POST",
+				Headers = new()
+				{
+					{ "Content-Type", "application/json" },
+					{ "cookie", requestCookies },
+				},
+				Body = requestBody,
+			};
+
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return getAddressesResponse;
+		}
+		// Process addresses from response
+		else if (clientSideResponse.RequestId == 2)
+		{
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			var rows = jsonDoc.RootElement
+				.GetProperty("integration")
+				.GetProperty("transformed")
+				.GetProperty("rows_data");
+
+			// Iterate through each address, and create a new address object
+			var addresses = new List<Address>();
+			foreach (var row in rows.EnumerateObject())
+			{
+				var addressData = row.Value;
+
+				var address = new Address
+				{
+					Property = addressData.GetProperty("display").GetString()!.Trim(),
+					Postcode = postcode,
+					Uid = addressData.GetProperty("uprn").GetString()!.Trim(),
+				};
+
+				addresses.Add(address);
+			}
+
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
+		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <inheritdoc/>
+	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+	{
+		// Prepare client-side request for getting bin days
+		if (clientSideResponse == null)
+		{
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 1,
+				Url = "https://tunbridgewells-self.achieveservice.com/AchieveForms/?mode=fill&consentMessage=yes&form_uri=sandbox-publish://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed/AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38/definition.json&process=1&process_uri=sandbox-processes://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed&process_id=AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed",
+				Method = "GET",
+				Headers = new()
+				{
+					{ "User-Agent", Constants.UserAgent },
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return getBinDaysResponse;
+		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
+			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
+
+			var requestBody = JsonSerializer.Serialize(new
+			{
+				stopOnFailure = true,
+				usePHPIntegrations = true,
+				stage_id = _stageId,
+				stage_name = "Customer form",
+				formId = _formId,
+				formValues = new
+				{
+					Property = new
+					{
+						gardenSuspended = new { value = "no" },
+						postcodeValid = new { value = "true" },
+						buttonPressed = new { value = "Yes" },
+						addressPicker = new { value = address.Uid },
+						selectedAddress = new { value = address.Property },
+						propertyReference = new { value = address.Uid },
+						siteReference = new { value = address.Uid },
+						postcodeEntered = new { value = ProcessingUtilities.FormatPostcode(address.Postcode!) },
+						referredBy = new { value = "binchecker" },
+					},
+				},
+				isPublished = true,
+				formName = _formName,
+				processId = _processId,
+				formUri = _formUri,
+			});
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = $"https://tunbridgewells-self.achieveservice.com/apibroker/runLookup?id=6314720683f30&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sessionId}",
+				Method = "POST",
+				Headers = new()
+				{
+					{ "Content-Type", "application/json" },
+					{ "cookie", requestCookies },
+				},
+				Body = requestBody,
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return getBinDaysResponse;
+		}
+		// Process bin days from response
+		else if (clientSideResponse.RequestId == 2)
+		{
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			var rows = jsonDoc.RootElement
+				.GetProperty("integration")
+				.GetProperty("transformed")
+				.GetProperty("rows_data");
+
+			// Iterate through each bin day, and create a new bin day object
+			var binDays = new List<BinDay>();
+			foreach (var row in rows.EnumerateObject())
+			{
+				var collection = row.Value;
+				var collectionType = collection.GetProperty("collectionType").GetString()!.Trim();
+				var collectionDate = collection.GetProperty("nextDateUnformatted").GetString()!.Trim();
+
+				var date = DateOnly.ParseExact(
+					collectionDate,
+					"dd/MM/yyyy",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, collectionType);
+
+				var binDay = new BinDay
+				{
+					Date = date,
+					Address = address,
+					Bins = bins,
+				};
+
+				binDays.Add(binDay);
+			}
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
+		}
+
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+}
