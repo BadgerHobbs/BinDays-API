@@ -68,12 +68,10 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" },
-					{ "accept-language", "en-US,en;q=0.9" },
+					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
 					{ "sec-ch-ua", "\"Not A(Brand\";v=\"99\", \"Mozilla\";v=\"137\", \"Chromium\";v=\"137\"" },
 					{ "sec-ch-ua-mobile", "?0" },
 					{ "sec-ch-ua-platform", "\"Windows\"" },
-					{ "upgrade-insecure-requests", "1" },
 				},
 			};
 
@@ -87,24 +85,19 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var encodedPostcode = Uri.EscapeDataString(postcode);
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"https://www.enfield.gov.uk/_design/integrations/ordnance-survey/places-v2?query={encodedPostcode}",
+				Url = $"https://www.enfield.gov.uk/_design/integrations/ordnance-survey/places-v2?query={postcode}",
 				Method = "GET",
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "accept", "*/*" },
-					{ "accept-language", "en-US,en;q=0.9" },
 					{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
-					{ "sec-ch-ua", "\"Not A(Brand\";v=\"99\", \"Mozilla\";v=\"137\", \"Chromium\";v=\"137\"" },
-					{ "sec-ch-ua-mobile", "?0" },
-					{ "sec-ch-ua-platform", "\"Windows\"" },
 					{ "sec-fetch-dest", "empty" },
 					{ "sec-fetch-mode", "cors" },
 					{ "sec-fetch-site", "same-origin" },
@@ -166,12 +159,10 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" },
-					{ "accept-language", "en-US,en;q=0.9" },
+					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
 					{ "sec-ch-ua", "\"Not A(Brand\";v=\"99\", \"Mozilla\";v=\"137\", \"Chromium\";v=\"137\"" },
 					{ "sec-ch-ua-mobile", "?0" },
 					{ "sec-ch-ua-platform", "\"Windows\"" },
-					{ "upgrade-insecure-requests", "1" },
 				},
 			};
 
@@ -185,8 +176,8 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 			var requestUrl = $"https://www.enfield.gov.uk/_design/integrations/bartec/find-my-collection/rest/schedule?uprn={address.Uid!}";
 
 			var clientSideRequest = new ClientSideRequest
@@ -198,11 +189,7 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "accept", "*/*" },
-					{ "accept-language", "en-US,en;q=0.9" },
 					{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
-					{ "sec-ch-ua", "\"Not A(Brand\";v=\"99\", \"Mozilla\";v=\"137\", \"Chromium\";v=\"137\"" },
-					{ "sec-ch-ua-mobile", "?0" },
-					{ "sec-ch-ua-platform", "\"Windows\"" },
 					{ "sec-fetch-dest", "empty" },
 					{ "sec-fetch-mode", "cors" },
 					{ "sec-fetch-site", "same-origin" },
