@@ -127,17 +127,14 @@ jobs:
           # Verify it works in a login shell
           bash -lc 'dotnet --version'
 
-      - name: Implement collector with Codex
+      - name: Implement collector with Codex (with retries)
         env:
           ISSUE_TITLE: ${{ needs.check_trigger.outputs.council_name }}
           ISSUE_NUMBER: ${{ needs.check_trigger.outputs.issue_number }}
-          BINDAYS_ENABLE_HTTP_LOGGING: "true"
-        run: ./.github/scripts/implement-collector/implement-collector.sh
-
-      - name: Verify implementation
-        env:
           COLLECTOR_NAME: ${{ needs.check_trigger.outputs.council_name_pascal }}
-        run: ./.github/scripts/implement-collector/verify-implementation.sh
+          BINDAYS_ENABLE_HTTP_LOGGING: "true"
+          MAX_ATTEMPTS: "3"
+        run: ./.github/scripts/implement-collector/implement-with-retries.sh
 
       - name: Run final integration tests
         env:
