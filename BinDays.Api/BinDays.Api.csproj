@@ -23,4 +23,9 @@
     <ProjectReference Include="..\BinDays.Api.Collectors\BinDays.Api.Collectors.csproj" />
   </ItemGroup>
 
+  <!-- Required for integration tests -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="BinDays.Api.IntegrationTests" />
+  </ItemGroup>
+
 </Project>

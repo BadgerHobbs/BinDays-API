@@ -5,24 +5,27 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using Xunit.Abstractions;
 
 /// <summary>
 /// A client helper for executing multi-step requests during integration tests.
+/// Posts to the real API endpoints and executes external client-side requests.
 /// </summary>
 internal sealed class IntegrationTestClient
 {
+	private readonly HttpClient _apiClient;
 	private readonly HttpClient _httpClientWithRedirects;
 	private readonly HttpClient _httpClientWithoutRedirects;
-	private readonly ITestOutputHelper _outputHelper;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="IntegrationTestClient"/> class.
 	/// </summary>
+	/// <param name="outputHelper">The xUnit test output helper.</param>
 	public IntegrationTestClient(ITestOutputHelper outputHelper)
 	{
-		_outputHelper = outputHelper;
+		_apiClient = BinDaysApiFactory.CreateClient();
 
 		var enableHttpLogging = string.Equals(
 			Environment.GetEnvironmentVariable("BINDAYS_ENABLE_HTTP_LOGGING"),
@@ -37,7 +40,7 @@ internal sealed class IntegrationTestClient
 			CookieContainer = new CookieContainer(),
 			AllowAutoRedirect = true,
 		};
-		_httpClientWithRedirects = CreateClient(handlerWithRedirects, enableHttpLogging, outputHelper);
+		_httpClientWithRedirects = CreateExternalClient(handlerWithRedirects, enableHttpLogging, outputHelper);
 
 		// Client that does NOT automatically follow redirects
 		var handlerWithoutRedirects = new HttpClientHandler
@@ -46,17 +49,13 @@ internal sealed class IntegrationTestClient
 			CookieContainer = new CookieContainer(),
 			AllowAutoRedirect = false,
 		};
-		_httpClientWithoutRedirects = CreateClient(handlerWithoutRedirects, enableHttpLogging, outputHelper);
+		_httpClientWithoutRedirects = CreateExternalClient(handlerWithoutRedirects, enableHttpLogging, outputHelper);
 	}
 
 	/// <summary>
-	/// Creates an <see cref="HttpClient"/> instance, optionally wrapping it with a <see cref="LoggingHttpHandler"/>.
+	/// Creates an <see cref="HttpClient"/> for external (council website) requests.
 	/// </summary>
-	/// <param name="handler">The <see cref="HttpClientHandler"/> to use for the client.</param>
-	/// <param name="enableLogging">A boolean indicating whether HTTP logging should be enabled.</param>
-	/// <param name="outputHelper">The <see cref="ITestOutputHelper"/> for logging output.</param>
-	/// <returns>A new <see cref="HttpClient"/> instance.</returns>
-	private static HttpClient CreateClient(HttpClientHandler handler, bool enableLogging, ITestOutputHelper outputHelper)
+	private static HttpClient CreateExternalClient(HttpClientHandler handler, bool enableLogging, ITestOutputHelper outputHelper)
 	{
 		return enableLogging
 			? new HttpClient(new LoggingHttpHandler(outputHelper, handler))
@@ -64,60 +63,78 @@ internal sealed class IntegrationTestClient
 	}
 
 	/// <summary>
-	/// Executes the entire request cycle for a multi-step API call.
+	/// Executes the full request cycle by POSTing to an API endpoint and following
+	/// client-side request chains until the final response is returned.
 	/// </summary>
-	/// <typeparam name="TResponse">The type of the final API response object (e.g. GetAddressesResponse).</typeparam>
-	/// <typeparam name="TResult">The type of the final data expected (e.g. IReadOnlyCollection<Address>).</typeparam>
-	/// <param name="initialFunc">A function that makes the first call to the API method (with clientSideResponse = null).</param>
-	/// <param name="subsequentFunc">A function that makes subsequent calls to the API method, passing the ClientSideResponse.</param>
-	/// <param name="nextRequestExtractor">A function to extract the NextClientSideRequest from the API response.</param>
-	/// <param name="resultExtractor">A function to extract the final TResult data from the API response.</param>
-	/// <param name="errorMessage">Error message to throw if the cycle completes without yielding data.</param>
-	/// <returns>The final extracted data of type TResult.</returns>
-	/// <exception cref="InvalidOperationException">Thrown if the API does not return data or a next step.</exception>
-	/// <exception cref="HttpRequestException">Can be thrown if a client-side request fails.</exception>
-	public async Task<TResult> ExecuteRequestCycleAsync<TResponse, TResult>(
-		Func<TResponse> initialFunc,
-		Func<ClientSideResponse, TResponse> subsequentFunc,
-		Func<TResponse, ClientSideRequest?> nextRequestExtractor,
-		Func<TResponse, TResult?> resultExtractor,
-		string errorMessage)
-		where TResult : class
+	/// <typeparam name="TResponse">The type of the API response.</typeparam>
+	/// <param name="apiUrl">The API URL to POST to.</param>
+	/// <param name="nextRequestExtractor">Extracts the NextClientSideRequest from the response.</param>
+	/// <returns>The final API response.</returns>
+	public async Task<TResponse> ExecuteRequestCycleAsync<TResponse>(
+		string apiUrl,
+		Func<TResponse, ClientSideRequest?> nextRequestExtractor)
 	{
 		ClientSideResponse? clientSideResponse = null;
-		TResponse apiResponse;
 
 		while (true)
 		{
-			apiResponse = clientSideResponse == null
-				? initialFunc()
-				: subsequentFunc(clientSideResponse);
-
-			var result = resultExtractor(apiResponse);
-			if (result != null)
-			{
-				return result;
-			}
+			var apiResponse = await PostToApiAsync<TResponse>(apiUrl, clientSideResponse);
 
 			var nextRequest = nextRequestExtractor(apiResponse);
-			if (nextRequest != null)
+			if (nextRequest == null)
 			{
-				clientSideResponse = await SendClientSideRequestAsync(nextRequest);
+				return apiResponse;
+			}
 
-			}
-			else
-			{
-				throw new InvalidOperationException(errorMessage);
-			}
+			clientSideResponse = await SendClientSideRequestAsync(nextRequest);
 		}
+	}
+
+	/// <summary>
+	/// Executes the full request cycle, following client-side requests, and returns
+	/// the final raw HttpResponseMessage. Used for asserting HTTP status codes.
+	/// </summary>
+	/// <param name="apiUrl">The API URL to POST to.</param>
+	/// <returns>The final raw HttpResponseMessage.</returns>
+	public async Task<HttpResponseMessage> ExecuteRequestCycleRawAsync(string apiUrl)
+	{
+		ClientSideResponse? clientSideResponse = null;
+
+		while (true)
+		{
+			var response = await _apiClient.PostAsJsonAsync(apiUrl, clientSideResponse);
+
+			if (!response.IsSuccessStatusCode)
+			{
+				return response;
+			}
+
+			var body = await response.Content.ReadFromJsonAsync<TestGetCollectorResponse>();
+
+			if (body?.NextClientSideRequest == null)
+			{
+				return response;
+			}
+
+			response.Dispose();
+			clientSideResponse = await SendClientSideRequestAsync(body.NextClientSideRequest);
+		}
+	}
+
+	/// <summary>
+	/// Posts to the API endpoint with an optional ClientSideResponse body.
+	/// </summary>
+	private async Task<TResponse> PostToApiAsync<TResponse>(string apiUrl, ClientSideResponse? clientSideResponse)
+	{
+		using var response = await _apiClient.PostAsJsonAsync(apiUrl, clientSideResponse);
+		response.EnsureSuccessStatusCode();
+		var result = await response.Content.ReadFromJsonAsync<TResponse>();
+		return result ?? throw new InvalidOperationException($"API returned null response from {apiUrl}.");
 	}
 
 	/// <summary>
 	/// Sends a single client-side HTTP request as defined by the API.
 	/// </summary>
-	/// <param name="request">The client-side request details.</param>
-	/// <returns>The response from the external service, packaged as a ClientSideResponse.</returns>
-	/// <exception cref="HttpRequestException">Thrown if the HTTP request fails.</exception>
 	private async Task<ClientSideResponse> SendClientSideRequestAsync(ClientSideRequest request)
 	{
 		using var httpRequest = new HttpRequestMessage(new HttpMethod(request.Method), request.Url);
@@ -181,8 +198,6 @@ internal sealed class IntegrationTestClient
 	/// <summary>
 	/// Basic check to see if a string looks like a JSON object or array.
 	/// </summary>
-	/// <param name="value">The string to check.</param>
-	/// <returns>True if it starts/ends with {} or [], false otherwise.</returns>
 	private static bool LooksLikeJson(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value)) return false;
