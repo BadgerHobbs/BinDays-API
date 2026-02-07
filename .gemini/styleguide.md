@@ -669,26 +669,26 @@ var cookies = clientSideResponse.Headers.TryGetValue("set-cookie", out var h)
 var postcode = address.Postcode!;
 var uid = address.Uid!;
 
-clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
-```
-
-### ❌ DON'T: Use direct header indexer access
-
-**Problem**: Direct indexer access can throw if header is unexpectedly missing.
-
-```c#
 var setCookieHeader = clientSideResponse.Headers["set-cookie"];
-var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 ```
 
-### ✅ DO: Use TryGetValue with null-forgiving operator
+### ❌ DON'T: Use TryGetValue for required headers
 
-**Reason**: Slightly safer pattern that still fails fast if header is missing.
+**Problem**: TryGetValue with null-forgiving operator is unnecessarily verbose for headers that must exist.
 
 ```c#
 clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
 var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+```
+
+### ✅ DO: Use direct header indexer access
+
+**Reason**: Simpler and fails fast with a clear `KeyNotFoundException` if the header is missing.
+
+```c#
+var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 ```
 
 ### ❌ DON'T: Use defensive fallback for expected JSON properties
@@ -1849,7 +1849,7 @@ Before submitting a PR, check:
 - [ ] Metadata contains only values needed in subsequent requests
 - [ ] No explicit empty metadata initialization
 - [ ] Required values use null-forgiving operator (`!`) not null-coalescing (`??`)
-- [ ] Headers accessed with `TryGetValue` + `!` for required headers
+- [ ] Headers accessed with direct indexer for required headers
 - [ ] JSON properties use `GetString()!` for required values
 - [ ] No URL encoding - let framework handle it automatically
 
