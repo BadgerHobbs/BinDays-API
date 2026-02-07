@@ -48,7 +48,7 @@ internal static class TestSteps
 		string expectedGovUkId)
 	{
 		var response = await client.ExecuteRequestCycleAsync<TestGetCollectorResponse>(
-			$"/collector?postcode={Uri.EscapeDataString(postcode)}",
+			$"/collector?postcode={postcode}",
 			resp => resp.NextClientSideRequest
 		);
 
@@ -66,7 +66,7 @@ internal static class TestSteps
 		string postcode)
 	{
 		var response = await client.ExecuteRequestCycleAsync<GetAddressesResponse>(
-			$"/{govUkId}/addresses?postcode={Uri.EscapeDataString(postcode)}",
+			$"/{govUkId}/addresses?postcode={postcode}",
 			resp => resp.NextClientSideRequest
 		);
 
@@ -85,7 +85,7 @@ internal static class TestSteps
 		string uid)
 	{
 		var response = await client.ExecuteRequestCycleAsync<GetBinDaysResponse>(
-			$"/{govUkId}/bin-days?postcode={Uri.EscapeDataString(postcode)}&uid={Uri.EscapeDataString(uid)}",
+			$"/{govUkId}/bin-days?postcode={postcode}&uid={uid}",
 			resp => resp.NextClientSideRequest
 		);
 

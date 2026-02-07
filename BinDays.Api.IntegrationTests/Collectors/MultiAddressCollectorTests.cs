@@ -5,10 +5,9 @@ using System.Net;
 using Xunit;
 using Xunit.Abstractions;
 
-public class MultiAddressCollectorTests
+public sealed class MultiAddressCollectorTests
 {
 	private readonly IntegrationTestClient _client;
-	private const string _postcode = "SS9 3RE";
 
 	public MultiAddressCollectorTests(ITestOutputHelper outputHelper)
 	{
@@ -19,7 +18,7 @@ public class MultiAddressCollectorTests
 	public async Task GetCollectorReturnsNotFound()
 	{
 		using var response = await _client.ExecuteRequestCycleRawAsync(
-			$"/collector?postcode={Uri.EscapeDataString(_postcode)}"
+			"/collector?postcode=SS9 3RE"
 		);
 
 		Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);

@@ -198,6 +198,8 @@ internal sealed class IntegrationTestClient
 	/// <summary>
 	/// Basic check to see if a string looks like a JSON object or array.
 	/// </summary>
+	/// <param name="value">The string to check.</param>
+	/// <returns>True if it starts/ends with {} or [], false otherwise.</returns>
 	private static bool LooksLikeJson(string value)
 	{
 		if (string.IsNullOrWhiteSpace(value)) return false;
