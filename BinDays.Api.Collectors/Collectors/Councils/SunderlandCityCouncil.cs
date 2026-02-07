@@ -35,7 +35,7 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 		},
 		new()
 		{
-			Name = "Dry Recycling",
+			Name = "Mixed Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "Recycling Waste" ],
 		},
@@ -104,8 +104,8 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 			var viewStateGenerator = ViewStateGeneratorRegex().Match(clientSideResponse.Content).Groups["viewStateGenerator"].Value;
@@ -207,8 +207,8 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
 			var viewStateGenerator = ViewStateGeneratorRegex().Match(clientSideResponse.Content).Groups["viewStateGenerator"].Value;
