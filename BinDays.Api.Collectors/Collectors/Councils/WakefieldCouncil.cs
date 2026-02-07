@@ -136,7 +136,7 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 				{
 					Property = property,
 					Postcode = postcode,
-					Uid = uprn,
+					Uid = $"{uprn};{property}",
 				};
 
 				addresses.Add(address);
@@ -154,13 +154,18 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
+		// Uid format: "uprn;property"
+		var parts = address.Uid!.Split(';', 2);
+		var uprn = parts[0];
+		var property = parts[1];
+
 		// Prepare client-side request for bin collections page
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://www.wakefield.gov.uk/where-i-live?uprn={address.Uid}&a={Uri.EscapeDataString(address.Property!)}",
+				Url = $"https://www.wakefield.gov.uk/where-i-live?uprn={uprn}&a={Uri.EscapeDataString(property)}",
 				Method = "GET",
 				Headers = new()
 				{

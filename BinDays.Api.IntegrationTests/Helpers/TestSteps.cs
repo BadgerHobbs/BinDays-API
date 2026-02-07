@@ -52,11 +52,18 @@ internal static class TestSteps
 
 		var selectedAddress = addresses.ElementAt(addressIndex);
 
+		// Only retain postcode and uid  to match properties provided in the controller
+		var requestAddress = new Address
+		{
+			Postcode = selectedAddress.Postcode,
+			Uid = selectedAddress.Uid
+		};
+
 		// Step 3: Get Bin Days
 		var binDays = await GetBinDaysAsync(
 			client,
 			collector,
-			selectedAddress
+			requestAddress
 		);
 
 		// Step 4: Output Summary
