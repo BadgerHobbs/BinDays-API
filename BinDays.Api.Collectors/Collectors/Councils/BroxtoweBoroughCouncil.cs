@@ -6,6 +6,7 @@ using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 
@@ -26,40 +27,57 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
+	/// <summary>
+	/// The list of bin types for this collector.
+	/// </summary>
 	private readonly IReadOnlyCollection<Bin> _binTypes =
 	[
 		new()
 		{
 			Name = "Mixed Dry Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "GREEN 240L" ],
+			Keys = [ "GREEN 240L", ],
 		},
 		new()
 		{
 			Name = "Glass Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "GLASS BAG" ],
+			Keys = [ "GLASS BAG", ],
 			Type = BinType.Bag,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "BROWN 240L" ],
+			Keys = [ "BROWN 240L", ],
 		},
 		new()
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "BLACK 240L" ],
+			Keys = [ "BLACK 240L", ],
 		},
 	];
 
+	/// <summary>
+	/// The URL of the web form for bin collection lookups.
+	/// </summary>
 	private const string _formUrl = "https://selfservice.broxtowe.gov.uk/renderform.aspx?t=217&k=9D2EF214E144EE796430597FB475C3892C43C528";
+
+	/// <summary>
+	/// The ASP.NET script manager target for AJAX requests.
+	/// </summary>
 	private const string _scriptManagerTarget = "ctl00$ContentPlaceHolder1$APUP_5683";
+
+	/// <summary>
+	/// The event target for postcode search button.
+	/// </summary>
 	private const string _searchEventTarget = "ctl00$ContentPlaceHolder1$FF5683BTN";
+
+	/// <summary>
+	/// The event target for address dropdown selection.
+	/// </summary>
 	private const string _addressEventTarget = "ctl00$ContentPlaceHolder1$FF5683DDL";
-	private const string _submitEventTarget = "ctl00$ContentPlaceHolder1$btnSubmit";
 
 	/// <summary>
 	/// Regex for parsing hidden fields from AJAX responses.
@@ -91,16 +109,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		// Prepare client-side request for initial form load
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _formUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-			};
+			var clientSideRequest = CreateInitialFormRequest();
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -112,42 +121,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		// Prepare client-side request for postcode search
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
-
-			var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
-			var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-			var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
-
-			var formData = new Dictionary<string, string>
-			{
-				{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_searchEventTarget}" },
-				{ "__EVENTTARGET", _searchEventTarget },
-				{ "__EVENTARGUMENT", string.Empty },
-				{ "__VIEWSTATE", viewState },
-				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-				{ "__EVENTVALIDATION", eventValidation },
-				{ "ctl00$ContentPlaceHolder1$txtPositionLL", string.Empty },
-				{ "ctl00$ContentPlaceHolder1$txtPosition", string.Empty },
-				{ "ctl00$ContentPlaceHolder1$FF5683TB", postcode },
-				{ "__ASYNCPOST", "true" },
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = _formUrl,
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "x-requested-with", "XMLHttpRequest" },
-					{ "x-microsoftajax", "Delta=true" },
-					{ "content-type", "application/x-www-form-urlencoded; charset=utf-8" },
-					{ "cookie", cookie },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
-			};
+			var clientSideRequest = CreatePostcodeSearchRequest(clientSideResponse, postcode);
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -201,16 +175,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		// Prepare client-side request for initial form load
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _formUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-			};
+			var clientSideRequest = CreateInitialFormRequest();
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
@@ -222,49 +187,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		// Prepare client-side request for postcode search
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
-
-			var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
-			var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-			var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
-
-			var formData = new Dictionary<string, string>
-			{
-				{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_searchEventTarget}" },
-				{ "__EVENTTARGET", _searchEventTarget },
-				{ "__EVENTARGUMENT", string.Empty },
-				{ "__VIEWSTATE", viewState },
-				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-				{ "__EVENTVALIDATION", eventValidation },
-				{ "ctl00$ContentPlaceHolder1$txtPositionLL", string.Empty },
-				{ "ctl00$ContentPlaceHolder1$txtPosition", string.Empty },
-				{ "ctl00$ContentPlaceHolder1$FF5683TB", address.Postcode! },
-				{ "__ASYNCPOST", "true" },
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = _formUrl,
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "x-requested-with", "XMLHttpRequest" },
-					{ "x-microsoftajax", "Delta=true" },
-					{ "content-type", "application/x-www-form-urlencoded; charset=utf-8" },
-					{ "cookie", cookie },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "cookie", cookie },
-					},
-				},
-			};
+			var clientSideRequest = CreatePostcodeSearchRequest(clientSideResponse, address.Postcode!);
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
@@ -340,7 +263,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 			{
 				{ "ctl00$ContentPlaceHolder1$txtPositionLL", string.Empty },
 				{ "ctl00$ContentPlaceHolder1$txtPosition", string.Empty },
-				{ "__EVENTTARGET", _submitEventTarget },
+				{ "__EVENTTARGET", "ctl00$ContentPlaceHolder1$btnSubmit" },
 				{ "__EVENTARGUMENT", string.Empty },
 				{ "__LASTFOCUS", string.Empty },
 				{ "__VIEWSTATE", viewState },
@@ -412,32 +335,92 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	}
 
 	/// <summary>
+	/// Creates the initial client-side request to load the form.
+	/// </summary>
+	private ClientSideRequest CreateInitialFormRequest()
+	{
+		return new ClientSideRequest
+		{
+			RequestId = 1,
+			Url = _formUrl,
+			Method = "GET",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+			},
+		};
+	}
+
+	/// <summary>
+	/// Creates a client-side request for postcode search.
+	/// </summary>
+	private ClientSideRequest CreatePostcodeSearchRequest(ClientSideResponse clientSideResponse, string postcode)
+	{
+		clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
+		var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+
+		var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
+		var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
+		var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
+
+		var formData = new Dictionary<string, string>
+		{
+			{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_searchEventTarget}" },
+			{ "__EVENTTARGET", _searchEventTarget },
+			{ "__EVENTARGUMENT", string.Empty },
+			{ "__VIEWSTATE", viewState },
+			{ "__VIEWSTATEGENERATOR", viewStateGenerator },
+			{ "__EVENTVALIDATION", eventValidation },
+			{ "ctl00$ContentPlaceHolder1$txtPositionLL", string.Empty },
+			{ "ctl00$ContentPlaceHolder1$txtPosition", string.Empty },
+			{ "ctl00$ContentPlaceHolder1$FF5683TB", postcode },
+			{ "__ASYNCPOST", "true" },
+		};
+
+		return new ClientSideRequest
+		{
+			RequestId = 2,
+			Url = _formUrl,
+			Method = "POST",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "x-requested-with", "XMLHttpRequest" },
+				{ "x-microsoftajax", "Delta=true" },
+				{ "content-type", "application/x-www-form-urlencoded; charset=utf-8" },
+				{ "cookie", cookie },
+			},
+			Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
+			Options = new ClientSideOptions
+			{
+				Metadata =
+				{
+					{ "cookie", cookie },
+				},
+			},
+		};
+	}
+
+	/// <summary>
 	/// Extracts hidden field values from HTML or AJAX responses.
 	/// </summary>
 	private static string GetHiddenField(string content, string fieldName)
 	{
-		var ajaxFields = AjaxHiddenFieldRegex().Matches(content)!;
-
-		// Iterate through each hidden field in the AJAX response
-		foreach (Match ajaxField in ajaxFields)
+		// First, try to find the field in the AJAX response format.
+		var ajaxMatch = AjaxHiddenFieldRegex().Matches(content)!.FirstOrDefault(m => m.Groups["name"].Value == fieldName);
+		if (ajaxMatch is not null)
 		{
-			if (ajaxField.Groups["name"].Value == fieldName)
-			{
-				return ajaxField.Groups["value"].Value;
-			}
+			return ajaxMatch.Groups["value"].Value;
 		}
 
-		var htmlFields = HtmlHiddenFieldRegex().Matches(content)!;
-
-		// Iterate through each hidden field in the HTML response
-		foreach (Match htmlField in htmlFields)
+		// If not found, try the standard HTML input format.
+		var htmlMatch = HtmlHiddenFieldRegex().Matches(content)!.FirstOrDefault(m => m.Groups["name"].Value == fieldName);
+		if (htmlMatch is not null)
 		{
-			if (htmlField.Groups["name"].Value == fieldName)
-			{
-				return htmlField.Groups["value"].Value;
-			}
+			return htmlMatch.Groups["value"].Value;
 		}
 
-		throw new InvalidOperationException($"{fieldName} not found.");
+		// If the field is not found in either format, throw an exception.
+		throw new InvalidOperationException($"Hidden field '{fieldName}' not found in response content.");
 	}
 }
