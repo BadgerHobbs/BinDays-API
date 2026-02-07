@@ -31,13 +31,13 @@ internal sealed class BarkingAndDagenhamCouncil : GovUkCollectorBase, ICollector
 		{
 			Name = "Non-Recyclable Waste",
 			Colour = BinColour.Grey,
-			Keys = [ "Grey-Household" ],
+			Keys = [ "Grey-Household", ],
 		},
 		new()
 		{
 			Name = "Mixed Recycling",
 			Colour = BinColour.Brown,
-			Keys = [ "Brown-Recycling" ],
+			Keys = [ "Brown-Recycling", ],
 		},
 	];
 
