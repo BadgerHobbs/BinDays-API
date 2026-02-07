@@ -27,9 +27,6 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
-	/// <summary>
-	/// The list of bin types for this collector.
-	/// </summary>
 	private readonly IReadOnlyCollection<Bin> _binTypes =
 	[
 		new()
@@ -208,12 +205,8 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 			var formData = new Dictionary<string, string>
 			{
 				{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_addressEventTarget}" },
-				{ "ctl00$ContentPlaceHolder1$txtPositionLL", string.Empty },
-				{ "ctl00$ContentPlaceHolder1$txtPosition", string.Empty },
 				{ "ctl00$ContentPlaceHolder1$FF5683DDL", address.Uid! },
 				{ "__EVENTTARGET", _addressEventTarget },
-				{ "__EVENTARGUMENT", string.Empty },
-				{ "__LASTFOCUS", string.Empty },
 				{ "__VIEWSTATE", viewState },
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
 				{ "__EVENTVALIDATION", eventValidation },
@@ -261,11 +254,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 
 			var formData = new Dictionary<string, string>
 			{
-				{ "ctl00$ContentPlaceHolder1$txtPositionLL", string.Empty },
-				{ "ctl00$ContentPlaceHolder1$txtPosition", string.Empty },
 				{ "__EVENTTARGET", "ctl00$ContentPlaceHolder1$btnSubmit" },
-				{ "__EVENTARGUMENT", string.Empty },
-				{ "__LASTFOCUS", string.Empty },
 				{ "__VIEWSTATE", viewState },
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
 				{ "__EVENTVALIDATION", eventValidation },
@@ -367,12 +356,9 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		{
 			{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_searchEventTarget}" },
 			{ "__EVENTTARGET", _searchEventTarget },
-			{ "__EVENTARGUMENT", string.Empty },
 			{ "__VIEWSTATE", viewState },
 			{ "__VIEWSTATEGENERATOR", viewStateGenerator },
 			{ "__EVENTVALIDATION", eventValidation },
-			{ "ctl00$ContentPlaceHolder1$txtPositionLL", string.Empty },
-			{ "ctl00$ContentPlaceHolder1$txtPosition", string.Empty },
 			{ "ctl00$ContentPlaceHolder1$FF5683TB", postcode },
 			{ "__ASYNCPOST", "true" },
 		};
