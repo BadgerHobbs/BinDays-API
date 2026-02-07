@@ -2,6 +2,8 @@
 
 You are an AI agent tasked with implementing a new UK council bin day collector for the BinDays API project. You will use Playwright MCP to navigate the council's website, capture network requests, and then implement a C# collector based on that data.
 
+**IMPORTANT: This is a fully automated, non-interactive task running in a CI/CD pipeline.** There is NO user present to answer questions, provide clarification, or give approval. You cannot ask for help or confirmation - you must make all decisions autonomously and complete the entire task independently.
+
 **This is a one-shot, end-to-end implementation.** You must complete all phases autonomously from start to finish without requiring additional user input. This includes:
 
 - Parsing the issue and extracting council information
@@ -316,7 +318,31 @@ Before reporting completion, perform a final review:
 
 **If any style guide violation is found, fix it before proceeding.**
 
-### 5.2 Report Success
+### 5.2 Verify Files Exist on Disk
+
+**CRITICAL: Before reporting completion, you MUST verify that all implementation files actually exist on disk.** This is a mandatory step - do not skip it.
+
+Run the following commands and confirm they succeed:
+
+```bash
+# Verify collector file exists and has content
+test -f "BinDays.Api.Collectors/Collectors/Councils/{CouncilName}.cs" && wc -l "BinDays.Api.Collectors/Collectors/Councils/{CouncilName}.cs"
+
+# Verify test file exists and has content
+test -f "BinDays.Api.IntegrationTests/Collectors/Councils/{CouncilName}Tests.cs" && wc -l "BinDays.Api.IntegrationTests/Collectors/Councils/{CouncilName}Tests.cs"
+
+# Verify screenshot exists
+test -f ".agent/playwright/out/{CouncilName}-screenshot.png" && echo "Screenshot exists"
+```
+
+**If any of these checks fail:**
+1. The file was not written correctly - write it again
+2. Re-run the verification commands
+3. Only proceed to 5.3 when ALL files are confirmed to exist
+
+Do NOT report success if files do not exist on disk. The workflow depends on these files being present.
+
+### 5.3 Report Success
 
 When tests pass AND style guide compliance is verified:
 
@@ -347,8 +373,29 @@ When tests pass AND style guide compliance is verified:
 
 All implementation rules and conventions are documented in the comprehensive style guide provided in Phase 3.1.
 
-**Workflow-Specific Requirement:**
+**Workflow-Specific Requirements:**
 
 - **Include screenshot in PR**: The screenshot of the bin collections page taken during Phase 2.3 must be included in the pull request to assist with verification and validation
+
+### CRITICAL: Do Not Stop Prematurely
+
+**You MUST complete ALL phases including Phase 5.2 (file verification) before stopping.**
+
+This is an unattended, non-interactive task. There is no user to:
+- Answer follow-up questions
+- Approve your work
+- Provide additional input
+- Resume your session manually
+
+Common failure mode: Stopping after describing what you did, without actually:
+1. Writing the files to disk
+2. Running the file verification commands
+3. Confirming files exist
+
+**If you stop before verifying files exist on disk, the workflow WILL FAIL.** The automated workflow checks for these files after you complete, and missing files cause the entire job to fail.
+
+Always end by running the verification commands in Phase 5.2 and confirming success.
+
+---
 
 Begin now by parsing the issue content and navigating to the council website.
