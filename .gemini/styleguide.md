@@ -1777,9 +1777,7 @@ internal sealed class MyVendorCouncil : ITouchVisionCollectorBase, ICollector
 ```c#
 namespace BinDays.Api.IntegrationTests.Collectors.Councils;
 
-using BinDays.Api.Collectors.Collectors;
 using BinDays.Api.Collectors.Collectors.Councils;
-using BinDays.Api.Collectors.Services;
 using BinDays.Api.IntegrationTests.Helpers;
 using System.Threading.Tasks;
 using Xunit;
@@ -1788,9 +1786,8 @@ using Xunit.Abstractions;
 public class MyNewCouncilTests
 {
 	private readonly IntegrationTestClient _client;
-	private static readonly ICollector _collector = new MyNewCouncil();
-	private readonly CollectorService _collectorService = new([_collector]);
 	private readonly ITestOutputHelper _outputHelper;
+	private static readonly string _govUkId = new MyNewCouncil().GovUkId;
 
 	public MyNewCouncilTests(ITestOutputHelper outputHelper)
 	{
@@ -1804,9 +1801,8 @@ public class MyNewCouncilTests
 	{
 		await TestSteps.EndToEnd(
 			_client,
-			_collectorService,
-			_collector,
 			postcode,
+			_govUkId,
 			_outputHelper
 		);
 	}

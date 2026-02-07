@@ -1,6 +1,5 @@
 namespace BinDays.Api.IntegrationTests.Helpers;
 
-using BinDays.Api.Collectors.Collectors;
 using BinDays.Api.Collectors.Models;
 using System.Text;
 using Xunit.Abstractions;
@@ -26,7 +25,7 @@ internal static class TestOutput
 	/// <param name="binDays">The list of bin days retrieved.</param>
 	public static void WriteTestSummary(
 		ITestOutputHelper outputHelper,
-		ICollector collector,
+		TestCollector collector,
 		IReadOnlyCollection<Address> addresses,
 		IReadOnlyCollection<BinDay> binDays)
 	{
@@ -59,7 +58,7 @@ internal static class TestOutput
 	/// </summary>
 	/// <param name="summaryBuilder">The StringBuilder to append to.</param>
 	/// <param name="collector">The collector instance.</param>
-	private static void AppendCollectorDetails(StringBuilder summaryBuilder, ICollector collector)
+	private static void AppendCollectorDetails(StringBuilder summaryBuilder, TestCollector collector)
 	{
 		const string collectorHeaderText = " Collector ";
 		summaryBuilder.AppendLine(CreateCenteredHeader(collectorHeaderText, _borderWidth, '-'));

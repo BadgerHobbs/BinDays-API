@@ -1,6 +1,5 @@
 namespace BinDays.Api.IntegrationTests.Helpers;
 
-using BinDays.Api.Collectors.Collectors;
 using BinDays.Api.Collectors.Models;
 using Xunit;
 
@@ -12,17 +11,15 @@ internal static class TestValidation
 	/// <summary>
 	/// Validates the result of a GetCollector operation.
 	/// </summary>
-	/// <param name="collector">The collector returned by the operation.</param>
-	/// <param name="expectedType">The expected concrete type of the collector.</param>
+	/// <param name="collector">The collector DTO returned by the operation.</param>
 	/// <param name="expectedGovUkId">The expected GOV.UK ID of the collector.</param>
 	public static void ValidateCollectorResult(
-		ICollector? collector,
-		Type expectedType,
+		TestCollector? collector,
 		string expectedGovUkId)
 	{
 		Assert.NotNull(collector);
-		Assert.IsType(expectedType, collector);
 		Assert.Equal(expectedGovUkId, collector.GovUkId);
+		Assert.False(string.IsNullOrWhiteSpace(collector.Name), "Collector name should not be empty.");
 	}
 
 	/// <summary>
