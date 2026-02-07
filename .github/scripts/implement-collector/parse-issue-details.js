@@ -15,6 +15,7 @@ module.exports = async ({ github, context, core }) => {
 
   // Use issue title as council name and convert to PascalCase
   const councilNamePascal = issueTitle
+    .replace(/&/g, 'And')
     .replace(/[^a-zA-Z0-9\s]/g, '')
     .split(/\s+/)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

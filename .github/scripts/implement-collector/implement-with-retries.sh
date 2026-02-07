@@ -7,10 +7,13 @@ set -e
 # If verification fails, resumes the previous Codex session to complete
 # any unfinished work.
 #
+# On success, writes the discovered COLLECTOR_NAME to $GITHUB_ENV so
+# subsequent workflow steps use the actual class name Codex created.
+#
 # Required environment variables:
 #   ISSUE_TITLE - Council name from issue title
 #   ISSUE_NUMBER - GitHub issue number
-#   COLLECTOR_NAME - Council name in PascalCase
+#   COLLECTOR_NAME - Council name in PascalCase (hint for Codex prompt)
 #
 # Optional environment variables:
 #   MAX_ATTEMPTS - Maximum number of attempts (default: 3)
@@ -19,10 +22,18 @@ set -e
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-3}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-COLLECTOR_FILE="BinDays.Api.Collectors/Collectors/Councils/${COLLECTOR_NAME}.cs"
-TEST_FILE="BinDays.Api.IntegrationTests/Collectors/Councils/${COLLECTOR_NAME}Tests.cs"
-
 RESUME_PROMPT="You stopped before completing all steps. This is a non-interactive CI/CD task with no user present. Please continue the implementation of ${COLLECTOR_NAME} until completion."
+
+# Try to verify and capture the discovered collector name.
+# Returns 0 on success (and exports COLLECTOR_NAME to GITHUB_ENV), 1 on failure.
+try_verify() {
+  local discovered
+  if discovered=$("$SCRIPT_DIR/verify-implementation.sh"); then
+    echo "COLLECTOR_NAME=$discovered" >> "$GITHUB_ENV"
+    return 0
+  fi
+  return 1
+}
 
 # First attempt - run fresh
 echo "=========================================="
@@ -31,7 +42,7 @@ echo "=========================================="
 
 "$SCRIPT_DIR/implement-collector.sh"
 
-if "$SCRIPT_DIR/verify-implementation.sh"; then
+if try_verify; then
   echo "Implementation verified successfully"
   exit 0
 fi
@@ -44,7 +55,7 @@ for attempt in $(seq 2 "$MAX_ATTEMPTS"); do
 
   codex exec resume --last --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "$RESUME_PROMPT"
 
-  if "$SCRIPT_DIR/verify-implementation.sh"; then
+  if try_verify; then
     echo "Implementation verified successfully after resume"
     exit 0
   fi

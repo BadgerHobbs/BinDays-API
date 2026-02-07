@@ -137,8 +137,6 @@ jobs:
         run: ./.github/scripts/implement-collector/implement-with-retries.sh
 
       - name: Run final integration tests
-        env:
-          COLLECTOR_NAME: ${{ needs.check_trigger.outputs.council_name_pascal }}
         run: ./.github/scripts/implement-collector/run-collector-tests.sh
 
       - name: Upload artifacts
@@ -157,7 +155,6 @@ jobs:
       - name: Create branch and commit
         id: commit
         env:
-          COLLECTOR_NAME: ${{ needs.check_trigger.outputs.council_name_pascal }}
           ISSUE_NUMBER: ${{ needs.check_trigger.outputs.issue_number }}
         run: ./.github/scripts/implement-collector/create-branch-and-commit.sh
 
@@ -172,7 +169,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           COUNCIL_NAME: ${{ needs.check_trigger.outputs.council_name }}
-          COUNCIL_NAME_PASCAL: ${{ needs.check_trigger.outputs.council_name_pascal }}
+          COUNCIL_NAME_PASCAL: ${{ env.COLLECTOR_NAME }}
           BRANCH_NAME: ${{ steps.commit.outputs.branch_name }}
           ISSUE_NUMBER: ${{ needs.check_trigger.outputs.issue_number }}
         with:
