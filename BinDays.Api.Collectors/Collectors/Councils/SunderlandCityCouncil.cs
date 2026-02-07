@@ -117,8 +117,6 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
 				{ "__EVENTVALIDATION", eventValidation },
 				{ "ctl00$ContentPlaceHolder1$tbPostCode$controltext", postcode },
-				{ "ctl00$ContentPlaceHolder1$tbPostCode$_Mandatory", "true" },
-				{ "ctl00$ContentPlaceHolder1$tbPostCode$_Label", "First line of address or postcode (eg 1 High Street or SR2 9XY)" },
 				{ "ctl00$ContentPlaceHolder1$btnLLPG", "Find Address" },
 			});
 
@@ -220,8 +218,6 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
 				{ "__EVENTVALIDATION", eventValidation },
 				{ "ctl00$ContentPlaceHolder1$tbPostCode$controltext", address.Postcode! },
-				{ "ctl00$ContentPlaceHolder1$tbPostCode$_Mandatory", "true" },
-				{ "ctl00$ContentPlaceHolder1$tbPostCode$_Label", "First line of address or postcode (eg 1 High Street or SR2 9XY)" },
 				{ "ctl00$ContentPlaceHolder1$btnLLPG", "Find Address" },
 			});
 
@@ -264,8 +260,6 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
 				{ "__EVENTVALIDATION", eventValidation },
 				{ "ctl00$ContentPlaceHolder1$tbPostCode$controltext", address.Postcode! },
-				{ "ctl00$ContentPlaceHolder1$tbPostCode$_Mandatory", "true" },
-				{ "ctl00$ContentPlaceHolder1$tbPostCode$_Label", "First line of address or postcode (eg 1 High Street or SR2 9XY)" },
 				{ "ctl00$ContentPlaceHolder1$ddlAddresses", address.Uid! },
 			});
 
