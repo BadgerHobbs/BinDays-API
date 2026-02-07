@@ -337,7 +337,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	/// <summary>
 	/// Creates the initial client-side request to load the form.
 	/// </summary>
-	private ClientSideRequest CreateInitialFormRequest()
+	private static ClientSideRequest CreateInitialFormRequest()
 	{
 		return new ClientSideRequest
 		{
@@ -354,7 +354,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	/// <summary>
 	/// Creates a client-side request for postcode search.
 	/// </summary>
-	private ClientSideRequest CreatePostcodeSearchRequest(ClientSideResponse clientSideResponse, string postcode)
+	private static ClientSideRequest CreatePostcodeSearchRequest(ClientSideResponse clientSideResponse, string postcode)
 	{
 		clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
 		var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
