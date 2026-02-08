@@ -151,13 +151,14 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 				var addressData = property.Value;
 				var display = addressData.GetProperty("display").GetString()!;
 				var uprn = addressData.GetProperty("overview_uprn").GetString()!;
+				var ward = addressData.GetProperty("overview_ward").GetString()!;
 				var addressPostcode = addressData.GetProperty("overview_postcode").GetString()!;
 
 				var address = new Address
 				{
 					Property = display.Trim(),
 					Postcode = addressPostcode.Trim(),
-					Uid = uprn,
+					Uid = $"{uprn};{ward}",
 				};
 
 				addresses.Add(address);
@@ -177,6 +178,11 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
+		// Uid format: "uprn;ward"
+		var parts = address.Uid!.Split(';', 2);
+		var uprn = parts[0];
+		var ward = parts[1];
+
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
@@ -189,53 +195,6 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 				{
 					{ "user-agent", Constants.UserAgent },
 				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "uprn", address.Uid! },
-					},
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for address lookup before bin days
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var sid = SessionIdRegex().Match(clientSideResponse.Content).Groups[1].Value;
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]
-			);
-
-			var requestBody = BuildAddressLookupPayload(address.Postcode!);
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"{_apibrokerBaseUrl}?api=RunLookup&id={_addressLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sid}",
-				Method = "POST",
-				Headers = new()
-				{
-					{ "content-type", "application/json" },
-					{ "cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
-				},
-				Body = requestBody,
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "cookie", requestCookies },
-						{ "sid", sid },
-						{ "uprn", address.Uid! },
-					},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -246,30 +205,18 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 			return getBinDaysResponse;
 		}
 		// Prepare client-side request for bin collections lookup
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 1)
 		{
-			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-			var rowsData = jsonDoc.RootElement
-				.GetProperty("integration")
-				.GetProperty("transformed")
-				.GetProperty("rows_data");
+			var sid = SessionIdRegex().Match(clientSideResponse.Content).Groups[1].Value;
+			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
+				clientSideResponse.Headers["set-cookie"]
+			);
 
-			var uprn = clientSideResponse.Options.Metadata["uprn"];
-			var matchedAddress = rowsData.EnumerateObject()
-				.Select(p => p.Value)
-				.FirstOrDefault(v => v.GetProperty("overview_uprn").GetString()! == uprn);
-
-			var sid = clientSideResponse.Options.Metadata["sid"];
-			var requestCookies = clientSideResponse.Options.Metadata["cookie"];
-
-			var addressDisplay = matchedAddress.GetProperty("display").GetString()!;
-			var ward = matchedAddress.GetProperty("overview_ward").GetString()!;
-
-			var requestBody = BuildMainFormPayload(address.Postcode!, uprn, addressDisplay, ward);
+			var requestBody = BuildMainFormPayload(address.Postcode!, uprn, address.Property!, ward);
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 3,
+				RequestId = 2,
 				Url = $"{_apibrokerBaseUrl}runLookup?id=5e42e28b44d9e&repeat_against=&noRetry=true&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sid}",
 				Method = "POST",
 				Headers = new()
@@ -285,9 +232,6 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 					{
 						{ "cookie", requestCookies },
 						{ "sid", sid },
-						{ "uprn", uprn },
-						{ "address", addressDisplay },
-						{ "ward", ward },
 					},
 				},
 			};
@@ -300,19 +244,16 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 2)
 		{
 			var sid = clientSideResponse.Options.Metadata["sid"];
 			var requestCookies = clientSideResponse.Options.Metadata["cookie"];
-			var uprn = clientSideResponse.Options.Metadata["uprn"];
-			var addressDisplay = clientSideResponse.Options.Metadata["address"];
-			var ward = clientSideResponse.Options.Metadata["ward"];
 
-			var requestBody = BuildMainFormPayload(address.Postcode!, uprn, addressDisplay, ward);
+			var requestBody = BuildMainFormPayload(address.Postcode!, uprn, address.Property!, ward);
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 4,
+				RequestId = 3,
 				Url = $"{_apibrokerBaseUrl}runLookup?id=5e208cda0d0a0&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&sid={sid}",
 				Method = "POST",
 				Headers = new()
@@ -332,7 +273,7 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 			return getBinDaysResponse;
 		}
 		// Process bin day results
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 3)
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var rowsData = jsonDoc.RootElement
