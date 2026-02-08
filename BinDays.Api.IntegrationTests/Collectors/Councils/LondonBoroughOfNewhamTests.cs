@@ -29,4 +29,17 @@ public class LondonBoroughOfNewhamTests
 			_outputHelper
 		);
 	}
+
+	[Theory]
+	[InlineData("E15 1LG")]
+	public async Task GetBinDaysTest_FlatWithFoodWasteOnly(string postcode)
+	{
+		await TestSteps.EndToEnd(
+			_client,
+			postcode,
+			_govUkId,
+			_outputHelper,
+			addressIndex: 1
+		);
+	}
 }
