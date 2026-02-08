@@ -19,7 +19,7 @@ public class LondonBoroughOfNewhamTests
 	}
 
 	[Theory]
-	[InlineData("E15 1LH")]
+	[InlineData("E15 1LH", 5)]
 	[InlineData("E15 1LG", 1)]
 	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{

@@ -149,8 +149,7 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
 			// Iterate through each address, and create a new address object
-			var numericAddresses = new List<Address>();
-			var otherAddresses = new List<Address>();
+			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
 				var line1 = rawAddress.Groups["line1"].Value.Trim();
@@ -164,21 +163,12 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 					Uid = rawAddress.Groups["uid"].Value,
 				};
 
-				var hasLeadingDigit = !string.IsNullOrWhiteSpace(line1) && char.IsDigit(line1[0]);
-
-				if (hasLeadingDigit)
-				{
-					numericAddresses.Add(address);
-				}
-				else
-				{
-					otherAddresses.Add(address);
-				}
+				addresses.Add(address);
 			}
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				Addresses = [.. numericAddresses, .. otherAddresses],
+				Addresses = [.. addresses],
 			};
 
 			return getAddressesResponse;
