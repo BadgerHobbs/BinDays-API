@@ -8,25 +8,25 @@ using Xunit.Abstractions;
 
 public class WakefieldMetropolitanDistrictCouncilTests
 {
-    private readonly IntegrationTestClient _client;
-    private readonly ITestOutputHelper _outputHelper;
-    private static readonly string _govUkId = new WakefieldMetropolitanDistrictCouncil().GovUkId;
+	private readonly IntegrationTestClient _client;
+	private readonly ITestOutputHelper _outputHelper;
+	private static readonly string _govUkId = new WakefieldMetropolitanDistrictCouncil().GovUkId;
 
-    public WakefieldMetropolitanDistrictCouncilTests(ITestOutputHelper outputHelper)
-    {
-        _outputHelper = outputHelper;
-        _client = new IntegrationTestClient(outputHelper);
-    }
+	public WakefieldMetropolitanDistrictCouncilTests(ITestOutputHelper outputHelper)
+	{
+		_outputHelper = outputHelper;
+		_client = new IntegrationTestClient(outputHelper);
+	}
 
-    [Theory]
-    [InlineData("WF1 5AX")]
-    public async Task GetBinDaysTest(string postcode)
-    {
-        await TestSteps.EndToEnd(
-            _client,
-            postcode,
-            _govUkId,
-            _outputHelper
-        );
-    }
+	[Theory]
+	[InlineData("WF1 5AX")]
+	public async Task GetBinDaysTest(string postcode)
+	{
+		await TestSteps.EndToEnd(
+			_client,
+			postcode,
+			_govUkId,
+			_outputHelper
+		);
+	}
 }
