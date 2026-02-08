@@ -29,8 +29,14 @@ internal sealed partial class CherwellDistrictCouncil : GovUkCollectorBase, ICol
 	[
 		new()
 		{
-			Name = "Food and Garden Waste",
+			Name = "Garden waste",
 			Colour = BinColour.Brown,
+			Keys = [ "Brown Bin" ],
+		},
+		new()
+		{
+			Name = "Food waste",
+			Colour = BinColour.Grey,
 			Keys = [ "Brown Bin" ],
 		},
 		new()
@@ -41,7 +47,7 @@ internal sealed partial class CherwellDistrictCouncil : GovUkCollectorBase, ICol
 		},
 		new()
 		{
-			Name = "General Waste",
+			Name = "Rubbish",
 			Colour = BinColour.Green,
 			Keys = [ "Green Bin" ],
 		},
