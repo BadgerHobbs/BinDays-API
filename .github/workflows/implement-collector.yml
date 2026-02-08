@@ -177,16 +177,18 @@ jobs:
         run: |
           set +e
 
-          SCREENSHOT_FILE=".agent/playwright/out/${COLLECTOR_NAME}-screenshot.png"
+          # Find screenshot file using glob pattern (name may include suffix like "DistrictCouncil")
+          SCREENSHOT_FILE=$(find .agent/playwright/out -name "*-screenshot.png" -type f | head -n 1)
 
-          if [ ! -f "$SCREENSHOT_FILE" ]; then
-            echo "⚠️ Screenshot not found at $SCREENSHOT_FILE"
+          if [ -z "$SCREENSHOT_FILE" ] || [ ! -f "$SCREENSHOT_FILE" ]; then
+            echo "⚠️ Screenshot not found in .agent/playwright/out/"
             echo "screenshot_url=" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          echo "📤 Uploading screenshot to R2..."
-          R2_KEY="screenshots/${ISSUE_NUMBER}/${COLLECTOR_NAME}-screenshot.png"
+          echo "📤 Uploading screenshot: $SCREENSHOT_FILE"
+          SCREENSHOT_BASENAME=$(basename "$SCREENSHOT_FILE")
+          R2_KEY="screenshots/${ISSUE_NUMBER}/${SCREENSHOT_BASENAME}"
           BUCKET="${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}"
 
           if aws s3 cp "$SCREENSHOT_FILE" "s3://${BUCKET}/${R2_KEY}" \
