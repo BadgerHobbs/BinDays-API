@@ -20,26 +20,15 @@ public class LondonBoroughOfNewhamTests
 
 	[Theory]
 	[InlineData("E15 1LH")]
-	public async Task GetBinDaysTest(string postcode)
-	{
-		await TestSteps.EndToEnd(
-			_client,
-			postcode,
-			_govUkId,
-			_outputHelper
-		);
-	}
-
-	[Theory]
-	[InlineData("E15 1LG")]
-	public async Task GetBinDaysTest_FlatWithFoodWasteOnly(string postcode)
+	[InlineData("E15 1LG", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex: 1
+			addressIndex
 		);
 	}
 }
