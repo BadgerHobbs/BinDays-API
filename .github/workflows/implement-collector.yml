@@ -112,6 +112,18 @@ jobs:
       - name: Create output directory
         run: mkdir -p .agent/playwright/out
 
+      - name: Install AWS CLI
+        run: |
+          if ! command -v aws &> /dev/null; then
+            echo "Installing AWS CLI..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -q awscliv2.zip
+            sudo ./aws/install
+            rm -rf aws awscliv2.zip
+          else
+            echo "AWS CLI already installed: $(aws --version)"
+          fi
+
       - name: Write issue body to file
         run: |
           cat << 'ISSUE_EOF' > .agent/playwright/out/issue_body.txt
@@ -152,6 +164,51 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      - name: Upload screenshots to Cloudflare R2
+        id: upload_screenshot
+        if: always()
+        continue-on-error: true
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: ${{ secrets.CLOUDFLARE_R2_ENDPOINT }}
+          COLLECTOR_NAME: ${{ needs.check_trigger.outputs.council_name_pascal }}
+          ISSUE_NUMBER: ${{ needs.check_trigger.outputs.issue_number }}
+        run: |
+          set +e
+
+          SCREENSHOT_FILE=".agent/playwright/out/${COLLECTOR_NAME}-screenshot.png"
+
+          if [ ! -f "$SCREENSHOT_FILE" ]; then
+            echo "⚠️ Screenshot not found at $SCREENSHOT_FILE"
+            echo "screenshot_url=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "📤 Uploading screenshot to R2..."
+          R2_KEY="screenshots/${ISSUE_NUMBER}/${COLLECTOR_NAME}-screenshot.png"
+          BUCKET="${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}"
+
+          if aws s3 cp "$SCREENSHOT_FILE" "s3://${BUCKET}/${R2_KEY}" \
+              --endpoint-url "${AWS_ENDPOINT_URL}" \
+              --acl public-read \
+              --content-type image/png; then
+
+            if [ -n "${{ secrets.CLOUDFLARE_R2_CUSTOM_DOMAIN }}" ]; then
+              SCREENSHOT_URL="${{ secrets.CLOUDFLARE_R2_CUSTOM_DOMAIN }}/${R2_KEY}"
+            else
+              ACCOUNT_ID="${{ secrets.CLOUDFLARE_R2_ACCOUNT_ID }}"
+              SCREENSHOT_URL="https://${BUCKET}.${ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_KEY}"
+            fi
+
+            echo "✅ Screenshot uploaded successfully!"
+            echo "🔗 Public URL: $SCREENSHOT_URL"
+            echo "screenshot_url=$SCREENSHOT_URL" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Failed to upload screenshot to R2"
+            echo "screenshot_url=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create branch and commit
         id: commit
         env:
@@ -172,6 +229,7 @@ jobs:
           COUNCIL_NAME_PASCAL: ${{ env.COLLECTOR_NAME }}
           BRANCH_NAME: ${{ steps.commit.outputs.branch_name }}
           ISSUE_NUMBER: ${{ needs.check_trigger.outputs.issue_number }}
+          SCREENSHOT_URL: ${{ steps.upload_screenshot.outputs.screenshot_url }}
         with:
           github-token: ${{ steps.refresh-token.outputs.token }}
           script: |

@@ -7,6 +7,7 @@
  *   BRANCH_NAME - Git branch name
  *   ISSUE_NUMBER - GitHub issue number
  *   TEST_SUMMARY - Test execution summary
+ *   SCREENSHOT_URL - (Optional) Public URL of the screenshot in R2
  *
  * @param {Object} github - GitHub API client
  * @param {Object} context - GitHub Actions context
@@ -18,14 +19,9 @@ module.exports = async ({ github, context, core }) => {
   const branchName = process.env.BRANCH_NAME;
   const issueNumber = parseInt(process.env.ISSUE_NUMBER);
   const testSummary = process.env.TEST_SUMMARY;
+  const screenshotUrl = process.env.SCREENSHOT_URL;
 
-  const { data: pr } = await github.rest.pulls.create({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    title: `Add collector for ${councilName}`,
-    head: branchName,
-    base: 'main',
-    body: `## Summary
+  let prBody = `## Summary
 
 This PR adds a new bin collection data collector for **${councilName}**.
 
@@ -39,11 +35,30 @@ Closes #${issueNumber}
 
 \`\`\`text
 ${testSummary}
-\`\`\`
+\`\`\``;
+
+  // Add screenshot section if URL is available
+  if (screenshotUrl && screenshotUrl.trim() !== '') {
+    prBody += `
+
+## Bin Collections Page Screenshot
+
+![${councilNamePascal} Bin Collections](${screenshotUrl})`;
+  }
+
+  prBody += `
 
 ---
 
-Generated automatically by **Moley-Bot** using Codex CLI`
+Generated automatically by **Moley-Bot** using Codex CLI`;
+
+  const { data: pr } = await github.rest.pulls.create({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    title: `Add collector for ${councilName}`,
+    head: branchName,
+    base: 'main',
+    body: prBody,
   });
 
   core.info(`Created PR #${pr.number}: ${pr.html_url}`);
