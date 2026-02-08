@@ -1307,6 +1307,49 @@ Addresses = addresses.OrderBy(address => address.Property).ToList(),
 Addresses = [.. addresses],
 ```
 
+### ✅ DO: Concatenate multiple data parts into UID when needed
+
+**Reason**: When `GetBinDays` requires multiple pieces of data (UPRN, property name, coordinates, etc.), concatenate them into the `Uid` field using a semicolon separator. This allows you to pass all necessary data forward without re-fetching addresses in both `GetAddresses` and `GetBinDays`.
+
+**This pattern is far preferable to re-fetching the same address data in both methods.**
+
+**Pattern:**
+
+1. In `GetAddresses`: Concatenate all required data into the UID
+2. In `GetBinDays`: Split the UID to extract the individual parts
+
+**Example (WakefieldCouncil):**
+
+```c#
+// In GetAddresses - concatenate uprn and property
+var address = new Address
+{
+    Property = property,
+    Postcode = postcode,
+    Uid = $"{uprn};{property}",  // Store multiple values
+};
+```
+
+```c#
+// In GetBinDays - split and use the parts
+// Uid format: "uprn;property"
+var parts = address.Uid!.Split(';', 2);
+var uprn = parts[0];
+var property = parts[1];
+
+var clientSideRequest = new ClientSideRequest
+{
+    Url = $"https://example.com/bins?uprn={uprn}&a={Uri.EscapeDataString(property)}",
+    // ...
+};
+```
+
+**Important notes:**
+- Use semicolon (`;`) as the separator to avoid conflicts with common address characters (commas, spaces)
+- Use `Split(';', 2)` when you only need to split into a specific number of parts
+- Always use the null-forgiving operator when splitting: `address.Uid!.Split(';')`
+- Document the UID format with a comment in both methods for clarity
+
 ---
 
 ## GetBinDays Patterns
@@ -1897,6 +1940,9 @@ Before submitting a PR, check:
 - [ ] Don't split addresses into Street/Town unless API requires it
 - [ ] Don't sort addresses - return in order received
 - [ ] Trim all related values consistently
+- [ ] Concatenate multiple data parts into UID using semicolon (`;`) separator when GetBinDays needs multiple values
+- [ ] Split UID with `address.Uid!.Split(';')` in GetBinDays to extract the parts
+- [ ] Document UID format with comments when using concatenation
 
 ---
 
