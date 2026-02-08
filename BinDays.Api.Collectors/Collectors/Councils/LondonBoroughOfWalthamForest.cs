@@ -65,19 +65,9 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 	private const string _apibrokerBaseUrl = "https://portal.walthamforest.gov.uk/apibroker/";
 
 	/// <summary>
-	/// The stage ID for the form workflow.
-	/// </summary>
-	private const string _stageId = "AF-Stage-8bf39bf9-5391-4c24-857f-0dc2025c67f4";
-
-	/// <summary>
 	/// The form ID for address lookup.
 	/// </summary>
 	private const string _addressFormId = "AF-Form-08647570-43e4-4e68-9d6a-65d914e27ef7";
-
-	/// <summary>
-	/// The form ID for the main bin collection form.
-	/// </summary>
-	private const string _mainFormId = "AF-Form-07a98da7-bc6b-4df6-aa46-33a06312acce";
 
 	/// <summary>
 	/// The lookup ID for address search.
@@ -96,8 +86,6 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			_ = ProcessingUtilities.FormatPostcode(postcode);
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
@@ -123,9 +111,8 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 				clientSideResponse.Headers["set-cookie"]
 			);
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
 
-			var requestBody = BuildAddressLookupPayload(formattedPostcode);
+			var requestBody = BuildAddressLookupPayload(postcode);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -225,9 +212,8 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
 				clientSideResponse.Headers["set-cookie"]
 			);
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(address.Postcode!);
 
-			var requestBody = BuildAddressLookupPayload(formattedPostcode);
+			var requestBody = BuildAddressLookupPayload(address.Postcode!);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -278,9 +264,8 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 
 			var addressDisplay = matchedAddress.GetProperty("display").GetString()!;
 			var ward = matchedAddress.GetProperty("overview_ward").GetString()!;
-			var formattedPostcode = matchedAddress.GetProperty("overview_postcode").GetString()!;
 
-			var requestBody = BuildMainFormPayload(formattedPostcode, uprn, addressDisplay, ward);
+			var requestBody = BuildMainFormPayload(address.Postcode!, uprn, addressDisplay, ward);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -303,7 +288,6 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 						{ "uprn", uprn },
 						{ "address", addressDisplay },
 						{ "ward", ward },
-						{ "postcode", formattedPostcode },
 					},
 				},
 			};
@@ -323,9 +307,8 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 			var uprn = clientSideResponse.Options.Metadata["uprn"];
 			var addressDisplay = clientSideResponse.Options.Metadata["address"];
 			var ward = clientSideResponse.Options.Metadata["ward"];
-			var formattedPostcode = clientSideResponse.Options.Metadata["postcode"];
 
-			var requestBody = BuildMainFormPayload(formattedPostcode, uprn, addressDisplay, ward);
+			var requestBody = BuildMainFormPayload(address.Postcode!, uprn, addressDisplay, ward);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -430,7 +413,7 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 	{
 		return $$"""
 		{
-			"formId": "{{_mainFormId}}",
+			"formId": "AF-Form-07a98da7-bc6b-4df6-aa46-33a06312acce",
 			"formValues": {
 				"Section 1": {
 					"calcWardCode": {
