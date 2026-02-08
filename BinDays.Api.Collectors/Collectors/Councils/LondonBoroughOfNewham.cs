@@ -50,6 +50,9 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 		},
 	];
 
+	/// <summary>
+	/// The base URL for the bin collection service.
+	/// </summary>
 	private const string _baseUrl = "https://bincollection.newham.gov.uk/";
 
 	/// <summary>
@@ -103,8 +106,8 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 		// Prepare client-side request for searching addresses
 		else if (clientSideResponse.RequestId == 1)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 			var asSfid = AsSfidRegex().Match(clientSideResponse.Content).Groups["token"].Value;
 			var asFid = AsFidRegex().Match(clientSideResponse.Content).Groups["token"].Value;
@@ -152,14 +155,11 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 			{
 				var line1 = rawAddress.Groups["line1"].Value.Trim();
 				var line2 = rawAddress.Groups["line2"].Value.Trim();
-				var property = string.Join(
-					", ",
-					new[] { line1, line2 }.Where(value => !string.IsNullOrWhiteSpace(value))
-				);
 
 				var address = new Address
 				{
-					Property = property,
+					Property = line1,
+					Street = line2,
 					Postcode = postcode,
 					Uid = rawAddress.Groups["uid"].Value,
 				};
@@ -221,44 +221,36 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 			foreach (Match rawBinDay in rawBinDays)
 			{
 				var service = rawBinDay.Groups["service"].Value.Trim();
-				var nextDateText = rawBinDay.Groups["nextDate"].Value.Trim();
-				var previousDateText = rawBinDay.Groups["previousDate"].Value.Trim();
-
 				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
-				var nextDate = DateOnly.ParseExact(
-					nextDateText,
-					"dd/MM/yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
-
-				var nextBinDay = new BinDay
+				var dateTexts = new[]
 				{
-					Address = address,
-					Date = nextDate,
-					Bins = bins,
+					rawBinDay.Groups["nextDate"].Value.Trim(),
+					rawBinDay.Groups["previousDate"].Value.Trim(),
 				};
 
-				binDays.Add(nextBinDay);
-
-				if (!string.IsNullOrWhiteSpace(previousDateText))
+				foreach (var dateText in dateTexts)
 				{
-					var previousDate = DateOnly.ParseExact(
-						previousDateText,
+					if (string.IsNullOrWhiteSpace(dateText))
+					{
+						continue;
+					}
+
+					var date = DateOnly.ParseExact(
+						dateText,
 						"dd/MM/yyyy",
 						CultureInfo.InvariantCulture,
 						DateTimeStyles.None
 					);
 
-					var previousBinDay = new BinDay
+					var binDay = new BinDay
 					{
 						Address = address,
-						Date = previousDate,
+						Date = date,
 						Bins = bins,
 					};
 
-					binDays.Add(previousBinDay);
+					binDays.Add(binDay);
 				}
 			}
 
