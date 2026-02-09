@@ -46,7 +46,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		new()
 		{
 			Name = "Food waste",
-			Colour = BinColour.Brown,
+			Colour = BinColour.Grey,
 			Keys = [ "Food", ],
 		},
 	];
@@ -97,8 +97,33 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 			var auraContext = BuildAuraContext(fwuid, appId);
 
 			var lookupMessage = $$$$$$"""
-{"actions":[{"id":"lookup","descriptor":"aura://LookupController/ACTION$lookup","callingDescriptor":"UNKNOWN","params":{"objectApiName":"Case","fieldApiName":"Property__c","pageParam":1,"pageSize":50,"q":"{{{{{{postcode}}}}}}","searchType":"TypeAhead","targetApiName":"Property__c","body":{"sourceRecord":{"apiName":"Case","fields":{"Id":null}}}}}]}
-""";
+				{
+					"actions": [
+						{
+							"id": "lookup",
+							"descriptor": "aura://LookupController/ACTION$lookup",
+							"callingDescriptor": "UNKNOWN",
+							"params": {
+								"objectApiName": "Case",
+								"fieldApiName": "Property__c",
+								"pageParam": 1,
+								"pageSize": 50,
+								"q": "{{{{{{postcode}}}}}}",
+								"searchType": "TypeAhead",
+								"targetApiName": "Property__c",
+								"body": {
+									"sourceRecord": {
+										"apiName": "Case",
+										"fields": {
+											"Id": null
+										}
+									}
+								}
+							}
+						}
+					]
+				}
+				""";
 
 			var messageBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -133,7 +158,11 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		{
 			using var document = JsonDocument.Parse(clientSideResponse.Content);
 			var actions = document.RootElement.GetProperty("actions");
-			var lookupResults = actions[0].GetProperty("returnValue").GetProperty("lookupResults").GetProperty("Property__c").GetProperty("records");
+			var lookupResults = actions[0]
+				.GetProperty("returnValue")
+				.GetProperty("lookupResults")
+				.GetProperty("Property__c")
+				.GetProperty("records");
 
 			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
@@ -480,6 +509,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		var clientSideRequest = new ClientSideRequest
 		{
 			RequestId = requestId,
+			// The 'r' parameter is offset by 8 to match the Salesforce Aura framework's expected request sequence numbering
 			Url = $"https://community.westoxon.gov.uk/s/sfsites/aura?r={requestId + 8}&aura.FlowRuntimeConnect.navigateFlow=1",
 			Method = "POST",
 			Headers = new()
