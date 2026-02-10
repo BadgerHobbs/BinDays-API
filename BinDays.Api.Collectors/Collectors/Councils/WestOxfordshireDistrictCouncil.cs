@@ -333,8 +333,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		int requestId,
 		string action,
 		ClientSideResponse clientSideResponse,
-		Address address
-	)
+		Address address)
 	{
 		var serializedState = GetSerializedState(clientSideResponse.Content);
 
@@ -391,8 +390,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		string fwuid,
 		string appId,
 		string cookie,
-		Address address
-	)
+		Address address)
 	{
 		var fieldsJson = action == "NEXT"
 			? $$"""
