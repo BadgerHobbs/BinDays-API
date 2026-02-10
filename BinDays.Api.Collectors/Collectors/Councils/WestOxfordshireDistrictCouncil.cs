@@ -85,7 +85,6 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 				{
 					"actions": [
 						{
-							"id": "lookup",
 							"descriptor": "aura://LookupController/ACTION$lookup",
 							"params": {
 								"objectApiName": "Case",
@@ -93,7 +92,6 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 								"pageSize": 50,
 								"q": "{{postcode}}",
 								"searchType": "TypeAhead",
-								"targetApiName": "Property__c",
 								"body": {
 									"sourceRecord": {
 										"apiName": "Case",
@@ -191,7 +189,6 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 				{
 					"actions": [
 						{
-							"id": "start",
 							"descriptor": "aura://FlowRuntimeConnectController/ACTION$startFlow",
 							"params": {
 								"flowDevName": "WebFormAlloyWasteCollectionEnquiry",
@@ -249,7 +246,10 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		else if (clientSideResponse.RequestId == 5)
 		{
 			using var document = JsonDocument.Parse(clientSideResponse.Content);
-			var fields = document.RootElement.GetProperty("actions")[0].GetProperty("returnValue").GetProperty("response").GetProperty("fields");
+			var fields = document.RootElement.GetProperty("actions")[0]
+				.GetProperty("returnValue")
+				.GetProperty("response")
+				.GetProperty("fields");
 
 			string? dataJson = null;
 			// Iterate through each field to find the bin data JSON
@@ -408,7 +408,6 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 				{
 					"actions": [
 						{
-							"id": "navigate",
 							"descriptor": "aura://FlowRuntimeConnectController/ACTION$navigateFlow",
 							"params": {
 								"request": {
