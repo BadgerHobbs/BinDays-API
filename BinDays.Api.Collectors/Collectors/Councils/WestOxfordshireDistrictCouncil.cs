@@ -68,16 +68,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	{
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = "https://community.westoxon.gov.uk/s/waste-collection-enquiry",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-			};
+			var clientSideRequest = CreateInitialRequest();
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -88,15 +79,10 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		}
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
-
-			var fwuid = FwuidRegex().Match(clientSideResponse.Content).Groups["fwuid"].Value;
-			var appId = AppIdRegex().Match(clientSideResponse.Content).Groups["appId"].Value;
-
+			var (requestCookies, fwuid, appId) = ExtractSessionTokens(clientSideResponse);
 			var auraContext = BuildAuraContext(fwuid, appId);
 
-			var lookupMessage = $$$$$$"""
+			var lookupMessage = $$"""
 				{
 					"actions": [
 						{
@@ -108,7 +94,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 								"fieldApiName": "Property__c",
 								"pageParam": 1,
 								"pageSize": 50,
-								"q": "{{{{{{postcode}}}}}}",
+								"q": "{{postcode}}",
 								"searchType": "TypeAhead",
 								"targetApiName": "Property__c",
 								"body": {
@@ -197,16 +183,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	{
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = "https://community.westoxon.gov.uk/s/waste-collection-enquiry",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-			};
+			var clientSideRequest = CreateInitialRequest();
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
@@ -217,16 +194,24 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		}
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
-
-			var fwuid = FwuidRegex().Match(clientSideResponse.Content).Groups["fwuid"].Value;
-			var appId = AppIdRegex().Match(clientSideResponse.Content).Groups["appId"].Value;
+			var (requestCookies, fwuid, appId) = ExtractSessionTokens(clientSideResponse);
 			var auraContext = BuildAuraContext(fwuid, appId);
 
 			var startFlowMessage = """
-{"actions":[{"id":"start","descriptor":"aura://FlowRuntimeConnectController/ACTION$startFlow","callingDescriptor":"UNKNOWN","params":{"flowDevName":"WebFormAlloyWasteCollectionEnquiry","arguments":"[{\"name\":\"vClientCode\",\"type\":\"String\",\"supportsRecordId\":false,\"value\":\"WOD\"}]","enableTrace":false,"enableRollbackMode":false,"debugAsUserId":"","useLatestSubflow":false,"isBuilderDebug":false}}]}
-""";
+				{
+					"actions": [
+						{
+							"id": "start",
+							"descriptor": "aura://FlowRuntimeConnectController/ACTION$startFlow",
+							"callingDescriptor": "UNKNOWN",
+							"params": {
+								"flowDevName": "WebFormAlloyWasteCollectionEnquiry",
+								"arguments": "[{\"name\":\"vClientCode\",\"type\":\"String\",\"supportsRecordId\":false,\"value\":\"WOD\"}]"
+							}
+						}
+					]
+				}
+				""";
 
 			var messageBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -385,6 +370,33 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	}
 
 	/// <summary>
+	/// Creates the initial client-side request for session initialization.
+	/// </summary>
+	private static ClientSideRequest CreateInitialRequest() =>
+		new()
+		{
+			RequestId = 1,
+			Url = "https://community.westoxon.gov.uk/s/waste-collection-enquiry",
+			Method = "GET",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+			},
+		};
+
+	/// <summary>
+	/// Extracts the session tokens from the initial page response.
+	/// </summary>
+	private static (string cookie, string fwuid, string appId) ExtractSessionTokens(ClientSideResponse clientSideResponse)
+	{
+		var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+		var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+		var fwuid = FwuidRegex().Match(clientSideResponse.Content).Groups["fwuid"].Value;
+		var appId = AppIdRegex().Match(clientSideResponse.Content).Groups["appId"].Value;
+		return (cookie, fwuid, appId);
+	}
+
+	/// <summary>
 	/// Extracts the serialized encoded state from a Salesforce Aura response.
 	/// </summary>
 	private static string GetSerializedState(string content)
@@ -400,24 +412,8 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	/// <summary>
 	/// Builds the aura context payload for Salesforce requests.
 	/// </summary>
-	private static string BuildAuraContext(string fwuid, string appId)
-	{
-		var context = new
-		{
-			mode = "PROD",
-			fwuid,
-			app = "siteforce:communityApp",
-			loaded = new Dictionary<string, string>
-			{
-				{ "APPLICATION@markup://siteforce:communityApp", appId },
-			},
-			dn = Array.Empty<string>(),
-			globals = new { },
-			uad = true,
-		};
-
-		return JsonSerializer.Serialize(context);
-	}
+	private static string BuildAuraContext(string fwuid, string appId) =>
+		$$"""{"mode":"PROD","fwuid":"{{fwuid}}","app":"siteforce:communityApp","loaded":{"APPLICATION@markup://siteforce:communityApp":"{{appId}}"},"dn":[],"globals":{},"uad":true}""";
 
 	/// <summary>
 	/// Creates a navigateFlow request with the provided action and state.
@@ -432,75 +428,35 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		Address address
 	)
 	{
-		var fields = action == "NEXT"
-			? new object[]
-			{
-				new
-				{
-					field = "FlowStages1.currentStage",
-					value = (string?)null,
-					isVisible = false,
-				},
-				new
-				{
-					field = "FlowStages1.stages",
-					value = (string?)null,
-					isVisible = false,
-				},
-				new
-				{
-					field = "Property.recordId",
-					value = address.Uid,
-					isVisible = true,
-				},
-				new
-				{
-					field = "Property.recordIds",
-					value = new[]
-					{
-						address.Uid,
-					},
-					isVisible = true,
-				},
-				new
-				{
-					field = "Property.recordName",
-					value = address.Property,
-					isVisible = true,
-				},
-			}
-			: [];
+		var fieldsJson = action == "NEXT"
+			? $$"""[{"field":"FlowStages1.currentStage","value":null,"isVisible":false},{"field":"FlowStages1.stages","value":null,"isVisible":false},{"field":"Property.recordId","value":"{{address.Uid}}","isVisible":true},{"field":"Property.recordIds","value":["{{address.Uid}}"],"isVisible":true},{"field":"Property.recordName","value":"{{address.Property}}","isVisible":true}]"""
+			: "[]";
 
 		var auraContext = BuildAuraContext(fwuid, appId);
 
-		var navigateMessage = new
-		{
-			actions = new[]
-			{
-				new
+		var navigateMessage = $$"""
 				{
-					id = "navigate",
-					descriptor = "aura://FlowRuntimeConnectController/ACTION$navigateFlow",
-					callingDescriptor = "UNKNOWN",
-					@params = new
-					{
-						request = new
-						{ action,
-							 serializedState,
-							fields,
-							uiElementVisited = true,
-							enableTrace = false,
-							lcErrors = new { },
-							isBuilderDebug = false,
-						},
-					},
-				},
-			},
-		};
+					"actions": [
+						{
+							"id": "navigate",
+							"descriptor": "aura://FlowRuntimeConnectController/ACTION$navigateFlow",
+							"callingDescriptor": "UNKNOWN",
+							"params": {
+								"request": {
+									"action": "{{action}}",
+									"serializedState": "{{serializedState}}",
+									"fields": {{fieldsJson}},
+									"uiElementVisited": true
+								}
+							}
+						}
+					]
+				}
+				""";
 
 		var messageBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 		{
-			{ "message", JsonSerializer.Serialize(navigateMessage) },
+			{ "message", navigateMessage },
 			{ "aura.context", auraContext },
 			{ "aura.pageURI", "/s/waste-collection-enquiry" },
 			{ "aura.token", "null" },
