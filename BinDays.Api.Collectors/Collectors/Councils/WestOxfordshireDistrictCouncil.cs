@@ -80,7 +80,6 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var (requestCookies, fwuid, appId) = ExtractSessionTokens(clientSideResponse);
-			var auraContext = BuildAuraContext(fwuid, appId);
 
 			var lookupMessage = $$"""
 				{
@@ -88,11 +87,9 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 						{
 							"id": "lookup",
 							"descriptor": "aura://LookupController/ACTION$lookup",
-							"callingDescriptor": "UNKNOWN",
 							"params": {
 								"objectApiName": "Case",
 								"fieldApiName": "Property__c",
-								"pageParam": 1,
 								"pageSize": 50,
 								"q": "{{postcode}}",
 								"searchType": "TypeAhead",
@@ -111,13 +108,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 				}
 				""";
 
-			var messageBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "message", lookupMessage },
-				{ "aura.context", auraContext },
-				{ "aura.pageURI", "/s/waste-collection-enquiry" },
-				{ "aura.token", "null" },
-			});
+			var messageBody = BuildAuraFormData(lookupMessage, fwuid, appId);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -195,7 +186,6 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var (requestCookies, fwuid, appId) = ExtractSessionTokens(clientSideResponse);
-			var auraContext = BuildAuraContext(fwuid, appId);
 
 			var startFlowMessage = """
 				{
@@ -203,23 +193,16 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 						{
 							"id": "start",
 							"descriptor": "aura://FlowRuntimeConnectController/ACTION$startFlow",
-							"callingDescriptor": "UNKNOWN",
 							"params": {
 								"flowDevName": "WebFormAlloyWasteCollectionEnquiry",
-								"arguments": "[{\"name\":\"vClientCode\",\"type\":\"String\",\"supportsRecordId\":false,\"value\":\"WOD\"}]"
+								"arguments": "[{\"name\":\"vClientCode\",\"type\":\"String\",\"value\":\"WOD\"}]"
 							}
 						}
 					]
 				}
 				""";
 
-			var messageBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "message", startFlowMessage },
-				{ "aura.context", auraContext },
-				{ "aura.pageURI", "/s/waste-collection-enquiry" },
-				{ "aura.token", "null" },
-			});
+			var messageBody = BuildAuraFormData(startFlowMessage, fwuid, appId);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -253,66 +236,15 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		}
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var serializedState = GetSerializedState(clientSideResponse.Content);
-
-			var clientSideRequest = CreateNavigateRequest(
-				3,
-				"NEXT",
-				serializedState,
-				clientSideResponse.Options.Metadata["fwuid"],
-				clientSideResponse.Options.Metadata["appId"],
-				clientSideResponse.Options.Metadata["cookie"],
-				address
-			);
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
+			return CreateNavigateResponse(3, "NEXT", clientSideResponse, address);
 		}
 		else if (clientSideResponse.RequestId == 3)
 		{
-			var serializedState = GetSerializedState(clientSideResponse.Content);
-
-			var clientSideRequest = CreateNavigateRequest(
-				4,
-				"CONTINUE_AFTER_COMMIT",
-				serializedState,
-				clientSideResponse.Options.Metadata["fwuid"],
-				clientSideResponse.Options.Metadata["appId"],
-				clientSideResponse.Options.Metadata["cookie"],
-				address
-			);
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
+			return CreateNavigateResponse(4, "CONTINUE_AFTER_COMMIT", clientSideResponse, address);
 		}
 		else if (clientSideResponse.RequestId == 4)
 		{
-			var serializedState = GetSerializedState(clientSideResponse.Content);
-
-			var clientSideRequest = CreateNavigateRequest(
-				5,
-				"CONTINUE_AFTER_COMMIT",
-				serializedState,
-				clientSideResponse.Options.Metadata["fwuid"],
-				clientSideResponse.Options.Metadata["appId"],
-				clientSideResponse.Options.Metadata["cookie"],
-				address
-			);
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
+			return CreateNavigateResponse(5, "CONTINUE_AFTER_COMMIT", clientSideResponse, address);
 		}
 		else if (clientSideResponse.RequestId == 5)
 		{
@@ -325,10 +257,8 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 			{
 				if (field.GetProperty("name").GetString() == "FlowShowTableFromJson1")
 				{
-					dataJson = field
-						.GetProperty("inputs")[3]
-						.GetProperty("value")
-						.GetString();
+					dataJson = field.GetProperty("inputs")[3].GetProperty("value").GetString();
+					break;
 				}
 			}
 
@@ -397,6 +327,36 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	}
 
 	/// <summary>
+	/// Extracts the serialized state from the response and creates a navigateFlow response.
+	/// </summary>
+	private static GetBinDaysResponse CreateNavigateResponse(
+		int requestId,
+		string action,
+		ClientSideResponse clientSideResponse,
+		Address address
+	)
+	{
+		var serializedState = GetSerializedState(clientSideResponse.Content);
+
+		var clientSideRequest = CreateNavigateRequest(
+			requestId,
+			action,
+			serializedState,
+			clientSideResponse.Options.Metadata["fwuid"],
+			clientSideResponse.Options.Metadata["appId"],
+			clientSideResponse.Options.Metadata["cookie"],
+			address
+		);
+
+		var getBinDaysResponse = new GetBinDaysResponse
+		{
+			NextClientSideRequest = clientSideRequest,
+		};
+
+		return getBinDaysResponse;
+	}
+
+	/// <summary>
 	/// Extracts the serialized encoded state from a Salesforce Aura response.
 	/// </summary>
 	private static string GetSerializedState(string content)
@@ -410,10 +370,16 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	}
 
 	/// <summary>
-	/// Builds the aura context payload for Salesforce requests.
+	/// Builds the form-encoded Aura request body with the provided message and context.
 	/// </summary>
-	private static string BuildAuraContext(string fwuid, string appId) =>
-		$$"""{"mode":"PROD","fwuid":"{{fwuid}}","app":"siteforce:communityApp","loaded":{"APPLICATION@markup://siteforce:communityApp":"{{appId}}"},"dn":[],"globals":{},"uad":true}""";
+	private static string BuildAuraFormData(string message, string fwuid, string appId) =>
+		ProcessingUtilities.ConvertDictionaryToFormData(new()
+		{
+			{ "message", message },
+			{ "aura.context", $$"""{"mode":"PROD","fwuid":"{{fwuid}}","app":"siteforce:communityApp","loaded":{"APPLICATION@markup://siteforce:communityApp":"{{appId}}"},"dn":[],"globals":{},"uad":true}""" },
+			{ "aura.pageURI", "/s/waste-collection-enquiry" },
+			{ "aura.token", "null" },
+		});
 
 	/// <summary>
 	/// Creates a navigateFlow request with the provided action and state.
@@ -429,10 +395,14 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	)
 	{
 		var fieldsJson = action == "NEXT"
-			? $$"""[{"field":"FlowStages1.currentStage","value":null,"isVisible":false},{"field":"FlowStages1.stages","value":null,"isVisible":false},{"field":"Property.recordId","value":"{{address.Uid}}","isVisible":true},{"field":"Property.recordIds","value":["{{address.Uid}}"],"isVisible":true},{"field":"Property.recordName","value":"{{address.Property}}","isVisible":true}]"""
+			? $$"""
+				[
+					{"field": "Property.recordId", "value": "{{address.Uid}}", "isVisible": true},
+					{"field": "Property.recordIds", "value": ["{{address.Uid}}"], "isVisible": true},
+					{"field": "Property.recordName", "value": "{{address.Property}}", "isVisible": true}
+				]
+				"""
 			: "[]";
-
-		var auraContext = BuildAuraContext(fwuid, appId);
 
 		var navigateMessage = $$"""
 				{
@@ -440,13 +410,11 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 						{
 							"id": "navigate",
 							"descriptor": "aura://FlowRuntimeConnectController/ACTION$navigateFlow",
-							"callingDescriptor": "UNKNOWN",
 							"params": {
 								"request": {
 									"action": "{{action}}",
 									"serializedState": "{{serializedState}}",
-									"fields": {{fieldsJson}},
-									"uiElementVisited": true
+									"fields": {{fieldsJson}}
 								}
 							}
 						}
@@ -454,13 +422,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 				}
 				""";
 
-		var messageBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-		{
-			{ "message", navigateMessage },
-			{ "aura.context", auraContext },
-			{ "aura.pageURI", "/s/waste-collection-enquiry" },
-			{ "aura.token", "null" },
-		});
+		var messageBody = BuildAuraFormData(navigateMessage, fwuid, appId);
 
 		var clientSideRequest = new ClientSideRequest
 		{
