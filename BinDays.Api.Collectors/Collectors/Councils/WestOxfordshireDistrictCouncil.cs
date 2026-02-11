@@ -148,7 +148,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 			foreach (var record in lookupResults.EnumerateArray())
 			{
 				var uid = record.GetProperty("id").GetString()!;
-				var property = record.GetProperty("fields").GetProperty("Name").GetProperty("value").GetString()!;
+				var property = record.GetProperty("fields").GetProperty(nameof(Name)).GetProperty("value").GetString()!;
 
 				var address = new Address
 				{
