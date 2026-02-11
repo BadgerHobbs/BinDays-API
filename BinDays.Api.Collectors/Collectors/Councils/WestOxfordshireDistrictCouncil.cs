@@ -26,7 +26,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	[
 		new()
 		{
-			Name = "Rubbish",
+			Name = "General waste",
 			Colour = BinColour.Grey,
 			Keys = [ "Refuse", ],
 		},
@@ -34,20 +34,19 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		{
 			Name = "Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "360 Litre Recycling", ],
-		},
-		new()
-		{
-			Name = "Recycling",
-			Colour = BinColour.Black,
-			Keys = [ "Black Recycling Box", ],
-			Type = BinType.Box,
+			Keys = [ "360 Litre Recycling", "Black Recycling Box", ],
 		},
 		new()
 		{
 			Name = "Food waste",
-			Colour = BinColour.Grey,
+			Colour = BinColour.Brown,
 			Keys = [ "Food", ],
+		},
+		new()
+		{
+			Name = "Garden waste",
+			Colour = BinColour.Green,
+			Keys = [ "Garden", ],
 		},
 	];
 
@@ -81,30 +80,35 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		{
 			var (requestCookies, fwuid, appId) = ExtractSessionTokens(clientSideResponse);
 
-			var lookupMessage = $$"""
+			var lookupMessage = JsonSerializer.Serialize(new
+			{
+				actions = new[]
 				{
-					"actions": [
+					new
+					{
+						descriptor = "aura://LookupController/ACTION$lookup",
+						@params = new
 						{
-							"descriptor": "aura://LookupController/ACTION$lookup",
-							"params": {
-								"objectApiName": "Case",
-								"fieldApiName": "Property__c",
-								"pageSize": 50,
-								"q": "{{postcode}}",
-								"searchType": "TypeAhead",
-								"body": {
-									"sourceRecord": {
-										"apiName": "Case",
-										"fields": {
-											"Id": null
-										}
-									}
-								}
-							}
-						}
-					]
-				}
-				""";
+							objectApiName = "Case",
+							fieldApiName = "Property__c",
+							pageSize = 50,
+							q = postcode,
+							searchType = "TypeAhead",
+							body = new
+							{
+								sourceRecord = new
+								{
+									apiName = "Case",
+									fields = new
+									{
+										Id = (object?)null,
+									},
+								},
+							},
+						},
+					},
+				},
+			});
 
 			var messageBody = BuildAuraFormData(lookupMessage, fwuid, appId);
 
@@ -144,7 +148,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 			foreach (var record in lookupResults.EnumerateArray())
 			{
 				var uid = record.GetProperty("id").GetString()!;
-				var property = record.GetProperty("fields").GetProperty(nameof(Name)).GetProperty("value").GetString()!;
+				var property = record.GetProperty("fields").GetProperty("Name").GetProperty("value").GetString()!;
 
 				var address = new Address
 				{
@@ -273,6 +277,12 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 					var service = row.GetProperty("col1").GetString()!;
 					var dateString = row.GetProperty("col2").GetString()!;
 
+					// Handle a date of "Tomorrow"
+					if (dateString.StartsWith("Tomorrow", StringComparison.OrdinalIgnoreCase))
+					{
+						dateString = DateTime.Now.AddDays(1).ToString("ddd, d MMMM");
+					}
+
 					var date = dateString.ParseDateInferringYear("ddd, d MMMM");
 
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
@@ -371,14 +381,30 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	/// <summary>
 	/// Builds the form-encoded Aura request body with the provided message and context.
 	/// </summary>
-	private static string BuildAuraFormData(string message, string fwuid, string appId) =>
-		ProcessingUtilities.ConvertDictionaryToFormData(new()
+	private static string BuildAuraFormData(string message, string fwuid, string appId)
+	{
+		var auraContext = JsonSerializer.Serialize(new
+		{
+			mode = "PROD",
+			fwuid,
+			app = "siteforce:communityApp",
+			loaded = new Dictionary<string, string>
+			{
+				{ "APPLICATION@markup://siteforce:communityApp", appId },
+			},
+			dn = Array.Empty<string>(),
+			globals = new { },
+			uad = true,
+		});
+
+		return ProcessingUtilities.ConvertDictionaryToFormData(new()
 		{
 			{ "message", message },
-			{ "aura.context", $$"""{"mode":"PROD","fwuid":"{{fwuid}}","app":"siteforce:communityApp","loaded":{"APPLICATION@markup://siteforce:communityApp":"{{appId}}"},"dn":[],"globals":{},"uad":true}""" },
+			{ "aura.context", auraContext },
 			{ "aura.pageURI", "/s/waste-collection-enquiry" },
 			{ "aura.token", "null" },
 		});
+	}
 
 	/// <summary>
 	/// Creates a navigateFlow request with the provided action and state.
@@ -392,32 +418,34 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		string cookie,
 		Address address)
 	{
-		var fieldsJson = action == "NEXT"
-			? $$"""
-				[
-					{"field": "Property.recordId", "value": "{{address.Uid}}", "isVisible": true},
-					{"field": "Property.recordIds", "value": ["{{address.Uid}}"], "isVisible": true},
-					{"field": "Property.recordName", "value": "{{address.Property}}", "isVisible": true}
-				]
-				"""
-			: "[]";
+		var fields = action == "NEXT"
+			?
+			[
+				new { field = "Property.recordId", value = address.Uid, isVisible = true },
+				new { field = "Property.recordIds", value = new[] { address.Uid }, isVisible = true },
+				new { field = "Property.recordName", value = address.Property, isVisible = true },
+			]
+			: Array.Empty<object>();
 
-		var navigateMessage = $$"""
+		var navigateMessage = JsonSerializer.Serialize(new
+		{
+			actions = new[]
+			{
+				new
 				{
-					"actions": [
+					descriptor = "aura://FlowRuntimeConnectController/ACTION$navigateFlow",
+					@params = new
+					{
+						request = new
 						{
-							"descriptor": "aura://FlowRuntimeConnectController/ACTION$navigateFlow",
-							"params": {
-								"request": {
-									"action": "{{action}}",
-									"serializedState": "{{serializedState}}",
-									"fields": {{fieldsJson}}
-								}
-							}
-						}
-					]
-				}
-				""";
+							action,
+							serializedState,
+							fields,
+						},
+					},
+				},
+			},
+		});
 
 		var messageBody = BuildAuraFormData(navigateMessage, fwuid, appId);
 
