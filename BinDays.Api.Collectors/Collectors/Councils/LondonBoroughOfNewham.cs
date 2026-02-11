@@ -76,7 +76,7 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 	/// <summary>
 	/// Regex for the bin days from the detail cards.
 	/// </summary>
-	[GeneratedRegex(@"<div class=""card-header"">Your <b>(?<service>[^<]+)</b> Collection Day</div>(?:(?!There are no).)*?<b>Next&nbsp;</b><mark>[^<]+</mark>&nbsp;(?<nextDate>\d{2}/\d{2}/\d{4})(?:.*?<b>Previous&nbsp;</b><mark>[^<]+</mark>&nbsp;(?<previousDate>\d{2}/\d{2}/\d{4}))?", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+	[GeneratedRegex(@"<div class=""card-header"">Your <b>(?<service>[^<]+)</b> Collection Day</div>(?:(?!There are no).)*?<b>Next&nbsp;</b><mark>[^<]+</mark>&nbsp;(?<nextDate>\d{1,2}/\d{1,2}/\d{4})(?:.*?<b>Previous&nbsp;</b><mark>[^<]+</mark>&nbsp;(?<previousDate>\d{1,2}/\d{1,2}/\d{4}))?", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
 	private static partial Regex BinDaysRegex();
 
 	/// <inheritdoc/>
@@ -228,7 +228,7 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 
 					var date = DateOnly.ParseExact(
 						dateText,
-						"dd/MM/yyyy",
+						"M/d/yyyy",
 						CultureInfo.InvariantCulture,
 						DateTimeStyles.None
 					);
