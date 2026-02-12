@@ -26,7 +26,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	[
 		new()
 		{
-			Name = "Rubbish",
+			Name = "General waste",
 			Colour = BinColour.Grey,
 			Keys = [ "Refuse", ],
 		},
@@ -34,20 +34,19 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		{
 			Name = "Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "360 Litre Recycling", ],
-		},
-		new()
-		{
-			Name = "Recycling",
-			Colour = BinColour.Black,
-			Keys = [ "Black Recycling Box", ],
-			Type = BinType.Box,
+			Keys = [ "360 Litre Recycling", "Black Recycling Box", ],
 		},
 		new()
 		{
 			Name = "Food waste",
-			Colour = BinColour.Grey,
+			Colour = BinColour.Brown,
 			Keys = [ "Food", ],
+		},
+		new()
+		{
+			Name = "Garden waste",
+			Colour = BinColour.Green,
+			Keys = [ "Garden", ],
 		},
 	];
 
