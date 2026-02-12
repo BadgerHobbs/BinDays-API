@@ -20,13 +20,15 @@ public class NorthDevonCouncilTests
 
 	[Theory]
 	[InlineData("EX32 8QX")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("EX32 8QX", 17)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			addressIndex: addressIndex
 		);
 	}
 }

@@ -37,6 +37,12 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 		},
 		new()
 		{
+			Name = "Garden Waste",
+			Colour = BinColour.Green,
+			Keys = [ "GRN" ],
+		},
+		new()
+		{
 			Name = "Recycling",
 			Colour = BinColour.Green,
 			Type = BinType.Container,
