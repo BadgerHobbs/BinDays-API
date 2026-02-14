@@ -6,7 +6,6 @@ using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -45,17 +44,12 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 
 	private const string _baseUrl = "https://my.kirklees.gov.uk";
 	private const string _servicePath = "/service/Bins_and_recycling___Manage_your_bins";
-	private const string _apiBrokerPath = "/apibroker/runLookup";
-	private const string _addressLookupId = "58049013ca4c9";
-	private const string _propertyDetailsLookupId = "659c2c2386104";
-	private const string _binListLookupId = "65e08e60b299d";
-	private const string _scheduleLookupId = "692431ec1ec18";
 	private const int _dateRangeDays = 28;
 
 	/// <summary>
 	/// Regex to extract the session ID (sid) from HTML content.
 	/// </summary>
-	[GeneratedRegex(@"sid=([a-f0-9]+)")]
+	[GeneratedRegex(@"sid=(?<sid>[a-f0-9]+)")]
 	private static partial Regex SidRegex();
 
 	/// <inheritdoc/>
@@ -88,24 +82,17 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 			var setCookies = clientSideResponse.Headers["set-cookie"];
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
-			var sid = SidRegex().Match(clientSideResponse.Content).Groups[1].Value;
-
-			var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+			var sid = SidRegex().Match(clientSideResponse.Content).Groups["sid"].Value;
 
 			var requestBody = $$"""
 			{
 				"formValues": {
 					"Section 1": {
 						"searchForAddress": {
-							"name": "searchForAddress",
-							"value": "yes",
-							"isMandatory": true,
-							"type": "radio"
+							"value": "yes"
 						},
 						"Postcode": {
-							"name": "Postcode",
-							"value": "{{postcode}}",
-							"isMandatory": true
+							"value": "{{postcode}}"
 						}
 					}
 				}
@@ -115,12 +102,11 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"{_baseUrl}{_apiBrokerPath}?id={_addressLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={timestamp}&sid={sid}",
+				Url = BuildApiBrokerUrl("58049013ca4c9", sid),
 				Method = "POST",
 				Headers = new()
 				{
 					{"content-type", "application/json"},
-					{"x-requested-with", "XMLHttpRequest"},
 					{"cookie", requestCookies},
 					{"user-agent", Constants.UserAgent},
 				},
@@ -150,13 +136,17 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				var rowData = row.Value;
 				var uid = rowData.GetProperty("name").GetString()!;
 
+				var property = rowData.GetProperty("display").GetString()!.Trim();
+				var street = rowData.GetProperty("Street").GetString()!.Trim();
+				var town = rowData.GetProperty("Town").GetString()!.Trim();
+
 				var address = new Address
 				{
-					Property = rowData.GetProperty("display").GetString()!.Trim(),
-					Street = rowData.GetProperty("Street").GetString()!.Trim(),
-					Town = rowData.GetProperty("Town").GetString()!.Trim(),
+					Property = property,
+					Street = street,
+					Town = town,
 					Postcode = postcode,
-					Uid = uid,
+					Uid = $"{uid};{property};{street};{town}",
 				};
 
 				addresses.Add(address);
@@ -177,6 +167,17 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
+		// Uid format: "uprn;property;street;town"
+		var uidParts = address.Uid!.Split(';', 4);
+		address = new Address
+		{
+			Uid = uidParts[0],
+			Property = uidParts[1],
+			Street = uidParts[2],
+			Town = uidParts[3],
+			Postcode = address.Postcode,
+		};
+
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
@@ -204,62 +205,29 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 			var setCookies = clientSideResponse.Headers["set-cookie"];
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookies);
 
-			var sid = SidRegex().Match(clientSideResponse.Content).Groups[1].Value;
+			var sid = SidRegex().Match(clientSideResponse.Content).Groups["sid"].Value;
 
-			var house = address.Property!.Split(",").FirstOrDefault()?.Split(" ").FirstOrDefault() ?? string.Empty;
+			var searchFormValues = BuildSearchFormValues(address);
 
 			var requestBody = $$"""
 			{
 				"formValues": {
-					"Search": {
-						"PowerSuite_Available": { "name": "PowerSuite_Available", "value": "True", "isMandatory": true },
-						"PowerSuite_Available1": { "name": "PowerSuite_Available1", "value": "True", "isMandatory": true },
-						"customerAddress": {
-							"Section 1": {
-								"searchForAddress": { "name": "searchForAddress", "value": "yes", "isMandatory": true, "type": "radio" },
-								"Postcode": { "name": "Postcode", "value": "{{address.Postcode!}}", "isMandatory": true },
-								"List": { "name": "List", "value": "{{address.Uid!}}", "isMandatory": true, "type": "select", "value_label": "{{address.Property}}" },
-								"House": { "name": "House", "value": "{{house}}", "isMandatory": true },
-								"Street": { "name": "Street", "value": "{{address.Street!}}", "isMandatory": true },
-								"Town": { "name": "Town", "value": "{{address.Town!}}", "isMandatory": true },
-								"UPRN": { "name": "UPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-								"fullAddress": { "name": "fullAddress", "value": "{{address.Property!}}", "isMandatory": true }
-							}
-						},
-						"uprn2": { "name": "uprn2", "value": "{{address.Uid!}}", "isMandatory": true },
-						"validatedUPRN": { "name": "validatedUPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-						"suppliedUPRN": { "name": "suppliedUPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-						"productName": { "name": "productName", "value": "Self", "isMandatory": true },
-						"uprnFinal": { "name": "uprnFinal", "value": "{{address.Uid!}}", "isMandatory": true },
-						"houseFinal": { "name": "houseFinal", "value": "{{house}}", "isMandatory": true },
-						"streetFinal": { "name": "streetFinal", "value": "{{address.Street!}}", "isMandatory": true },
-						"townFinal": { "name": "townFinal", "value": "{{address.Town!}}", "isMandatory": true },
-						"postcodeFinal": { "name": "postcodeFinal", "value": "{{address.Postcode!}}", "isMandatory": true },
-						"fullAddressFinal": { "name": "fullAddressFinal", "value": "{{address.Property!}}", "isMandatory": true },
-						"binsPropertyType": {
-							"Section 1": {
-								"PropertyType": { "name": "PropertyType", "value": "Residential", "isMandatory": true }
-							}
-						},
-						"validPropertyFlag": { "name": "validPropertyFlag", "value": "yes", "isMandatory": true }
-					}
+					"Search": {{searchFormValues}}
 				}
 			}
 			""";
 
-			var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 			var fromDate = DateTime.UtcNow.AddDays(-_dateRangeDays).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 			var toDate = DateTime.UtcNow.AddDays(_dateRangeDays).ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"{_baseUrl}{_apiBrokerPath}?id={_propertyDetailsLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={timestamp}&sid={sid}",
+				Url = BuildApiBrokerUrl("659c2c2386104", sid),
 				Method = "POST",
 				Headers = new()
 				{
 					{"content-type", "application/json"},
-					{"x-requested-with", "XMLHttpRequest"},
 					{"cookie", requestCookies},
 					{"user-agent", Constants.UserAgent},
 				},
@@ -286,86 +254,33 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 		// Process property details and request bin list
 		else if (clientSideResponse.RequestId == 2)
 		{
-			using var responseJson = JsonDocument.Parse(clientSideResponse.Content);
-			var rowsData = responseJson.RootElement
-				.GetProperty("integration")
-				.GetProperty("transformed")
-				.GetProperty("rows_data");
-
-			var govDeliveryCategory = rowsData.EnumerateObject().First().Value
-				.GetProperty("GovDeliveryCategorye")
-				.GetString()!
-				.Trim();
-
 			var sid = clientSideResponse.Options.Metadata["sid"];
 			var cookies = clientSideResponse.Options.Metadata["cookies"];
 			var fromDate = clientSideResponse.Options.Metadata["fromDate"];
 			var toDate = clientSideResponse.Options.Metadata["toDate"];
 
-			var house = address.Property!.Split(",").FirstOrDefault()?.Split(" ").FirstOrDefault() ?? string.Empty;
-			var currentDateTime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-			var timeInHours = DateTime.UtcNow.ToString("HH", CultureInfo.InvariantCulture);
+			var searchFormValues = BuildSearchFormValues(address);
 
 			var requestBody = $$"""
 			{
 				"formValues": {
-					"Search": {
-						"PowerSuite_Available": { "name": "PowerSuite_Available", "value": "True", "isMandatory": true },
-						"PowerSuite_Available1": { "name": "PowerSuite_Available1", "value": "True", "isMandatory": true },
-						"customerAddress": {
-							"Section 1": {
-								"searchForAddress": { "name": "searchForAddress", "value": "yes", "isMandatory": true, "type": "radio" },
-								"Postcode": { "name": "Postcode", "value": "{{address.Postcode!}}", "isMandatory": true },
-								"List": { "name": "List", "value": "{{address.Uid!}}", "isMandatory": true, "type": "select", "value_label": "{{address.Property}}" },
-								"House": { "name": "House", "value": "{{house}}", "isMandatory": true },
-								"Street": { "name": "Street", "value": "{{address.Street!}}", "isMandatory": true },
-								"Town": { "name": "Town", "value": "{{address.Town!}}", "isMandatory": true },
-								"UPRN": { "name": "UPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-								"fullAddress": { "name": "fullAddress", "value": "{{address.Property!}}", "isMandatory": true }
-							}
-						},
-						"uprn2": { "name": "uprn2", "value": "{{address.Uid!}}", "isMandatory": true },
-						"validatedUPRN": { "name": "validatedUPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-						"suppliedUPRN": { "name": "suppliedUPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-						"productName": { "name": "productName", "value": "Self", "isMandatory": true },
-						"uprnFinal": { "name": "uprnFinal", "value": "{{address.Uid!}}", "isMandatory": true },
-						"houseFinal": { "name": "houseFinal", "value": "{{house}}", "isMandatory": true },
-						"streetFinal": { "name": "streetFinal", "value": "{{address.Street!}}", "isMandatory": true },
-						"townFinal": { "name": "townFinal", "value": "{{address.Town!}}", "isMandatory": true },
-						"postcodeFinal": { "name": "postcodeFinal", "value": "{{address.Postcode!}}", "isMandatory": true },
-						"fullAddressFinal": { "name": "fullAddressFinal", "value": "{{address.Property!}}", "isMandatory": true },
-						"binsPropertyType": {
-							"Section 1": {
-								"PropertyType": { "name": "PropertyType", "value": "Residential", "isMandatory": true },
-								"GovDeliveryCategorye": { "name": "GovDeliveryCategorye", "value": "{{govDeliveryCategory}}", "isMandatory": true }
-							}
-						},
-						"validPropertyFlag": { "name": "validPropertyFlag", "value": "yes", "isMandatory": true }
-					},
+					"Search": {{searchFormValues}},
 					"Your bins": {
-						"NextCollectionFromDate": { "name": "NextCollectionFromDate", "value": "{{fromDate}}", "isMandatory": true },
-						"NextCollectionToDate": { "name": "NextCollectionToDate", "value": "{{toDate}}", "isMandatory": true },
-						"currentDateTime": { "name": "currentDateTime", "value": "{{currentDateTime}}", "isMandatory": true },
-						"timeInHours": { "name": "timeInHours", "value": "{{timeInHours}}", "isMandatory": true },
-						"sameDaySubmissionFlag": { "name": "sameDaySubmissionFlag", "value": "no", "isMandatory": true },
-						"maxBinAllocation": { "name": "maxBinAllocation", "value": "1", "isMandatory": true },
-						"allowedBins": { "name": "allowedBins", "value": "1", "isMandatory": true }
+						"NextCollectionFromDate": { "value": "{{fromDate}}" },
+						"NextCollectionToDate": { "value": "{{toDate}}" }
 					}
 				}
 			}
 			""";
 
-			var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 3,
-				Url = $"{_baseUrl}{_apiBrokerPath}?id={_binListLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={timestamp}&sid={sid}",
+				Url = BuildApiBrokerUrl("65e08e60b299d", sid),
 				Method = "POST",
 				Headers = new()
 				{
 					{"content-type", "application/json"},
-					{"x-requested-with", "XMLHttpRequest"},
 					{"cookie", cookies},
 					{"user-agent", Constants.UserAgent},
 				},
@@ -376,7 +291,6 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 					{
 						{ "sid", sid },
 						{ "cookies", cookies },
-						{ "govDeliveryCategory", govDeliveryCategory },
 						{ "fromDate", fromDate },
 						{ "toDate", toDate },
 					},
@@ -441,7 +355,6 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				bins[0],
 				clientSideResponse.Options.Metadata["sid"],
 				clientSideResponse.Options.Metadata["cookies"],
-				clientSideResponse.Options.Metadata["govDeliveryCategory"],
 				clientSideResponse.Options.Metadata["fromDate"],
 				clientSideResponse.Options.Metadata["toDate"],
 				binData,
@@ -497,7 +410,6 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 					bins[nextIndex],
 					clientSideResponse.Options.Metadata["sid"],
 					clientSideResponse.Options.Metadata["cookies"],
-					clientSideResponse.Options.Metadata["govDeliveryCategory"],
 					clientSideResponse.Options.Metadata["fromDate"],
 					clientSideResponse.Options.Metadata["toDate"],
 					clientSideResponse.Options.Metadata["binData"],
@@ -513,6 +425,7 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				return nextBinDaysResponse;
 			}
 
+			// Iterate through each bin day, and create a new bin day object
 			var processedBinDays = new List<BinDay>();
 			foreach (var binDay in binDays)
 			{
@@ -540,7 +453,6 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
-
 	/// <summary>
 	/// Builds a schedule request for fetching bin collection dates.
 	/// </summary>
@@ -549,7 +461,6 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 		BinInfo bin,
 		string sid,
 		string cookies,
-		string govDeliveryCategory,
 		string fromDate,
 		string toDate,
 		string binData,
@@ -557,76 +468,31 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 		ClientSideOptions options
 	)
 	{
-		var house = address.Property!.Split(",").FirstOrDefault()?.Split(" ").FirstOrDefault() ?? string.Empty;
-		var binTypeSelect = bin.BinTypeService.Contains("Recycling", StringComparison.OrdinalIgnoreCase) ? "Recycling" : "Domestic";
-		var currentDateTime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-		var timeInHours = DateTime.UtcNow.ToString("HH", CultureInfo.InvariantCulture);
-
+		var searchFormValues = BuildSearchFormValues(address);
 		var requestBody = $$"""
 		{
 			"formValues": {
-				"Search": {
-					"PowerSuite_Available": { "name": "PowerSuite_Available", "value": "True", "isMandatory": true },
-					"PowerSuite_Available1": { "name": "PowerSuite_Available1", "value": "True", "isMandatory": true },
-					"customerAddress": {
-						"Section 1": {
-							"searchForAddress": { "name": "searchForAddress", "value": "yes", "isMandatory": true, "type": "radio" },
-							"Postcode": { "name": "Postcode", "value": "{{address.Postcode!}}", "isMandatory": true },
-							"List": { "name": "List", "value": "{{address.Uid!}}", "isMandatory": true, "type": "select", "value_label": "{{address.Property}}" },
-							"House": { "name": "House", "value": "{{house}}", "isMandatory": true },
-							"Street": { "name": "Street", "value": "{{address.Street!}}", "isMandatory": true },
-							"Town": { "name": "Town", "value": "{{address.Town!}}", "isMandatory": true },
-							"UPRN": { "name": "UPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-							"fullAddress": { "name": "fullAddress", "value": "{{address.Property!}}", "isMandatory": true }
-						}
-					},
-					"uprn2": { "name": "uprn2", "value": "{{address.Uid!}}", "isMandatory": true },
-					"validatedUPRN": { "name": "validatedUPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-					"suppliedUPRN": { "name": "suppliedUPRN", "value": "{{address.Uid!}}", "isMandatory": true },
-					"productName": { "name": "productName", "value": "Self", "isMandatory": true },
-					"uprnFinal": { "name": "uprnFinal", "value": "{{address.Uid!}}", "isMandatory": true },
-					"houseFinal": { "name": "houseFinal", "value": "{{house}}", "isMandatory": true },
-					"streetFinal": { "name": "streetFinal", "value": "{{address.Street!}}", "isMandatory": true },
-					"townFinal": { "name": "townFinal", "value": "{{address.Town!}}", "isMandatory": true },
-					"postcodeFinal": { "name": "postcodeFinal", "value": "{{address.Postcode!}}", "isMandatory": true },
-					"fullAddressFinal": { "name": "fullAddressFinal", "value": "{{address.Property!}}", "isMandatory": true },
-					"binsPropertyType": {
-						"Section 1": {
-							"PropertyType": { "name": "PropertyType", "value": "Residential", "isMandatory": true },
-							"GovDeliveryCategorye": { "name": "GovDeliveryCategorye", "value": "{{govDeliveryCategory}}", "isMandatory": true }
-						}
-					},
-					"validPropertyFlag": { "name": "validPropertyFlag", "value": "yes", "isMandatory": true }
-				},
+				"Search": {{searchFormValues}},
 				"Your bins": {
-					"binTypeService": { "name": "binTypeService", "value": "{{bin.BinTypeService}}", "isMandatory": true },
-					"RoundSchedule": { "name": "RoundSchedule", "value": "{{bin.RoundSchedule}}", "isMandatory": true },
-					"NextCollectionFromDate": { "name": "NextCollectionFromDate", "value": "{{fromDate}}", "isMandatory": true },
-					"NextCollectionToDate": { "name": "NextCollectionToDate", "value": "{{toDate}}", "isMandatory": true },
-					"binData": { "name": "binData", "value": "{{binData}}", "isMandatory": true },
-					"serviceItemID": { "name": "serviceItemID", "value": "{{bin.ServiceItemId}}", "isMandatory": true },
-					"binTypeSelect": { "name": "binTypeSelect", "value": "{{binTypeSelect}}", "isMandatory": true },
-					"currentDateTime": { "name": "currentDateTime", "value": "{{currentDateTime}}", "isMandatory": true },
-					"timeInHours": { "name": "timeInHours", "value": "{{timeInHours}}", "isMandatory": true },
-					"sameDaySubmissionFlag": { "name": "sameDaySubmissionFlag", "value": "no", "isMandatory": true },
-					"maxBinAllocation": { "name": "maxBinAllocation", "value": "1", "isMandatory": true },
-					"allowedBins": { "name": "allowedBins", "value": "1", "isMandatory": true }
+					"binTypeService": { "value": "{{bin.BinTypeService}}" },
+					"RoundSchedule": { "value": "{{bin.RoundSchedule}}" },
+					"NextCollectionFromDate": { "value": "{{fromDate}}" },
+					"NextCollectionToDate": { "value": "{{toDate}}" },
+					"binData": { "value": "{{binData}}" },
+					"serviceItemID": { "value": "{{bin.ServiceItemId}}" }
 				}
 			}
 		}
 		""";
 
-		var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
 		var clientSideRequest = new ClientSideRequest
 		{
 			RequestId = requestId,
-			Url = $"{_baseUrl}{_apiBrokerPath}?id={_scheduleLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={timestamp}&sid={sid}",
+			Url = BuildApiBrokerUrl("692431ec1ec18", sid),
 			Method = "POST",
 			Headers = new()
 			{
 				{"content-type", "application/json"},
-				{"x-requested-with", "XMLHttpRequest"},
 				{"cookie", cookies},
 				{"user-agent", Constants.UserAgent},
 			},
@@ -637,7 +503,45 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 		return clientSideRequest;
 	}
 
+	/// <summary>
+	/// Builds the "Search" section of the form values JSON shared across multiple requests.
+	/// </summary>
+	private static string BuildSearchFormValues(Address address)
+	{
+		return $$"""
+		{
+			"customerAddress": {
+				"Section 1": {
+					"Postcode": { "value": "{{address.Postcode!}}" },
+					"List": { "value": "{{address.Uid!}}" },
+					"Street": { "value": "{{address.Street!}}" },
+					"Town": { "value": "{{address.Town!}}" },
+					"UPRN": { "value": "{{address.Uid!}}" }
+				}
+			},
+			"uprn2": { "value": "{{address.Uid!}}" },
+			"validatedUPRN": { "value": "{{address.Uid!}}" },
+			"suppliedUPRN": { "value": "{{address.Uid!}}" }
+		}
+		""";
+	}
+
+	/// <summary>
+	/// Builds the API broker URL for a given lookup ID and session.
+	/// </summary>
+	private static string BuildApiBrokerUrl(string lookupId, string sid)
+	{
+		var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+		return $"{_baseUrl}/apibroker/runLookup?id={lookupId}&_={timestamp}&sid={sid}";
+	}
+
+	/// <summary>
+	/// Holds bin metadata needed across schedule request steps.
+	/// </summary>
 	private sealed record BinInfo(string Label, string RoundSchedule, string BinTypeService, string ServiceItemId);
 
+	/// <summary>
+	/// Holds a parsed collection date and its associated bin label.
+	/// </summary>
 	private sealed record BinDayData(DateOnly Date, string BinLabel);
 }
