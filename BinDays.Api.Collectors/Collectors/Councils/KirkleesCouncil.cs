@@ -406,7 +406,7 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 					DateTimeStyles.None
 				);
 
-				binDays.Add(new BinDayData(date, currentBin.Label));
+				binDays.Add(new BinDayData(date, currentBin.BinTypeService));
 			}
 
 			if (binIndex + 1 < bins.Count)
