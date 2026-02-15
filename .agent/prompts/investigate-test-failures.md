@@ -43,7 +43,18 @@ For every failure, create a GitHub issue with:
 
 - **Title:** `Broken collector: {councilName}` (this exact format is required for deduplication — do not deviate)
 - **Label:** `collector-broken`
-- **Body:** include the failure category, the key error message from the logs, a link to the workflow run (`runUrl`), and a link to the specific job (`jobUrl`)
+- **Body:** use a markdown table for the key details, followed by any extra notes. Use this format:
+
+  ```markdown
+  | Field | Value |
+  |-------|-------|
+  | Category | {category} |
+  | Key error | {key error message} |
+  | Workflow run | [{runId}]({runUrl}) |
+  | Job | [{jobId}]({jobUrl}) |
+
+  {any additional notes, e.g. pattern across failures}
+  ```
 
 Use the `gh` CLI to create issues:
 
