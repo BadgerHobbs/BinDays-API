@@ -32,18 +32,29 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 		{
 			Name = "General Waste",
 			Colour = BinColour.Grey,
-			Keys = [ "grey", "240d", "domestic", "grey wheelie" ],
+			Keys = [ "domestic" ],
 		},
 		new()
 		{
 			Name = "Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "green", "240g", "recycling", "green wheelie" ],
+			Keys = [ "recycling" ],
 		},
 	];
 
+	/// <summary>
+	/// The base URL for the Kirklees Council self-service portal.
+	/// </summary>
 	private const string _baseUrl = "https://my.kirklees.gov.uk";
+
+	/// <summary>
+	/// The service path for the bin collection management service.
+	/// </summary>
 	private const string _servicePath = "/service/Bins_and_recycling___Manage_your_bins";
+
+	/// <summary>
+	/// The number of days before and after today to fetch bin collections for.
+	/// </summary>
 	private const int _dateRangeDays = 28;
 
 	/// <summary>
@@ -333,10 +344,9 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				var serviceItemName = rowData.GetProperty("ServiceItemName").GetString()!.Trim();
 
 				var source = $"{serviceItemName} {label}";
-				var binTypeService = source.Contains("240G", StringComparison.OrdinalIgnoreCase)
-					|| source.Contains("green", StringComparison.OrdinalIgnoreCase)
-					? "Recycling Collection Service"
-					: "Domestic Waste Collection Service";
+				var isRecycling = source.Contains("240G", StringComparison.OrdinalIgnoreCase)
+					|| source.Contains("green", StringComparison.OrdinalIgnoreCase);
+				var binTypeService = isRecycling ? "Recycling Collection Service" : "Domestic Waste Collection Service";
 
 				bins.Add(new BinInfo(label, roundSchedule, binTypeService, serviceItemId));
 
