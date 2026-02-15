@@ -48,6 +48,9 @@ internal sealed partial class SheffieldCityCouncil : GovUkCollectorBase, ICollec
 		},
 	];
 
+	/// <summary>
+	/// The base URL for the Sheffield waste services portal.
+	/// </summary>
 	private const string _baseUrl = "https://wasteservices.sheffield.gov.uk";
 
 	/// <summary>
@@ -95,8 +98,6 @@ internal sealed partial class SheffieldCityCouncil : GovUkCollectorBase, ICollec
 			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
-			var requestBody = $"aj=true&search_property={postcode}";
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
@@ -109,7 +110,7 @@ internal sealed partial class SheffieldCityCouncil : GovUkCollectorBase, ICollec
 					{ "x-requested-with", "XMLHttpRequest" },
 					{ "cookie", requestCookies },
 				},
-				Body = requestBody,
+				Body = $"aj=true&search_property={postcode}",
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
