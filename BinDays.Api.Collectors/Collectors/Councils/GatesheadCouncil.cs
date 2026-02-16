@@ -41,7 +41,14 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 		},
 	];
 
+	/// <summary>
+	/// The URL of the bin collection checker page.
+	/// </summary>
 	private const string _pageUrl = "https://www.gateshead.gov.uk/article/3150/Bin-collection-day-checker";
+
+	/// <summary>
+	/// The URL for processing form submissions.
+	/// </summary>
 	private const string _processSubmissionUrl = "https://www.gateshead.gov.uk/apiserver/formsservice/http/processsubmission";
 
 	/// <summary>
@@ -71,7 +78,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting addresses
+		// Prepare client-side request for initial page load (Cloudflare cookie challenge)
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
@@ -92,12 +99,48 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 
 			return getAddressesResponse;
 		}
-		// Prepare form submission with postcode to retrieve addresses
+		// Retry with Cloudflare cookie to load the actual form page
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = _pageUrl,
+				Method = "GET",
+				Headers = new()
+				{
+					{ "cookie", cookies },
+					{ "user-agent", Constants.UserAgent },
+				},
+				Options = new ClientSideOptions
+				{
+					Metadata =
+					{
+						{ "cookie", cookies },
+						{ "postcode", postcode },
+					},
+				},
+			};
+
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getAddressesResponse;
+		}
+		// Prepare form submission with postcode to retrieve addresses
+		else if (clientSideResponse.RequestId == 2)
+		{
+			var metadata = clientSideResponse.Options.Metadata;
+			var cookies = metadata["cookie"];
+			if (clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader))
+			{
+				cookies = $"{cookies}; {ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!)}";
+			}
 
 			var hiddenFields = HiddenFieldRegex().Matches(clientSideResponse.Content)!;
 			var hiddenFieldValues = hiddenFields.ToDictionary(
@@ -105,28 +148,10 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				x => x.Groups["value"].Value
 			);
 
-			if (!hiddenFieldValues.TryGetValue("BINCOLLECTIONCHECKER_PAGESESSIONID", out var pageSessionId))
-			{
-				var fallbackAddresses = new List<Address>
-				{
-					new()
-					{
-						Property = "132, Whitehall Road, Gateshead, Bensham, Gateshead",
-						Postcode = postcode,
-						Uid = "100000064057",
-					},
-				};
-
-				var fallbackAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. fallbackAddresses],
-				};
-
-				return fallbackAddressesResponse;
-			}
-
+			var pageSessionId = hiddenFieldValues["BINCOLLECTIONCHECKER_PAGESESSIONID"];
 			var sessionId = hiddenFieldValues["BINCOLLECTIONCHECKER_SESSIONID"];
 			var nonce = hiddenFieldValues["BINCOLLECTIONCHECKER_NONCE"];
+			var storedPostcode = metadata["postcode"];
 
 			var formData = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -136,28 +161,21 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				{ "BINCOLLECTIONCHECKER_VARIABLES", "e30=" },
 				{ "BINCOLLECTIONCHECKER_PAGENAME", "ADDRESSSEARCH" },
 				{ "BINCOLLECTIONCHECKER_PAGEINSTANCE", "0" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ASSISTOFF", "false" },
 				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ASSISTON", "true" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_STAFFLAYOUT", "false" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ADDRESSLOOKUPPOSTCODE", formattedPostcode },
+				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ADDRESSLOOKUPPOSTCODE", storedPostcode },
 				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ADDRESSLOOKUPADDRESS", "0" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_FIELD125", "false" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_UPRN", string.Empty },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ADDRESSTEXT", string.Empty },
 				{ "BINCOLLECTIONCHECKER_FORMACTION_NEXT", "BINCOLLECTIONCHECKER_ADDRESSSEARCH_NEXTBUTTON" },
 			});
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 2,
+				RequestId = 3,
 				Url = $"{_processSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
 				Method = "POST",
 				Headers = new()
 				{
 					{ "content-type", "application/x-www-form-urlencoded" },
 					{ "cookie", cookies },
-					{ "origin", "https://www.gateshead.gov.uk" },
-					{ "referer", _pageUrl },
 					{ "user-agent", Constants.UserAgent },
 				},
 				Body = formData,
@@ -166,10 +184,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 					Metadata =
 					{
 						{ "cookie", cookies },
-						{ "pageSessionId", pageSessionId },
-						{ "sessionId", sessionId },
-						{ "nonce", nonce },
-						{ "postcode", formattedPostcode },
+						{ "postcode", storedPostcode },
 					},
 				},
 			};
@@ -182,7 +197,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 			return getAddressesResponse;
 		}
 		// Follow verify cookie redirect
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 3)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
 			var cookies = metadata["cookie"];
@@ -195,7 +210,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 3,
+				RequestId = 4,
 				Url = verifyCookieUrl,
 				Method = "GET",
 				Headers = new()
@@ -209,6 +224,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 					Metadata =
 					{
 						{ "cookie", cookies },
+						{ "postcode", metadata["postcode"] },
 					},
 				},
 			};
@@ -221,7 +237,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 			return getAddressesResponse;
 		}
 		// Follow redirect to page containing address options
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 4)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
 			var cookies = metadata["cookie"];
@@ -234,7 +250,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 4,
+				RequestId = 5,
 				Url = redirectedUrl,
 				Method = "GET",
 				Headers = new()
@@ -242,6 +258,13 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 					{ "cookie", cookies },
 					{ "referer", _pageUrl },
 					{ "user-agent", Constants.UserAgent },
+				},
+				Options = new ClientSideOptions
+				{
+					Metadata =
+					{
+						{ "postcode", metadata["postcode"] },
+					},
 				},
 			};
 
@@ -253,8 +276,9 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 			return getAddressesResponse;
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 5)
 		{
+			var metadata = clientSideResponse.Options.Metadata;
 			var rawAddresses = AddressOptionRegex().Matches(clientSideResponse.Content)!;
 
 			// Iterate through each address, and create a new address object
@@ -272,7 +296,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				var address = new Address
 				{
 					Property = property,
-					Postcode = postcode,
+					Postcode = metadata["postcode"],
 					Uid = uid,
 				};
 
@@ -294,11 +318,9 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting bin days
+		// Prepare client-side request for initial page load (Cloudflare cookie challenge)
 		if (clientSideResponse == null)
 		{
-			var formattedPostcode = ProcessingUtilities.FormatPostcode(address.Postcode!);
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
@@ -308,11 +330,37 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				{
 					{ "user-agent", Constants.UserAgent },
 				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest
+			};
+
+			return getBinDaysResponse;
+		}
+		// Retry with Cloudflare cookie to load the actual form page
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = _pageUrl,
+				Method = "GET",
+				Headers = new()
+				{
+					{ "cookie", cookies },
+					{ "user-agent", Constants.UserAgent },
+				},
 				Options = new ClientSideOptions
 				{
 					Metadata =
 					{
-						{ "postcode", formattedPostcode },
+						{ "cookie", cookies },
+						{ "postcode", address.Postcode! },
 					},
 				},
 			};
@@ -325,10 +373,14 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 			return getBinDaysResponse;
 		}
 		// Prepare form submission with selected address
-		else if (clientSideResponse.RequestId == 1)
+		else if (clientSideResponse.RequestId == 2)
 		{
-			clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+			var metadata = clientSideResponse.Options.Metadata;
+			var cookies = metadata["cookie"];
+			if (clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader))
+			{
+				cookies = $"{cookies}; {ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!)}";
+			}
 
 			var hiddenFields = HiddenFieldRegex().Matches(clientSideResponse.Content)!;
 			var hiddenFieldValues = hiddenFields.ToDictionary(
@@ -336,59 +388,10 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				x => x.Groups["value"].Value
 			);
 
-			if (!hiddenFieldValues.TryGetValue("BINCOLLECTIONCHECKER_PAGESESSIONID", out var pageSessionId))
-			{
-				var fallbackBinDays = new List<BinDay>
-				{
-					new()
-					{
-						Date = "20 January".ParseDateInferringYear("dd MMMM"),
-						Address = address,
-						Bins = ProcessingUtilities.GetMatchingBins(_binTypes, "Recycling"),
-					},
-					new()
-					{
-						Date = "27 January".ParseDateInferringYear("dd MMMM"),
-						Address = address,
-						Bins = ProcessingUtilities.GetMatchingBins(_binTypes, "Household Waste"),
-					},
-					new()
-					{
-						Date = "03 February".ParseDateInferringYear("dd MMMM"),
-						Address = address,
-						Bins = ProcessingUtilities.GetMatchingBins(_binTypes, "Recycling"),
-					},
-					new()
-					{
-						Date = "10 February".ParseDateInferringYear("dd MMMM"),
-						Address = address,
-						Bins = ProcessingUtilities.GetMatchingBins(_binTypes, "Household Waste"),
-					},
-					new()
-					{
-						Date = "17 February".ParseDateInferringYear("dd MMMM"),
-						Address = address,
-						Bins = ProcessingUtilities.GetMatchingBins(_binTypes, "Recycling"),
-					},
-					new()
-					{
-						Date = "24 February".ParseDateInferringYear("dd MMMM"),
-						Address = address,
-						Bins = ProcessingUtilities.GetMatchingBins(_binTypes, "Household Waste"),
-					},
-				};
-
-				var fallbackBinDaysResponse = new GetBinDaysResponse
-				{
-					BinDays = ProcessingUtilities.ProcessBinDays(fallbackBinDays),
-				};
-
-				return fallbackBinDaysResponse;
-			}
-
+			var pageSessionId = hiddenFieldValues["BINCOLLECTIONCHECKER_PAGESESSIONID"];
 			var sessionId = hiddenFieldValues["BINCOLLECTIONCHECKER_SESSIONID"];
 			var nonce = hiddenFieldValues["BINCOLLECTIONCHECKER_NONCE"];
-			var formattedPostcode = clientSideResponse.Options.Metadata["postcode"];
+			var postcode = metadata["postcode"];
 
 			var formData = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -398,12 +401,9 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 				{ "BINCOLLECTIONCHECKER_VARIABLES", "e30=" },
 				{ "BINCOLLECTIONCHECKER_PAGENAME", "ADDRESSSEARCH" },
 				{ "BINCOLLECTIONCHECKER_PAGEINSTANCE", "0" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ASSISTOFF", "false" },
 				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ASSISTON", "true" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_STAFFLAYOUT", "false" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ADDRESSLOOKUPPOSTCODE", formattedPostcode },
+				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ADDRESSLOOKUPPOSTCODE", postcode },
 				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ADDRESSLOOKUPADDRESS", "0" },
-				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_FIELD125", "false" },
 				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_UPRN", address.Uid! },
 				{ "BINCOLLECTIONCHECKER_ADDRESSSEARCH_ADDRESSTEXT", address.Property! },
 				{ "BINCOLLECTIONCHECKER_FORMACTION_NEXT", "BINCOLLECTIONCHECKER_ADDRESSSEARCH_NEXTBUTTON" },
@@ -411,15 +411,13 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 2,
+				RequestId = 3,
 				Url = $"{_processSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
 				Method = "POST",
 				Headers = new()
 				{
 					{ "content-type", "application/x-www-form-urlencoded" },
 					{ "cookie", cookies },
-					{ "origin", "https://www.gateshead.gov.uk" },
-					{ "referer", _pageUrl },
 					{ "user-agent", Constants.UserAgent },
 				},
 				Body = formData,
@@ -440,7 +438,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 			return getBinDaysResponse;
 		}
 		// Follow verify cookie redirect
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 3)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
 			var cookies = metadata["cookie"];
@@ -453,7 +451,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 3,
+				RequestId = 4,
 				Url = verifyCookieUrl,
 				Method = "GET",
 				Headers = new()
@@ -479,7 +477,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 			return getBinDaysResponse;
 		}
 		// Follow redirect to page with bin days
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 4)
 		{
 			var metadata = clientSideResponse.Options.Metadata;
 			var cookies = metadata["cookie"];
@@ -492,7 +490,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 4,
+				RequestId = 5,
 				Url = redirectedUrl,
 				Method = "GET",
 				Headers = new()
@@ -511,7 +509,7 @@ internal sealed partial class GatesheadCouncil : GovUkCollectorBase, ICollector
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 5)
 		{
 			var monthHeaders = new List<(int Index, string Month)>();
 			foreach (Match monthHeader in MonthHeaderRegex().Matches(clientSideResponse.Content)!)
