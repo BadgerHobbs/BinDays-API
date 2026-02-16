@@ -121,25 +121,25 @@ internal sealed partial class ElmbridgeBoroughCouncil : GovUkCollectorBase, ICol
 			var (sessionId, cookies) = ExtractSessionData(clientSideResponse);
 
 			var requestBody = $$"""
-{
-  "stopOnFailure": true,
-  "usePHPIntegrations": true,
-  "stage_id": "{{_stageId}}",
-  "stage_name": "Your bin collection days",
-  "formId": "{{_formId}}",
-  "formValues": {
-    "Section 1": {
-      "isThereAnError": { "value": "no" },
-      "lu_postcode": { "value": "{{postcode}}" },
-      "postcodecheck": { "value": "false" }
-    }
-  },
-  "isPublished": true,
-  "formName": "{{_formName}}",
-  "processId": "{{_processId}}",
-  "formUri": "{{_formUri}}"
-}
-""";
+			{
+				"stopOnFailure": true,
+				"usePHPIntegrations": true,
+				"stage_id": "{{_stageId}}",
+				"stage_name": "Your bin collection days",
+				"formId": "{{_formId}}",
+				"formValues": {
+					"Section 1": {
+						"isThereAnError": { "value": "no" },
+						"lu_postcode": { "value": "{{postcode}}" },
+						"postcodecheck": { "value": "false" }
+					}
+				},
+				"isPublished": true,
+				"formName": "{{_formName}}",
+				"processId": "{{_processId}}",
+				"formUri": "{{_formUri}}"
+			}
+			""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -220,27 +220,27 @@ internal sealed partial class ElmbridgeBoroughCouncil : GovUkCollectorBase, ICol
 			var (sessionId, cookies) = ExtractSessionData(clientSideResponse);
 
 			var requestBody = $$"""
-{
-  "stopOnFailure": true,
-  "usePHPIntegrations": true,
-  "stage_id": "{{_stageId}}",
-  "stage_name": "Your bin collection days",
-  "formId": "{{_formId}}",
-  "formValues": {
-    "Section 1": {
-      "isThereAnError": { "value": "no" },
-      "lu_postcode": { "value": "{{address.Postcode!}}" },
-      "postcodecheck": { "value": "true" },
-      "osAddress": { "value": "{{address.Uid!}}" },
-      "UPRN": { "value": "{{address.Uid!}}" }
-    }
-  },
-  "isPublished": true,
-  "formName": "{{_formName}}",
-  "processId": "{{_processId}}",
-  "formUri": "{{_formUri}}"
-}
-""";
+			{
+				"stopOnFailure": true,
+				"usePHPIntegrations": true,
+				"stage_id": "{{_stageId}}",
+				"stage_name": "Your bin collection days",
+				"formId": "{{_formId}}",
+				"formValues": {
+					"Section 1": {
+						"isThereAnError": { "value": "no" },
+						"lu_postcode": { "value": "{{address.Postcode!}}" },
+						"postcodecheck": { "value": "true" },
+						"osAddress": { "value": "{{address.Uid!}}" },
+						"UPRN": { "value": "{{address.Uid!}}" }
+					}
+				},
+				"isPublished": true,
+				"formName": "{{_formName}}",
+				"processId": "{{_processId}}",
+				"formUri": "{{_formUri}}"
+			}
+			""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
