@@ -40,5 +40,5 @@ jobs:
             code-review@claude-code-plugins
             feature-dev@claude-code-plugins
           claude_args: |
-            --model claude-sonnet-4-5-20250929
+            --model claude-sonnet-4-6
             --dangerously-skip-permissions
