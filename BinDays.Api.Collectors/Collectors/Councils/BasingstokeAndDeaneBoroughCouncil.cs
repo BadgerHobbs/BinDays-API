@@ -62,11 +62,34 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 		},
 	];
 
+	/// <summary>
+	/// The URL for the bin collections page.
+	/// </summary>
 	private const string _binCollectionsUrl = "https://www.basingstoke.gov.uk/bincollections";
+
+	/// <summary>
+	/// The URL for the form action endpoint.
+	/// </summary>
 	private const string _formActionUrl = "https://www.basingstoke.gov.uk/rte.aspx?id=1270";
+
+	/// <summary>
+	/// The script manager prefix used in ASP.NET UpdatePanel requests.
+	/// </summary>
 	private const string _scriptManagerPrefix = "rteelem$ctl03$ctl01";
+
+	/// <summary>
+	/// The event target for the postcode search action.
+	/// </summary>
 	private const string _searchEventTarget = "rteelem$ctl03$gapAddress$ctl04";
+
+	/// <summary>
+	/// The event target for the address selection action.
+	/// </summary>
 	private const string _selectEventTarget = "rteelem$ctl03$gapAddress$ctl07";
+
+	/// <summary>
+	/// The origin URL for request headers.
+	/// </summary>
 	private const string _origin = "https://www.basingstoke.gov.uk";
 
 	/// <summary>
@@ -184,7 +207,8 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 
 			return getBinDaysResponse;
 		}
-		// Prepare client-side request for postcode search
+		// Perform postcode search to obtain a fresh VIEWSTATE token required for address selection.
+		// The ASP.NET WebForms UpdatePanel requires a valid VIEWSTATE from this step before the address can be submitted.
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var clientSideRequest = CreatePostcodeSearchRequest(clientSideResponse.Content, address.Postcode!, 2);
@@ -208,7 +232,6 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 				{ "rteelem$ctl03$ctl00", $"{_scriptManagerPrefix}|{_selectEventTarget}" },
 				{ "rteelem$ctl03$gapAddress$lstStage2_SearchResults", address.Uid! },
 				{ "__EVENTTARGET", _selectEventTarget },
-				{ "__EVENTARGUMENT", string.Empty },
 				{ "__VIEWSTATE", viewState },
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
 				{ "__EVENTVALIDATION", eventValidation },
@@ -325,7 +348,6 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 		{
 			{ "rteelem$ctl03$ctl00", $"{_scriptManagerPrefix}|{_searchEventTarget}" },
 			{ "__EVENTTARGET", _searchEventTarget },
-			{ "__EVENTARGUMENT", string.Empty },
 			{ "__VIEWSTATE", viewState },
 			{ "__VIEWSTATEGENERATOR", viewStateGenerator },
 			{ "__EVENTVALIDATION", eventValidation },
