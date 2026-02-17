@@ -56,10 +56,20 @@ For every failure, create a GitHub issue with:
   {any additional notes, e.g. pattern across failures}
   ```
 
-Use the `gh` CLI to create issues:
+Use the `gh` CLI to create issues. Write the body to a temp file and use `--body-file` to preserve newlines:
 
 ```bash
-gh issue create --title "Broken collector: {councilName}" --label "collector-broken" --body "..."
+cat > /tmp/issue-body.md << 'EOF'
+| Field | Value |
+|-------|-------|
+| Category | {category} |
+| Key error | {key error message} |
+| Workflow run | [{runId}]({runUrl}) |
+| Job | [{jobId}]({jobUrl}) |
+
+{any additional notes}
+EOF
+gh issue create --title "Broken collector: {councilName}" --label "collector-broken" --body-file /tmp/issue-body.md
 ```
 
 ### 4. Attempt Fix (Website Changed Only)
