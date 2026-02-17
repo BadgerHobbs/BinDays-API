@@ -399,12 +399,19 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 			{
 				var collectionData = row.Value.GetProperty("Collections").GetString()!.Trim();
 
-				var date = DateOnly.ParseExact(
-					collectionData,
-					"dddd d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = collectionData switch
+				{
+					var value when value.Equals("Today", StringComparison.OrdinalIgnoreCase) =>
+						DateOnly.FromDateTime(DateTime.UtcNow),
+					var value when value.Equals("Tomorrow", StringComparison.OrdinalIgnoreCase) =>
+						DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)),
+					_ => DateOnly.ParseExact(
+						collectionData,
+						"dddd d MMMM yyyy",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.None
+					),
+				};
 
 				binDays.Add(new BinDayData(date, currentBin.BinTypeService));
 			}
