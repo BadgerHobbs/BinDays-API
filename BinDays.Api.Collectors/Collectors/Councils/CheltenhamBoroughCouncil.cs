@@ -8,11 +8,12 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 /// <summary>
 /// Collector implementation for Cheltenham Borough Council.
 /// </summary>
-internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
+internal sealed partial class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 {
 	/// <inheritdoc/>
 	public string Name => "Cheltenham Borough Council";
@@ -36,14 +37,14 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 		},
 		new()
 		{
-			Name = "Mixed Dry Recycling (Green Box)",
+			Name = "Mixed Dry Recycling",
 			Colour = BinColour.Green,
 			Keys = [ "Recycling" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
-			Name = "Paper, Glass & Cardboard Recycling (Blue Bag)",
+			Name = "Paper, Glass & Cardboard Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "Recycling" ],
 			Type = BinType.Bag,
@@ -74,9 +75,10 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 	private const string _scriptPath = "%5CAurora%5CCBC%20Waste%20Streets.AuroraScript%24";
 
 	/// <summary>
-	/// The Google Calendar ICS feed for Cheltenham's week schedule.
+	/// Regex to strip HTML bold tags from location descriptions.
 	/// </summary>
-	private const string _calendarUrl = "https://calendar.google.com/calendar/ical/v7oettki6t1pi2p7s0j6q6121k%40group.calendar.google.com/public/full.ics";
+	[GeneratedRegex(@"</?b>", RegexOptions.IgnoreCase)]
+	private static partial Regex HtmlBoldTagRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -84,16 +86,7 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = $"{_auroraBaseUrl}/RequestSession?userName=guest%20CBC&password=&script={_scriptPath}&callback=_jqjsp",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-			};
+			var clientSideRequest = CreateSessionRequest(1);
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -136,10 +129,10 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var addresses = new List<Address>();
 			foreach (var location in locations)
 			{
-				var description = location.GetProperty("Description").GetString()!
-					.Replace("<b>", string.Empty, StringComparison.OrdinalIgnoreCase)
-					.Replace("</b>", string.Empty, StringComparison.OrdinalIgnoreCase)
-					.Trim();
+				var description = HtmlBoldTagRegex().Replace(
+					location.GetProperty("Description").GetString()!,
+					string.Empty
+				).Trim();
 
 				var address = new Address
 				{
@@ -169,16 +162,7 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for creating a session
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = $"{_auroraBaseUrl}/RequestSession?userName=guest%20CBC&password=&script={_scriptPath}&callback=_jqjsp",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-			};
+			var clientSideRequest = CreateSessionRequest(1);
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
@@ -267,12 +251,12 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var restoreTaskId = clientSideResponse.Options.Metadata["restoreTaskId"];
 
 			var job = """
-{
-	"Task": {
-		"$type": "StatMap.Aurora.RestoreStateTask, StatMapService"
-	}
-}
-""";
+				{
+					"Task": {
+						"$type": "StatMap.Aurora.RestoreStateTask, StatMapService"
+					}
+				}
+				""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -311,12 +295,12 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var saveTaskId = clientSideResponse.Options.Metadata["saveTaskId"];
 
 			var job = """
-{
-	"Task": {
-		"$type": "StatMap.Aurora.SaveStateTask, StatMapService"
-	}
-}
-""";
+				{
+					"Task": {
+						"$type": "StatMap.Aurora.SaveStateTask, StatMapService"
+					}
+				}
+				""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -354,12 +338,12 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var clearTaskId = clientSideResponse.Options.Metadata["clearTaskId"];
 
 			var job = """
-{
-	"Task": {
-		"$type": "StatMap.Aurora.ClearResultSetTask, StatMapService"
-	}
-}
-""";
+				{
+					"Task": {
+						"$type": "StatMap.Aurora.ClearResultSetTask, StatMapService"
+					}
+				}
+				""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -396,12 +380,12 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var visibilityTaskId = clientSideResponse.Options.Metadata["visibilityTaskId"];
 
 			var job = """
-{
-	"Task": {
-		"$type": "StatMap.Aurora.ChangeLayersVisibilityTask, StatMapService"
-	}
-}
-""";
+				{
+					"Task": {
+						"$type": "StatMap.Aurora.ChangeLayersVisibilityTask, StatMapService"
+					}
+				}
+				""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -474,14 +458,14 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var queryY = location.GetProperty("Y").GetDouble();
 
 			var job = $$"""
-{
-	"QueryX": {{queryX.ToString(CultureInfo.InvariantCulture)}},
-	"QueryY": {{queryY.ToString(CultureInfo.InvariantCulture)}},
-	"Task": {
-		"Type": "StatMap.Aurora.DrillDownTask, StatMapService"
-	}
-}
-""";
+				{
+					"QueryX": {{queryX.ToString(CultureInfo.InvariantCulture)}},
+					"QueryY": {{queryY.ToString(CultureInfo.InvariantCulture)}},
+					"Task": {
+						"Type": "StatMap.Aurora.DrillDownTask, StatMapService"
+					}
+				}
+				""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -520,15 +504,15 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var queryY = clientSideResponse.Options.Metadata["queryY"];
 
 			var job = $$"""
-{
-	"QueryX": {{queryX}},
-	"QueryY": {{queryY}},
-	"Task": {
-		"Type": "StatMap.Aurora.FetchResultSetTask, StatMapService"
-	},
-	"ResultSetName": "inspection"
-}
-""";
+				{
+					"QueryX": {{queryX}},
+					"QueryY": {{queryY}},
+					"Task": {
+						"Type": "StatMap.Aurora.FetchResultSetTask, StatMapService"
+					},
+					"ResultSetName": "inspection"
+				}
+				""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -575,7 +559,7 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 11,
-				Url = _calendarUrl,
+				Url = "https://calendar.google.com/calendar/ical/v7oettki6t1pi2p7s0j6q6121k%40group.calendar.google.com/public/full.ics",
 				Method = "GET",
 				Headers = new()
 				{
@@ -640,38 +624,23 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 			var foodBins = ProcessingUtilities.GetMatchingBins(_binTypes, "Food");
 			var gardenBins = ProcessingUtilities.GetMatchingBins(_binTypes, "Garden");
 
-			// Iterate through each collection date, and create a bin day entry
+			// Iterate through each service and its dates, and create a bin day entry
 			var binDays = new List<BinDay>();
-			foreach (var date in refuseDates)
+			foreach (var (dates, bins) in new[] {
+				(refuseDates, refuseBins),
+				(recyclingDates, recyclingBins),
+				(foodDates, foodBins),
+			})
 			{
-				binDays.Add(new BinDay
+				foreach (var date in dates)
 				{
-					Address = address,
-					Date = date,
-					Bins = refuseBins,
-				});
-			}
-
-			// Iterate through each recycling date, and create a bin day entry
-			foreach (var date in recyclingDates)
-			{
-				binDays.Add(new BinDay
-				{
-					Address = address,
-					Date = date,
-					Bins = recyclingBins,
-				});
-			}
-
-			// Iterate through each food waste date, and create a bin day entry
-			foreach (var date in foodDates)
-			{
-				binDays.Add(new BinDay
-				{
-					Address = address,
-					Date = date,
-					Bins = foodBins,
-				});
+					binDays.Add(new BinDay
+					{
+						Address = address,
+						Date = date,
+						Bins = bins,
+					});
+				}
 			}
 
 			var gardenWeek = clientSideResponse.Options.Metadata["gardenWeek"];
@@ -711,12 +680,35 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 	}
 
 	/// <summary>
+	/// Creates the initial client-side request for a new session.
+	/// </summary>
+	private static ClientSideRequest CreateSessionRequest(int requestId)
+	{
+		return new ClientSideRequest
+		{
+			RequestId = requestId,
+			Url = $"{_auroraBaseUrl}/RequestSession?userName=guest%20CBC&password=&script={_scriptPath}&callback=_jqjsp",
+			Method = "GET",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+			},
+		};
+	}
+
+	/// <summary>
 	/// Parses a JSONP response into a JSON document.
 	/// </summary>
 	private static JsonDocument ParseJsonp(string content)
 	{
 		var startIndex = content.IndexOf('(');
 		var endIndex = content.LastIndexOf(')');
+
+		if (startIndex == -1 || endIndex == -1 || endIndex <= startIndex)
+		{
+			throw new InvalidOperationException("Invalid JSONP response.");
+		}
+
 		var jsonContent = content[(startIndex + 1)..endIndex];
 
 		return JsonDocument.Parse(jsonContent);
@@ -733,8 +725,16 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 		DateOnly endDate
 	)
 	{
-		var dayOfWeek = ParseDayOfWeek(dayOfWeekText);
-		string? normalisedPattern;
+		var dayOfWeek = Enum.TryParse(dayOfWeekText, true, out DayOfWeek parsedDay)
+			? parsedDay
+			: (DayOfWeek)Array.IndexOf(
+				CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedDayNames,
+				CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedDayNames
+					.FirstOrDefault(d => d.Equals(dayOfWeekText, StringComparison.OrdinalIgnoreCase))
+					?? throw new InvalidOperationException("Invalid day of week provided.")
+			);
+
+		string normalisedPattern;
 		if (weekPattern.Contains("weekly", StringComparison.OrdinalIgnoreCase))
 		{
 			normalisedPattern = "Weekly";
@@ -764,28 +764,6 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 		var targetWeek = normalisedPattern == "2" ? week2Date : week1Date;
 
 		return BuildRecurringDates(targetWeek, 14, endDate);
-	}
-
-	/// <summary>
-	/// Parses a day of week string that may be abbreviated.
-	/// </summary>
-	private static DayOfWeek ParseDayOfWeek(string dayOfWeekText)
-	{
-		if (Enum.TryParse(dayOfWeekText, true, out DayOfWeek parsedDay))
-		{
-			return parsedDay;
-		}
-
-		var abbreviatedDay = CultureInfo.InvariantCulture.DateTimeFormat.AbbreviatedDayNames
-			.Select((day, index) => new { Day = day, Index = index })
-			.FirstOrDefault(day => day.Day.Equals(dayOfWeekText, StringComparison.OrdinalIgnoreCase));
-
-		if (abbreviatedDay != null)
-		{
-			return (DayOfWeek)abbreviatedDay.Index;
-		}
-
-		throw new InvalidOperationException("Invalid day of week provided.");
 	}
 
 	/// <summary>
@@ -835,7 +813,7 @@ internal sealed class CheltenhamBoroughCouncil : GovUkCollectorBase, ICollector
 
 			var startLine = lines.FirstOrDefault(line => line.StartsWith("DTSTART", StringComparison.OrdinalIgnoreCase));
 
-			if (startLine == null)
+			if (startLine == null || !startLine.Contains(':'))
 			{
 				continue;
 			}
