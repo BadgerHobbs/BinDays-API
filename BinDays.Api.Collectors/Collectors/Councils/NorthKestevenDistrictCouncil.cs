@@ -31,25 +31,25 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 		{
 			Name = "Household Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Black (Domestic)" ],
+			Keys = [ "Black" ],
 		},
 		new()
 		{
 			Name = "Plastic Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Green (Recycling)" ],
+			Keys = [ "Green" ],
 		},
 		new()
 		{
 			Name = "Paper and Card Recycling",
 			Colour = BinColour.Purple,
-			Keys = [ "Purple (Paper/Card)" ],
+			Keys = [ "Purple" ],
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Brown (Garden Waste)" ],
+			Keys = [ "Brown" ],
 		},
 	];
 
@@ -66,16 +66,16 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 	private static partial Regex AddressRegex();
 
 	/// <summary>
-	/// Regex for the bin sections containing next and future collections.
+	/// Regex for the bin type name from a bold span element.
 	/// </summary>
-	[GeneratedRegex(@"<div class=""bg-[^""]+ bin-[^""]+-next[\s\S]*?<h3>(?<service>[^<]+)</h3>[\s\S]*?Next Collection:\s*(?<next>[^<]+)</strong>[\s\S]*?future-bin-dates[^>]*>[\s\S]*?<ul[^>]*>(?<future>[\s\S]*?)</ul>")]
-	private static partial Regex BinSectionRegex();
+	[GeneratedRegex(@"<span class=""font-weight-bold"">(?<name>[^<]+)</span>")]
+	private static partial Regex BinNameRegex();
 
 	/// <summary>
-	/// Regex for the collection dates.
+	/// Regex for the collection date from a strong element.
 	/// </summary>
-	[GeneratedRegex(@"(?<date>[A-Za-z]+,\s+\d{1,2}\s+[A-Za-z]+\s+\d{4})")]
-	private static partial Regex DateRegex();
+	[GeneratedRegex(@"<strong>(?<date>[^<]+)</strong>")]
+	private static partial Regex BinDateRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -211,7 +211,7 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for bin details page
+		// Prepare client-side request to establish session
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
@@ -232,7 +232,7 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 
 			return getBinDaysResponse;
 		}
-		// Submit the selected address to set the session
+		// Fetch the bin display page for the given UPRN
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
@@ -242,44 +242,7 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = "https://www.n-kesteven.org.uk/bins/address",
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
-					{ "cookie", requestCookies },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-				{
-					{ "uprn", address.Uid! },
-					{ "submit", string.Empty },
-				}),
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "cookie", requestCookies },
-					},
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for bin details page
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var requestCookies = clientSideResponse.Options.Metadata["cookie"];
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = $"https://www.n-kesteven.org.uk/bins/details?uprn={address.Uid}",
+				Url = $"https://www.n-kesteven.org.uk/bins/display?uprn={address.Uid}",
 				Method = "GET",
 				Headers = new()
 				{
@@ -296,59 +259,42 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 2)
 		{
-			var binSections = BinSectionRegex().Matches(clientSideResponse.Content)!;
+			var binNames = BinNameRegex().Matches(clientSideResponse.Content);
+			var binDates = BinDateRegex().Matches(clientSideResponse.Content);
 
-			// Iterate through each bin section, and create bin day entries
+			// Iterate through each bin type paired with its collection date
 			var binDays = new List<BinDay>();
-			foreach (Match binSection in binSections)
+			for (var i = 0; i < binNames.Count && i < binDates.Count; i++)
 			{
-				var service = binSection.Groups["service"].Value.Trim();
-				var nextCollection = binSection.Groups["next"].Value.Trim();
-				var futureCollections = binSection.Groups["future"].Value;
+				var binName = binNames[i].Groups["name"].Value.Trim();
+				var dateText = binDates[i].Groups["date"].Value.Trim();
 
-				var matchingBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-				var collectionDates = new HashSet<DateOnly>();
-
-				var nextDateMatch = DateRegex().Match(nextCollection);
-				if (nextDateMatch.Success)
+				// Date format is "Day, DD Month YYYY" (e.g. "Wednesday, 15 January 2025")
+				var dateParts = dateText.Split(", ");
+				if (dateParts.Length < 2)
 				{
-					var date = DateOnly.ParseExact(
-						nextDateMatch.Groups["date"].Value,
-						"dddd, d MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					collectionDates.Add(date);
+					continue;
 				}
 
-				// Iterate through each future collection date, and add it to the set
-				foreach (Match dateMatch in DateRegex().Matches(futureCollections)!)
+				var date = DateOnly.ParseExact(
+					dateParts[1],
+					"d MMMM yyyy",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+
+				var matchingBins = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
+
+				var binDay = new BinDay
 				{
-					var date = DateOnly.ParseExact(
-						dateMatch.Groups["date"].Value,
-						"dddd, d MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					Address = address,
+					Date = date,
+					Bins = matchingBins,
+				};
 
-					collectionDates.Add(date);
-				}
-
-				// Iterate through each collection date, and create a bin day object
-				foreach (var collectionDate in collectionDates)
-				{
-					var binDay = new BinDay
-					{
-						Address = address,
-						Date = collectionDate,
-						Bins = matchingBins,
-					};
-
-					binDays.Add(binDay);
-				}
+				binDays.Add(binDay);
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
