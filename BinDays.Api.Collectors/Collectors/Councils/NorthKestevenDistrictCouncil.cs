@@ -66,16 +66,11 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 	private static partial Regex AddressRegex();
 
 	/// <summary>
-	/// Regex for the bin type name from a bold span element.
+	/// Regex for the bin name and collection date from a list item in the bin-dates section.
+	/// Matches: &lt;li&gt;&lt;span class="text-COLOUR font-weight-bold"&gt;NAME&lt;/span&gt; ... &lt;strong&gt;Day, DD Month YYYY&lt;/strong&gt;
 	/// </summary>
-	[GeneratedRegex(@"<span class=""font-weight-bold"">(?<name>[^<]+)</span>")]
-	private static partial Regex BinNameRegex();
-
-	/// <summary>
-	/// Regex for the collection date from a strong element.
-	/// </summary>
-	[GeneratedRegex(@"<strong>(?<date>[^<]+)</strong>")]
-	private static partial Regex BinDateRegex();
+	[GeneratedRegex(@"<li[^>]*><span[^>]*font-weight-bold[^>]*>(?<name>[^<]+)</span>[^<]*(?:<[^>]+>[^<]*</[^>]+>)*[^<]*<strong>(?<date>[^<]+)</strong>")]
+	private static partial Regex BinDayRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -232,7 +227,7 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 
 			return getBinDaysResponse;
 		}
-		// Fetch the bin display page for the given UPRN
+		// Submit postcode to register it in the server session
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
@@ -242,6 +237,43 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
+				Url = "https://www.n-kesteven.org.uk/bins",
+				Method = "POST",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "cookie", requestCookies },
+				},
+				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
+				{
+					{ "postcode", address.Postcode! },
+					{ "submit", string.Empty },
+				}),
+				Options = new ClientSideOptions
+				{
+					Metadata =
+					{
+						{ "cookie", requestCookies },
+					},
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return getBinDaysResponse;
+		}
+		// Fetch the bin display page for the given UPRN
+		else if (clientSideResponse.RequestId == 2)
+		{
+			var requestCookies = clientSideResponse.Options.Metadata["cookie"];
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 3,
 				Url = $"https://www.n-kesteven.org.uk/bins/display?uprn={address.Uid}",
 				Method = "GET",
 				Headers = new()
@@ -259,19 +291,15 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 3)
 		{
-			var binNames = BinNameRegex().Matches(clientSideResponse.Content);
-			var binDates = BinDateRegex().Matches(clientSideResponse.Content);
-
-			// Iterate through each bin type paired with its collection date
 			var binDays = new List<BinDay>();
-			for (var i = 0; i < binNames.Count && i < binDates.Count; i++)
+			foreach (Match match in BinDayRegex().Matches(clientSideResponse.Content))
 			{
-				var binName = binNames[i].Groups["name"].Value.Trim();
-				var dateText = binDates[i].Groups["date"].Value.Trim();
+				var binName = match.Groups["name"].Value.Trim();
+				var dateText = match.Groups["date"].Value.Trim();
 
-				// Date format is "Day, DD Month YYYY" (e.g. "Wednesday, 15 January 2025")
+				// Date format is "Day, DD Month YYYY" (e.g. "Monday, 23 February 2026")
 				var dateParts = dateText.Split(", ");
 				if (dateParts.Length < 2)
 				{
