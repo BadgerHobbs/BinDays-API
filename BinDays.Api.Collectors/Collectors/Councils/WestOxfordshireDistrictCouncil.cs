@@ -277,8 +277,12 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 					var service = row.GetProperty("col1").GetString()!;
 					var dateString = row.GetProperty("col2").GetString()!;
 
-					// Handle a date of "Tomorrow"
-					if (dateString.StartsWith("Tomorrow", StringComparison.OrdinalIgnoreCase))
+					// Handle relative dates returned as "Today" or "Tomorrow"
+					if (dateString.StartsWith("Today", StringComparison.OrdinalIgnoreCase))
+					{
+						dateString = DateTime.Now.ToString("ddd, d MMMM");
+					}
+					else if (dateString.StartsWith("Tomorrow", StringComparison.OrdinalIgnoreCase))
 					{
 						dateString = DateTime.Now.AddDays(1).ToString("ddd, d MMMM");
 					}
