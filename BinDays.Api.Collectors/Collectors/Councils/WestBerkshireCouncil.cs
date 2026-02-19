@@ -32,26 +32,26 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Rubbish" ],
+			Keys = [ "Rubbish", ],
 		},
 		new()
 		{
 			Name = "Dry Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Recycling" ],
+			Keys = [ "Recycling", ],
 			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Garden" ],
+			Keys = [ "Garden", ],
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Green,
-			Keys = [ "Food" ],
+			Keys = [ "Food", ],
 			Type = BinType.Caddy,
 		},
 	];
@@ -70,16 +70,16 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 		{
 			var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
 
-			var jsonPayload = $$"""
+			var jsonPayload = JsonSerializer.Serialize(new
 			{
-				"id": {{timestamp}},
-				"method": "location.westberks.echoPostcodeFinderFILTERED",
-				"params": {
-					"provider": "",
-					"postcode": "{{postcode}}"
-				}
-			}
-			""";
+				id = long.Parse(timestamp),
+				method = "location.westberks.echoPostcodeFinderFILTERED",
+				@params = new
+				{
+					provider = "",
+					postcode,
+				},
+			});
 
 			var url = $"https://www.westberks.gov.uk/apiserver/ajaxlibrary/?callback=jQuery{timestamp}&jsonrpc={Uri.EscapeDataString(jsonPayload)}&_={timestamp}";
 
@@ -144,16 +144,16 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var requestBody = $$"""
+			var requestBody = JsonSerializer.Serialize(new
 			{
-				"jsonrpc": "2.0",
-				"id": "1",
-				"method": "goss.echo.westberks.forms.getNextRubbishRecyclingFoodCollectionDate3wkly",
-				"params": {
-					"uprn": "{{address.Uid}}"
-				}
-			}
-			""";
+				jsonrpc = "2.0",
+				id = "1",
+				method = "goss.echo.westberks.forms.getNextRubbishRecyclingFoodCollectionDate3wkly",
+				@params = new
+				{
+					uprn = address.Uid ?? string.Empty,
+				},
+			});
 
 			var clientSideRequest = new ClientSideRequest
 			{
