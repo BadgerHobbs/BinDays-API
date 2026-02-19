@@ -183,14 +183,14 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 
 			var binDays = new List<BinDay>();
 
-			(string Key, string Property)[] services =
+			string[] properties =
 			[
-				("Rubbish", "nextRubbishDateText"),
-				("Recycling", "nextRecyclingDateText"),
-				("Food", "nextFoodWasteDateText"),
+				"nextRubbishDateText",
+				"nextRecyclingDateText",
+				"nextFoodWasteDateText",
 			];
 
-			foreach (var (key, property) in services)
+			foreach (var property in properties)
 			{
 				var dateText = result.GetProperty(property).GetString()!.Trim();
 
@@ -203,7 +203,7 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 				{
 					Date = dateText.ParseDateInferringYear("dddd d MMMM"),
 					Address = address,
-					Bins = ProcessingUtilities.GetMatchingBins(_binTypes, key),
+					Bins = ProcessingUtilities.GetMatchingBins(_binTypes, property),
 				});
 			}
 
