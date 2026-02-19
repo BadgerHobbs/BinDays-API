@@ -71,15 +71,15 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 			var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
 
 			var jsonPayload = $$"""
-{
-	"id": {{timestamp}},
-	"method": "location.westberks.echoPostcodeFinderFILTERED",
-	"params": {
-		"provider": "",
-		"postcode": "{{postcode}}"
-	}
-}
-""";
+			{
+				"id": {{timestamp}},
+				"method": "location.westberks.echoPostcodeFinderFILTERED",
+				"params": {
+					"provider": "",
+					"postcode": "{{postcode}}"
+				}
+			}
+			""";
 
 			var url = $"https://www.westberks.gov.uk/apiserver/ajaxlibrary/?callback=jQuery{timestamp}&jsonrpc={Uri.EscapeDataString(jsonPayload)}&_={timestamp}";
 
@@ -145,15 +145,15 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 		if (clientSideResponse == null)
 		{
 			var requestBody = $$"""
-{
-	"jsonrpc": "2.0",
-	"id": "1",
-	"method": "goss.echo.westberks.forms.getNextRubbishRecyclingFoodCollectionDate3wkly",
-	"params": {
-		"uprn": "{{address.Uid}}"
-	}
-}
-""";
+			{
+				"jsonrpc": "2.0",
+				"id": "1",
+				"method": "goss.echo.westberks.forms.getNextRubbishRecyclingFoodCollectionDate3wkly",
+				"params": {
+					"uprn": "{{address.Uid}}"
+				}
+			}
+			""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -183,41 +183,28 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 
 			var binDays = new List<BinDay>();
 
-			void AddBinDay(string serviceName, string dateText)
+			(string Key, string Property)[] services =
+			[
+				("Rubbish", "nextRubbishDateText"),
+				("Recycling", "nextRecyclingDateText"),
+				("Food", "nextFoodWasteDateText"),
+			];
+
+			foreach (var (key, property) in services)
 			{
-				var date = dateText.ParseDateInferringYear("dddd d MMMM");
+				var dateText = result.GetProperty(property).GetString()!.Trim();
 
-				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, serviceName);
-
-				var binDay = new BinDay
+				if (string.IsNullOrWhiteSpace(dateText))
 				{
-					Date = date,
+					continue;
+				}
+
+				binDays.Add(new BinDay
+				{
+					Date = dateText.ParseDateInferringYear("dddd d MMMM"),
 					Address = address,
-					Bins = matchedBins,
-				};
-
-				binDays.Add(binDay);
-			}
-
-			var rubbishDate = result.GetProperty("nextRubbishDateText").GetString()!.Trim();
-
-			if (!string.IsNullOrWhiteSpace(rubbishDate))
-			{
-				AddBinDay("Rubbish", rubbishDate);
-			}
-
-			var recyclingDate = result.GetProperty("nextRecyclingDateText").GetString()!.Trim();
-
-			if (!string.IsNullOrWhiteSpace(recyclingDate))
-			{
-				AddBinDay("Recycling", recyclingDate);
-			}
-
-			var foodWasteDate = result.GetProperty("nextFoodWasteDateText").GetString()!.Trim();
-
-			if (!string.IsNullOrWhiteSpace(foodWasteDate))
-			{
-				AddBinDay("Food", foodWasteDate);
+					Bins = ProcessingUtilities.GetMatchingBins(_binTypes, key),
+				});
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
