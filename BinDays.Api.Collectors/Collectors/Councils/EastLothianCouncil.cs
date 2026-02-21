@@ -29,15 +29,38 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 	[
 		new()
 		{
-			Name = "Food waste and recycling",
-			Colour = BinColour.Grey,
+			Name = "General Waste",
+			Colour = BinColour.Green,
+			Type = BinType.Bin,
+			Keys = [ "Non recyclable waste" ],
+		},
+		new()
+		{
+			Name = "Recycling Glass",
+			Colour = BinColour.Black,
+			Type = BinType.Box,
 			Keys = [ "Food waste and recycling" ],
 		},
 		new()
 		{
-			Name = "Non recyclable waste",
-			Colour = BinColour.Green,
-			Keys = [ "Non recyclable waste" ],
+			Name = "Recycling Paper",
+			Colour = BinColour.Blue,
+			Type = BinType.Box,
+			Keys = [ "Food waste and recycling" ],
+		},
+		new()
+		{
+			Name = "Recycling Plastics",
+			Colour = BinColour.White,
+			Type = BinType.Sack,
+			Keys = [ "Food waste and recycling" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Type = BinType.Caddy,
+			Keys = [ "Food waste and recycling" ],
 		},
 	];
 
