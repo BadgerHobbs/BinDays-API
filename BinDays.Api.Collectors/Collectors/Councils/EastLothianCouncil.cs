@@ -177,7 +177,7 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 			{
 				var trimmedLine = line.TrimEnd('\r');
 
-				if (trimmedLine.StartsWith(" ", StringComparison.Ordinal) && unfoldedLines.Count > 0)
+				if (trimmedLine.StartsWith(' ') && unfoldedLines.Count > 0)
 				{
 					unfoldedLines[^1] += trimmedLine[1..];
 					continue;
