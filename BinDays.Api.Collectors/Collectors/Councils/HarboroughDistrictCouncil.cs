@@ -26,7 +26,8 @@ internal sealed partial class HarboroughDistrictCouncil : GovUkCollectorBase, IC
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
-	private readonly IReadOnlyCollection<Bin> _binTypes = [
+	private readonly IReadOnlyCollection<Bin> _binTypes =
+	[
 		new()
 		{
 			Name = "General Waste",
@@ -47,7 +48,14 @@ internal sealed partial class HarboroughDistrictCouncil : GovUkCollectorBase, IC
 		},
 	];
 
-	private const string _baseUrl = "http://harborough.fccenvironment.co.uk/";
+	/// <summary>
+	/// The base URL for the FCC Environment API.
+	/// </summary>
+	private const string _baseUrl = "https://harborough.fccenvironment.co.uk/";
+
+	/// <summary>
+	/// The value for the x-forwarded-proto header.
+	/// </summary>
 	private const string _forwardedProtoHeaderValue = "https";
 
 	/// <summary>
@@ -68,11 +76,7 @@ internal sealed partial class HarboroughDistrictCouncil : GovUkCollectorBase, IC
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var requestBody = $$"""
-			{
-			  "Postcode": "{{postcode}}"
-			}
-			""";
+			var requestBody = JsonSerializer.Serialize(new { Postcode = postcode });
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -153,7 +157,7 @@ internal sealed partial class HarboroughDistrictCouncil : GovUkCollectorBase, IC
 			var uprn = addressParts[0];
 			var addressLabel = addressParts[1];
 
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new Dictionary<string, string>
+			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
 				{ "Uprn", uprn },
 				{ "hiddenAddressLabel", addressLabel },
