@@ -1,5 +1,6 @@
 namespace BinDays.Api.Collectors.Collectors.Councils;
 
+using BinDays.Api.Collectors.Collectors.Vendors;
 using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
@@ -11,7 +12,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using BinDays.Api.Collectors.Collectors.Vendors;
 
 /// <summary>
 /// Collector implementation for Reigate and Banstead Borough Council.
