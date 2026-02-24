@@ -66,10 +66,10 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 	private static partial Regex AddressRegex();
 
 	/// <summary>
-	/// Regex for the bin name and collection date from a list item in the bin-dates section.
-	/// Matches: &lt;li&gt;&lt;span class="text-COLOUR font-weight-bold"&gt;NAME&lt;/span&gt; ... &lt;strong&gt;Day, DD Month YYYY&lt;/strong&gt;
+	/// Regex for the bin name and collection date from the bin-dates section.
+	/// Matches: &lt;h3&gt;NAME&lt;/h3&gt; ... &lt;strong&gt;Next Collection: ... on Day, DD Month YYYY&lt;/strong&gt;
 	/// </summary>
-	[GeneratedRegex(@"<li[^>]*><span[^>]*font-weight-bold[^>]*>(?<name>[^<]+)</span>[^<]*(?:<[^>]+>[^<]*</[^>]+>)*[^<]*<strong>(?<date>[^<]+)</strong>")]
+	[GeneratedRegex(@"<h3>(?<name>[^<]+)</h3>[\s\S]*?<strong>Next Collection:[^<]*on (?<date>[^<]+)</strong>")]
 	private static partial Regex BinDayRegex();
 
 	/// <inheritdoc/>
@@ -266,7 +266,7 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 
 			return getBinDaysResponse;
 		}
-		// Fetch the bin display page for the given UPRN
+		// Fetch the bin details page for the given UPRN
 		else if (clientSideResponse.RequestId == 2)
 		{
 			var requestCookies = clientSideResponse.Options.Metadata["cookie"];
@@ -274,12 +274,19 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 3,
-				Url = $"https://www.n-kesteven.org.uk/bins/display?uprn={address.Uid}",
+				Url = $"https://www.n-kesteven.org.uk/bins/details?uprn={address.Uid}",
 				Method = "GET",
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
+					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+					{ "accept-language", "en-GB,en;q=0.5" },
+					{ "referer", $"https://www.n-kesteven.org.uk/bins/display?uprn={address.Uid}" },
 					{ "cookie", requestCookies },
+					{ "sec-fetch-dest", "document" },
+					{ "sec-fetch-mode", "navigate" },
+					{ "sec-fetch-site", "same-origin" },
+					{ "sec-fetch-user", "?1" },
 				},
 			};
 
