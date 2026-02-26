@@ -158,6 +158,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 			return getAddressesResponse;
 		}
 
+		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
@@ -283,6 +284,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 			return getBinDaysResponse;
 		}
 
+		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }
