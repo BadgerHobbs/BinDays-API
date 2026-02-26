@@ -101,46 +101,16 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 
 			return getAddressesResponse;
 		}
-		// Prepare client-side request for the property form
+		// Prepare client-side request for address lookup
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var track = TrackRegex().Match(clientSideResponse.Content).Groups["track"].Value;
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"{_baseUrl}/?Track={track}&serviceID=A&seq=1",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "track", track },
-					},
-				},
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		// Prepare client-side request for address lookup
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var track = clientSideResponse.Options.Metadata["track"];
 
 			var requestBody = $"address_name_number=&address_street=&street_town=&address_postcode={postcode}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 3,
+				RequestId = 2,
 				Url = $"{_baseUrl}/mop.php?serviceID=A&Track={track}&seq=2",
 				Method = "POST",
 				Headers = new()
@@ -149,13 +119,6 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 					{ "content-type", "application/x-www-form-urlencoded" },
 				},
 				Body = requestBody,
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "track", track },
-					},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -166,7 +129,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 			return getAddressesResponse;
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 2)
 		{
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
@@ -224,46 +187,16 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 
 			return getBinDaysResponse;
 		}
-		// Prepare client-side request for the property form
+		// Prepare client-side request for address lookup
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var track = TrackRegex().Match(clientSideResponse.Content).Groups["track"].Value;
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"{_baseUrl}/?Track={track}&serviceID=A&seq=1",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "track", track },
-					},
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for address lookup
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var track = clientSideResponse.Options.Metadata["track"];
 
 			var requestBody = $"address_name_number=&address_street=&street_town=&address_postcode={address.Postcode!}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 3,
+				RequestId = 2,
 				Url = $"{_baseUrl}/mop.php?serviceID=A&Track={track}&seq=2",
 				Method = "POST",
 				Headers = new()
@@ -289,13 +222,13 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 			return getBinDaysResponse;
 		}
 		// Prepare client-side request for bin collection details
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 2)
 		{
 			var track = clientSideResponse.Options.Metadata["track"];
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 4,
+				RequestId = 3,
 				Url = $"{_baseUrl}/mop.php?Track={track}&serviceID=A&seq=3&pIndex={pIndex}",
 				Method = "GET",
 				Headers = new()
@@ -312,7 +245,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 3)
 		{
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
 
