@@ -272,8 +272,6 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 				{ "longitude", longitude },
 				{ "usrn", usrn },
 				{ "postcodeSector", postcodeSector },
-				{ "lengthOfPostcode", postcode.Length.ToString(CultureInfo.InvariantCulture) },
-				{ "lengthMinusTwo", (postcode.Length - 2).ToString(CultureInfo.InvariantCulture) },
 				{ "wardShort", wardCode },
 				{ "wardName", string.Empty },
 				{ "tokenString", string.Empty },
@@ -495,7 +493,7 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 				var dateString = section.Groups["date"].Value.Trim();
 				var binsContent = section.Groups["content"].Value;
 
-				var binNames = BinNameRegex().Matches(binsContent)!.Select(match => match.Groups["bin"].Value.Trim()).ToList();
+				IReadOnlyList<string> binNames = [.. BinNameRegex().Matches(binsContent)!.Select(match => match.Groups["bin"].Value.Trim())];
 
 				var date = DateOnly.ParseExact(
 					dateString,
@@ -504,7 +502,7 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 					DateTimeStyles.None
 				);
 
-				var matchedBins = binNames.SelectMany(binName => ProcessingUtilities.GetMatchingBins(_binTypes, binName)).DistinctBy(bin => bin.Name).ToList();
+				IReadOnlyList<Bin> matchedBins = [.. binNames.SelectMany(binName => ProcessingUtilities.GetMatchingBins(_binTypes, binName)).DistinctBy(bin => bin.Name)];
 
 				var binDay = new BinDay
 				{
@@ -547,9 +545,9 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 	}
 
 	/// <summary>
-	/// Builds the request body for the property details lookup.
+	/// Builds the common address form values JSON fragment shared between property details and schedule request bodies.
 	/// </summary>
-	private static string BuildPropertyDetailsBody(Dictionary<string, string> metadata)
+	private static string BuildAddressFormValues(Dictionary<string, string> metadata)
 	{
 		var house = metadata["house"];
 		var street = metadata["street"];
@@ -561,10 +559,50 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 		var latitude = metadata["latitude"];
 		var longitude = metadata["longitude"];
 		var usrn = metadata["usrn"];
+
+		return $$"""
+		"informationCorrectLabel": { "value": "Is this information correct?" },
+		"postcode_search": { "value": "{{postcode}}" },
+		"chooseAddress": { "value": "{{uprn}}" },
+		"txtListHouseNumber": { "value": "{{house}}" },
+		"txtListStreet": { "value": "{{street}}" },
+		"txtListTown": { "value": "{{town}}" },
+		"txtListCounty": { "value": "{{county}}" },
+		"txtListPostcode": { "value": "{{postcode}}" },
+		"txtUprn": { "value": "{{uprn}}" },
+		"txtWard": { "value": "{{wardCode}}" },
+		"txtlatitude": { "value": "{{latitude}}" },
+		"txtlongitude": { "value": "{{longitude}}" },
+		"txtUsrn": { "value": "{{usrn}}" },
+		"calcHouseNumber": { "value": "{{house}}" },
+		"calcStreet": { "value": "{{street}}" },
+		"calcTown": { "value": "{{town}}" },
+		"calcWard": { "value": "{{wardCode}}" },
+		"calcCounty": { "value": "{{county}}" },
+		"calcPostcode": { "value": "{{postcode}}" },
+		"txtTheHouse1": { "value": "{{house}}" },
+		"txtTheStreet1": { "value": "{{street}}" },
+		"txtTheTown1": { "value": "{{town}}" },
+		"txtTheCounty1": { "value": "{{county}}" },
+		"txtThePostcode1": { "value": "{{postcode}}" },
+		"txtTheUprn1": { "value": "{{uprn}}" },
+		"noPopuprn": { "value": "{{uprn}}" },
+		"txtTheWard1": { "value": "{{wardCode}}" }
+		""";
+	}
+
+	/// <summary>
+	/// Builds the request body for the property details lookup.
+	/// </summary>
+	private static string BuildPropertyDetailsBody(Dictionary<string, string> metadata)
+	{
+		var postcode = metadata["postcode"];
+		var uprn = metadata["uprn"];
 		var postcodeSector = metadata["postcodeSector"];
+		var addressFormValues = BuildAddressFormValues(metadata);
 		var tokenSections = BuildTokenSections(metadata, _addressFormId, _mainFormName);
 
-		var propertyDetailsBody = $$"""
+		return $$"""
 		{
 			"stopOnFailure": true,
 			"usePHPIntegrations": true,
@@ -576,33 +614,7 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 					"processName": { "value": "bin calendar" },
 					"productName": { "value": "Self" },
 					"useDefaultAddress": { "value": "true" },
-					"informationCorrectLabel": { "value": "Is this information correct?" },
-					"postcode_search": { "value": "{{postcode}}" },
-					"chooseAddress": { "value": "{{uprn}}" },
-					"txtListHouseNumber": { "value": "{{house}}" },
-					"txtListStreet": { "value": "{{street}}" },
-					"txtListTown": { "value": "{{town}}" },
-					"txtListCounty": { "value": "{{county}}" },
-					"txtListPostcode": { "value": "{{postcode}}" },
-					"txtUprn": { "value": "{{uprn}}" },
-					"txtWard": { "value": "{{wardCode}}" },
-					"txtlatitude": { "value": "{{latitude}}" },
-					"txtlongitude": { "value": "{{longitude}}" },
-					"txtUsrn": { "value": "{{usrn}}" },
-					"calcHouseNumber": { "value": "{{house}}" },
-					"calcStreet": { "value": "{{street}}" },
-					"calcTown": { "value": "{{town}}" },
-					"calcWard": { "value": "{{wardCode}}" },
-					"calcCounty": { "value": "{{county}}" },
-					"calcPostcode": { "value": "{{postcode}}" },
-					"txtTheHouse1": { "value": "{{house}}" },
-					"txtTheStreet1": { "value": "{{street}}" },
-					"txtTheTown1": { "value": "{{town}}" },
-					"txtTheCounty1": { "value": "{{county}}" },
-					"txtThePostcode1": { "value": "{{postcode}}" },
-					"txtTheUprn1": { "value": "{{uprn}}" },
-					"noPopuprn": { "value": "{{uprn}}" },
-					"txtTheWard1": { "value": "{{wardCode}}" },
+					{{addressFormValues}},
 					"checkSpacesInPostcode": { "value": "true" },
 					"lengthOfPostcode": { "value": "{{postcode.Length}}" },
 					"lengthMinus2": { "value": "{{postcode.Length - 2}}" },
@@ -617,8 +629,6 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 			{{tokenSections}}
 		}
 		""";
-
-		return propertyDetailsBody;
 	}
 
 	/// <summary>
@@ -727,12 +737,9 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 		var wardCode = metadata["wardCode"];
 		var wardShort = metadata["wardShort"];
 		var wardName = metadata["wardName"];
-		var latitude = metadata["latitude"];
-		var longitude = metadata["longitude"];
 		var usrn = metadata["usrn"];
 		var postcodeSector = metadata["postcodeSector"];
-		var lengthOfPostcode = metadata["lengthOfPostcode"];
-		var lengthMinusTwo = metadata["lengthMinusTwo"];
+		var addressFormValues = BuildAddressFormValues(metadata);
 
 		var fullAddress = string.Join(
 			" ",
@@ -744,7 +751,7 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 			new[] { $"{house} {street}".Trim(), town, county, postcode }.Where(part => !string.IsNullOrWhiteSpace(part))
 		);
 
-		var requestBody = $$"""
+		return $$"""
 		{
 			"stopOnFailure": true,
 			"usePHPIntegrations": true,
@@ -771,39 +778,13 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 								"productName": { "value": "Self" },
 								"useDefaultAddress": { "value": "true" },
 								"ward": { "value": "{{wardShort}}" },
-								"informationCorrectLabel": { "value": "Is this information correct?" },
-								"postcode_search": { "value": "{{postcode}}" },
-								"chooseAddress": { "value": "{{uprn}}" },
-								"txtListHouseNumber": { "value": "{{house}}" },
-								"txtListStreet": { "value": "{{street}}" },
-								"txtListTown": { "value": "{{town}}" },
-								"txtListCounty": { "value": "{{county}}" },
-								"txtListPostcode": { "value": "{{postcode}}" },
-								"txtUprn": { "value": "{{uprn}}" },
-								"txtWard": { "value": "{{wardCode}}" },
-								"txtlatitude": { "value": "{{latitude}}" },
-								"txtlongitude": { "value": "{{longitude}}" },
-								"txtUsrn": { "value": "{{usrn}}" },
-								"calcHouseNumber": { "value": "{{house}}" },
-								"calcStreet": { "value": "{{street}}" },
-								"calcTown": { "value": "{{town}}" },
-								"calcWard": { "value": "{{wardCode}}" },
-								"calcCounty": { "value": "{{county}}" },
-								"calcPostcode": { "value": "{{postcode}}" },
-								"txtTheHouse1": { "value": "{{house}}" },
-								"txtTheStreet1": { "value": "{{street}}" },
-								"txtTheTown1": { "value": "{{town}}" },
-								"txtTheCounty1": { "value": "{{county}}" },
-								"txtThePostcode1": { "value": "{{postcode}}" },
-								"txtTheUprn1": { "value": "{{uprn}}" },
-								"noPopuprn": { "value": "{{uprn}}" },
-								"txtTheWard1": { "value": "{{wardCode}}" },
+								{{addressFormValues}},
 								"txtFullAddress2": { "value": "{{fullAddress}}" },
 								"fullAddressMultiLine": { "value": "{{fullAddressMultiLine}}" },
 								"fullAddressComplete": { "value": "true" },
 								"checkSpacesInPostcode": { "value": "true" },
-								"lengthOfPostcode": { "value": "{{lengthOfPostcode}}" },
-								"lengthMinus2": { "value": "{{lengthMinusTwo}}" },
+								"lengthOfPostcode": { "value": "{{postcode.Length}}" },
+								"lengthMinus2": { "value": "{{postcode.Length - 2}}" },
 								"postcodeSector": { "value": "{{postcodeSector}}" },
 								"uniformUprn": { "value": "{{uprn}}" },
 								"wardCode": { "value": "{{wardCode}}" },
@@ -827,7 +808,5 @@ internal sealed partial class ReigateAndBansteadBoroughCouncil : GovUkCollectorB
 			{{tokenSections}}
 		}
 		""";
-
-		return requestBody;
 	}
 }
