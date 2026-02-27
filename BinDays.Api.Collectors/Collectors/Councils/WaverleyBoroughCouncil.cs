@@ -106,7 +106,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 		{
 			var track = TrackRegex().Match(clientSideResponse.Content).Groups["track"].Value;
 
-			var requestBody = $"address_name_number=&address_street=&street_town=&address_postcode={postcode}";
+			var requestBody = $"address_postcode={Uri.EscapeDataString(postcode)}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -193,7 +193,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 		{
 			var track = TrackRegex().Match(clientSideResponse.Content).Groups["track"].Value;
 
-			var requestBody = $"address_name_number=&address_street=&street_town=&address_postcode={address.Postcode!}";
+			var requestBody = $"address_postcode={Uri.EscapeDataString(address.Postcode!)}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
