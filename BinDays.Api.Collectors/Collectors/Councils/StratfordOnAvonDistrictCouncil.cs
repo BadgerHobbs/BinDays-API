@@ -117,14 +117,13 @@ internal sealed partial class StratfordOnAvonDistrictCouncil : GovUkCollectorBas
 				// UID format: uprn;addressLine1;addressLine2;addressLine3;addressLine4
 				var uid = string.Join(
 					";",
-					new[]
-					{
+					[
 						uprn,
-						addressLine1?.Trim() ?? string.Empty,
-						addressLine2?.Trim() ?? string.Empty,
-						addressLine3?.Trim() ?? string.Empty,
-						addressLine4?.Trim() ?? string.Empty,
-					}
+						addressLine1?.Trim(),
+						addressLine2?.Trim(),
+						addressLine3?.Trim(),
+						addressLine4?.Trim(),
+					]
 				);
 
 				var address = new Address
@@ -213,22 +212,19 @@ internal sealed partial class StratfordOnAvonDistrictCouncil : GovUkCollectorBas
 
 				var bins = new List<Bin>();
 
-				if (rawBinRow.Groups["food"].Value.Contains("check-img", StringComparison.OrdinalIgnoreCase))
-				{
-					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, "Food waste");
-					bins.AddRange(matchedBins);
-				}
+				(string Group, string Key)[] binChecks =
+				[
+					("food", "Food waste"),
+					("recycling", "Recycling"),
+					("refuse", "Refuse"),
+				];
 
-				if (rawBinRow.Groups["recycling"].Value.Contains("check-img", StringComparison.OrdinalIgnoreCase))
+				foreach (var binCheck in binChecks)
 				{
-					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, "Recycling");
-					bins.AddRange(matchedBins);
-				}
-
-				if (rawBinRow.Groups["refuse"].Value.Contains("check-img", StringComparison.OrdinalIgnoreCase))
-				{
-					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, "Refuse");
-					bins.AddRange(matchedBins);
+					if (rawBinRow.Groups[binCheck.Group].Value.Contains("check-img", StringComparison.OrdinalIgnoreCase))
+					{
+						bins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, binCheck.Key));
+					}
 				}
 
 				var binDay = new BinDay
