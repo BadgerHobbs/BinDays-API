@@ -1339,12 +1339,13 @@ var property = parts[1];
 
 var clientSideRequest = new ClientSideRequest
 {
-    Url = $"https://example.com/bins?uprn={uprn}&a={Uri.EscapeDataString(property)}",
+    Url = $"https://example.com/bins?uprn={uprn}&a={property}",
     // ...
 };
 ```
 
 **Important notes:**
+
 - Use semicolon (`;`) as the separator to avoid conflicts with common address characters (commas, spaces)
 - Use `Split(';', 2)` when you only need to split into a specific number of parts
 - Always use the null-forgiving operator when splitting: `address.Uid!.Split(';')`
