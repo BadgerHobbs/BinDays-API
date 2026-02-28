@@ -296,16 +296,17 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 		{
 			var binDays = new List<BinDay>();
 
-			void ParseAndAddBinDay(string dateString, string binTypeString)
+			var nextCollectionMatch = NextCollectionRegex().Match(clientSideResponse.Content);
+			if (nextCollectionMatch.Success)
 			{
 				var date = DateOnly.ParseExact(
-					dateString,
+					nextCollectionMatch.Groups["date"].Value.Trim(),
 					"dddd, MMMM d, yyyy",
 					CultureInfo.InvariantCulture,
 					DateTimeStyles.None
 				);
 
-				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeString);
+				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, nextCollectionMatch.Groups["bins"].Value.Trim());
 
 				binDays.Add(new BinDay
 				{
@@ -315,24 +316,26 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 				});
 			}
 
-			var nextCollectionMatch = NextCollectionRegex().Match(clientSideResponse.Content);
-			if (nextCollectionMatch.Success)
-			{
-				ParseAndAddBinDay(
-					nextCollectionMatch.Groups["date"].Value.Trim(),
-					nextCollectionMatch.Groups["bins"].Value.Trim()
-				);
-			}
-
 			var binRows = BinRowRegex().Matches(clientSideResponse.Content)!;
 
 			// Iterate through each bin day row, and create a new bin day object
 			foreach (Match binRow in binRows)
 			{
-				ParseAndAddBinDay(
+				var date = DateOnly.ParseExact(
 					binRow.Groups["date"].Value.Trim(),
-					binRow.Groups["bins"].Value.Trim()
+					"dddd, MMMM d, yyyy",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
 				);
+
+				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, binRow.Groups["bins"].Value.Trim());
+
+				binDays.Add(new BinDay
+				{
+					Date = date,
+					Address = address,
+					Bins = bins,
+				});
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
