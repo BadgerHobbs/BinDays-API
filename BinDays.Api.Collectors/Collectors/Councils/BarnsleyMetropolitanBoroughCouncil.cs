@@ -54,6 +54,11 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 	];
 
 	/// <summary>
+	/// The URL for the address selection page.
+	/// </summary>
+	private const string SelectAddressUrl = "https://waste.barnsley.gov.uk/ViewCollection/SelectAddress";
+
+	/// <summary>
 	/// Regex for the RequestVerificationToken.
 	/// </summary>
 	[GeneratedRegex(@"<input name=""__RequestVerificationToken"" type=""hidden"" value=""(?<token>[^""]+)"" />")]
@@ -92,7 +97,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = "https://waste.barnsley.gov.uk/ViewCollection/SelectAddress",
+				Url = SelectAddressUrl,
 				Method = "GET",
 				Headers = new()
 				{
@@ -126,7 +131,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = "https://waste.barnsley.gov.uk/ViewCollection/SelectAddress",
+				Url = SelectAddressUrl,
 				Method = "POST",
 				Headers = new()
 				{
@@ -190,7 +195,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = "https://waste.barnsley.gov.uk/ViewCollection/SelectAddress",
+				Url = SelectAddressUrl,
 				Method = "GET",
 				Headers = new()
 				{
@@ -224,7 +229,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = "https://waste.barnsley.gov.uk/ViewCollection/SelectAddress",
+				Url = SelectAddressUrl,
 				Method = "POST",
 				Headers = new()
 				{
@@ -268,7 +273,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 3,
-				Url = "https://waste.barnsley.gov.uk/ViewCollection/SelectAddress",
+				Url = SelectAddressUrl,
 				Method = "POST",
 				Headers = new()
 				{
@@ -291,12 +296,8 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 		{
 			var binDays = new List<BinDay>();
 
-			var nextCollectionMatch = NextCollectionRegex().Match(clientSideResponse.Content);
-			if (nextCollectionMatch.Success)
+			void ParseAndAddBinDay(string dateString, string binTypeString)
 			{
-				var dateString = nextCollectionMatch.Groups["date"].Value.Trim();
-				var binType = nextCollectionMatch.Groups["bins"].Value.Trim();
-
 				var date = DateOnly.ParseExact(
 					dateString,
 					"dddd, MMMM d, yyyy",
@@ -304,16 +305,23 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 					DateTimeStyles.None
 				);
 
-				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
+				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeString);
 
-				var binDay = new BinDay
+				binDays.Add(new BinDay
 				{
 					Date = date,
 					Address = address,
 					Bins = bins,
-				};
+				});
+			}
 
-				binDays.Add(binDay);
+			var nextCollectionMatch = NextCollectionRegex().Match(clientSideResponse.Content);
+			if (nextCollectionMatch.Success)
+			{
+				ParseAndAddBinDay(
+					nextCollectionMatch.Groups["date"].Value.Trim(),
+					nextCollectionMatch.Groups["bins"].Value.Trim()
+				);
 			}
 
 			var binRows = BinRowRegex().Matches(clientSideResponse.Content)!;
@@ -321,26 +329,10 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			// Iterate through each bin day row, and create a new bin day object
 			foreach (Match binRow in binRows)
 			{
-				var dateString = binRow.Groups["date"].Value.Trim();
-				var binType = binRow.Groups["bins"].Value.Trim();
-
-				var date = DateOnly.ParseExact(
-					dateString,
-					"dddd, MMMM d, yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
+				ParseAndAddBinDay(
+					binRow.Groups["date"].Value.Trim(),
+					binRow.Groups["bins"].Value.Trim()
 				);
-
-				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
-
-				var binDay = new BinDay
-				{
-					Date = date,
-					Address = address,
-					Bins = bins,
-				};
-
-				binDays.Add(binDay);
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
