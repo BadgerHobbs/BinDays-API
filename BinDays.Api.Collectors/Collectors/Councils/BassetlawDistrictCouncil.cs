@@ -32,7 +32,7 @@ internal sealed class BassetlawDistrictCouncil : GovUkCollectorBase, ICollector
 		{
 			Name = "General Waste",
 			Colour = BinColour.Green,
-			Keys = [ "Green", "Custom" ],
+			Keys = [ "Green" ],
 		},
 		new()
 		{
@@ -102,6 +102,7 @@ internal sealed class BassetlawDistrictCouncil : GovUkCollectorBase, ICollector
 				var x = location["x"]!.GetValue<double>().ToString(CultureInfo.InvariantCulture);
 				var y = location["y"]!.GetValue<double>().ToString(CultureInfo.InvariantCulture);
 
+				// Uid format: "uprn;x-coordinate;y-coordinate"
 				var address = new Address
 				{
 					Property = property,
@@ -130,6 +131,7 @@ internal sealed class BassetlawDistrictCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting bin polygons
 		if (clientSideResponse == null)
 		{
+			// Uid format: "uprn;x-coordinate;y-coordinate"
 			var coordinateParts = address.Uid!.Split(';');
 			var x = coordinateParts[1];
 			var y = coordinateParts[2];
@@ -177,9 +179,9 @@ internal sealed class BassetlawDistrictCouncil : GovUkCollectorBase, ICollector
 
 			var collectionDay = GetCollectionDay(attributes);
 
-			var baseDates = _baseDates[layerId];
-			var blueDates = BuildUpcomingDates(baseDates.Blue, collectionDay);
-			var greenDates = BuildUpcomingDates(baseDates.Green, collectionDay);
+			var (Blue, Green) = _baseDates[layerId];
+			var blueDates = BuildUpcomingDates(Blue, collectionDay);
+			var greenDates = BuildUpcomingDates(Green, collectionDay);
 
 			var binDays = new List<BinDay>();
 
@@ -267,15 +269,15 @@ internal sealed class BassetlawDistrictCouncil : GovUkCollectorBase, ICollector
 			("Saturday", DayOfWeek.Saturday),
 		};
 
-		foreach (var dayField in dayFields)
+		foreach (var (Field, Day) in dayFields)
 		{
-			if (attributes.TryGetPropertyValue(dayField.Field, out var valueNode))
+			if (attributes.TryGetPropertyValue(Field, out var valueNode))
 			{
 				var value = valueNode!.GetValue<string>().Trim();
 
 				if (value.Equals("Yes", StringComparison.OrdinalIgnoreCase))
 				{
-					return dayField.Day;
+					return Day;
 				}
 			}
 		}
