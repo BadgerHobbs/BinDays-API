@@ -56,7 +56,7 @@ internal sealed partial class SouthamptonCityCouncil : GovUkCollectorBase, IColl
 	/// Regex for the ufprt token values from input fields.
 	/// </summary>
 	[GeneratedRegex(
-		@"<input[^>]*?(?:name|id)=[\"'][^\"']*ufprt[^\"']*[\"'][^>]*?value=[\"'](?<ufprt>[^\"']*)[\"'][^>]*?/?>",
+		@"<input[^>]*?(?:name|id)=[\"'][^\"']* ufprt[^\"']*[\"'][^>]*?value=[\"'](?<ufprt>[^\"']*)[\"'][^>]*?/?>",
 		RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
 	)]
 	private static partial Regex UfprtTokenRegex();
@@ -65,7 +65,8 @@ internal sealed partial class SouthamptonCityCouncil : GovUkCollectorBase, IColl
 	/// Regex for the __RequestVerificationToken token values from input fields.
 	/// </summary>
 	[GeneratedRegex(
-		@"<input[^>]*?(?:name|id)=[\"']__RequestVerificationToken[\"'][^>]*?value=[\"'](?<token>[^\"']*)[\"'][^>]*?/?>",
+		@"<input[^>]*?(?:name|id)=[\"']__RequestVerificationToken[\"']
+	[^>]*?value=[\"'](?<token>[^\"']*)[\"'][^>]*?/?>",
 		RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
 	)]
 	private static partial Regex RequestVerificationTokenRegex();
