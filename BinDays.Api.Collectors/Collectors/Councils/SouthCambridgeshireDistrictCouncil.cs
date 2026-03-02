@@ -217,22 +217,7 @@ internal sealed partial class SouthCambridgeshireDistrictCouncil : GovUkCollecto
 					continue;
 				}
 
-				var bins = new List<Bin>();
-
-				if (rowHtml.Contains("Black bin", StringComparison.OrdinalIgnoreCase))
-				{
-					bins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, "Black bin"));
-				}
-
-				if (rowHtml.Contains("Blue bin", StringComparison.OrdinalIgnoreCase))
-				{
-					bins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, "Blue bin"));
-				}
-
-				if (rowHtml.Contains("Green bin", StringComparison.OrdinalIgnoreCase))
-				{
-					bins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, "Green bin"));
-				}
+				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, rowHtml);
 
 				if (bins.Count == 0)
 				{
