@@ -89,7 +89,12 @@ git checkout -b fix/{councilName}-collector-{runId}
 git add -A
 git commit -m "Fix {councilName} collector for website changes"
 git push -u origin fix/{councilName}-collector-{runId}
-gh pr create --title "Fix {councilName} collector (run {runId})" --body "Fixes #{issueNumber}\n\n..."
+cat > /tmp/pr-body.md << 'EOF'
+Fixes #{issueNumber}
+
+{description of changes}
+EOF
+gh pr create --title "Fix {councilName} collector (run {runId})" --body-file /tmp/pr-body.md
 ```
 
 Fixes are best-effort — the issue ensures manual follow-up if the auto-fix doesn't work. The PR will trigger existing integration tests CI for verification.
