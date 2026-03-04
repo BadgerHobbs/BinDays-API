@@ -12,13 +12,13 @@ using System.Text.Json;
 /// <summary>
 /// Collector implementation for Bath and North East Somerset Council.
 /// </summary>
-internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBase, ICollector
+internal sealed class BathAndNorthEastSomersetCouncil : GovUkCollectorBase, ICollector
 {
 	/// <inheritdoc/>
 	public string Name => "Bath and North East Somerset Council";
 
 	/// <inheritdoc/>
-	public Uri WebsiteUrl => new("https://www.bathnes.gov.uk/webforms/waste/collectionday/");
+	public Uri WebsiteUrl => new("https://app.bathnes.gov.uk/webforms/waste/collectionday/");
 
 	/// <inheritdoc/>
 	public override string GovUkId => "bath-and-north-east-somerset";
@@ -31,33 +31,33 @@ internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBa
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "residualNextDate" ],
+			Keys = [ "Residual" ],
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Grey,
-			Keys = [ "recyclingNextDate" ],
+			Keys = [ "Recycling" ],
 		},
 		new()
 		{
 			Name = "Card & Brown Paper",
 			Colour = BinColour.Blue,
-			Keys = [ "recyclingNextDate" ],
+			Keys = [ "Recycling" ],
 			Type = BinType.Bag,
 		},
 		new()
 		{
 			Name = "Metal, Glass, Paper & Plastic",
 			Colour = BinColour.Green,
-			Keys = [ "recyclingNextDate" ],
+			Keys = [ "Recycling" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Green,
-			Keys = [ "organicNextDate" ],
+			Keys = [ "Garden" ],
 		},
 	];
 
@@ -67,7 +67,7 @@ internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBa
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var requestUrl = $"https://www.bathnes.gov.uk/webapi/api/AddressesAPI/v2/search/{postcode}/150/true";
+			var requestUrl = $"https://app.bathnes.gov.uk/webapi/api/AddressesAPI/v2/search/{postcode}/150/true";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -78,7 +78,7 @@ internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBa
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -124,7 +124,7 @@ internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBa
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var requestUrl = $"https://www.bathnes.gov.uk/webapi/api/BinsAPI/v2/getbartecroute/{address.Uid}/true";
+			var requestUrl = $"https://app.bathnes.gov.uk/webapi/api/BinsAPI/v2/BartecFeaturesandSchedules/CollectionSummary/{address.Uid}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -135,7 +135,7 @@ internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBa
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -143,35 +143,44 @@ internal sealed partial class BathAndNorthEastSomersetCouncil : GovUkCollectorBa
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			// Parse response content as JSON object
+			// Parse response content as JSON array
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-			var rawBinDaysObject = jsonDoc.RootElement;
+			var rawBinDays = jsonDoc.RootElement;
 
-			// Iterate through all bin type keys and get associated collection date
+			// Iterate through each service collection, and create bin day entries
 			var binDays = new List<BinDay>();
-			foreach (var binType in _binTypes)
+			foreach (var rawBinDay in rawBinDays.EnumerateArray())
 			{
-				foreach (var key in binType.Keys)
+				var collectionDate = rawBinDay.GetProperty("nextCollectionDate").GetString()!;
+
+				if (string.IsNullOrWhiteSpace(collectionDate))
 				{
-					var collectionDate = rawBinDaysObject.GetProperty(key).ToString();
-
-					// Parse the date (e.g. "2024-07-29T00:00:00")
-					var date = DateOnly.ParseExact(
-						collectionDate,
-						"yyyy-MM-ddTHH:mm:ss",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
-
-					var binDay = new BinDay
-					{
-						Date = date,
-						Address = address,
-						Bins = [binType],
-					};
-
-					binDays.Add(binDay);
+					continue;
 				}
+
+				var date = DateOnly.ParseExact(
+					collectionDate,
+					"yyyy-MM-ddTHH:mm:ss",
+					CultureInfo.InvariantCulture,
+					DateTimeStyles.None
+				);
+
+				var featureType = rawBinDay.GetProperty("featureType").GetString()!;
+				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, featureType);
+
+				if (matchedBinTypes.Count == 0)
+				{
+					continue;
+				}
+
+				var binDay = new BinDay
+				{
+					Date = date,
+					Address = address,
+					Bins = matchedBinTypes,
+				};
+
+				binDays.Add(binDay);
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
