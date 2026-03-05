@@ -6,7 +6,6 @@ using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Xml.Linq;
 
 /// <summary>
@@ -102,10 +101,7 @@ internal sealed class CannockChaseDistrictCouncil : GovUkCollectorBase, ICollect
 				var addressParts = rawAddress
 					.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-				var propertyLine = string.Join(
-					", ",
-					addressParts.Where(part => !string.IsNullOrWhiteSpace(part))
-				);
+				var propertyLine = string.Join(", ", addressParts);
 
 				var address = new Address
 				{
