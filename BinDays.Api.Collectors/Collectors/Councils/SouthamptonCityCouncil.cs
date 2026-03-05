@@ -55,7 +55,7 @@ internal sealed partial class SouthamptonCityCouncil : GovUkCollectorBase, IColl
 	/// <summary>
 	/// Regex for the ufprt token values from input fields.
 	/// </summary>
-	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']ufprt[""'][^>]*?value=[""'](?<ufprt>[^""']*)[""'][^>]*?/?>")]
+	[GeneratedRegex(@"(?:<input[^>]*?(?:name|id)=[""']ufprt[""'][^>]*?value=[""'](?<ufprt>[^""']*)[""'][^>]*?/?>)|(?:data-ufprt=[""'](?<ufprt>[^""']+)[""'])|(?:ufprt=(?<ufprt>[^\\""'\\s>&]+))", RegexOptions.IgnoreCase)]
 	private static partial Regex UfprtTokenRegex();
 
 	/// <summary>
