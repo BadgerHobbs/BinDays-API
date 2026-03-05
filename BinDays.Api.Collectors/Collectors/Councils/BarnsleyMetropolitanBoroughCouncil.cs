@@ -299,12 +299,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			var nextCollectionMatch = NextCollectionRegex().Match(clientSideResponse.Content);
 			if (nextCollectionMatch.Success)
 			{
-				var date = DateOnly.ParseExact(
-					nextCollectionMatch.Groups["date"].Value.Trim(),
-					"dddd, MMMM d, yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = ParseCollectionDate(nextCollectionMatch.Groups["date"].Value);
 
 				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, nextCollectionMatch.Groups["bins"].Value.Trim());
 
@@ -321,12 +316,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			// Iterate through each bin day row, and create a new bin day object
 			foreach (Match binRow in binRows)
 			{
-				var date = DateOnly.ParseExact(
-					binRow.Groups["date"].Value.Trim(),
-					"dddd, MMMM d, yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = ParseCollectionDate(binRow.Groups["date"].Value);
 
 				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, binRow.Groups["bins"].Value.Trim());
 
@@ -347,5 +337,30 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Parses collection date strings, handling relative terms when present.
+	/// </summary>
+	private static DateOnly ParseCollectionDate(string value)
+	{
+		var dateString = value.Trim();
+
+		if (string.Equals(dateString, "Today", StringComparison.OrdinalIgnoreCase))
+		{
+			return DateOnly.FromDateTime(DateTime.UtcNow);
+		}
+
+		if (string.Equals(dateString, "Tomorrow", StringComparison.OrdinalIgnoreCase))
+		{
+			return DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1));
+		}
+
+		return DateOnly.ParseExact(
+			dateString,
+			"dddd, MMMM d, yyyy",
+			CultureInfo.InvariantCulture,
+			DateTimeStyles.None
+		);
 	}
 }
