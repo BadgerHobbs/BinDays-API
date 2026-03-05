@@ -234,20 +234,8 @@ internal sealed partial class TorridgeDistrictCouncil : GovUkCollectorBase, ICol
 					continue;
 				}
 
-				DateOnly collectionDate;
-				if (datePart.Equals("Today", StringComparison.OrdinalIgnoreCase))
-				{
-					collectionDate = DateOnly.FromDateTime(DateTime.Today);
-				}
-				else if (datePart.Equals("Tomorrow", StringComparison.OrdinalIgnoreCase))
-				{
-					collectionDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
-				}
-				else
-				{
-					// e.g. "Wed 16 Jul". The year is implied as the current one.
-					collectionDate = datePart.ParseDateInferringYear("ddd d MMM");
-				}
+				// e.g. "Today", "Tomorrow", or "Wed 16 Jul".
+				var collectionDate = datePart.ParseRelativeDateOrInferYear("ddd d MMM");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binKey);
 

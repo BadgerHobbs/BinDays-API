@@ -9,6 +9,27 @@ using System.Globalization;
 public static class Extensions
 {
 	/// <summary>
+	/// Resolves "Today" and "Tomorrow" to their corresponding <see cref="DateOnly"/> values,
+	/// or delegates to <see cref="ParseDateInferringYear"/> for all other date strings.
+	/// </summary>
+	/// <param name="input">The date string to parse (e.g. "Today", "Tomorrow", or "Monday 29 December").</param>
+	/// <param name="format">The expected date format excluding the year, passed to <see cref="ParseDateInferringYear"/> when needed.</param>
+	public static DateOnly ParseRelativeDateOrInferYear(this string input, string format)
+	{
+		if (input.Equals("Today", StringComparison.OrdinalIgnoreCase))
+		{
+			return DateOnly.FromDateTime(DateTime.Today);
+		}
+
+		if (input.Equals("Tomorrow", StringComparison.OrdinalIgnoreCase))
+		{
+			return DateOnly.FromDateTime(DateTime.Today.AddDays(1));
+		}
+
+		return input.ParseDateInferringYear(format);
+	}
+
+	/// <summary>
 	/// Parses a date string that lacks a year by checking the current, previous, and next years.
 	/// It returns the valid date that is chronologically closest to today.
 	/// </summary>

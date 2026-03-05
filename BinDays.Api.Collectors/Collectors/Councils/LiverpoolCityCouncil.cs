@@ -167,19 +167,8 @@ internal sealed partial class LiverpoolCityCouncil : GovUkCollectorBase, ICollec
 					// Strip the st|nd|rd|th and remove day of the week
 					dateString = CollectionDateRegex().Replace(dateString, "").Split(",").Last().Trim();
 
-					// Handle a date of 'Today'
-					if (dateString == "Today")
-					{
-						dateString = DateTime.Now.ToString("d MMMM");
-					}
-					// Handle a date of "Tomorrow"
-					else if (dateString == "Tomorrow")
-					{
-						dateString = DateTime.Now.AddDays(1).ToString("d MMMM");
-					}
-
 					// Parse the date
-					var date = dateString.ParseDateInferringYear("d MMMM");
+					var date = dateString.ParseRelativeDateOrInferYear("d MMMM");
 
 					// Get matching bin types from the type using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
