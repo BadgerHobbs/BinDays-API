@@ -297,12 +297,7 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 				var collectionType = collection.GetProperty("collectionType").GetString()!.Trim();
 				var collectionDate = collection.GetProperty("nextDateUnformatted").GetString()!.Trim();
 
-				var date = DateOnly.ParseExact(
-					collectionDate,
-					"dd/MM/yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(collectionDate, "dd/MM/yyyy");
 				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, collectionType);
 
 				var binDay = new BinDay

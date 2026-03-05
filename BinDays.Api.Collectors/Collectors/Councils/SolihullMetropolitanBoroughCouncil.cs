@@ -239,12 +239,7 @@ internal sealed partial class SolihullMetropolitanBoroughCouncil : GovUkCollecto
 				var collectionDate = rawBinDay.Groups["nextCollectionDate"].Value;
 
 				// Parse the collection date (e.g. Monday, 12 May 2025)
-				var date = DateOnly.ParseExact(
-					collectionDate,
-					"dddd, d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(collectionDate, "dddd, d MMMM yyyy");
 
 				// Get matching bin types from the service using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);

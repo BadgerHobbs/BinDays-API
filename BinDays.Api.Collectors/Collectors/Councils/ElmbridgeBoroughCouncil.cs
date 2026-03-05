@@ -283,12 +283,7 @@ internal sealed partial class ElmbridgeBoroughCouncil : GovUkCollectorBase, ICol
 					.Select(result => result.Value.Trim())
 					.Where(result => !string.IsNullOrWhiteSpace(result));
 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"dd/MM/yyyy HH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "dd/MM/yyyy HH:mm:ss");
 
 				var bins = new List<Bin>();
 				foreach (var service in services)

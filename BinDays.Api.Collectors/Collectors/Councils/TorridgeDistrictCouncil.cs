@@ -235,7 +235,7 @@ internal sealed partial class TorridgeDistrictCouncil : GovUkCollectorBase, ICol
 				}
 
 				// e.g. "Today", "Tomorrow", or "Wed 16 Jul".
-				var collectionDate = datePart.ParseRelativeDateOrInferYear("ddd d MMM");
+				var collectionDate = DateUtilities.ParseRelativeDateOrInferYear(datePart, "ddd d MMM");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binKey);
 

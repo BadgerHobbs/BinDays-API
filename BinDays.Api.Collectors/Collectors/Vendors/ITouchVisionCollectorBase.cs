@@ -166,12 +166,7 @@ internal abstract class ITouchVisionCollectorBase : GovUkCollectorBase
 				{
 					if (!string.IsNullOrWhiteSpace(dateString))
 					{
-						var date = DateOnly.ParseExact(
-							dateString,
-							"dd-MM-yyyy",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
+						var date = DateUtilities.ParseDateExact(dateString, "dd-MM-yyyy");
 
 						binDays.Add(new BinDay
 						{

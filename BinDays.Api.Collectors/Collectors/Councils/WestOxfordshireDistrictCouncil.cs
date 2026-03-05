@@ -277,7 +277,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 					var service = row.GetProperty("col1").GetString()!;
 					var dateString = row.GetProperty("col2").GetString()!;
 
-					var date = dateString.ParseRelativeDateOrInferYear("ddd, d MMMM");
+					var date = DateUtilities.ParseRelativeDateOrInferYear(dateString, "ddd, d MMMM");
 
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

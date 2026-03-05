@@ -233,12 +233,7 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 				var service = rawBinDay.Groups["service"].Value.Trim();
 				var dateString = rawBinDay.Groups["date"].Value.Trim();
 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"yyyy-MM-dd",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "yyyy-MM-dd");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

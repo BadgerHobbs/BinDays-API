@@ -242,12 +242,7 @@ internal sealed partial class BirminghamCityCouncil : GovUkCollectorBase, IColle
 				var service = rawBinDay.Groups["service"].Value;
 				var collectionDate = rawBinDay.Groups["date"].Value;
 
-				var date = DateOnly.ParseExact(
-					collectionDate,
-					"ddd dd/MM/yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(collectionDate, "ddd dd/MM/yyyy");
 
 				// Get matching bin types from the service using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);

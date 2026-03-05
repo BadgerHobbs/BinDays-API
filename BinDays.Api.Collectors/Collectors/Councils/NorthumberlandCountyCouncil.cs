@@ -247,7 +247,7 @@ internal sealed partial class NorthumberlandCountyCouncil : GovUkCollectorBase, 
 				dateStr = OrdinalIndicatorsRegex().Replace(dateStr, "");
 
 				// Parse the date
-				var date = dateStr.ParseDateInferringYear("d MMMM");
+				var date = DateUtilities.ParseDateInferringYear(dateStr, "d MMMM");
 
 				// Get matching bin types from the type using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeStr);

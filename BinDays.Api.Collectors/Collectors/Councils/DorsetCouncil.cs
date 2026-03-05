@@ -247,12 +247,7 @@ internal sealed partial class DorsetCouncil : GovUkCollectorBase, ICollector
 					var type = binTypeElement.GetProperty("type").GetString()!;
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, type);
 
-					var date = DateOnly.ParseExact(
-						dateEl.GetString()!,
-						"yyyy-MM-dd",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var date = DateUtilities.ParseDateExact(dateEl.GetString()!, "yyyy-MM-dd");
 
 					var binDay = new BinDay
 					{

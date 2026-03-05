@@ -189,7 +189,7 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 				var dateText = WebUtility.HtmlDecode(collectionEntry.Groups["date"].Value).Trim();
 				var day = DayNumberRegex().Match(dateText).Value;
 
-				var date = $"{day} {currentMonth}".ParseDateInferringYear("d MMMM");
+				var date = DateUtilities.ParseDateInferringYear($"{day} {currentMonth}", "d MMMM");
 
 				var binsHtml = WebUtility.HtmlDecode(collectionEntry.Groups["bins"].Value);
 				var bins = new List<Bin>();

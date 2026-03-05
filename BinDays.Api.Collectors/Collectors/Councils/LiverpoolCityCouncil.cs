@@ -168,7 +168,7 @@ internal sealed partial class LiverpoolCityCouncil : GovUkCollectorBase, ICollec
 					dateString = CollectionDateRegex().Replace(dateString, "").Split(",").Last().Trim();
 
 					// Parse the date
-					var date = dateString.ParseRelativeDateOrInferYear("d MMMM");
+					var date = DateUtilities.ParseRelativeDateOrInferYear(dateString, "d MMMM");
 
 					// Get matching bin types from the type using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);

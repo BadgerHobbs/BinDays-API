@@ -189,12 +189,7 @@ internal sealed partial class BristolCityCouncil : GovUkCollectorBase, ICollecto
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, containerName);
 
 				// Parse the date string (e.g. "2025-04-15T00:00:00")
-				var date = DateOnly.ParseExact(
-					collectionDate,
-					"yyyy-MM-dd'T'HH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(collectionDate, "yyyy-MM-dd'T'HH:mm:ss");
 
 				var binDay = new BinDay
 				{

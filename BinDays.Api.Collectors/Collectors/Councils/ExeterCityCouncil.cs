@@ -173,12 +173,7 @@ internal sealed partial class ExeterCityCouncil : GovUkCollectorBase, ICollector
 				dateString = CollectionDateRegex().Replace(dateString, "");
 
 				// Parse the date (e.g. 'Wednesday, 8 October 2025')
-				var date = DateOnly.ParseExact(
-					dateString,
-					"dddd, d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "dddd, d MMMM yyyy");
 
 				// Get matching bin types from the collection using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, collection);

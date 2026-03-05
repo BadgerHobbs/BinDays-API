@@ -219,12 +219,7 @@ internal sealed partial class BroadlandDistrictCouncil : GovUkCollectorBase, ICo
 				var dateString = match.Groups["date"].Value.Trim();
 
 				// Parse date stirng (e.g. 'Friday 19 December 2025')
-				var date = DateOnly.ParseExact(
-					dateString,
-					"dddd d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "dddd d MMMM yyyy");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
 

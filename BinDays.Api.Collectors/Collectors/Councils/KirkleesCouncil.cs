@@ -410,12 +410,7 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				}
 				else
 				{
-					date = DateOnly.ParseExact(
-						collectionData,
-						"dddd d MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					date = DateUtilities.ParseDateExact(collectionData, "dddd d MMMM yyyy");
 				}
 
 				binDays.Add(new BinDayData(date, currentBin.BinTypeService));

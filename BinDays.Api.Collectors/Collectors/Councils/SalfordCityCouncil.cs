@@ -154,12 +154,7 @@ internal sealed partial class SalfordCityCouncil : GovUkCollectorBase, ICollecto
 				var summary = rawCollection.Groups["summary"].Value.Trim();
 				var dateString = rawCollection.Groups["date"].Value;
 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"yyyyMMdd",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "yyyyMMdd");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, summary);
 

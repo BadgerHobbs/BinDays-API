@@ -173,11 +173,7 @@ internal sealed partial class PembrokeshireCountyCouncil : GovUkCollectorBase, I
 				var binType = rawBinDay.Groups["binType"].Value;
 				var date = rawBinDay.Groups["date"].Value;
 
-				var collectionDate = DateOnly.ParseExact(
-					date,
-					"dd/MM/yyyy",
-					CultureInfo.InvariantCulture
-				);
+				var collectionDate = DateUtilities.ParseDateExact(date, "dd/MM/yyyy");
 
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
 

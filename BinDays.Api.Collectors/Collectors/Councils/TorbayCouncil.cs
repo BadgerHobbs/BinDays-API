@@ -272,12 +272,7 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 				var dateString = match.Groups["date"].Value.Trim();
 				var service = match.Groups["service"].Value.Trim();
 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"dddd dd MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "dddd dd MMMM yyyy");
 
 				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

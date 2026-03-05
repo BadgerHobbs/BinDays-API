@@ -256,12 +256,7 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 							continue;
 						}
 
-						var date = DateOnly.ParseExact(
-							$"{day} {month} {year}",
-							"d MMMM yyyy",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
+						var date = DateUtilities.ParseDateExact($"{day} {month} {year}", "d MMMM yyyy");
 
 						// Extract bin types from icons in the cell
 						var bins = new List<Bin>();

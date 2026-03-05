@@ -185,9 +185,7 @@ internal sealed partial class HartDistrictCouncil : GovUkCollectorBase, ICollect
 				var service = rawBinDay.Groups["service"].Value.Trim();
 				var serviceDate = rawBinDay.Groups["date"].Value.Trim();
 
-				var date = serviceDate.ParseDateInferringYear(
-					"d MMMM"
-				);
+				var date = DateUtilities.ParseDateInferringYear(serviceDate, "d MMMM");
 
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

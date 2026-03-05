@@ -257,12 +257,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 				var dateText = rawBinDay.Groups["date"].Value;
 				var service = rawBinDay.Groups["service"].Value.Trim();
 
-				var date = DateOnly.ParseExact(
-					dateText,
-					"dd/MM/yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateText, "dd/MM/yyyy");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

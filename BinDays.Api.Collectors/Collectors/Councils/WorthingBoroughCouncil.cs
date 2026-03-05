@@ -167,7 +167,7 @@ internal sealed partial class WorthingBoroughCouncil : GovUkCollectorBase, IColl
 				foreach (var collectionDate in collectionDates)
 				{
 					// Parse the date (e.g. 'Friday 16 May')
-					var date = collectionDate.Trim().ParseDateInferringYear("dddd d MMMM");
+					var date = DateUtilities.ParseDateInferringYear(collectionDate.Trim(), "dddd d MMMM");
 
 					// Get matching bin types from the collection using the keys
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, collection);

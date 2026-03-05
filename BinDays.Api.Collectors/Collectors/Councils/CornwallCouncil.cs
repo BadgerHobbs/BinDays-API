@@ -175,7 +175,7 @@ internal sealed partial class CornwallCouncil : GovUkCollectorBase, ICollector
 				var dateString = rawBinDay.Groups["date"].Value;
 
 				// Parse date string (e.g. "18 Jul")
-				var date = dateString.ParseDateInferringYear("d MMM");
+				var date = DateUtilities.ParseDateInferringYear(dateString, "d MMM");
 
 				// Get matching bin types from the bin ID using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binId);

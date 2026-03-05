@@ -553,12 +553,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 					continue;
 				}
 
-				var collectionDate = DateOnly.ParseExact(
-					match.Groups["date"].Value,
-					"dd/MM/yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var collectionDate = DateUtilities.ParseDateExact(match.Groups["date"].Value, "dd/MM/yyyy");
 
 				var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, []);
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, workPack);

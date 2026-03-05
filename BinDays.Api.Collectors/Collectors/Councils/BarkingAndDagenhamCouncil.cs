@@ -155,12 +155,7 @@ internal sealed class BarkingAndDagenhamCouncil : GovUkCollectorBase, ICollector
 
 				foreach (var collectionDate in collections)
 				{
-					var date = DateOnly.ParseExact(
-						collectionDate,
-						"dddd dd MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var date = DateUtilities.ParseDateExact(collectionDate, "dddd dd MMMM yyyy");
 
 					var binDay = new BinDay
 					{

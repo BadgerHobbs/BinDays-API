@@ -409,12 +409,7 @@ internal sealed partial class StockportCouncil : GovUkCollectorBase, ICollector
 				var serviceDescription = rawBinDay.Groups["description"].Value.Trim();
 				var dateString = rawBinDay.Groups["date"].Value.Trim();
 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"dddd, d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "dddd, d MMMM yyyy");
 
 				var service = $"{serviceName} {serviceDescription}";
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);

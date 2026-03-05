@@ -263,11 +263,7 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 				var date = rawBinDay.Groups["date"].Value.TrimEnd('.');
 
 				// Parse the collection date
-				var collectionDate = DateOnly.ParseExact(
-					date,
-					"dddd dd MMMM yyyy",
-					CultureInfo.InvariantCulture
-				);
+				var collectionDate = DateUtilities.ParseDateExact(date, "dddd dd MMMM yyyy");
 
 				// Get matching bin types from the type using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binName);

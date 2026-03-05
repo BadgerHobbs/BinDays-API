@@ -196,23 +196,13 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 
 				if (!nextCollection.Contains("n/a", StringComparison.OrdinalIgnoreCase))
 				{
-					var date = DateOnly.ParseExact(
-						nextCollection,
-						"dddd, d MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var date = DateUtilities.ParseDateExact(nextCollection, "dddd, d MMMM yyyy");
 					collectionDates.Add(date);
 				}
 
 				foreach (Match dateMatch in DateRegex().Matches(futureCollections))
 				{
-					var date = DateOnly.ParseExact(
-						dateMatch.Groups["date"].Value,
-						"dddd, d MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var date = DateUtilities.ParseDateExact(dateMatch.Groups["date"].Value, "dddd, d MMMM yyyy");
 					collectionDates.Add(date);
 				}
 

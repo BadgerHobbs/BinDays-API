@@ -229,12 +229,7 @@ internal sealed partial class ShropshireCouncil : GovUkCollectorBase, ICollector
 				var collectionType = rawBinDay.Groups["CollectionType"].Value;
 
 				// Parse the date (e.g. 'Friday 4, April 2025')
-				var date = DateOnly.ParseExact(
-					dateString,
-					"dddd d, MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "dddd d, MMMM yyyy");
 
 				// Skip bin day if in the past
 				if (date < DateOnly.FromDateTime(DateTime.Now))

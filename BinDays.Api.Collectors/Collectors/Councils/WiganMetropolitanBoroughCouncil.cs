@@ -277,11 +277,7 @@ internal sealed partial class WiganMetropolitanBoroughCouncil : GovUkCollectorBa
 				var year = rawBinDay.Groups["year"].Value;
 
 				// Parse the collection date
-				var date = DateOnly.ParseExact(
-					$"{day} {month} {year}",
-					"d MMM yyyy",
-					CultureInfo.InvariantCulture
-				);
+				var date = DateUtilities.ParseDateExact($"{day} {month} {year}", "d MMM yyyy");
 
 				// Get matching bin types from the type using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeKey);

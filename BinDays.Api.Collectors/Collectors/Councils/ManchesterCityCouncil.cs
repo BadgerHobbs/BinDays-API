@@ -269,12 +269,7 @@ internal sealed partial class ManchesterCityCouncil : GovUkCollectorBase, IColle
 					foreach (var rawDate in rawDates)
 					{
 						// Parse the date string (e.g. "15/04/2025 00:00:00")
-						var date = DateOnly.ParseExact(
-							rawDate,
-							"dd/MM/yyyy HH:mm:ss",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
+						var date = DateUtilities.ParseDateExact(rawDate, "dd/MM/yyyy HH:mm:ss");
 
 						var binDay = new BinDay
 						{

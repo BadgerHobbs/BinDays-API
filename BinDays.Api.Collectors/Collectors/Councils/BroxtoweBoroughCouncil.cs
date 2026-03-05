@@ -293,12 +293,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 				var service = WebUtility.HtmlDecode(rawBinRow.Groups["service"].Value).Trim();
 				var nextCollection = WebUtility.HtmlDecode(rawBinRow.Groups["next"].Value).Trim();
 
-				var date = DateOnly.ParseExact(
-					nextCollection,
-					"dddd, dd MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(nextCollection, "dddd, dd MMMM yyyy");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

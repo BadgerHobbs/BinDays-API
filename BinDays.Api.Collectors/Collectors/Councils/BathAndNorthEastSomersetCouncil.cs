@@ -158,12 +158,7 @@ internal sealed class BathAndNorthEastSomersetCouncil : GovUkCollectorBase, ICol
 					continue;
 				}
 
-				var date = DateOnly.ParseExact(
-					collectionDate,
-					"yyyy-MM-ddTHH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(collectionDate, "yyyy-MM-ddTHH:mm:ss");
 
 				var featureType = rawBinDay.GetProperty("featureType").GetString()!;
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, featureType);

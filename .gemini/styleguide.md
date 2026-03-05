@@ -760,17 +760,9 @@ Headers = new()
 };
 ```
 
-### ❌ DON'T: Use single-line date parsing
+### ❌ DON'T: Call DateOnly.ParseExact directly
 
-**Problem**: Date parsing on a single line is hard to read.
-
-```c#
-var date = DateOnly.ParseExact(dateString, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None);
-```
-
-### ✅ DO: Use multi-line date parsing
-
-**Reason**: Multi-line format improves readability.
+**Problem**: Verbose boilerplate — always requires `CultureInfo.InvariantCulture` and `DateTimeStyles.None`.
 
 ```c#
 var date = DateOnly.ParseExact(
@@ -781,9 +773,17 @@ var date = DateOnly.ParseExact(
 );
 ```
 
-### ❌ DON'T: Put closing parenthesis inline
+### ✅ DO: Use DateUtilities.ParseDateExact
 
-**Problem**: Closing parenthesis on the same line as last argument.
+**Reason**: Removes boilerplate; the utility class owns all date parsing concerns.
+
+```c#
+var date = DateUtilities.ParseDateExact(dateString, "dd/MM/yyyy");
+```
+
+### ❌ DON'T: Put closing parenthesis inline with the last argument
+
+**Problem**: Closing parenthesis on the same line as the last argument is harder to read.
 
 ```c#
 var date = DateOnly.ParseExact(
@@ -793,7 +793,7 @@ var date = DateOnly.ParseExact(
     DateTimeStyles.None);  // ❌ Should be on own line
 ```
 
-### ✅ DO: Put closing parenthesis on separate line
+### ✅ DO: Put closing parenthesis on its own line
 
 **Reason**: Consistent formatting for multi-line method calls.
 
@@ -1080,11 +1080,7 @@ var day = Regex.Match(dateText, @"\d+").Value;
 **Problem**: Parsing dates with "1st", "2nd", "3rd" without removing suffixes.
 
 ```c#
-var date = DateOnly.ParseExact(
-    "21st March 2024",  // ❌ Will fail
-    "dd MMMM yyyy",
-    CultureInfo.InvariantCulture
-);
+var date = DateUtilities.ParseDateExact("21st March 2024", "dd MMMM yyyy");  // ❌ Will fail
 ```
 
 ### ✅ DO: Remove ordinal suffixes before parsing
@@ -1097,23 +1093,32 @@ private static partial Regex OrdinalSuffixRegex();
 
 // Remove suffixes first
 dateString = OrdinalSuffixRegex().Replace(dateString, "");
-var date = DateOnly.ParseExact(
-    dateString,
-    "d MMMM yyyy",
-    CultureInfo.InvariantCulture,
-    DateTimeStyles.None
-);
+var date = DateUtilities.ParseDateExact(dateString, "d MMMM yyyy");
 ```
 
-### ✅ DO: Use ParseDateInferringYear for dates without year
+### ✅ DO: Use the correct DateUtilities method for the date format
 
-**Reason**: Extension method automatically handles year boundaries.
+**Reason**: Each method enforces the right format contract at the boundary and redirects misuse with a clear error.
+
+| Method | Format contains year? | Handles Today/Tomorrow? |
+|---|---|---|
+| `ParseDateExact` | ✅ required | ❌ |
+| `ParseRelativeDateOrExact` | ✅ required | ✅ |
+| `ParseRelativeDateOrInferYear` | ❌ forbidden | ✅ |
+| `ParseDateInferringYear` | ❌ forbidden | ❌ |
 
 ```c#
-using BinDays.Api.Collectors.Utilities;
+// Full date with year
+var date = DateUtilities.ParseDateExact(dateString, "dd/MM/yyyy");
 
-// When date lacks year information
-var date = dateString.ParseDateInferringYear("dddd d MMMM");
+// Full date with year, but council may also return "Today" or "Tomorrow"
+var date = DateUtilities.ParseRelativeDateOrExact(dateString, "dddd d MMMM yyyy");
+
+// Date without year, but council may also return "Today" or "Tomorrow"
+var date = DateUtilities.ParseRelativeDateOrInferYear(dateString, "dddd d MMMM");
+
+// Date without year
+var date = DateUtilities.ParseDateInferringYear(dateString, "dddd d MMMM");
 ```
 
 ---
@@ -1710,12 +1715,7 @@ internal sealed partial class MyNewCouncil : GovUkCollectorBase, ICollector
 				var service = rawBinDay.Groups["service"].Value.Trim();
 				var collectionDate = rawBinDay.Groups["date"].Value.Trim();
 
-				var date = DateOnly.ParseExact(
-					collectionDate,
-					"dd/MM/yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(collectionDate, "dd/MM/yyyy");
 
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

@@ -313,12 +313,7 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 					continue;
 				}
 
-				var date = DateOnly.ParseExact(
-					dateParts[1],
-					"d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateParts[1], "d MMMM yyyy");
 
 				var matchingBins = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
 

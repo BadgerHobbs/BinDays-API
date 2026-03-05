@@ -216,11 +216,7 @@ internal abstract partial class FccCollectorBase : GovUkCollectorBase
 				var service = ServiceRegex().Match(html).Groups[1].Value;
 				var collectionDateString = DateRegex().Match(html).Groups[1].Value;
 
-				var date = DateOnly.ParseExact(
-					collectionDateString.Split(",").Last().Trim(),
-					"dd MMMM yyyy",
-					CultureInfo.InvariantCulture
-				);
+				var date = DateUtilities.ParseDateExact(collectionDateString.Split(",").Last().Trim(), "dd MMMM yyyy");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(BinTypes, service);
 

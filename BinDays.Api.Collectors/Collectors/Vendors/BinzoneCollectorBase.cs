@@ -369,7 +369,7 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 				}
 
 				// Parse the date (e.g. "Thursday 27 November")
-				var date = dateString.ParseDateInferringYear("dddd d MMMM");
+				var date = DateUtilities.ParseDateInferringYear(dateString, "dddd d MMMM");
 
 				// Split bin description by comma or "and" to get individual bins
 				var bins = binString.Split([",", " and "], StringSplitOptions.RemoveEmptyEntries);

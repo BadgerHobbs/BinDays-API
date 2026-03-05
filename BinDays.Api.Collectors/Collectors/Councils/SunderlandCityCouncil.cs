@@ -297,12 +297,7 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				var service = rawBinDay.Groups["service"].Value.Trim();
 				var date = rawBinDay.Groups["date"].Value.Trim();
 
-				var collectionDate = DateOnly.ParseExact(
-					date,
-					"dddd d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var collectionDate = DateUtilities.ParseDateExact(date, "dddd d MMMM yyyy");
 
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

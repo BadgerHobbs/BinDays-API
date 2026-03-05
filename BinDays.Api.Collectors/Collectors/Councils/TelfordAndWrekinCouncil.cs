@@ -162,7 +162,7 @@ internal sealed partial class TelfordAndWrekinCouncil : GovUkCollectorBase, ICol
 				dateString = CollectionDateRegex().Replace(dateString, "");
 
 				// Parse the date (e.g. "Monday 15th December")
-				var date = dateString.ParseDateInferringYear("dddd d MMMM");
+				var date = DateUtilities.ParseDateInferringYear(dateString, "dddd d MMMM");
 
 				var binType = rawBinDay.GetProperty("name").GetString()!;
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binType);

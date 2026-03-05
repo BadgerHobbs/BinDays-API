@@ -201,12 +201,7 @@ internal sealed partial class HarboroughDistrictCouncil : GovUkCollectorBase, IC
 				var service = rawBinDay.Groups["service"].Value.Trim();
 				var collectionDate = rawBinDay.Groups["date"].Value.Trim();
 
-				var date = DateOnly.ParseExact(
-					collectionDate,
-					"d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(collectionDate, "d MMMM yyyy");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

@@ -240,12 +240,7 @@ internal sealed partial class SouthamptonCityCouncil : GovUkCollectorBase, IColl
 				var collectionDate = rawBinDay.Groups["collectionDate"].Value;
 
 				// Parse the collection date (6/19/2025)
-				var date = DateOnly.ParseExact(
-					collectionDate,
-					"M/d/yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(collectionDate, "M/d/yyyy");
 
 				// Get matching bin types from the service using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);

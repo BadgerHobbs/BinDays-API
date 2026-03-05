@@ -169,12 +169,7 @@ internal sealed partial class TeignbridgeDistrictCouncil : GovUkCollectorBase, I
 				var dateString = rawBinCollection.Groups["CollectionDate"].Value;
 
 				// Parse the date (e.g. '12 June 2025')
-				var date = DateOnly.ParseExact(
-					dateString,
-					"d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "d MMMM yyyy");
 
 				// Get the bin types from the collection
 				var rawBinTypes = rawBinCollection.Groups["BinType"].Captures;

@@ -244,12 +244,7 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 				var serviceStartIndex = summary.LastIndexOf(" for ", StringComparison.Ordinal) + 5;
 				var service = summary[serviceStartIndex..];
 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"yyyyMMdd",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "yyyyMMdd");
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

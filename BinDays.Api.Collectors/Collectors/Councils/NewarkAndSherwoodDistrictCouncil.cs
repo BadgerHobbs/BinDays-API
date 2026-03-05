@@ -251,12 +251,7 @@ internal sealed partial class NewarkAndSherwoodDistrictCouncil : GovUkCollectorB
 
 					var dateString = $"{day} {month}";
 
-					var collectionDate = DateOnly.ParseExact(
-						dateString,
-						"dddd d MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var collectionDate = DateUtilities.ParseDateExact(dateString, "dddd d MMMM yyyy");
 
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

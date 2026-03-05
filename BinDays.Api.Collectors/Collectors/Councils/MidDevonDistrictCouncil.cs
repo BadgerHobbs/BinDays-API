@@ -362,12 +362,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			{
 				var binDay = new BinDay
 				{
-					Date = DateOnly.ParseExact(
-						dates[i],
-						"dd-MMM-yy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					),
+					Date = DateUtilities.ParseDateExact(dates[i], "dd-MMM-yy"),
 					Address = address,
 					Bins = ProcessingUtilities.GetMatchingBins(_binTypes, items[i]),
 				};

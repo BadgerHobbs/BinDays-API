@@ -192,12 +192,7 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 				datePart = DoubleSpaceRegex().Replace(datePart, " ");
 
 				// Parse the date (e.g. "Tuesday 8 July 2025")
-				var collectionDate = DateOnly.ParseExact(
-					datePart,
-					"dddd d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var collectionDate = DateUtilities.ParseDateExact(datePart, "dddd d MMMM yyyy");
 
 				// Find matching bin types
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeText);

@@ -201,7 +201,7 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 
 				binDays.Add(new BinDay
 				{
-					Date = dateText.ParseRelativeDateOrInferYear("dddd d MMMM"),
+					Date = DateUtilities.ParseRelativeDateOrInferYear(dateText, "dddd d MMMM"),
 					Address = address,
 					Bins = ProcessingUtilities.GetMatchingBins(_binTypes, property),
 				});

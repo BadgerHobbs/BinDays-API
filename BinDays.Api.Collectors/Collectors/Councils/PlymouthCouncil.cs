@@ -292,12 +292,7 @@ internal sealed partial class PlymouthCouncil : GovUkCollectorBase, ICollector
 				var roundType = binDayData.GetProperty("Round_Type").ToString();
 
 				// Parse date (e.g. '2025-05-07T00:00:00')
-				var date = DateOnly.ParseExact(
-					dateString,
-					"yyyy-MM-ddTHH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "yyyy-MM-ddTHH:mm:ss");
 
 				// Find matching bin types based on the round type in their keys
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, roundType);

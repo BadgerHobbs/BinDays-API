@@ -224,12 +224,7 @@ internal sealed partial class SouthCambridgeshireDistrictCouncil : GovUkCollecto
 					continue;
 				}
 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"dddd d MMMM yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "dddd d MMMM yyyy");
 
 				var binDay = new BinDay
 				{

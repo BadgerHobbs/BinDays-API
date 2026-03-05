@@ -163,12 +163,7 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 					var rangeEl = binTypeElement.GetProperty("scheduleDateRange");
 					foreach (var dateEl in rangeEl.EnumerateArray())
 					{
-						var date = DateOnly.ParseExact(
-							dateEl.GetString()!,
-							"yyyy-MM-dd",
-							CultureInfo.InvariantCulture,
-							DateTimeStyles.None
-						);
+						var date = DateUtilities.ParseDateExact(dateEl.GetString()!, "yyyy-MM-dd");
 
 						var binDay = new BinDay
 						{

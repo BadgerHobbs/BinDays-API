@@ -289,12 +289,7 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 				{
 					var dateText = WebUtility.HtmlDecode(rawDate.Groups["date"].Value).Trim();
 
-					var date = DateOnly.ParseExact(
-						dateText,
-						"dddd, dd MMMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var date = DateUtilities.ParseDateExact(dateText, "dddd, dd MMMM yyyy");
 
 					var binDay = new BinDay
 					{

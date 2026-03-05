@@ -404,12 +404,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 
 				foreach (Match dateMatch in DateRegex().Matches(datesText)!)
 				{
-					var date = DateOnly.ParseExact(
-						dateMatch.Value,
-						"ddd MMM dd yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var date = DateUtilities.ParseDateExact(dateMatch.Value, "ddd MMM dd yyyy");
 
 					var matchingBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

@@ -376,7 +376,7 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 				var service = rawBinDay.Groups["service"].Value;
 				var collectionDate = rawBinDay.Groups["date"].Value;
 
-				var date = DateOnly.ParseExact(collectionDate, format, CultureInfo.InvariantCulture);
+				var date = DateUtilities.ParseDateExact(collectionDate, format);
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 				var binDay = new BinDay

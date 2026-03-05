@@ -154,12 +154,7 @@ internal sealed partial class ArdsAndNorthDownCouncil : GovUkCollectorBase, ICol
 					ArgumentNullException.ThrowIfNull(collectionDate);
 
 					// Parse the date (e.g. "2024-07-29T00:00:00")
-					var date = DateOnly.ParseExact(
-						collectionDate,
-						"yyyy-MM-ddTHH:mm:ss",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var date = DateUtilities.ParseDateExact(collectionDate, "yyyy-MM-ddTHH:mm:ss");
 
 					var binsForDay = new List<Bin>();
 					foreach (var binEntry in dayEntry.GetProperty("bins").EnumerateArray())

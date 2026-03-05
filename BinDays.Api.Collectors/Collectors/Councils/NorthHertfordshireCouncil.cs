@@ -367,7 +367,7 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 				var collectionDate = CollectionDateRegex()
 					.Replace(rawBinDay.Groups["date"].Value, "");
 
-				var date = DateOnly.ParseExact(collectionDate, format, CultureInfo.InvariantCulture);
+				var date = DateUtilities.ParseDateExact(collectionDate, format);
 
 				// Get matching bin types from the service using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);

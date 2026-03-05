@@ -223,12 +223,7 @@ internal sealed partial class SheffieldCityCouncil : GovUkCollectorBase, ICollec
 				{
 					var trimmedDate = dateString.Trim();
 
-					var date = DateOnly.ParseExact(
-						trimmedDate,
-						"d MMM yyyy",
-						CultureInfo.InvariantCulture,
-						DateTimeStyles.None
-					);
+					var date = DateUtilities.ParseDateExact(trimmedDate, "d MMM yyyy");
 
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

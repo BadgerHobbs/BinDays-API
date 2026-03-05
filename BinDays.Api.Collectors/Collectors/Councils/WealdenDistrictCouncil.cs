@@ -242,12 +242,7 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 					continue;
 				}
 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"yyyy-MM-dd'T'HH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "yyyy-MM-dd'T'HH:mm:ss");
 
 				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, property.Value);
 

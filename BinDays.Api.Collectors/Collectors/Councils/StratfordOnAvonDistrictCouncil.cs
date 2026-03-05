@@ -203,12 +203,7 @@ internal sealed partial class StratfordOnAvonDistrictCouncil : GovUkCollectorBas
 			{
 				var dateText = rawBinRow.Groups["date"].Value.Trim();
 
-				var date = DateOnly.ParseExact(
-					dateText,
-					"dddd, dd/MM/yyyy",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateText, "dddd, dd/MM/yyyy");
 
 				var bins = new List<Bin>();
 

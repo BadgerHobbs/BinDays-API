@@ -156,12 +156,7 @@ internal sealed partial class LeedsCityCouncil : GovUkCollectorBase, ICollector
 				}
 
 				// Parse the date 
-				var date = DateOnly.ParseExact(
-					dateString,
-					"yyyy-MM-dd'T'HH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
-				);
+				var date = DateUtilities.ParseDateExact(dateString, "yyyy-MM-dd'T'HH:mm:ss");
 
 				// Get matching bin types from the type using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, type);

@@ -356,11 +356,6 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 			return DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1));
 		}
 
-		return DateOnly.ParseExact(
-			dateString,
-			"dddd, MMMM d, yyyy",
-			CultureInfo.InvariantCulture,
-			DateTimeStyles.None
-		);
+		return DateUtilities.ParseDateExact(dateString, "dddd, MMMM d, yyyy");
 	}
 }

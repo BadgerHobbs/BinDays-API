@@ -253,7 +253,7 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 					":",
 					StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
 				);
-				var date = DateOnly.ParseExact(parts[0], "yyyy-MM-dd", CultureInfo.InvariantCulture);
+				var date = DateUtilities.ParseDateExact(parts[0], "yyyy-MM-dd");
 				var code = parts[1];
 
 				binDays.Add((date, code));
@@ -288,11 +288,7 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 						continue;
 					}
 
-					var date = DateOnly.ParseExact(
-						$"{dayText}-{monthNumber}-{year}",
-						"d-M-yyyy",
-						CultureInfo.InvariantCulture
-					);
+					var date = DateUtilities.ParseDateExact($"{dayText}-{monthNumber}-{year}", "d-M-yyyy");
 
 					binDays.Add((date, className));
 				}

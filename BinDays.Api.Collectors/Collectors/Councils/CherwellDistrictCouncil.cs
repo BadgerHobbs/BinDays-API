@@ -165,7 +165,7 @@ internal sealed partial class CherwellDistrictCouncil : GovUkCollectorBase, ICol
 				var dateString = rawCollection.Groups["date"].Value.Trim();
 
 				var cleanedDate = OrdinalSuffixRegex().Replace(dateString, string.Empty);
-				var date = cleanedDate.ParseDateInferringYear("d MMMM");
+				var date = DateUtilities.ParseDateInferringYear(cleanedDate, "d MMMM");
 
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 

@@ -195,11 +195,7 @@ internal sealed partial class EastCambridgeshireDistrictCouncil : GovUkCollector
 				var dateStr = WhitespaceRegex().Replace(rawBinDay.Groups["date"].Value.Trim(), " ");
 
 				// Parse date string (e.g. "Fri - 26 Sep 2025")
-				var date = DateOnly.ParseExact(
-					dateStr,
-					"ddd - dd MMM yyyy",
-					CultureInfo.InvariantCulture
-				);
+				var date = DateUtilities.ParseDateExact(dateStr, "ddd - dd MMM yyyy");
 
 				// Get matching bin types from the bin ID using the keys
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binTypeStr);

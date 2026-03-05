@@ -297,7 +297,7 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 					continue;
 				}
 
-				var date = nextCollectionDate.ParseDateInferringYear("dddd d MMMM");
+				var date = DateUtilities.ParseDateInferringYear(nextCollectionDate, "dddd d MMMM");
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, serviceName);
 
 				var binDay = new BinDay
