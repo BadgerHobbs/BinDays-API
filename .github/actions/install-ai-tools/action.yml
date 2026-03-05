@@ -32,7 +32,9 @@ runs:
 
     - name: Install Playwright browsers
       shell: bash
-      run: npx playwright install firefox --with-deps
+      run: |
+        sudo dpkg --configure -a
+        npx playwright install firefox --with-deps
 
     - name: Configure Playwright MCP
       if: inputs.playwright_config != ''
