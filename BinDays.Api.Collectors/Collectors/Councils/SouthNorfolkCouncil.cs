@@ -26,8 +26,7 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
-	private readonly IReadOnlyCollection<Bin> _binTypes =
-	[
+	private readonly IReadOnlyCollection<Bin> _binTypes = [
 		new()
 		{
 			Name = "General Waste",
@@ -42,6 +41,9 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 		},
 	];
 
+	/// <summary>
+	/// The base URL for the South Norfolk collection service.
+	/// </summary>
 	private const string _baseUrl = "https://collections-southnorfolk.azurewebsites.net";
 
 	/// <summary>
