@@ -104,13 +104,12 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
-			var requestBody = $$"""
-{
-  "functionHashData":"SearchForProp#CalendarSearch##{{postcode}}#####",
-  "fky":"getCal",
-  "url":"{{_baseUrl}}/calendar.aspx"
-}
-""";
+			var requestBody = JsonSerializer.Serialize(new
+			{
+				functionHashData = $"SearchForProp#CalendarSearch##{postcode}#####",
+				fky = "getCal",
+				url = $"{_baseUrl}/calendar.aspx",
+			});
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -277,17 +276,10 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 				};
 
 				var rows = RowRegex().Matches(monthTable.Value)!;
-				var weekIndex = -1;
 
-				for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+				for (var rowIndex = 2; rowIndex < rows.Count; rowIndex++)
 				{
-					if (rowIndex < 2)
-					{
-						continue;
-					}
-
-					weekIndex++;
-
+					var weekIndex = rowIndex - 2;
 					var cells = CellRegex().Matches(rows[rowIndex].Groups["row"].Value)!;
 
 					for (var cellIndex = 1; cellIndex < cells.Count; cellIndex++)
