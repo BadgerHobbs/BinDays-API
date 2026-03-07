@@ -125,7 +125,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 				Method = "GET",
 				Headers = new()
 				{
-					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", metadata["cookie"] },
 					{ "User-Agent", Constants.UserAgent },
 				},
@@ -242,7 +242,7 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 				Method = "GET",
 				Headers = new()
 				{
-					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", metadata["cookie"] },
 					{ "User-Agent", Constants.UserAgent },
 				},
@@ -418,8 +418,8 @@ internal sealed partial class MidDevonDistrictCouncil : GovUkCollectorBase, ICol
 			Method = "POST",
 			Headers = new()
 			{
-				{ "Content-Type", "application/json" },
-				{ "X-Requested-With", "XMLHttpRequest" },
+				{ "Content-Type", Constants.ApplicationJson },
+				{ "x-requested-with", Constants.XmlHttpRequest },
 				{ "cookie", metadata["cookie"] },
 				{ "User-Agent", Constants.UserAgent },
 				{ "Referer", _formUrl.ToString() },

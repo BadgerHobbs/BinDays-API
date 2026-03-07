@@ -277,22 +277,35 @@ Headers = new()
 
 ### ✅ DO: Use minimal, essential headers only
 
-**Reason**: Start with the minimum required headers. Only add additional headers if the API strictly requires them.
+**Reason**: `ClientSideRequest.Headers` defaults to `{ "user-agent": Constants.UserAgent }`. For simple GET requests, omit `Headers` entirely — the default is sufficient.
+
+```c#
+var clientSideRequest = new ClientSideRequest
+{
+    RequestId = 1,
+    Url = requestUrl,
+    Method = "GET",
+};
+```
+
+**When additional headers are needed, include user-agent explicitly (setting `Headers` replaces the default):**
 
 ```c#
 Headers = new()
 {
     { "user-agent", Constants.UserAgent },
+    { "content-type", Constants.ApplicationJson },
 },
 ```
 
-**Or if content type is needed:**
+**Use `Constants.FormUrlEncoded` for form posts and `Constants.XmlHttpRequest` for AJAX requests:**
 
 ```c#
 Headers = new()
 {
     { "user-agent", Constants.UserAgent },
-    { "content-type", "application/json" },
+    { "content-type", Constants.FormUrlEncoded },
+    { "x-requested-with", Constants.XmlHttpRequest },
 },
 ```
 
@@ -314,7 +327,7 @@ var requestHeaders = new Dictionary<string, string> {
 Dictionary<string, string> requestHeaders = new()
 {
     { "user-agent", Constants.UserAgent },
-    { "content-type", "application/x-www-form-urlencoded" },
+    { "content-type", Constants.FormUrlEncoded },
 };
 ```
 
@@ -962,7 +975,6 @@ private ClientSideRequest CreateInitialRequest()
         RequestId = 1,
         Url = "https://example.com/form",
         Method = "GET",
-        Headers = new() { { "user-agent", Constants.UserAgent }, },
     };
 }
 
@@ -1041,6 +1053,41 @@ private const string _apiKey = "abc123xyz";
 Headers = new() { { "x-api-key", _apiKey }, };
 // ... later
 Headers = new() { { "x-api-key", _apiKey }, };
+```
+
+### ✅ DO: Use the shared header constants from `Constants`
+
+**Reason**: Avoids magic strings for common header values. The following are available in `BinDays.Api.Collectors.Utilities.Constants`:
+
+- `Constants.UserAgent` — the Firefox user-agent string
+- `Constants.FormUrlEncoded` — `"application/x-www-form-urlencoded"`
+- `Constants.ApplicationJson` — `"application/json"`
+- `Constants.XmlHttpRequest` — `"XMLHttpRequest"` (value for `x-requested-with`)
+
+`ClientSideRequest.Headers` defaults to `{ "user-agent", Constants.UserAgent }`. Only set `Headers` explicitly when additional headers are required — setting it replaces the default entirely, so user-agent must then be included manually.
+
+```c#
+// ✅ Simple GET — no Headers needed, default provides user-agent
+var clientSideRequest = new ClientSideRequest
+{
+    RequestId = 1,
+    Url = requestUrl,
+    Method = "GET",
+};
+
+// ✅ POST with content-type — must re-include user-agent
+var clientSideRequest = new ClientSideRequest
+{
+    RequestId = 2,
+    Url = requestUrl,
+    Method = "POST",
+    Headers = new()
+    {
+        { "user-agent", Constants.UserAgent },
+        { "content-type", Constants.FormUrlEncoded },
+    },
+    Body = requestBody,
+};
 ```
 
 ### ✅ DO: Use HTTPS URLs when available
@@ -1627,10 +1674,6 @@ internal sealed partial class MyNewCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.mynewcouncil.gov.uk/bin-collections",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -1868,7 +1911,9 @@ Before submitting a PR, check:
 
 **HTTP & Requests:**
 
-- [ ] HTTP headers are minimal (typically just `user-agent` and `content-type`)
+- [ ] HTTP headers are minimal (typically just `content-type` where needed; `user-agent` is the default and only needed explicitly when other headers are also set)
+- [ ] Use `Constants.FormUrlEncoded`, `Constants.ApplicationJson`, `Constants.XmlHttpRequest` instead of string literals
+- [ ] Omit `Headers` entirely for simple GET requests (default provides user-agent)
 - [ ] Request bodies contain only required fields (no empty/null/default/false values)
 - [ ] Use raw string literals for JSON, not nested dictionaries
 - [ ] Use `new()` for dictionaries, not `new Dictionary<string, string>()`

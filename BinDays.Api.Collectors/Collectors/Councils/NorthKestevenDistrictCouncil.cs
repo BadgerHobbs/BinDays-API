@@ -83,10 +83,6 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 				RequestId = 1,
 				Url = "https://www.n-kesteven.org.uk/bins",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -111,7 +107,7 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
@@ -214,10 +210,6 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 				RequestId = 1,
 				Url = "https://www.n-kesteven.org.uk/bins",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -242,7 +234,7 @@ internal sealed partial class NorthKestevenDistrictCouncil : GovUkCollectorBase,
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()

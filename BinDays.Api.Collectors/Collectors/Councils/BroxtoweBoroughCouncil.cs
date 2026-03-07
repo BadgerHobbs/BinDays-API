@@ -221,9 +221,9 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "x-microsoftajax", "Delta=true" },
-					{ "content-type", "application/x-www-form-urlencoded; charset=utf-8" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", cookie },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
@@ -268,7 +268,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", cookie },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
@@ -328,10 +328,6 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 			RequestId = 1,
 			Url = _formUrl,
 			Method = "GET",
-			Headers = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-			},
 		};
 	}
 
@@ -366,9 +362,9 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 			Headers = new()
 			{
 				{ "user-agent", Constants.UserAgent },
-				{ "x-requested-with", "XMLHttpRequest" },
+				{ "x-requested-with", Constants.XmlHttpRequest },
 				{ "x-microsoftajax", "Delta=true" },
-				{ "content-type", "application/x-www-form-urlencoded; charset=utf-8" },
+				{ "content-type", Constants.FormUrlEncoded },
 				{ "cookie", cookie },
 			},
 			Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),

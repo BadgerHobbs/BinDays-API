@@ -99,10 +99,6 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 				RequestId = 1,
 				Url = SelectAddressUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -136,7 +132,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = requestBody,
@@ -197,10 +193,6 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 				RequestId = 1,
 				Url = SelectAddressUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -234,7 +226,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = requestBody,
@@ -278,7 +270,7 @@ internal sealed partial class BarnsleyMetropolitanBoroughCouncil : GovUkCollecto
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = requestBody,

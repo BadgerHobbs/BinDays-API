@@ -82,7 +82,7 @@ internal sealed partial class CherwellDistrictCouncil : GovUkCollectorBase, ICol
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = $"postcode={postcode}",
 			};
@@ -139,10 +139,6 @@ internal sealed partial class CherwellDistrictCouncil : GovUkCollectorBase, ICol
 				RequestId = 1,
 				Url = $"https://www.cherwell.gov.uk/homepage/129/bin-collection-search?uprn={address.Uid!}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

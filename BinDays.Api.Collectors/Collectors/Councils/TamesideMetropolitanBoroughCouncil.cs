@@ -193,7 +193,7 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 
 			Dictionary<string, string> requestHeaders = new()
 			{
-				{ "content-type", "application/x-www-form-urlencoded" },
+				{ "content-type", Constants.FormUrlEncoded },
 				{ "cookie", $"cookieconsent_dismissed=yes; {sessionCookie}" },
 				{ "user-agent", Constants.UserAgent },
 			};
@@ -307,10 +307,6 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 			RequestId = 1,
 			Url = "https://public.tameside.gov.uk/forms/bin-dates.asp",
 			Method = "GET",
-			Headers = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-			},
 		};
 	}
 
@@ -323,7 +319,7 @@ internal sealed partial class TamesideMetropolitanBoroughCouncil : GovUkCollecto
 
 		Dictionary<string, string> requestHeaders = new()
 		{
-			{ "content-type", "application/x-www-form-urlencoded" },
+			{ "content-type", Constants.FormUrlEncoded },
 			{ "cookie", $"cookieconsent_dismissed=yes; {sessionCookie}" },
 			{ "user-agent", Constants.UserAgent },
 		};

@@ -86,7 +86,7 @@ internal sealed partial class HarboroughDistrictCouncil : GovUkCollectorBase, IC
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/json" },
+					{ "content-type", Constants.ApplicationJson },
 					{ "x-forwarded-proto", _forwardedProtoHeaderValue },
 				},
 				Body = requestBody,
@@ -171,7 +171,7 @@ internal sealed partial class HarboroughDistrictCouncil : GovUkCollectorBase, IC
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "x-forwarded-proto", _forwardedProtoHeaderValue },
 				},
 				Body = requestBody,

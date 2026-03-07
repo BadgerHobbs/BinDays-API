@@ -110,7 +110,7 @@ internal sealed partial class PlymouthCouncil : GovUkCollectorBase, ICollector
 			var requestUrl = $"https://plymouth-self.achieveservice.com/apibroker/?api=RunLookup&id=560d5266e930f&sid={sessionId}";
 
 			var requestHeaders = new Dictionary<string, string> {
-				{"content-type", "application/json; charset=UTF-8"},
+				{"content-type", Constants.ApplicationJson},
 				{"cookie", requestCookies},
 			};
 
@@ -255,7 +255,7 @@ internal sealed partial class PlymouthCouncil : GovUkCollectorBase, ICollector
 			var requestUrl = $"https://plymouth-self.achieveservice.com/apibroker/?api=RunLookup&id=5c99439d85f83&sid={sessionId}";
 
 			var requestHeaders = new Dictionary<string, string> {
-				{"content-type", "application/json; charset=UTF-8"},
+				{"content-type", Constants.ApplicationJson},
 				{"cookie", requestCookies},
 			};
 

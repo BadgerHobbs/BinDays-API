@@ -87,10 +87,6 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 				RequestId = 1,
 				Url = "https://collectiondates.eastlothian.gov.uk/waste-collection-schedule",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -113,7 +109,7 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
@@ -178,10 +174,6 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 				RequestId = 1,
 				Url = $"https://collectiondates.eastlothian.gov.uk/waste-collection-schedule/download/{address.Uid!}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

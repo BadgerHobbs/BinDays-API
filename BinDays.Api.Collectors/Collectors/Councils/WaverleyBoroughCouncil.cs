@@ -88,10 +88,6 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 				RequestId = 1,
 				Url = $"{_baseUrl}/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -116,7 +112,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = requestBody,
 			};
@@ -175,10 +171,6 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 				RequestId = 1,
 				Url = $"{_baseUrl}/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -203,7 +195,7 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = requestBody,
 				Options = new ClientSideOptions
@@ -232,10 +224,6 @@ internal sealed partial class WaverleyBoroughCouncil : GovUkCollectorBase, IColl
 				RequestId = 3,
 				Url = $"{_baseUrl}/mop.php?Track={track}&serviceID=A&seq=3&pIndex={pIndex}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

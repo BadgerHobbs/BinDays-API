@@ -88,10 +88,6 @@ internal sealed partial class SouthamptonCityCouncil : GovUkCollectorBase, IColl
 				RequestId = 1,
 				Url = "https://www.southampton.gov.uk/bins-recycling/bins/collections/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -128,7 +124,7 @@ internal sealed partial class SouthamptonCityCouncil : GovUkCollectorBase, IColl
 			Dictionary<string, string> requestHeaders = new()
 			{
 				{ "user-agent", Constants.UserAgent },
-				{ "content-type", "application/x-www-form-urlencoded" },
+				{ "content-type", Constants.FormUrlEncoded },
 				{ "cookie", ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]) },
 			};
 
@@ -195,10 +191,6 @@ internal sealed partial class SouthamptonCityCouncil : GovUkCollectorBase, IColl
 				RequestId = 1,
 				Url = "https://www.southampton.gov.uk/bins-recycling/bins/collections/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

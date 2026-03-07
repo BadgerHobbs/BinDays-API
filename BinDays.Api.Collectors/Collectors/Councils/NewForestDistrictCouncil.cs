@@ -90,9 +90,6 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 				RequestId = 1,
 				Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 				Options = new ClientSideOptions
 				{
 					FollowRedirects = false,
@@ -156,7 +153,7 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 				{"cookie", clientSideResponse.Options.Metadata["cookie"]},
 			};
 
@@ -251,9 +248,6 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 				RequestId = 1,
 				Url = "https://forms.newforest.gov.uk/ufs/ufsmain?formid=FIND_MY_BIN_BAR",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 				Options = new ClientSideOptions
 				{
 					FollowRedirects = false,
@@ -316,7 +310,7 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 				{"cookie", clientSideResponse.Options.Metadata["cookie"]},
 			};
 

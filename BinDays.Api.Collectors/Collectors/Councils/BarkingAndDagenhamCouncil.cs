@@ -52,10 +52,6 @@ internal sealed class BarkingAndDagenhamCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = $"https://www.lbbd.gov.uk/rest/bins/{postcode}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -109,10 +105,6 @@ internal sealed class BarkingAndDagenhamCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = $"https://www.lbbd.gov.uk/rest/bin/{address.Uid}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

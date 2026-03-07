@@ -64,10 +64,6 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.wealden.gov.uk/recycling-and-waste/bin-search/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -97,8 +93,8 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", "application/x-www-form-urlencoded; charset=UTF-8" },
-					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "Content-Type", Constants.FormUrlEncoded },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", requestCookies },
 					{ "User-Agent", Constants.UserAgent },
 				},
@@ -160,10 +156,6 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = requestUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -197,8 +189,8 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", "application/x-www-form-urlencoded; charset=UTF-8" },
-					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "Content-Type", Constants.FormUrlEncoded },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", cookies },
 					{ "User-Agent", Constants.UserAgent },
 				},

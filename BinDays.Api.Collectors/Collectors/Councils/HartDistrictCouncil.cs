@@ -87,8 +87,8 @@ internal sealed partial class HartDistrictCouncil : GovUkCollectorBase, ICollect
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8" },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "content-type", Constants.FormUrlEncoded },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = _ajaxRequestBody,
 			};
@@ -156,8 +156,8 @@ internal sealed partial class HartDistrictCouncil : GovUkCollectorBase, ICollect
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8" },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "content-type", Constants.FormUrlEncoded },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = _ajaxRequestBody,
 			};

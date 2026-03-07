@@ -134,7 +134,8 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 				Method = "POST",
 				Headers = new()
 				{
-					{ "user-agent", Constants.UserAgent }, { "content-type", "application/json" },
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.ApplicationJson },
 				},
 				Body = JsonSerializer.Serialize(new { uprn = address.Uid }),
 			};

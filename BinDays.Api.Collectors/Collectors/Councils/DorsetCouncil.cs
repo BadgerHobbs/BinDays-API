@@ -131,7 +131,7 @@ internal sealed partial class DorsetCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "accept", "application/json" }
+					{ "accept", Constants.ApplicationJson }
 				},
 			};
 
@@ -153,7 +153,7 @@ internal sealed partial class DorsetCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "accept", "application/json" }
+					{ "accept", Constants.ApplicationJson }
 				},
 				Options = new ClientSideOptions
 				{
@@ -185,7 +185,7 @@ internal sealed partial class DorsetCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "accept", "application/json" }
+					{ "accept", Constants.ApplicationJson }
 				},
 				Options = new ClientSideOptions
 				{
@@ -215,7 +215,7 @@ internal sealed partial class DorsetCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "accept", "application/json" }
+					{ "accept", Constants.ApplicationJson }
 				},
 				Options = new ClientSideOptions
 				{

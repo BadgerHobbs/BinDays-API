@@ -79,10 +79,6 @@ internal sealed partial class SheffieldCityCouncil : GovUkCollectorBase, ICollec
 				RequestId = 1,
 				Url = $"{_baseUrl}/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -106,8 +102,8 @@ internal sealed partial class SheffieldCityCouncil : GovUkCollectorBase, ICollec
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8" },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "content-type", Constants.FormUrlEncoded },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", requestCookies },
 				},
 				Body = $"aj=true&search_property={postcode}",
@@ -168,10 +164,6 @@ internal sealed partial class SheffieldCityCouncil : GovUkCollectorBase, ICollec
 				RequestId = 1,
 				Url = $"{_baseUrl}/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

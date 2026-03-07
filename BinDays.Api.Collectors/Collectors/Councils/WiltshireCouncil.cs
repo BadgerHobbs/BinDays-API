@@ -81,7 +81,7 @@ internal sealed partial class WiltshireCouncil : GovUkCollectorBase, ICollector
 				Url = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/AddressList",
 				Method = "POST",
 				Headers = new() {
-					{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
+					{"content-type", Constants.FormUrlEncoded},
 				},
 				Body = requestBody,
 			};
@@ -154,7 +154,7 @@ internal sealed partial class WiltshireCouncil : GovUkCollectorBase, ICollector
 				Url = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList",
 				Method = "POST",
 				Headers = new() {
-					{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
+					{"content-type", Constants.FormUrlEncoded},
 				},
 				Body = requestBody,
 			};
@@ -199,7 +199,7 @@ internal sealed partial class WiltshireCouncil : GovUkCollectorBase, ICollector
 					Url = "https://ilforms.wiltshire.gov.uk/WasteCollectionDays/CollectionList",
 					Method = "POST",
 					Headers = new() {
-						{"content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
+						{"content-type", Constants.FormUrlEncoded},
 					},
 					Body = requestBody,
 				};

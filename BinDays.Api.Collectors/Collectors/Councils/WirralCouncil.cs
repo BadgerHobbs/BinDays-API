@@ -86,10 +86,6 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.wirral.gov.uk/bincal_dev/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -115,10 +111,9 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 				{"ctl00$MainContent$LookupPostcode", "Go"},
 			});
 
-			Dictionary<string, string> requestHeaders = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-				{ "content-type", "application/x-www-form-urlencoded" },
+			var requestHeaders = new Dictionary<string, string> {
+				{"user-agent", Constants.UserAgent},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -176,10 +171,6 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.wirral.gov.uk/bincal_dev/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -205,10 +196,9 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 				{"ctl00$MainContent$LookupPostcode", "Go"},
 			});
 
-			Dictionary<string, string> requestHeaders = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-				{ "content-type", "application/x-www-form-urlencoded" },
+			var requestHeaders = new Dictionary<string, string> {
+				{"user-agent", Constants.UserAgent},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -244,10 +234,9 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 				{"ctl00$MainContent$FindRounds", "Find bin collections"},
 			});
 
-			Dictionary<string, string> requestHeaders = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-				{ "content-type", "application/x-www-form-urlencoded" },
+			var requestHeaders = new Dictionary<string, string> {
+				{"user-agent", Constants.UserAgent},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest

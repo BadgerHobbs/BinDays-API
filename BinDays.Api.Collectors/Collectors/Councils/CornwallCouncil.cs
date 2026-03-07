@@ -76,7 +76,7 @@ internal sealed partial class CornwallCouncil : GovUkCollectorBase, ICollector
 
 			var requestHeaders = new Dictionary<string, string>
 			{
-				{ "X-Requested-With", "XMLHttpRequest" },
+				{ "x-requested-with", Constants.XmlHttpRequest },
 				{ "User-Agent", Constants.UserAgent },
 			};
 
@@ -143,7 +143,7 @@ internal sealed partial class CornwallCouncil : GovUkCollectorBase, ICollector
 
 			var requestHeaders = new Dictionary<string, string>
 			{
-				{ "X-Requested-With", "XMLHttpRequest" },
+				{ "x-requested-with", Constants.XmlHttpRequest },
 				{ "User-Agent", Constants.UserAgent },
 			};
 

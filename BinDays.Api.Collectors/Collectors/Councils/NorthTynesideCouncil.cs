@@ -78,10 +78,6 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 				RequestId = 1,
 				Url = "https://www.northtyneside.gov.uk/waste-collection-schedule",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -112,7 +108,7 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
 			};
@@ -175,10 +171,6 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 				RequestId = 1,
 				Url = $"https://www.northtyneside.gov.uk/waste-collection-schedule/find?postcode={encodedPostcode}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -203,7 +195,7 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{

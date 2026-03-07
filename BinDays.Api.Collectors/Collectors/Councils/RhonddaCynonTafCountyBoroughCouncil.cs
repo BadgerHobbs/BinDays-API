@@ -85,16 +85,11 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 		{
 			var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?&Postcode={postcode}";
 
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-			};
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
 				Url = requestUrl,
 				Method = "GET",
-				Headers = requestHeaders,
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -148,16 +143,11 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 			// Use live URL as per legacy implementation, not base website URL
 			var requestUrl = $"https://live-rctcbc.cloud.contensis.com/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?uprn={address.Uid!}";
 
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-			};
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
 				Url = requestUrl,
 				Method = "GET",
-				Headers = requestHeaders,
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

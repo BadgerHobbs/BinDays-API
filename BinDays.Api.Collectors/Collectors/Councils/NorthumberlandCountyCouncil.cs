@@ -81,9 +81,6 @@ internal sealed partial class NorthumberlandCountyCouncil : GovUkCollectorBase, 
 				RequestId = 1,
 				Url = "https://bincollection.northumberland.gov.uk/postcode",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -112,7 +109,7 @@ internal sealed partial class NorthumberlandCountyCouncil : GovUkCollectorBase, 
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 				{"cookie", requestCookies},
 			};
 
@@ -179,9 +176,6 @@ internal sealed partial class NorthumberlandCountyCouncil : GovUkCollectorBase, 
 				RequestId = 1,
 				Url = "https://bincollection.northumberland.gov.uk/postcode",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -210,7 +204,7 @@ internal sealed partial class NorthumberlandCountyCouncil : GovUkCollectorBase, 
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 				{"cookie", requestCookies},
 			};
 

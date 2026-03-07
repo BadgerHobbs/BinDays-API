@@ -91,10 +91,6 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 				RequestId = 1,
 				Url = _achieveFormsUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -121,9 +117,9 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 				Method = "POST",
 				Headers = new()
 				{
-					{ "content-type", "application/json" },
+					{ "content-type", Constants.ApplicationJson },
 					{ "cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = requestBody,
 			};
@@ -191,10 +187,6 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 				RequestId = 1,
 				Url = _achieveFormsUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -221,9 +213,9 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 				Method = "POST",
 				Headers = new()
 				{
-					{ "content-type", "application/json" },
+					{ "content-type", Constants.ApplicationJson },
 					{ "cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = requestBody,
 				Options = new ClientSideOptions
@@ -258,9 +250,9 @@ internal sealed partial class LondonBoroughOfWalthamForest : GovUkCollectorBase,
 				Method = "POST",
 				Headers = new()
 				{
-					{ "content-type", "application/json" },
+					{ "content-type", Constants.ApplicationJson },
 					{ "cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = requestBody,
 			};

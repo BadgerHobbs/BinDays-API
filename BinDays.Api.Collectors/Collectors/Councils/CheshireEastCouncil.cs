@@ -73,10 +73,6 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 				RequestId = 1,
 				Url = "https://online.cheshireeast.gov.uk/MyCollectionDay/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -101,7 +97,7 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 				Headers = new()
 				{
 					{ "User-Agent", Constants.UserAgent },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", requestCookies },
 				},
 			};
@@ -157,10 +153,6 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 				RequestId = 1,
 				Url = "https://online.cheshireeast.gov.uk/MyCollectionDay/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -188,7 +180,7 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 				Headers = new()
 				{
 					{ "User-Agent", Constants.UserAgent },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", requestCookies },
 				},
 			};

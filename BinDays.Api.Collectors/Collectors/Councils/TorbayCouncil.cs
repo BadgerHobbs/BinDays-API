@@ -108,10 +108,6 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://selfservice-torbay.servicebuilder.co.uk/renderform?t=62&k=09B72FF904A21A4B01A72AB6CCF28DC95105031C",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -141,9 +137,9 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "User-Agent", Constants.UserAgent },
-					{ "Content-Type", "application/x-www-form-urlencoded" },
+					{ "Content-Type", Constants.FormUrlEncoded },
 					{ "Cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = requestBody,
 			};
@@ -200,10 +196,6 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://selfservice-torbay.servicebuilder.co.uk/renderform?t=62&k=09B72FF904A21A4B01A72AB6CCF28DC95105031C",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -248,9 +240,9 @@ internal sealed partial class TorbayCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "User-Agent", Constants.UserAgent },
-					{ "Content-Type", "application/x-www-form-urlencoded" },
+					{ "Content-Type", Constants.FormUrlEncoded },
 					{ "Cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = requestBody,
 			};

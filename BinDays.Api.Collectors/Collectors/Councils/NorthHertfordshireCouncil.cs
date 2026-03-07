@@ -141,9 +141,9 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", cookie },
-					{"x-requested-with", "XMLHttpRequest"},
+					{"x-requested-with", Constants.XmlHttpRequest},
 					{"accept", "application/json, text/javascript, */*; q=0.01"}
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
@@ -184,7 +184,7 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 					new()
 					{
 						{ "user-agent", Constants.UserAgent },
-						{ "content-type", "application/x-www-form-urlencoded" },
+						{ "content-type", Constants.FormUrlEncoded },
 						{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
 					},
 				Body = requestBody,
@@ -260,9 +260,9 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", cookie },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
@@ -308,9 +308,9 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
-					{"x-requested-with", "XMLHttpRequest"},
+					{"x-requested-with", Constants.XmlHttpRequest},
 					{"accept", "application/json, text/javascript, */*; q=0.01"}
 				},
 				Body = requestBody,
@@ -337,9 +337,9 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
-					{"x-requested-with", "XMLHttpRequest"},
+					{"x-requested-with", Constants.XmlHttpRequest},
 					{"accept", "application/json, text/javascript, */*; q=0.01"}
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),

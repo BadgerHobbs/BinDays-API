@@ -88,10 +88,6 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 				RequestId = 1,
 				Url = url,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -162,7 +158,7 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 				Method = "POST",
 				Headers = new()
 				{
-					{ "content-type", "application/json" },
+					{ "content-type", Constants.ApplicationJson },
 					{ "user-agent", Constants.UserAgent },
 				},
 				Body = requestBody,

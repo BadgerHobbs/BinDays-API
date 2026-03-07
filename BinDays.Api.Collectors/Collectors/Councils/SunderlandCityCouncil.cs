@@ -88,10 +88,6 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				RequestId = 1,
 				Url = "https://webapps.sunderland.gov.uk/WEBAPPS/WSS/Sunderland_Portal/Forms/bindaychecker.aspx?ccp=true",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -128,7 +124,7 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", cookie },
 				},
 				Body = requestBody,
@@ -189,10 +185,6 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				RequestId = 1,
 				Url = "https://webapps.sunderland.gov.uk/WEBAPPS/WSS/Sunderland_Portal/Forms/bindaychecker.aspx?ccp=true",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -229,7 +221,7 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", cookie },
 				},
 				Body = requestBody,
@@ -271,7 +263,7 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
 				},
 				Body = requestBody,

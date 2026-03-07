@@ -148,7 +148,7 @@ internal sealed partial class ElmbridgeBoroughCouncil : GovUkCollectorBase, ICol
 				Method = "POST",
 				Headers = new()
 				{
-					{ "content-type", "application/json" },
+					{ "content-type", Constants.ApplicationJson },
 					{ "cookie", cookies },
 				},
 				Body = requestBody,
@@ -249,7 +249,7 @@ internal sealed partial class ElmbridgeBoroughCouncil : GovUkCollectorBase, ICol
 				Method = "POST",
 				Headers = new()
 				{
-					{ "content-type", "application/json" },
+					{ "content-type", Constants.ApplicationJson },
 					{ "cookie", cookies },
 				},
 				Body = requestBody,
@@ -323,10 +323,6 @@ internal sealed partial class ElmbridgeBoroughCouncil : GovUkCollectorBase, ICol
 			RequestId = 1,
 			Url = $"{_baseUrl}/AchieveForms/?mode=fill&consentMessage=yes&form_uri={_formUri}&process=1&process_uri=sandbox-processes://{_processId}&process_id={_processId}",
 			Method = "GET",
-			Headers = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-			},
 		};
 
 		return clientSideRequest;

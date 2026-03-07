@@ -42,7 +42,7 @@ internal abstract class MyBinsAppCollectorBase : GovUkCollectorBase
 				Method = "POST",
 				Headers = new()
 				{
-					{ "content-type", "application/json" }
+					{ "content-type", Constants.ApplicationJson }
 				},
 				Body = JsonSerializer.Serialize(payload),
 			};
@@ -117,7 +117,7 @@ internal abstract class MyBinsAppCollectorBase : GovUkCollectorBase
 				Method = "POST",
 				Headers = new()
 				{
-					{ "content-type", "application/json" }
+					{ "content-type", Constants.ApplicationJson }
 				},
 				Body = JsonSerializer.Serialize(payload),
 			};

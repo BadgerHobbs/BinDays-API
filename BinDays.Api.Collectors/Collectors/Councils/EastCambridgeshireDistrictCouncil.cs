@@ -77,9 +77,6 @@ internal sealed partial class EastCambridgeshireDistrictCouncil : GovUkCollector
 				RequestId = 1,
 				Url = "https://eastcambs-self.achieveservice.com/bincollections",
 				Method = "GET",
-				Headers = new Dictionary<string, string> {
-					{ "User-Agent", Constants.UserAgent }
-				},
 			};
 
 			return new GetAddressesResponse
@@ -117,7 +114,7 @@ internal sealed partial class EastCambridgeshireDistrictCouncil : GovUkCollector
 				Method = "POST",
 				Headers = new Dictionary<string, string>
 				{
-					{ "Content-Type", "application/json" },
+					{ "Content-Type", Constants.ApplicationJson },
 					{ "cookie", requestCookies }
 				},
 				Body = requestBody,
@@ -172,9 +169,6 @@ internal sealed partial class EastCambridgeshireDistrictCouncil : GovUkCollector
 				RequestId = 1,
 				Url = requestUrl,
 				Method = "GET",
-				Headers = new Dictionary<string, string> {
-					{ "User-Agent", Constants.UserAgent }
-				},
 			};
 
 			return new GetBinDaysResponse

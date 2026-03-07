@@ -291,7 +291,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			Headers = new()
 			{
 				{ "cookie", cookies },
-				{ "x-requested-with", "XMLHttpRequest" },
+				{ "x-requested-with", Constants.XmlHttpRequest },
 				{ "User-Agent", Constants.UserAgent },
 			},
 			Options = new ClientSideOptions
@@ -335,9 +335,9 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			Body = requestBody,
 			Headers = new()
 			{
-				{ "content-type", "application/json" },
+				{ "content-type", Constants.ApplicationJson },
 				{ "cookie", cookies },
-				{ "x-requested-with", "XMLHttpRequest" },
+				{ "x-requested-with", Constants.XmlHttpRequest },
 				{ "User-Agent", Constants.UserAgent },
 			},
 			Options = new ClientSideOptions { Metadata = new Dictionary<string, string>(metadata) },
@@ -363,9 +363,9 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 			Body = requestBody,
 			Headers = new()
 			{
-				{ "content-type", "application/json" },
+				{ "content-type", Constants.ApplicationJson },
 				{ "cookie", metadata["cookies"] },
-				{ "x-requested-with", "XMLHttpRequest" },
+				{ "x-requested-with", Constants.XmlHttpRequest },
 				{ "User-Agent", Constants.UserAgent },
 			},
 			Options = new ClientSideOptions { Metadata = new Dictionary<string, string>(metadata) },
@@ -456,10 +456,6 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://my.northdevon.gov.uk/service/WasteRecyclingCollectionCalendar",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			}, false);
 		}
 
@@ -478,7 +474,7 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "cookie", requestCookies },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "User-Agent", Constants.UserAgent },
 				},
 				Options = new ClientSideOptions

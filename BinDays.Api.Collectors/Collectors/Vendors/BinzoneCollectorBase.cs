@@ -109,10 +109,6 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 				RequestId = 1,
 				Url = $"{EformBaseUrl}/ebase/ufsmain?formid=BINZONE_DESKTOP&SOVA_TAG={ServiceId}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 				Options = new ClientSideOptions
 				{
 					// We need to trap the 302 to get the Location header
@@ -184,7 +180,7 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "cookie", cookie },
-					{ "Content-Type", "application/x-www-form-urlencoded" },
+					{ "Content-Type", Constants.FormUrlEncoded },
 				},
 			};
 
@@ -226,10 +222,6 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 				RequestId = 1,
 				Url = $"{EformBaseUrl}/ebase/ufsmain?formid=BINZONE_DESKTOP&SOVA_TAG={ServiceId}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 				Options = new ClientSideOptions
 				{
 					FollowRedirects = false,
@@ -303,7 +295,7 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "cookie", cookie },
-					{ "Content-Type", "application/x-www-form-urlencoded" },
+					{ "Content-Type", Constants.FormUrlEncoded },
 				},
 				Options = clientSideResponse.Options,
 			};
@@ -342,7 +334,7 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "cookie", cookie },
-					{ "Content-Type", "application/x-www-form-urlencoded" },
+					{ "Content-Type", Constants.FormUrlEncoded },
 				},
 			};
 

@@ -76,9 +76,6 @@ internal sealed partial class WorthingBoroughCouncil : GovUkCollectorBase, IColl
 				RequestId = 1,
 				Url = requestUrl,
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -135,9 +132,6 @@ internal sealed partial class WorthingBoroughCouncil : GovUkCollectorBase, IColl
 				RequestId = 1,
 				Url = requestUrl,
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

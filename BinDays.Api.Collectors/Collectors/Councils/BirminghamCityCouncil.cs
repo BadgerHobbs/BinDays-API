@@ -76,9 +76,6 @@ internal sealed partial class BirminghamCityCouncil : GovUkCollectorBase, IColle
 				RequestId = 1,
 				Url = "https://www.birmingham.gov.uk/xfp/form/619",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -107,7 +104,7 @@ internal sealed partial class BirminghamCityCouncil : GovUkCollectorBase, IColle
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -178,9 +175,6 @@ internal sealed partial class BirminghamCityCouncil : GovUkCollectorBase, IColle
 				RequestId = 1,
 				Url = "https://www.birmingham.gov.uk/xfp/form/619",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -210,7 +204,7 @@ internal sealed partial class BirminghamCityCouncil : GovUkCollectorBase, IColle
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest

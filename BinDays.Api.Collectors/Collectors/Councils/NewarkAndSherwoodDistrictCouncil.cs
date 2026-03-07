@@ -112,10 +112,6 @@ internal sealed partial class NewarkAndSherwoodDistrictCouncil : GovUkCollectorB
 				RequestId = 1,
 				Url = "https://app.newark-sherwooddc.gov.uk/bincollection/",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -151,7 +147,7 @@ internal sealed partial class NewarkAndSherwoodDistrictCouncil : GovUkCollectorB
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = requestBody,
 			};
@@ -206,10 +202,6 @@ internal sealed partial class NewarkAndSherwoodDistrictCouncil : GovUkCollectorB
 				RequestId = 1,
 				Url = $"https://app.newark-sherwooddc.gov.uk/bincollection/calendar?pid={address.Uid!}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

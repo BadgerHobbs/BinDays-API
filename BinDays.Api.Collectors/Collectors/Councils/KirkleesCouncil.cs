@@ -74,10 +74,6 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = $"{_baseUrl}{_servicePath}",
 				Method = "GET",
-				Headers = new()
-				{
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -117,7 +113,7 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{"content-type", "application/json"},
+					{"content-type", Constants.ApplicationJson},
 					{"cookie", requestCookies},
 					{"user-agent", Constants.UserAgent},
 				},
@@ -197,10 +193,6 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = $"{_baseUrl}{_servicePath}",
 				Method = "GET",
-				Headers = new()
-				{
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -238,7 +230,7 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{"content-type", "application/json"},
+					{"content-type", Constants.ApplicationJson},
 					{"cookie", requestCookies},
 					{"user-agent", Constants.UserAgent},
 				},
@@ -291,7 +283,7 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{"content-type", "application/json"},
+					{"content-type", Constants.ApplicationJson},
 					{"cookie", cookies},
 					{"user-agent", Constants.UserAgent},
 				},
@@ -509,7 +501,7 @@ internal sealed partial class KirkleesCouncil : GovUkCollectorBase, ICollector
 			Method = "POST",
 			Headers = new()
 			{
-				{"content-type", "application/json"},
+				{"content-type", Constants.ApplicationJson},
 				{"cookie", cookies},
 				{"user-agent", Constants.UserAgent},
 			},

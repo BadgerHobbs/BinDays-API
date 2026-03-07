@@ -82,9 +82,6 @@ internal sealed partial class OxfordCityCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.oxford.gov.uk/xfp/form/142",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -113,7 +110,7 @@ internal sealed partial class OxfordCityCouncil : GovUkCollectorBase, ICollector
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -184,9 +181,6 @@ internal sealed partial class OxfordCityCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.oxford.gov.uk/xfp/form/142",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -215,7 +209,7 @@ internal sealed partial class OxfordCityCouncil : GovUkCollectorBase, ICollector
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest

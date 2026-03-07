@@ -100,9 +100,6 @@ internal sealed partial class PembrokeshireCountyCouncil : GovUkCollectorBase, I
 				RequestId = 1,
 				Url = $"https://nearest.pembrokeshire.gov.uk/search/?query={postcode}",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -150,9 +147,6 @@ internal sealed partial class PembrokeshireCountyCouncil : GovUkCollectorBase, I
 				RequestId = 1,
 				Url = $"https://nearest.pembrokeshire.gov.uk/property/{address.Uid}",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

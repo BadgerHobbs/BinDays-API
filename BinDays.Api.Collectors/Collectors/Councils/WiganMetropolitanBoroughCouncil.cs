@@ -87,9 +87,6 @@ internal sealed partial class WiganMetropolitanBoroughCouncil : GovUkCollectorBa
 				RequestId = 1,
 				Url = "https://apps.wigan.gov.uk/MyNeighbourhood/Search.aspx",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -116,7 +113,7 @@ internal sealed partial class WiganMetropolitanBoroughCouncil : GovUkCollectorBa
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -173,9 +170,6 @@ internal sealed partial class WiganMetropolitanBoroughCouncil : GovUkCollectorBa
 				RequestId = 1,
 				Url = "https://apps.wigan.gov.uk/MyNeighbourhood/Search.aspx",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -202,7 +196,7 @@ internal sealed partial class WiganMetropolitanBoroughCouncil : GovUkCollectorBa
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -241,7 +235,7 @@ internal sealed partial class WiganMetropolitanBoroughCouncil : GovUkCollectorBa
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 				{"cookie", requestCookies},
 			};
 

@@ -120,7 +120,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded;charset=UTF-8" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = messageBody,
@@ -213,7 +213,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded;charset=UTF-8" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = messageBody,
@@ -312,10 +312,6 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 			RequestId = 1,
 			Url = "https://community.westoxon.gov.uk/s/waste-collection-enquiry",
 			Method = "GET",
-			Headers = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-			},
 		};
 
 	/// <summary>
@@ -452,7 +448,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 			Headers = new()
 			{
 				{ "user-agent", Constants.UserAgent },
-				{ "content-type", "application/x-www-form-urlencoded;charset=UTF-8" },
+				{ "content-type", Constants.FormUrlEncoded },
 				{ "cookie", cookie },
 			},
 			Body = messageBody,

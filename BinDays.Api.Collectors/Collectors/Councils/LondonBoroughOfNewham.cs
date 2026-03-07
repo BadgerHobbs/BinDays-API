@@ -90,10 +90,6 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 				RequestId = 1,
 				Url = _baseUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -123,7 +119,7 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 			Dictionary<string, string> requestHeaders = new()
 			{
 				{ "user-agent", Constants.UserAgent },
-				{ "content-type", "application/x-www-form-urlencoded" },
+				{ "content-type", Constants.FormUrlEncoded },
 				{ "cookie", cookie },
 			};
 
@@ -188,10 +184,6 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 				RequestId = 1,
 				Url = $"{_baseUrl}Details/Index/{address.Uid}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

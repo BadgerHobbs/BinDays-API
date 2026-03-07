@@ -81,9 +81,6 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = _formUrl,
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -118,7 +115,7 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new() {
 					{"user-agent", Constants.UserAgent},
-					{"content-type", "application/x-www-form-urlencoded"},
+					{"content-type", Constants.FormUrlEncoded},
 					{"cookie", requestCookies},
 				},
 				Body = requestBody,
@@ -184,9 +181,6 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = requestUrl,
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

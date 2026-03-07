@@ -97,10 +97,6 @@ internal sealed partial class StockportCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://forms.stockport.gov.uk/bin-collections/address",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -126,7 +122,7 @@ internal sealed partial class StockportCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
@@ -224,10 +220,6 @@ internal sealed partial class StockportCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://forms.stockport.gov.uk/bin-collections/address",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -253,7 +245,7 @@ internal sealed partial class StockportCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
@@ -323,7 +315,7 @@ internal sealed partial class StockportCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
@@ -383,10 +375,6 @@ internal sealed partial class StockportCouncil : GovUkCollectorBase, ICollector
 				RequestId = 6,
 				Url = myAccountUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

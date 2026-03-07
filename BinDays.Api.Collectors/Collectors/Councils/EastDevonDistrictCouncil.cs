@@ -96,7 +96,7 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 				Headers = new()
 				{
 					{"User-Agent", Constants.UserAgent},
-					{"X-Requested-With", "XMLHttpRequest"},
+					{"x-requested-with", Constants.XmlHttpRequest},
 				},
 			};
 
@@ -157,10 +157,6 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 				RequestId = 1,
 				Url = $"https://eastdevon.gov.uk/recycling-and-waste/recycling-waste-information/when-is-my-bin-collected/future-collections-calendar/?UPRN={address.Uid}",
 				Method = "GET",
-				Headers = new()
-				{
-					{"User-Agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

@@ -104,10 +104,6 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 				RequestId = 1,
 				Url = "https://tunbridgewells-self.achieveservice.com/AchieveForms/?mode=fill&consentMessage=yes&form_uri=sandbox-publish://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed/AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38/definition.json&process=1&process_uri=sandbox-processes://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed&process_id=AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -152,7 +148,7 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", "application/json" },
+					{ "Content-Type", Constants.ApplicationJson },
 					{ "cookie", requestCookies },
 				},
 				Body = requestBody,
@@ -213,10 +209,6 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 				RequestId = 1,
 				Url = "https://tunbridgewells-self.achieveservice.com/AchieveForms/?mode=fill&consentMessage=yes&form_uri=sandbox-publish://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed/AF-Stage-88caf66c-378f-4082-ad1d-07b7a850af38/definition.json&process=1&process_uri=sandbox-processes://AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed&process_id=AF-Process-e01af4d4-eb0f-4cfe-a5ac-c47b63f017ed",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "User-Agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -267,7 +259,7 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", "application/json" },
+					{ "Content-Type", Constants.ApplicationJson },
 					{ "cookie", requestCookies },
 				},
 				Body = requestBody,

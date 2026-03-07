@@ -95,8 +95,8 @@ internal abstract partial class FccCollectorBase : GovUkCollectorBase
 				Method = "POST",
 				Headers = new()
 				{
-					{ "x-requested-with", "XMLHttpRequest"},
-					{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
+					{ "x-requested-with", Constants.XmlHttpRequest},
+					{ "content-type", Constants.FormUrlEncoded},
 					{ "cookie", $"fcc_session_cookie={sessionId}" }
 				},
 				Body = requestBody,
@@ -189,8 +189,8 @@ internal abstract partial class FccCollectorBase : GovUkCollectorBase
 				Method = "POST",
 				Headers = new()
 				{
-					{ "x-requested-with", "XMLHttpRequest"},
-					{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8"},
+					{ "x-requested-with", Constants.XmlHttpRequest},
+					{ "content-type", Constants.FormUrlEncoded},
 					{ "cookie", $"fcc_session_cookie={sessionId}" }
 				},
 				Body = requestBody,

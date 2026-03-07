@@ -118,10 +118,6 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = $"https://bindayfinder.moray.gov.uk/refuse_roads.php?strname=&pcode={postcode}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -175,10 +171,6 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = $"https://bindayfinder.moray.gov.uk/disp_bins.php?id={address.Uid}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -218,10 +210,6 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 				RequestId = 2,
 				Url = calendarUrls[0],
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 				Options = new ClientSideOptions
 				{
 					Metadata = metadata,
@@ -321,10 +309,6 @@ internal sealed partial class TheMorayCouncil : GovUkCollectorBase, ICollector
 					RequestId = clientSideResponse.RequestId + 1,
 					Url = remainingCalendars[0],
 					Method = "GET",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-					},
 					Options = new ClientSideOptions
 					{
 						Metadata = nextMetadata,

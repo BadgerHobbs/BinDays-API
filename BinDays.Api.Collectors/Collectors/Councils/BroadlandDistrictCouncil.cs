@@ -83,10 +83,7 @@ internal sealed partial class BroadlandDistrictCouncil : GovUkCollectorBase, ICo
 			{
 				RequestId = 1,
 				Url = "https://area.southnorfolkandbroadland.gov.uk/FindAddress",
-				Method = "GET",
-				Headers = new() {
-					{"User-Agent", Constants.UserAgent},
-				},
+				Method = "GET"
 			};
 
 			return new GetAddressesResponse
@@ -115,7 +112,7 @@ internal sealed partial class BroadlandDistrictCouncil : GovUkCollectorBase, ICo
 				Method = "POST",
 				Headers = new() {
 					{"User-Agent", Constants.UserAgent},
-					{"Content-Type", "application/x-www-form-urlencoded"},
+					{"Content-Type", Constants.FormUrlEncoded},
 					{"Cookie", requestCookies},
 				},
 				Body = requestBody,

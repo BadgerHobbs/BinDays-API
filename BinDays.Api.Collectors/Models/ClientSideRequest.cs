@@ -1,5 +1,6 @@
 namespace BinDays.Api.Collectors.Models;
 
+using BinDays.Api.Collectors.Utilities;
 using System.Collections.Generic;
 
 /// <summary>
@@ -25,7 +26,7 @@ public sealed class ClientSideRequest
 	/// <summary>
 	/// Gets the headers of the request.
 	/// </summary>
-	public Dictionary<string, string> Headers { get; init; } = [];
+	public Dictionary<string, string> Headers { get; init; } = new() { { "user-agent", Constants.UserAgent } };
 
 	/// <summary>
 	/// Gets the body of the request.

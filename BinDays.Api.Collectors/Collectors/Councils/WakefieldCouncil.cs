@@ -76,10 +76,6 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.wakefield.gov.uk/where-i-live",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			return new GetAddressesResponse
@@ -167,10 +163,6 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = $"https://www.wakefield.gov.uk/where-i-live?uprn={uprn}&a={Uri.EscapeDataString(property)}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			return new GetBinDaysResponse

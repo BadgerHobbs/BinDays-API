@@ -258,7 +258,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new() {
 					{"user-agent", Constants.UserAgent},
-					{"content-type", "application/x-www-form-urlencoded"},
+					{"content-type", Constants.FormUrlEncoded},
 					{"cookie", metadata["cookie"]},
 				},
 				Body = requestBody,
@@ -303,7 +303,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new() {
 					{"user-agent", Constants.UserAgent},
-					{"content-type", "application/x-www-form-urlencoded"},
+					{"content-type", Constants.FormUrlEncoded},
 					{"cookie", metadata["cookie"]},
 				},
 				Body = requestBody,
@@ -348,7 +348,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new() {
 					{"user-agent", Constants.UserAgent},
-					{"content-type", "application/x-www-form-urlencoded"},
+					{"content-type", Constants.FormUrlEncoded},
 					{"cookie", metadata["cookie"]},
 				},
 				Body = requestBody,
@@ -447,9 +447,6 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://onlineforms.bradford.gov.uk/ufs/collectiondates.eb?ebd=0&ebp=20&ebz=1_1761729510565",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 				Options = new ClientSideOptions
 				{
 					FollowRedirects = false,
@@ -526,7 +523,7 @@ internal sealed partial class BradfordCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new() {
 					{"user-agent", Constants.UserAgent},
-					{"content-type", "application/x-www-form-urlencoded"},
+					{"content-type", Constants.FormUrlEncoded},
 					{"cookie", metadata["cookie"]},
 				},
 				Body = requestBody,

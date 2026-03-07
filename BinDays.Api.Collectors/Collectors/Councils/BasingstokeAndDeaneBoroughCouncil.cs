@@ -246,9 +246,9 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "x-microsoftajax", "Delta=true" },
-					{ "content-type", "application/x-www-form-urlencoded; charset=utf-8" },
+					{ "content-type", Constants.FormUrlEncoded },
 					{ "origin", _origin },
 					{ "referer", _binCollectionsUrl },
 				},
@@ -323,10 +323,6 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 			RequestId = 1,
 			Url = _binCollectionsUrl,
 			Method = "GET",
-			Headers = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-			},
 		};
 	}
 
@@ -358,9 +354,9 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 			Headers = new()
 			{
 				{ "user-agent", Constants.UserAgent },
-				{ "x-requested-with", "XMLHttpRequest" },
+				{ "x-requested-with", Constants.XmlHttpRequest },
 				{ "x-microsoftajax", "Delta=true" },
-				{ "content-type", "application/x-www-form-urlencoded; charset=utf-8" },
+				{ "content-type", Constants.FormUrlEncoded },
 				{ "origin", _origin },
 				{ "referer", _binCollectionsUrl },
 			},

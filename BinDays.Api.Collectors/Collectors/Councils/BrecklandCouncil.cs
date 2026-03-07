@@ -80,8 +80,8 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", "application/json" },
-					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "Content-Type", Constants.ApplicationJson },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "User-Agent", Constants.UserAgent },
 				},
 				Body = requestBody,
@@ -160,8 +160,8 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", "application/json" },
-					{ "X-Requested-With", "XMLHttpRequest" },
+					{ "Content-Type", Constants.ApplicationJson },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "User-Agent", Constants.UserAgent },
 				},
 				Body = requestBody,

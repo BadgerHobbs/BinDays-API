@@ -73,7 +73,7 @@ internal sealed class CannockChaseDistrictCouncil : GovUkCollectorBase, ICollect
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = requestBody,
 			};
@@ -145,7 +145,7 @@ internal sealed class CannockChaseDistrictCouncil : GovUkCollectorBase, ICollect
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = requestBody,
 			};

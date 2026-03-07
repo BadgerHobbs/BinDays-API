@@ -89,9 +89,6 @@ internal sealed partial class SolihullMetropolitanBoroughCouncil : GovUkCollecto
 				RequestId = 1,
 				Url = "https://digital.solihull.gov.uk/BinCollectionCalendar/",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -119,7 +116,7 @@ internal sealed partial class SolihullMetropolitanBoroughCouncil : GovUkCollecto
 
 			var requestHeaders = new Dictionary<string, string> {
 				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+				{"content-type", Constants.FormUrlEncoded},
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -191,9 +188,6 @@ internal sealed partial class SolihullMetropolitanBoroughCouncil : GovUkCollecto
 				RequestId = 1,
 				Url = "https://digital.solihull.gov.uk/BinCollectionCalendar/",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

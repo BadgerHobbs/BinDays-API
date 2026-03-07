@@ -74,7 +74,7 @@ internal sealed partial class SalfordCityCouncil : GovUkCollectorBase, ICollecto
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/x-www-form-urlencoded; charset=UTF-8" },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = $"QueryStr={postcode}",
 			};
@@ -129,10 +129,6 @@ internal sealed partial class SalfordCityCouncil : GovUkCollectorBase, ICollecto
 				RequestId = 1,
 				Url = $"https://www.salford.gov.uk/umbraco/api/salfordapi/GetBinCollectionsICS/?UPRN={address.Uid}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

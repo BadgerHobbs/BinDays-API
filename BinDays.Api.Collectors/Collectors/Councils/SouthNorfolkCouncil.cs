@@ -87,10 +87,6 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 				RequestId = 1,
 				Url = $"{_baseUrl}/calendar.aspx",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -121,8 +117,8 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", "application/json; charset=utf-8" },
-					{ "x-requested-with", "XMLHttpRequest" },
+					{ "content-type", Constants.ApplicationJson },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", requestCookies },
 				},
 				Body = requestBody,
@@ -190,10 +186,6 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 				RequestId = 1,
 				Url = $"{_baseUrl}/calendar.aspx",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse

@@ -77,10 +77,6 @@ internal sealed partial class SouthCambridgeshireDistrictCouncil : GovUkCollecto
 				RequestId = 1,
 				Url = "https://www.greatercambridgewaste.org/find-your-bin-collection-day",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -159,10 +155,6 @@ internal sealed partial class SouthCambridgeshireDistrictCouncil : GovUkCollecto
 				RequestId = 1,
 				Url = "https://www.greatercambridgewaste.org/find-your-bin-collection-day",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
