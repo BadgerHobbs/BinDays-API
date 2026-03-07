@@ -5,7 +5,6 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -49,19 +48,25 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 	/// <summary>
 	/// Regex for the viewstate token values from input fields.
 	/// </summary>
-	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__VIEWSTATE[""'][^>]*?value=[""'](?<viewStateValue>[^""']*)[""'][^>]*?/?>")]
+	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__VIEWSTATE[""'][^>]*?value=[""'](?<viewState>[^""']*)[""'][^>]*?/?>")]
 	private static partial Regex ViewStateTokenRegex();
 
 	/// <summary>
 	/// Regex for the event validation values from input fields.
 	/// </summary>
-	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__EVENTVALIDATION[""'][^>]*?value=[""'](?<viewStateValue>[^""']*)[""'][^>]*?/?>")]
+	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__EVENTVALIDATION[""'][^>]*?value=[""'](?<eventValidation>[^""']*)[""'][^>]*?/?>")]
 	private static partial Regex EventValidationRegex();
+
+	/// <summary>
+	/// Regex for the viewstate generator values from input fields.
+	/// </summary>
+	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__VIEWSTATEGENERATOR[""'][^>]*?value=[""'](?<viewStateGenerator>[^""']*)[""'][^>]*?/?>")]
+	private static partial Regex ViewStateGeneratorRegex();
 
 	/// <summary>
 	/// Regex for the addresses from the options elements.
 	/// </summary>
-	[GeneratedRegex(@"<option value=""(?<uid>\d+)"">(?<address>[^<]+)</option>")]
+	[GeneratedRegex(@"<option[^>]*?value=[""'](?<uid>[^""']+)[""'][^>]*>\s*(?<address>[^<]+)\s*</option>")]
 	private static partial Regex AddressesRegex();
 
 	/// <summary>
@@ -81,14 +86,15 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.wirral.gov.uk/bincal_dev/",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
 				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -96,20 +102,23 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
-			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
+			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewState"].Value;
+			var viewStateGenerator = ViewStateGeneratorRegex().Match(clientSideResponse.Content).Groups["viewStateGenerator"].Value;
+			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["eventValidation"].Value;
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
 				{"__VIEWSTATE", viewState},
+				{"__VIEWSTATEGENERATOR", viewStateGenerator},
 				{"__EVENTVALIDATION", eventValidation},
 				{"ctl00$MainContent$Postcode", postcode},
 				{"ctl00$MainContent$LookupPostcode", "Go"},
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+			Dictionary<string, string> requestHeaders = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "content-type", "application/x-www-form-urlencoded" },
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -123,7 +132,7 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -134,6 +143,7 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 			var rawAddresses = AddressesRegex().Matches(clientSideResponse.Content)!;
 			var addresses = new List<Address>();
 
+			// Iterate through each address, and create a new address object
 			foreach (Match rawAddress in rawAddresses)
 			{
 				addresses.Add(new Address
@@ -166,14 +176,15 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.wirral.gov.uk/bincal_dev/",
 				Method = "GET",
-				Headers = new() {
-					{"user-agent", Constants.UserAgent},
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
 				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -181,20 +192,23 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request to get the address selection page
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
-			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
+			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewState"].Value;
+			var viewStateGenerator = ViewStateGeneratorRegex().Match(clientSideResponse.Content).Groups["viewStateGenerator"].Value;
+			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["eventValidation"].Value;
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
 				{"__VIEWSTATE", viewState},
+				{"__VIEWSTATEGENERATOR", viewStateGenerator},
 				{"__EVENTVALIDATION", eventValidation},
 				{"ctl00$MainContent$Postcode", address.Postcode!},
 				{"ctl00$MainContent$LookupPostcode", "Go"},
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+			Dictionary<string, string> requestHeaders = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "content-type", "application/x-www-form-urlencoded" },
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -208,7 +222,7 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -216,21 +230,24 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request to get bin collection data
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
-			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["viewStateValue"].Value;
+			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewState"].Value;
+			var viewStateGenerator = ViewStateGeneratorRegex().Match(clientSideResponse.Content).Groups["viewStateGenerator"].Value;
+			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["eventValidation"].Value;
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
 				{"__VIEWSTATE", viewState},
+				{"__VIEWSTATEGENERATOR", viewStateGenerator},
 				{"__EVENTVALIDATION", eventValidation},
 				{"ctl00$MainContent$Postcode", address.Postcode!},
 				{"ctl00$MainContent$addressDropDown", address.Uid!},
 				{"ctl00$MainContent$FindRounds", "Find bin collections"},
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", "application/x-www-form-urlencoded"},
+			Dictionary<string, string> requestHeaders = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "content-type", "application/x-www-form-urlencoded" },
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -244,7 +261,7 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
