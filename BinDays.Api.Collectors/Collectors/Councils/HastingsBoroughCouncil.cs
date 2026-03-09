@@ -42,13 +42,13 @@ internal sealed class HastingsBoroughCouncil : GovUkCollectorBase, ICollector
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Garden waste collection service" ],
+			Keys = [ "Garden waste" ],
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Grey,
-			Keys = [ "Food waste collection service" ],
+			Keys = [ "Food waste", "Food caddy" ],
 			Type = BinType.Caddy,
 		},
 	];
@@ -61,12 +61,7 @@ internal sealed class HastingsBoroughCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var requestBody = $$"""
-			{
-			  "PostCode": "{{postcode}}",
-			  "PropertyNumber": ""
-			}
-			""";
+			var requestBody = JsonSerializer.Serialize(new { PostCode = postcode });
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -126,11 +121,7 @@ internal sealed class HastingsBoroughCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var requestBody = $$"""
-			{
-			  "Uprn": "{{address.Uid}}"
-			}
-			""";
+			var requestBody = JsonSerializer.Serialize(new { Uprn = address.Uid });
 
 			var clientSideRequest = new ClientSideRequest
 			{
