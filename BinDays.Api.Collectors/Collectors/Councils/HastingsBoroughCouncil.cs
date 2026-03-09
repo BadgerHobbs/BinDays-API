@@ -119,6 +119,12 @@ internal sealed partial class HastingsBoroughCouncil : GovUkCollectorBase, IColl
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
+	/// <summary>
+	/// Regex for parsing the Unix timestamp from a /Date(…)/ formatted JSON date string.
+	/// </summary>
+	[GeneratedRegex(@"\((\d+)\)")]
+	private static partial Regex UnixDateRegex();
+
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
@@ -164,7 +170,8 @@ internal sealed partial class HastingsBoroughCouncil : GovUkCollectorBase, IColl
 				// Iterate through each date, and create a bin day for the service
 				foreach (var dateElement in dates.EnumerateArray())
 				{
-					var date = ParseUnixDate(dateElement.GetString()!);
+					var timestamp = long.Parse(UnixDateRegex().Match(dateElement.GetString()!).Groups[1].ValueSpan);
+					var date = DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp).Date);
 
 					var binDay = new BinDay
 					{
@@ -189,18 +196,4 @@ internal sealed partial class HastingsBoroughCouncil : GovUkCollectorBase, IColl
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
-	/// <summary>
-	/// Regex for parsing the Unix timestamp from a /Date(…)/ formatted JSON date string.
-	/// </summary>
-	[GeneratedRegex(@"\((\d+)\)")]
-	private static partial Regex UnixDateRegex();
-
-	/// <summary>
-	/// Parses a JSON date in /Date(…)/ format to a <see cref="DateOnly"/>.
-	/// </summary>
-	private static DateOnly ParseUnixDate(string value)
-	{
-		var timestamp = long.Parse(UnixDateRegex().Match(value).Groups[1].ValueSpan);
-		return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp).Date);
-	}
 }
