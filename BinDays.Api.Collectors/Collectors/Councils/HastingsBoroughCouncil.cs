@@ -6,11 +6,12 @@ using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 /// <summary>
 /// Collector implementation for Hastings Borough Council.
 /// </summary>
-internal sealed class HastingsBoroughCouncil : GovUkCollectorBase, ICollector
+internal sealed partial class HastingsBoroughCouncil : GovUkCollectorBase, ICollector
 {
 	/// <inheritdoc/>
 	public string Name => "Hastings Borough Council";
@@ -48,11 +49,14 @@ internal sealed class HastingsBoroughCouncil : GovUkCollectorBase, ICollector
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Grey,
-			Keys = [ "Food waste", "Food caddy" ],
+			Keys = [ "Food waste" ],
 			Type = BinType.Caddy,
 		},
 	];
 
+	/// <summary>
+	/// The base URL for the Hastings collection days web service.
+	/// </summary>
 	private const string _serviceBaseUrl = "https://el.hastings.gov.uk/MyArea/CollectionDays.asmx";
 
 	/// <inheritdoc/>
@@ -186,15 +190,17 @@ internal sealed class HastingsBoroughCouncil : GovUkCollectorBase, ICollector
 	}
 
 	/// <summary>
+	/// Regex for parsing the Unix timestamp from a /Date(…)/ formatted JSON date string.
+	/// </summary>
+	[GeneratedRegex(@"\((\d+)\)")]
+	private static partial Regex UnixDateRegex();
+
+	/// <summary>
 	/// Parses a JSON date in /Date(…)/ format to a <see cref="DateOnly"/>.
 	/// </summary>
 	private static DateOnly ParseUnixDate(string value)
 	{
-		var startIndex = value.IndexOf('(') + 1;
-		var endIndex = value.IndexOf(')', startIndex);
-		var timestamp = long.Parse(value.AsSpan(startIndex, endIndex - startIndex));
-		var date = DateTimeOffset.FromUnixTimeMilliseconds(timestamp).Date;
-
-		return DateOnly.FromDateTime(date);
+		var timestamp = long.Parse(UnixDateRegex().Match(value).Groups[1].ValueSpan);
+		return DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(timestamp).Date);
 	}
 }
