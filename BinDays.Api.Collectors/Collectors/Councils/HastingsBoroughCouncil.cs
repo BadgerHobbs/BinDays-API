@@ -61,7 +61,7 @@ internal sealed class HastingsBoroughCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var requestBody = JsonSerializer.Serialize(new { PostCode = postcode });
+			var requestBody = JsonSerializer.Serialize(new { PostCode = postcode, PropertyNumber = "" });
 
 			var clientSideRequest = new ClientSideRequest
 			{
