@@ -59,6 +59,12 @@ internal sealed partial class HastingsBoroughCouncil : GovUkCollectorBase, IColl
 	/// </summary>
 	private const string _serviceBaseUrl = "https://el.hastings.gov.uk/MyArea/CollectionDays.asmx";
 
+	/// <summary>
+	/// Regex for parsing the Unix timestamp from a /Date(…)/ formatted JSON date string.
+	/// </summary>
+	[GeneratedRegex(@"\((\d+)\)")]
+	private static partial Regex UnixDateRegex();
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
@@ -118,12 +124,6 @@ internal sealed partial class HastingsBoroughCouncil : GovUkCollectorBase, IColl
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
-
-	/// <summary>
-	/// Regex for parsing the Unix timestamp from a /Date(…)/ formatted JSON date string.
-	/// </summary>
-	[GeneratedRegex(@"\((\d+)\)")]
-	private static partial Regex UnixDateRegex();
 
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
