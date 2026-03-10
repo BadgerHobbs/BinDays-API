@@ -455,6 +455,26 @@ Keys = [ "Residual", "Refuse", "General" ],
 Keys = [ "General Waste" ],
 ```
 
+### ❌ DON'T: Use broad keys that match multiple bin types
+
+**Problem**: A key that is too broad can match dates belonging to a different bin type, causing incorrect collection dates. For example, using `"Recycling"` as a key for a paper/glass recycling bin would also match food waste recycling entries, assigning the wrong dates.
+
+```c#
+// ❌ "Recycling" matches both "Recycling" and "Food Waste Recycling"
+new() { Name = "Paper & Card Recycling", Keys = [ "Recycling" ] },
+new() { Name = "Food Waste", Keys = [ "Food Waste Recycling" ] },
+```
+
+### ✅ DO: Use the most specific key possible — prefer one key per bin type
+
+**Reason**: Use the exact string from the data source. If a single specific key uniquely identifies the bin type, use only that one key. Only add multiple keys when the data source genuinely uses different strings for the same bin type across different addresses or responses.
+
+```c#
+// ✅ Each key uniquely identifies its bin type
+new() { Name = "Paper & Card Recycling", Keys = [ "Paper and Card" ] },
+new() { Name = "Food Waste", Keys = [ "Food Waste" ] },
+```
+
 ### ❌ DON'T: Extract bin names as constants
 
 **Problem**: Creating constants for bin names adds unnecessary code.
