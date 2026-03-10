@@ -331,6 +331,72 @@ Dictionary<string, string> requestHeaders = new()
 };
 ```
 
+### Handling Bot Protection
+
+Some council websites use bot-detection that blocks requests which don't resemble browser traffic. Since all requests originate from users' residential IPs (not server IPs), the IP itself should not trigger bot protection — the issue is usually that the request *looks* automated because it lacks typical browser headers.
+
+**Why headers matter**: Bot-protection systems (Cloudflare, AWS WAF, Akamai, etc.) check whether incoming requests match the fingerprint of a real browser. The main signals are: HTTP headers (presence, values, and consistency), TLS fingerprint (JA3/JA4), and HTTP/2 settings. Since our requests are executed by the mobile app's native HTTP stack from residential IPs, the TLS fingerprint and HTTP/2 settings are naturally legitimate — headers are the main thing we control.
+
+**Strategy: add headers incrementally** — start minimal and only add what is needed to unblock the request. Do not cargo-cult a full browser header set.
+
+**Step 1 — Try with just `user-agent` first** (the default). Most councils don't need anything else.
+
+**Step 2 — If blocked, add `accept`, `accept-language`, and `accept-encoding`** to signal that the client is a real browser:
+
+```c#
+Headers = new()
+{
+    { "user-agent", Constants.UserAgent },
+    { "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+    { "accept-language", "en-GB,en;q=0.5" },
+    { "accept-encoding", "gzip, deflate, br" },
+},
+```
+
+**Step 3 — If still blocked, add `referer` and `upgrade-insecure-requests`** to mimic in-site navigation. The referer should point to the previous step's URL. `upgrade-insecure-requests: 1` is sent by all browsers on navigation requests:
+
+```c#
+{ "referer", "https://www.example-council.gov.uk/bins" },
+{ "upgrade-insecure-requests", "1" },
+```
+
+**Step 4 — If still blocked, add `sec-fetch-*` navigation headers.** These are Fetch Metadata headers that browsers attach to top-level navigations. Their presence (combined with the correct values) signals a real user clicking a link, which most bot-protection middleware trusts:
+
+```c#
+Headers = new()
+{
+    { "user-agent", Constants.UserAgent },
+    { "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+    { "accept-language", "en-GB,en;q=0.5" },
+    { "accept-encoding", "gzip, deflate, br" },
+    { "referer", previousStepUrl },
+    { "upgrade-insecure-requests", "1" },
+    { "sec-fetch-dest", "document" },
+    { "sec-fetch-mode", "navigate" },
+    { "sec-fetch-site", "same-origin" },
+    { "sec-fetch-user", "?1" },
+},
+```
+
+**Sec-Fetch values vary by request type:**
+
+| Scenario | `sec-fetch-dest` | `sec-fetch-mode` | `sec-fetch-site` | `sec-fetch-user` |
+|---|---|---|---|---|
+| First navigation (no referrer) | `document` | `navigate` | `none` | `?1` |
+| In-site navigation | `document` | `navigate` | `same-origin` | `?1` |
+| AJAX/fetch request | `empty` | `cors` | `same-origin` | *(omit)* |
+
+**Never include `sec-ch-ua` Client Hints headers.** We always use a Firefox user-agent (`Constants.UserAgent`), and Firefox does not send Client Hints. Including them contradicts the claimed browser identity and is itself a bot-detection signal:
+
+```c#
+// ❌ DON'T: Firefox never sends these — their presence flags the request as spoofed.
+{ "sec-ch-ua", "\"Not A(Brand\";v=\"99\", \"Google Chrome\";v=\"120\"" },
+{ "sec-ch-ua-mobile", "?0" },
+{ "sec-ch-ua-platform", "\"Windows\"" },
+```
+
+**Headers that are safe to skip**: `dnt`, `pragma`, `cache-control`, `te`, `priority` — these are not primary detection signals and add noise without benefit.
+
 ---
 
 ## Request Bodies & JSON Payloads
