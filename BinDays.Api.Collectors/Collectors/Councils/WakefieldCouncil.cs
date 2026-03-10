@@ -30,13 +30,13 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 		{
 			Name = "General Waste",
 			Colour = BinColour.Green,
-			Keys = [ "Household waste", "General waste", "Refuse" ],
+			Keys = [ "Household waste" ],
 		},
 		new()
 		{
 			Name = "Recycling",
 			Colour = BinColour.Brown,
-			Keys = [ "Mixed recycling", "Recycling" ],
+			Keys = [ "Mixed recycling" ],
 		},
 		new()
 		{
@@ -217,3 +217,4 @@ internal sealed partial class WakefieldCouncil : GovUkCollectorBase, ICollector
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }
+
