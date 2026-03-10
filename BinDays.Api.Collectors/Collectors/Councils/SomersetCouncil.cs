@@ -46,7 +46,7 @@ internal sealed class SomersetCouncil : ITouchVisionCollectorBase, ICollector
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Food", "Recycling" ],
+			Keys = [ "Recycling" ],
 			Type = BinType.Caddy,
 		},
 		new()

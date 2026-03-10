@@ -50,7 +50,7 @@ internal sealed partial class TunbridgeWellsBoroughCouncil : GovUkCollectorBase,
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Yellow,
-			Keys = [ "Food", "Recycling", "Refuse" ],
+			Keys = [ "Recycling", "Refuse" ],
 			Type = BinType.Caddy,
 		},
 		new()

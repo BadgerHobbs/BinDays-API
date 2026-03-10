@@ -475,6 +475,22 @@ new() { Name = "Paper & Card Recycling", Keys = [ "Paper and Card" ] },
 new() { Name = "Food Waste", Keys = [ "Food Waste" ] },
 ```
 
+### ✅ Exception: Intentional shared keys for co-collected bins
+
+**When it's valid**: Some councils collect multiple bin types on the same day but only report one `collectionType` in the API response. In these cases it is correct and intentional for multiple bin entries to share the same key, so that all co-collected bins appear on the same date.
+
+**How to identify this pattern**: The council website lists e.g. "Food Waste" under the same collection heading as "Recycling", but the API only returns a single `"Recycling"` entry (no separate `"Food"` or `"Food Waste"` entry exists in the response).
+
+```c#
+// ✅ Food waste is co-collected on recycling day — API never returns a separate "Food" entry
+new() { Name = "Recycling", Keys = [ "Recycling" ] },
+new() { Name = "Food Waste", Keys = [ "Recycling" ], Type = BinType.Caddy },
+```
+
+**Important**: Only use this pattern when you have verified (by inspecting the actual API response) that the data source does not return a separate entry for the co-collected bin. Do not add keys from other bin types speculatively — verify the API response first. Also do not add dead keys for values the API never returns (e.g. `"Food"` when the API only ever returns `"Recycling"`).
+
+---
+
 ### ❌ DON'T: Extract bin names as constants
 
 **Problem**: Creating constants for bin names adds unnecessary code.
