@@ -31,13 +31,13 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "RefuseBin", ],
+			Keys = [ "RefuseBin" ],
 		},
 		new()
 		{
 			Name = "Mixed Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "RecycleBin", ],
+			Keys = [ "RecycleBin" ],
 		},
 	];
 

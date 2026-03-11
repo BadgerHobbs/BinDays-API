@@ -31,33 +31,33 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Waste", ],
+			Keys = [ "Waste" ],
 		},
 		new()
 		{
 			Name = "Mixed Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Recycling", ],
+			Keys = [ "Recycling" ],
 		},
 		new()
 		{
 			Name = "Glass Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Glass", ],
+			Keys = [ "Glass" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Green,
-			Keys = [ "Food waste", ],
+			Keys = [ "Food waste" ],
 			Type = BinType.Caddy,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Garden", ],
+			Keys = [ "Garden" ],
 		},
 	];
 

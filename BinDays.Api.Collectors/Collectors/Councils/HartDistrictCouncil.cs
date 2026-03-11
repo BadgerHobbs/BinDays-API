@@ -32,26 +32,26 @@ internal sealed partial class HartDistrictCouncil : GovUkCollectorBase, ICollect
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Refuse", ],
+			Keys = [ "Refuse" ],
 		},
 		new()
 		{
 			Name = "Mixed Recycling",
 			Colour = BinColour.Black,
-			Keys = [ "Recycling", ],
+			Keys = [ "Recycling" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Green,
-			Keys = [ "Garden", ],
+			Keys = [ "Garden" ],
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Grey,
-			Keys = [ "Food Waste", ],
+			Keys = [ "Food Waste" ],
 			Type = BinType.Caddy,
 		},
 	];

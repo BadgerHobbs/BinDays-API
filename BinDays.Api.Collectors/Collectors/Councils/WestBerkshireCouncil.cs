@@ -32,26 +32,26 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "Rubbish", ],
+			Keys = [ "Rubbish" ],
 		},
 		new()
 		{
 			Name = "Dry Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Recycling", ],
+			Keys = [ "Recycling" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Garden", ],
+			Keys = [ "Garden" ],
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Green,
-			Keys = [ "Food", ],
+			Keys = [ "Food" ],
 			Type = BinType.Caddy,
 		},
 	];
