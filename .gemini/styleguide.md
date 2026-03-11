@@ -854,9 +854,11 @@ Headers = new()
 };
 ```
 
-### ✅ DO: Always use trailing commas
+### ✅ DO: Always use trailing commas in multi-line initializers
 
 **Reason**: Makes future diffs cleaner and reduces merge conflicts.
+
+**Single-line collections do NOT need internal trailing commas** — only the line itself needs one if it's inside a multi-line context. Trailing commas inside `[ ]` are only needed when the collection spans multiple lines.
 
 ```c#
 private readonly IReadOnlyCollection<Bin> _binTypes =
@@ -865,9 +867,16 @@ private readonly IReadOnlyCollection<Bin> _binTypes =
     {
         Name = "General Waste",
         Colour = BinColour.Black,
-        Keys = [ "General" ],  // ✅ Has comma
+        Keys = [ "General" ],  // ✅ Single-item list, no comma inside brackets
     },
 ];
+
+// Multi-line collection — each element gets a trailing comma:
+Keys =
+[
+    "General Waste",
+    "Non-Recyclable",
+],
 
 Headers = new()
 {
