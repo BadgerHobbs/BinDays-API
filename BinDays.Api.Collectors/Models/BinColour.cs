@@ -33,67 +33,67 @@ public sealed class BinColour
 	}
 
 	/// <summary>
-	/// Red (#FF0000).
+	/// Red (#F44336). Matches Flutter <c>Colors.red</c>.
 	/// </summary>
-	public static readonly BinColour Red = new("Red", "#FF0000");
+	public static readonly BinColour Red = new("Red", "#F44336");
 
 	/// <summary>
-	/// Green (#008000).
+	/// Green (#4CAF50). Matches Flutter <c>Colors.green</c>.
 	/// </summary>
-	public static readonly BinColour Green = new("Green", "#008000");
+	public static readonly BinColour Green = new("Green", "#4CAF50");
 
 	/// <summary>
-	/// Light green (#90EE90).
+	/// Light green (#8BC34A). Matches Flutter <c>Colors.lightGreen</c>.
 	/// </summary>
-	public static readonly BinColour LightGreen = new("Light Green", "#90EE90");
+	public static readonly BinColour LightGreen = new("Light Green", "#8BC34A");
 
 	/// <summary>
-	/// Blue (#0000FF).
+	/// Blue (#2196F3). Matches Flutter <c>Colors.blue</c>.
 	/// </summary>
-	public static readonly BinColour Blue = new("Blue", "#0000FF");
+	public static readonly BinColour Blue = new("Blue", "#2196F3");
 
 	/// <summary>
-	/// Light blue (#ADD8E6).
+	/// Light blue (#03A9F4). Matches Flutter <c>Colors.lightBlue</c>.
 	/// </summary>
-	public static readonly BinColour LightBlue = new("Light Blue", "#ADD8E6");
+	public static readonly BinColour LightBlue = new("Light Blue", "#03A9F4");
 
 	/// <summary>
-	/// Black (#000000).
+	/// Black (#000000). Matches Flutter <c>Colors.black</c>.
 	/// </summary>
 	public static readonly BinColour Black = new("Black", "#000000");
 
 	/// <summary>
-	/// Grey (#808080).
+	/// Grey (#9E9E9E). Matches Flutter <c>Colors.grey</c>.
 	/// </summary>
-	public static readonly BinColour Grey = new("Grey", "#808080");
+	public static readonly BinColour Grey = new("Grey", "#9E9E9E");
 
 	/// <summary>
-	/// Yellow (#FFFF00).
+	/// Yellow (#FFEB3B). Matches Flutter <c>Colors.yellow</c>.
 	/// </summary>
-	public static readonly BinColour Yellow = new("Yellow", "#FFFF00");
+	public static readonly BinColour Yellow = new("Yellow", "#FFEB3B");
 
 	/// <summary>
-	/// Orange (#FFA500).
+	/// Orange (#FF9800). Matches Flutter <c>Colors.orange</c>.
 	/// </summary>
-	public static readonly BinColour Orange = new("Orange", "#FFA500");
+	public static readonly BinColour Orange = new("Orange", "#FF9800");
 
 	/// <summary>
-	/// Purple (#800080).
+	/// Purple (#9C27B0). Matches Flutter <c>Colors.purple</c>.
 	/// </summary>
-	public static readonly BinColour Purple = new("Purple", "#800080");
+	public static readonly BinColour Purple = new("Purple", "#9C27B0");
 
 	/// <summary>
-	/// Pink (#FFC0CB).
+	/// Pink (#E91E63). Matches Flutter <c>Colors.pink</c>.
 	/// </summary>
-	public static readonly BinColour Pink = new("Pink", "#FFC0CB");
+	public static readonly BinColour Pink = new("Pink", "#E91E63");
 
 	/// <summary>
-	/// Brown (#A52A2A).
+	/// Brown (#795548). Matches Flutter <c>Colors.brown</c>.
 	/// </summary>
-	public static readonly BinColour Brown = new("Brown", "#A52A2A");
+	public static readonly BinColour Brown = new("Brown", "#795548");
 
 	/// <summary>
-	/// White (#FFFFFF).
+	/// White (#FFFFFF). Matches Flutter <c>Colors.white</c>.
 	/// </summary>
 	public static readonly BinColour White = new("White", "#FFFFFF");
 }
