@@ -206,16 +206,15 @@ internal static class TestOutput
 	private static string FormatBinDetails(Bin bin)
 	{
 		var name = bin.Name ?? "Unnamed Bin";
-		var colour = FormatEnumWithSpaces(bin.Colour.ToString());
 		var type = bin.Type.HasValue ? FormatEnumWithSpaces(bin.Type.Value.ToString()) : null;
 
 		if (type != null)
 		{
-			return $"{name} ({colour} {type})";
+			return $"{name} ({bin.Colour.Name} {type})";
 		}
 		else
 		{
-			return $"{name} ({colour})";
+			return $"{name} ({bin.Colour.Name})";
 		}
 	}
 

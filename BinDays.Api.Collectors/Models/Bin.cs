@@ -16,6 +16,11 @@ public sealed class Bin
 	required public BinColour Colour { get; init; }
 
 	/// <summary>
+	/// Gets the hex value of the bin colour (e.g. "#FF0000").
+	/// </summary>
+	public string ColourHex => Colour.Hex;
+
+	/// <summary>
 	/// Gets bin type.
 	/// </summary>
 	public BinType? Type { get; init; }

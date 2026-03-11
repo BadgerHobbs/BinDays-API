@@ -1,81 +1,99 @@
 namespace BinDays.Api.Collectors.Models;
 
-using BinDays.Api.Converters;
+using BinDays.Api.Collectors.Converters;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Represents the colour of a bin.
+/// Represents a bin colour with a display name and hex value.
 /// </summary>
 /// <remarks>
-/// For compatibility with the BinDays-App, this enum is serialized to a
-/// space-separated string (e.g. LightBlue -> "Light Blue").
+/// Serialized as the <see cref="Name"/> string for backwards compatibility.
+/// The hex value is exposed via <see cref="Bin.ColourHex"/> in the API response.
 /// </remarks>
-[JsonConverter(typeof(SpacedPascalCaseEnumConverter<BinColour>))]
-public enum BinColour
+[JsonConverter(typeof(BinColourJsonConverter))]
+public sealed class BinColour
 {
 	/// <summary>
-	/// Red bin.
+	/// Gets the display name (e.g. "Crimson", "Dark Cyan").
 	/// </summary>
-	Red,
+	public string Name { get; }
 
 	/// <summary>
-	/// Green bin.
+	/// Gets the hex colour value (e.g. "#DC143C").
 	/// </summary>
-	Green,
+	public string Hex { get; }
 
 	/// <summary>
-	/// Light green bin.
+	/// Creates a <see cref="BinColour"/>.
 	/// </summary>
-	LightGreen,
+	public BinColour(string name, string hex)
+	{
+		Name = name;
+		Hex = hex;
+	}
 
 	/// <summary>
-	/// Blue bin.
+	/// Red (#FF0000).
 	/// </summary>
-	Blue,
+	public static readonly BinColour Red = new("Red", "#FF0000");
 
 	/// <summary>
-	/// Light blue bin.
+	/// Green (#008000).
 	/// </summary>
-	LightBlue,
+	public static readonly BinColour Green = new("Green", "#008000");
 
 	/// <summary>
-	/// Black bin.
+	/// Light green (#90EE90).
 	/// </summary>
-	Black,
+	public static readonly BinColour LightGreen = new("Light Green", "#90EE90");
 
 	/// <summary>
-	/// Grey bin.
+	/// Blue (#0000FF).
 	/// </summary>
-	Grey,
+	public static readonly BinColour Blue = new("Blue", "#0000FF");
 
 	/// <summary>
-	/// Yellow bin.
+	/// Light blue (#ADD8E6).
 	/// </summary>
-	Yellow,
+	public static readonly BinColour LightBlue = new("Light Blue", "#ADD8E6");
 
 	/// <summary>
-	/// Orange bin.
+	/// Black (#000000).
 	/// </summary>
-	Orange,
+	public static readonly BinColour Black = new("Black", "#000000");
 
 	/// <summary>
-	/// Purple bin.
+	/// Grey (#808080).
 	/// </summary>
-	Purple,
+	public static readonly BinColour Grey = new("Grey", "#808080");
 
 	/// <summary>
-	/// Pink bin.
+	/// Yellow (#FFFF00).
 	/// </summary>
-	Pink,
+	public static readonly BinColour Yellow = new("Yellow", "#FFFF00");
 
 	/// <summary>
-	/// Brown bin.
+	/// Orange (#FFA500).
 	/// </summary>
-	Brown,
+	public static readonly BinColour Orange = new("Orange", "#FFA500");
 
 	/// <summary>
-	/// White bin.
+	/// Purple (#800080).
 	/// </summary>
-	White,
+	public static readonly BinColour Purple = new("Purple", "#800080");
+
+	/// <summary>
+	/// Pink (#FFC0CB).
+	/// </summary>
+	public static readonly BinColour Pink = new("Pink", "#FFC0CB");
+
+	/// <summary>
+	/// Brown (#A52A2A).
+	/// </summary>
+	public static readonly BinColour Brown = new("Brown", "#A52A2A");
+
+	/// <summary>
+	/// White (#FFFFFF).
+	/// </summary>
+	public static readonly BinColour White = new("White", "#FFFFFF");
 }
-
