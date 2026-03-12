@@ -223,17 +223,7 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 				"stage_id": "{{_stageId}}",
 				"stage_name": "Round Checker",
 				"formId": "{{_binDaysFormId}}",
-				"formValues": {
-					"Section 1": {
-						"showTable": { "value": "no" },
-						"sfNumberOfEntries": { "value": "0" },
-						"serviceResComm": { "value": "Domestic" },
-						"RefuseEntry": { "value": "0" },
-						"RecyclingEntry": { "value": "0" },
-						"FGWEntry": { "value": "0" },
-						"roundInformationStatus": { "value": "No address entered" }
-					}
-				},
+				"formValues": {},
 				"isPublished": true,
 				"formName": "{{_formName}}",
 				"processId": "{{_processId}}",
@@ -288,18 +278,6 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 			var postcode = parts[7];
 			var blpu = parts[8];
 
-			var fullAddress = string.Join(
-				", ",
-				new[]
-				{
-					house,
-					street,
-					locality,
-					town,
-					county,
-					postcode,
-				}.Where(part => !string.IsNullOrWhiteSpace(part))
-			);
 
 			var requestBody = $$"""
 			{
@@ -313,34 +291,17 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 						"coreBearerToken": { "value": "{{coreBearerToken}}" },
 						"propertySearch": {
 							"postcode_search": { "value": "{{address.Postcode!}}" },
-							"ChooseAddress": { "value": "{{uprn}}" },
 							"propertyUprn": { "value": "{{uprn}}" },
 							"propertyUsrn": { "value": "{{usrn}}" },
-							"propertyPaon": { "value": "{{house}}" },
 							"propertyHouse": { "value": "{{house}}" },
 							"propertyStreet": { "value": "{{street}}" },
 							"propertyLocality": { "value": "{{locality}}" },
 							"propertyTown": { "value": "{{town}}" },
 							"propertyCounty": { "value": "{{county}}" },
 							"propertyPostcode": { "value": "{{address.Postcode!}}" },
-							"fullAddress": { "value": "{{fullAddress}}" },
 							"BLPU": { "value": "{{blpu}}" }
 						},
-						"uprnCore": { "value": "{{uprn}}" },
-						"fullAddress1": { "value": "{{fullAddress}}" },
-						"assisted": { "value": "false" },
-						"showTable": { "value": "no" },
-						"sfNumberOfEntries": { "value": "0" },
-						"serviceResComm": { "value": "Domestic" },
-						"RefuseEntry": { "value": "0" },
-						"RecyclingEntry": { "value": "0" },
-						"FGWEntry": { "value": "0" },
-						"processDowntime": {
-							"Section 1": {
-								"isProcessDown": { "value": "No" }
-							}
-						},
-						"roundInformationStatus": { "value": "No round information" }
+						"uprnCore": { "value": "{{uprn}}" }
 					}
 				},
 				"isPublished": true,
