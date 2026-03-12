@@ -56,16 +56,11 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 	];
 
 	private const string _baseUrl = "https://mycouncil.milton-keynes.gov.uk";
-	private const string _serviceUrl = "https://mycouncil.milton-keynes.gov.uk/en/service/Waste_Collection_Round_Checker";
 	private const string _stageId = "AF-Stage-aeed9de6-ac06-4ac0-bfaf-f6cfee431092";
 	private const string _processId = "AF-Process-0a0b6838-6284-4163-998f-7ca6d4d62f41";
 	private const string _formUri = "sandbox-publish://AF-Process-0a0b6838-6284-4163-998f-7ca6d4d62f41/AF-Stage-aeed9de6-ac06-4ac0-bfaf-f6cfee431092/definition.json";
 	private const string _formName = "Milton Keynes City Council Waste Collection Round Checker";
-	private const string _searchFormId = "AF-Form-b7f7c45d-40ed-46dd-aa1c-18fb875921ee";
 	private const string _binDaysFormId = "AF-Form-1a083dbd-80dd-4a81-8e7e-7ab0b66b5fb5";
-	private const string _addressLookupId = "56a1f135c2a43";
-	private const string _tokenLookupId = "64e613b119075";
-	private const string _binDaysLookupId = "64d9feda3a507";
 
 	/// <summary>
 	/// Regex to extract the session identifier from the HTML content.
@@ -93,19 +88,13 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 		{
 			var (sessionId, cookies) = ExtractSessionData(clientSideResponse);
 
-			var metadata = new Dictionary<string, string>
-			{
-				{ "sid", sessionId },
-				{ "cookie", cookies },
-			};
-
 			var requestBody = $$"""
 			{
 				"stopOnFailure": true,
 				"usePHPIntegrations": true,
 				"stage_id": "{{_stageId}}",
 				"stage_name": "Round Checker",
-				"formId": "{{_searchFormId}}",
+				"formId": "AF-Form-b7f7c45d-40ed-46dd-aa1c-18fb875921ee",
 				"formValues": {
 					"Search": {
 						"postcode_search": { "value": "{{postcode}}" }
@@ -121,7 +110,7 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"{_baseUrl}/apibroker/runLookup?id={_addressLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={sessionId}",
+				Url = $"{_baseUrl}/apibroker/runLookup?id=56a1f135c2a43&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={sessionId}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -131,10 +120,6 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 					{ "cookie", cookies },
 				},
 				Body = requestBody,
-				Options = new ClientSideOptions
-				{
-					Metadata = metadata,
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -157,21 +142,20 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 			var addresses = new List<Address>();
 			foreach (var row in rows)
 			{
-				var results = row.Elements("result").ToList();
-				var uprn = results.First(result => result.Attribute("column")!.Value == "uprn").Value.Trim();
-				var display = results.First(result => result.Attribute("column")!.Value == "display").Value.Trim();
-				var usrn = results.First(result => result.Attribute("column")!.Value == "usrn").Value.Trim();
-				var house = results.First(result => result.Attribute("column")!.Value == "house").Value.Trim();
-				var street = results.First(result => result.Attribute("column")!.Value == "street").Value.Trim();
-				var locality = results.First(result => result.Attribute("column")!.Value == "locality").Value.Trim();
-				var town = results.First(result => result.Attribute("column")!.Value == "town").Value.Trim();
-				var county = results.First(result => result.Attribute("column")!.Value == "county").Value.Trim();
-				var blpu = results.First(result => result.Attribute("column")!.Value == "BLPU").Value.Trim();
+				var results = row.Elements("result").ToDictionary(e => e.Attribute("column")!.Value, e => e.Value.Trim());
+				var uprn = results["uprn"];
+				var display = results["display"];
+				var usrn = results["usrn"];
+				var house = results["house"];
+				var street = results["street"];
+				var locality = results["locality"];
+				var town = results["town"];
+				var county = results["county"];
+				var blpu = results["BLPU"];
 
 				var uid = string.Join(
 					';',
-					new[]
-					{
+					[
 						uprn,
 						usrn,
 						house,
@@ -181,7 +165,7 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 						county,
 						postcode,
 						blpu,
-					}
+					]
 				);
 
 				var address = new Address
@@ -226,7 +210,7 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 		{
 			var (sessionId, cookies) = ExtractSessionData(clientSideResponse);
 
-			var metadata = new Dictionary<string, string>
+			Dictionary<string, string> metadata = new()
 			{
 				{ "sid", sessionId },
 				{ "cookie", cookies },
@@ -260,7 +244,7 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"{_baseUrl}/apibroker/runLookup?id={_tokenLookupId}&repeat_against=&noRetry=true&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={sessionId}",
+				Url = $"{_baseUrl}/apibroker/runLookup?id=64e613b119075&repeat_against=&noRetry=true&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={sessionId}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -286,7 +270,7 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 		// Prepare client-side request for bin days lookup
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var metadata = new Dictionary<string, string>(clientSideResponse.Options.Metadata);
+			var metadata = clientSideResponse.Options.Metadata;
 
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var tokenData = jsonDoc.RootElement.GetProperty("data").GetString()!;
@@ -369,7 +353,7 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 3,
-				Url = $"{_baseUrl}/apibroker/runLookup?id={_binDaysLookupId}&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={metadata["sid"]}",
+				Url = $"{_baseUrl}/apibroker/runLookup?id=64d9feda3a507&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={metadata["sid"]}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -401,40 +385,26 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 			var binDays = new List<BinDay>();
 			foreach (var row in rows)
 			{
-				var results = row.Elements("result").ToList();
-				var service = results.First(result => result.Attribute("column")!.Value == "TaskTypeName").Value.Trim();
-				var nextCollection = results.First(result => result.Attribute("column")!.Value == "NextInstance").Value.Trim();
-				var lastCollection = results.First(result => result.Attribute("column")!.Value == "LastInstance").Value.Trim();
+				var results = row.Elements("result").ToDictionary(e => e.Attribute("column")!.Value, e => e.Value.Trim());
+				var service = results["TaskTypeName"];
+				var nextCollection = results["NextInstance"];
+				var lastCollection = results["LastInstance"];
 
-				if (!string.IsNullOrWhiteSpace(nextCollection))
+				void AddBinDay(string dateString)
 				{
-					var nextDate = DateUtilities.ParseDateExact(nextCollection, "yyyy-MM-dd");
+					if (string.IsNullOrWhiteSpace(dateString)) return;
+					var date = DateUtilities.ParseDateExact(dateString, "yyyy-MM-dd");
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-
-					var binDay = new BinDay
+					binDays.Add(new BinDay
 					{
-						Date = nextDate,
+						Date = date,
 						Address = address,
 						Bins = matchedBins,
-					};
-
-					binDays.Add(binDay);
+					});
 				}
 
-				if (!string.IsNullOrWhiteSpace(lastCollection))
-				{
-					var lastDate = DateUtilities.ParseDateExact(lastCollection, "yyyy-MM-dd");
-					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-
-					var binDay = new BinDay
-					{
-						Date = lastDate,
-						Address = address,
-						Bins = matchedBins,
-					};
-
-					binDays.Add(binDay);
-				}
+				AddBinDay(nextCollection);
+				AddBinDay(lastCollection);
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -456,7 +426,7 @@ internal sealed partial class MiltonKeynesCityCouncil : GovUkCollectorBase, ICol
 		var clientSideRequest = new ClientSideRequest
 		{
 			RequestId = 1,
-			Url = _serviceUrl,
+			Url = "https://mycouncil.milton-keynes.gov.uk/en/service/Waste_Collection_Round_Checker",
 			Method = "GET",
 		};
 
