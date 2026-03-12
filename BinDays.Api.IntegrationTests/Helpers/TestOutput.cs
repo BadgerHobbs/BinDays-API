@@ -123,7 +123,12 @@ internal static class TestOutput
 			var uniqueBins = binDays
 				.Where(bd => bd.Bins != null)
 				.SelectMany(bd => bd.Bins)
-				.GroupBy(b => new { b.Name, b.Colour, b.Type })
+				.GroupBy(b => new
+				{
+					BinName = b.Name,
+					BinColour = b.Colour.Name,
+					b.Type,
+				})
 				.Select(g => g.First())
 				.OrderBy(b => b.Name)
 				.ToList();
