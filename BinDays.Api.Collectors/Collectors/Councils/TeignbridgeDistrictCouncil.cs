@@ -65,7 +65,7 @@ internal sealed partial class TeignbridgeDistrictCouncil : GovUkCollectorBase, I
 		new()
 		{
 			Name = "Garden Waste",
-			Colour = BinColour.Purple,
+			Colour = BinColour.Green,
 			Keys = [ "garden waste" ],
 		},
 	];
@@ -201,3 +201,4 @@ internal sealed partial class TeignbridgeDistrictCouncil : GovUkCollectorBase, I
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }
+
