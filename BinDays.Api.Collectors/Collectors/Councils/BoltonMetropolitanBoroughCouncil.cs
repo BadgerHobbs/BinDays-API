@@ -38,13 +38,13 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 		new()
 		{
 			Name = "Paper and Card Recycling",
-			Colour = BinColour.Brown,
+			Colour = new("Beige", "#D1AC75"),
 			Keys = [ "beige recycling bin" ],
 		},
 		new()
 		{
 			Name = "Plastic, Glass and Metal Recycling",
-			Colour = BinColour.Red,
+			Colour = new("Burgundy", "#B8253F"),
 			Keys = [ "burgundy plastic bin" ],
 		},
 		new()
