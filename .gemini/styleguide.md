@@ -31,7 +31,8 @@ This comprehensive guide outlines all coding conventions, design principles, and
 20. [Address Handling](#address-handling)
 21. [GetBinDays Patterns](#getbindays-patterns)
 22. [Iteration Patterns](#iteration-patterns)
-23. [URL Encoding](#url-encoding)
+23. [URL Query Parameters](#url-query-parameters)
+24. [URL Encoding](#url-encoding)
 
 ### Part 3: Templates & Testing
 
@@ -149,6 +150,8 @@ Maintain consistent ordering of class members to improve code readability. Group
    - **Never use constants for bin names**: Bin names should be inline strings in `_binTypes`
    - Place all const fields together after bin types, before regex methods
 
+**All private fields, const fields, and regex methods must have XML documentation (`/// <summary>`).**
+
 ### Implementation (in this order):
 
 4. **Regex Methods** (if using `[GeneratedRegex]`):
@@ -175,15 +178,21 @@ internal sealed partial class MyCouncil : GovUkCollectorBase, ICollector
     public Uri WebsiteUrl => new("...");
     public override string GovUkId => "...";
 
-    // Bin types
+    /// <summary>
+    /// The list of bin types for this collector.
+    /// </summary>
     private readonly IReadOnlyCollection<Bin> _binTypes = [...];
 
-    // Private const fields (if needed, and only if used 2+ times)
+    /// <summary>
+    /// The API key for the council's waste collection service.
+    /// </summary>
     private const string _apiKey = "...";
 
     // === IMPLEMENTATION ===
 
-    // Regex methods
+    /// <summary>
+    /// Regex to extract addresses from the HTML response.
+    /// </summary>
     [GeneratedRegex(@"...")]
     private static partial Regex AddressRegex();
 
@@ -431,6 +440,19 @@ Body = $$"""
 }
 """,
 ```
+
+### ✅ DO: Verify request body fields are actually required
+
+**Reason**: Council APIs often ignore most fields in a request body. When implementing a new collector, test by progressively removing fields and running integration tests. Use binary search (remove half the fields at once) to efficiently find the minimal set.
+
+**Strategy:**
+
+1. Start with the full request body observed from the council website
+2. Remove obvious candidates first: `stopOnFailure`, `usePHPIntegrations`, `isPublished`, `formName`, `formUri`, and other metadata-like fields
+3. Remove fields in batches and run integration tests after each removal
+4. Keep only the fields that cause test failures when removed
+
+This often leads to dramatic reductions — a request body with 15+ fields may only need 2-3.
 
 ### ❌ DON'T: Build JSON using nested dictionaries
 
@@ -1009,6 +1031,81 @@ internal sealed partial class MyCouncil : GovUkCollectorBase, ICollector
 }
 ```
 
+### ❌ DON'T: Use local functions (methods declared inside methods)
+
+**Problem**: Local functions add nesting and make the control flow harder to follow.
+
+```c#
+var binDays = new List<BinDay>();
+foreach (var row in rows)
+{
+    var service = results["TaskTypeName"];
+
+    void AddBinDay(string dateString)
+    {
+        if (string.IsNullOrWhiteSpace(dateString)) return;
+        var date = DateUtilities.ParseDateExact(dateString, "yyyy-MM-dd");
+        binDays.Add(new BinDay { Date = date, Bins = matchedBins });
+    }
+
+    AddBinDay(results["NextInstance"]);
+    AddBinDay(results["LastInstance"]);
+}
+```
+
+### ✅ DO: Use a loop instead of a local function
+
+**Reason**: A simple loop over the values is flatter and easier to read.
+
+```c#
+var binDays = new List<BinDay>();
+foreach (var row in rows)
+{
+    var service = results["TaskTypeName"];
+    var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+
+    foreach (var dateString in new[] { results["NextInstance"], results["LastInstance"] })
+    {
+        if (string.IsNullOrWhiteSpace(dateString))
+        {
+            continue;
+        }
+
+        binDays.Add(new BinDay
+        {
+            Date = DateUtilities.ParseDateExact(dateString, "yyyy-MM-dd"),
+            Address = address,
+            Bins = matchedBins,
+        });
+    }
+}
+```
+
+### ❌ DON'T: Use single-line if statements
+
+**Problem**: Putting the body on the same line as the `if` is easy to miss when scanning code.
+
+```c#
+if (string.IsNullOrWhiteSpace(dateString)) continue;
+if (value == null) return;
+```
+
+### ✅ DO: Always use braces for if statements
+
+**Reason**: Braces make control flow explicit and prevent bugs when adding lines later.
+
+```c#
+if (string.IsNullOrWhiteSpace(dateString))
+{
+    continue;
+}
+
+if (value == null)
+{
+    return;
+}
+```
+
 ---
 
 ## Helper Methods & Code Duplication
@@ -1117,12 +1214,31 @@ var clientSideRequest = CreateInitialRequest();
 
 **How to reduce complexity:**
 
-1. **Remove bloated request bodies** - Strip unnecessary fields
-2. **Inline single-use helpers** - Don't extract methods used once
-3. **Use raw string literals** - Replace nested Dictionary structures
-4. **Avoid over-engineering** - Don't add retry logic, caching, or defensive fallbacks unless strictly required
-5. **Minimize metadata** - Only store what's needed for subsequent requests
-6. **Extract truly common logic** - Only create helpers for genuine duplication (2-3+ uses)
+1. **Remove bloated request bodies** - Strip unnecessary fields (verify each field is required by testing removal)
+2. **Eliminate unnecessary request steps** - If a step fetches a token or value that subsequent steps don't actually need, remove the entire step. Test by removing the value from the downstream request body first; if it still works, the fetch step can be deleted entirely
+3. **Strip URL query parameters** - Remove empty, default, null-like, cache-buster, and logging parameters from URLs
+4. **Inline single-use helpers** - Don't extract methods used once
+5. **Use raw string literals** - Replace nested Dictionary structures
+6. **Avoid over-engineering** - Don't add retry logic, caching, or defensive fallbacks unless strictly required
+7. **Minimize metadata** - Only store what's needed for subsequent requests
+8. **Keep UIDs minimal** - Only store values in the `Uid` that are actually used by `GetBinDays`. Don't store every field from the address response just because it's available
+9. **Extract truly common logic** - Only create helpers for genuine duplication (2-3+ uses)
+
+### ✅ DO: Verify everything by iterative removal and testing
+
+**Reason**: Council APIs are often far more lenient than they appear from browser network traffic. The original request captured from a council website may include dozens of fields, parameters, headers, and even entire request steps that are completely ignored by the server.
+
+**Apply this minimization strategy to every aspect of the collector:**
+
+| What to minimize | How to test |
+|---|---|
+| Request body fields | Remove fields one-by-one or in batches, run integration tests |
+| URL query parameters | Strip all except obvious IDs, add back only what fails |
+| HTTP headers | Start with just `content-type` and `cookie`, add only what's needed |
+| Request steps | Remove a value from downstream request bodies; if still works, delete the fetch step entirely |
+| UID fields | Remove fields from the `GetBinDays` request body to find which address data is actually needed |
+
+**Real-world example**: A collector copied from browser traffic had 4 request steps, 15+ request body fields, 6 URL query parameters, and a 9-field UID. After iterative testing, it was reduced to 2 request steps, 1-2 request body fields, 0 extra URL query parameters, and a single-field UID. The file went from 430+ lines to ~260 lines.
 
 ---
 
@@ -1470,6 +1586,18 @@ Addresses = addresses.OrderBy(address => address.Property).ToList(),
 Addresses = [.. addresses],
 ```
 
+### ✅ DO: Keep UIDs minimal
+
+**Reason**: Only store values in the `Uid` that `GetBinDays` actually needs. If the bin days API only requires a UPRN, store just the UPRN — don't concatenate every field from the address response. Verify what's needed by testing field removal in the `GetBinDays` request body first.
+
+```c#
+// ✅ GetBinDays only needs UPRN
+Uid = results["uprn"],
+
+// ❌ Storing 9 fields when only UPRN is used
+Uid = $"{uprn};{usrn};{house};{street};{locality};{town};{county};{postcode};{blpu}",
+```
+
 ### ✅ DO: Concatenate multiple data parts into UID when needed
 
 **Reason**: When `GetBinDays` requires multiple pieces of data (UPRN, property name, coordinates, etc.), concatenate them into the `Uid` field using a semicolon separator. This allows you to pass all necessary data forward without re-fetching addresses in both `GetAddresses` and `GetBinDays`.
@@ -1663,6 +1791,35 @@ Addresses = addresses.ToList().AsReadOnly(),
 ```c#
 Addresses = [.. addresses],
 ```
+
+---
+
+## URL Query Parameters
+
+### ❌ DON'T: Include unnecessary query parameters in URLs
+
+**Problem**: Copying all query parameters from browser network traffic, including empty, default, or null-like values.
+
+```c#
+Url = $"{baseUrl}/apibroker/runLookup?id=56a1f135c2a43&repeat_against=&noRetry=false&getOnlyTokens=undefined&log_id=&app_name=AF-Renderer::Self&_={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}&sid={sessionId}",
+```
+
+### ✅ DO: Strip query parameters to the minimum required set
+
+**Reason**: Most query parameters copied from browser traffic are not required. Empty values (`repeat_against=`), defaults (`noRetry=false`), null-like values (`getOnlyTokens=undefined`), cache-busters (`_=`), and analytics/logging parameters (`log_id=`, `app_name=`) are almost never needed.
+
+```c#
+Url = $"{baseUrl}/apibroker/runLookup?id=56a1f135c2a43",
+```
+
+**Strategy:** Remove all query parameters except the obvious identifiers, then add back only those that cause test failures when missing. Parameters that are good candidates for removal:
+
+- Empty values: `param=`
+- Default/false values: `noRetry=false`
+- Null-like values: `param=undefined`, `param=null`
+- Cache-busters: `_=1234567890`
+- Logging/analytics: `log_id=`, `app_name=`
+- Session IDs in query strings (often only needed in cookies)
 
 ---
 
@@ -2048,6 +2205,7 @@ Before submitting a PR, check:
 - [ ] Headers accessed with direct indexer for required headers
 - [ ] JSON properties use `GetString()!` for required values
 - [ ] No URL encoding - let framework handle it automatically
+- [ ] No unnecessary query parameters in URLs (empty values, defaults, cache-busters, logging params)
 
 **Code Style:**
 
@@ -2070,6 +2228,9 @@ Before submitting a PR, check:
 - [ ] Collector is under 500 lines (ideally 200-400)
 - [ ] No unnecessary retry logic or over-engineering
 - [ ] No defensive fallbacks for cases that shouldn't occur
+- [ ] All request body fields verified as required (tested by removal)
+- [ ] All request steps verified as required (no redundant token/data fetch steps)
+- [ ] URL query parameters stripped to minimum required set
 
 **GetBinDays:**
 
@@ -2079,7 +2240,10 @@ Before submitting a PR, check:
 **Helpers & Patterns:**
 
 - [ ] No single-use helper methods
+- [ ] No local functions (methods inside methods) — use loops instead
+- [ ] All if statements use braces (no single-line `if (...) return;`)
 - [ ] All helper methods have XML documentation
+- [ ] All private fields, const fields, and regex methods have XML documentation
 - [ ] Duplicate logic (2-3+ uses) extracted to helpers
 - [ ] Standard iteration comment before foreach loops
 - [ ] Use HashSet for deduplication, not `List.Any()`
