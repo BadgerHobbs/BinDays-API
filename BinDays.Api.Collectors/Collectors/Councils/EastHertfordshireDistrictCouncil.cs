@@ -104,16 +104,16 @@ internal sealed partial class EastHertfordshireDistrictCouncil : GovUkCollectorB
 			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 
 			var requestBody = $$"""
-{
-	"formValues": {
-		"Collection Days": {
-			"postcode_search": {
-				"value": "{{postcode}}"
+			{
+				"formValues": {
+					"Collection Days": {
+						"postcode_search": {
+							"value": "{{postcode}}"
+						}
+					}
+				}
 			}
-		}
-	}
-}
-""";
+			""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -200,28 +200,16 @@ internal sealed partial class EastHertfordshireDistrictCouncil : GovUkCollectorB
 			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 
 			var requestBody = $$"""
-{
-	"formValues": {
-		"Collection Days": {
-			"postcode_search": {
-				"value": "{{address.Postcode}}"
-			},
-			"listSelectAddress": {
-				"value": "{{address.Uid}}"
-			},
-			"addressUPRN": {
-				"value": "{{address.Uid}}"
-			},
-			"inputUPRN": {
-				"value": "{{address.Uid}}"
-			},
-			"timeCheck": {
-				"value": "continue"
+			{
+				"formValues": {
+					"Collection Days": {
+						"inputUPRN": {
+							"value": "{{address.Uid}}"
+						}
+					}
+				}
 			}
-		}
-	}
-}
-""";
+			""";
 
 			var clientSideRequest = new ClientSideRequest
 			{
