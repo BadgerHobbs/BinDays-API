@@ -4,7 +4,7 @@
  * This script filters New Collector issues to find those that are ready for
  * automated implementation by checking:
  * - Required template fields are filled
- * - No linked pull requests
+ * - No open linked pull requests
  * - No previous failed implementation attempts
  * - No recent /implement commands (within 24 hours)
  *
@@ -95,13 +95,14 @@ module.exports = async ({ github, context, core }) => {
       per_page: 100
     });
 
-    const hasLinkedPR = timeline.some(event =>
+    const hasOpenLinkedPR = timeline.some(event =>
       event.event === 'cross-referenced' &&
-      event.source?.issue?.pull_request
+      event.source?.issue?.pull_request &&
+      event.source.issue.state === 'open'
     );
 
-    if (hasLinkedPR) {
-      core.info(`  - Skipping: has linked PR`);
+    if (hasOpenLinkedPR) {
+      core.info(`  - Skipping: has open linked PR`);
       continue;
     }
 
