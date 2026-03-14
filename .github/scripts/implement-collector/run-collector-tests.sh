@@ -11,6 +11,7 @@ echo "Running integration tests for ${COLLECTOR_NAME}..."
 dotnet test --filter "FullyQualifiedName~${COLLECTOR_NAME}Tests.GetBinDaysTest" \
   --logger "console;verbosity=detailed" \
   BinDays.Api.IntegrationTests/BinDays.Api.IntegrationTests.csproj | tee test_output.txt
+TEST_EXIT_CODE=${PIPESTATUS[0]}
 
 # Extract summary
 SUMMARY=$(sed -n '/==================== Test Summary ====================/,/======================================================/p' test_output.txt)
@@ -22,3 +23,5 @@ fi
 echo "TEST_SUMMARY<<EOF" >> $GITHUB_ENV
 echo "$SUMMARY" >> $GITHUB_ENV
 echo "EOF" >> $GITHUB_ENV
+
+exit $TEST_EXIT_CODE
