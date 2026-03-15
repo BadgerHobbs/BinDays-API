@@ -65,6 +65,8 @@ jobs:
     if: needs.check_trigger.outputs.should_run == 'true'
     runs-on: self-hosted
     timeout-minutes: 180
+    outputs:
+      failure_summary: ${{ steps.failure_summary.outputs.summary }}
     env:
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
     steps:
@@ -238,6 +240,13 @@ jobs:
             const script = require('./.github/scripts/implement-collector/create-pr.js');
             await script({ github, context, core });
 
+      - name: Summarise failure
+        id: failure_summary
+        if: failure()
+        env:
+          COLLECTOR_NAME: ${{ needs.check_trigger.outputs.council_name_pascal }}
+        run: ./.github/scripts/implement-collector/summarise-failure.sh
+
   report_failure:
     name: Report Failure
     needs: [check_trigger, implement_collector]
@@ -251,6 +260,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ needs.check_trigger.outputs.issue_number }}
+          FAILURE_SUMMARY: ${{ needs.implement_collector.outputs.failure_summary }}
         with:
           script: |
             const script = require('./.github/scripts/implement-collector/report-failure.js');
