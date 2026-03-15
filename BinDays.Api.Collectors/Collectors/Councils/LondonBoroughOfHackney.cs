@@ -88,25 +88,21 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 			}
 			""";
 
-			var clientSideRequest = new ClientSideRequest
+			return new GetAddressesResponse
 			{
-				RequestId = 1,
-				Url = $"{_baseApiUrl}/property/opensearch",
-				Method = "POST",
-				Headers = new()
+				NextClientSideRequest = new ClientSideRequest
 				{
-					{ "content-type", Constants.ApplicationJson },
-					{ "user-agent", Constants.UserAgent },
+					RequestId = 1,
+					Url = $"{_baseApiUrl}/property/opensearch",
+					Method = "POST",
+					Headers = new()
+					{
+						{ "content-type", Constants.ApplicationJson },
+						{ "user-agent", Constants.UserAgent },
+					},
+					Body = requestBody,
 				},
-				Body = requestBody,
 			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
 		}
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 1)
@@ -126,22 +122,18 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 					summary.Split(" ", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
 				);
 
-				var address = new Address
+				addresses.Add(new Address
 				{
 					Property = property,
 					Postcode = postcode,
 					Uid = systemId,
-				};
-
-				addresses.Add(address);
+				});
 			}
 
-			var getAddressesResponse = new GetAddressesResponse
+			return new GetAddressesResponse
 			{
 				Addresses = [.. addresses],
 			};
-
-			return getAddressesResponse;
 		}
 
 		// Throw exception for invalid request
@@ -154,23 +146,7 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting property details
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = $"{_baseApiUrl}/alloywastepages/getproperty/{address.Uid}",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
+			return CreateGetRequest(1, $"alloywastepages/getproperty/{address.Uid}");
 		}
 		// Parse property response and request first bin details
 		else if (clientSideResponse.RequestId == 1)
@@ -186,37 +162,27 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 				StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
 			);
 
-			var initialContainerIdsMetadata = string.Join(",", initialContainerIds);
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"{_baseApiUrl}/alloywastepages/getbin/{initialContainerIds[0]}",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "containerIds", initialContainerIdsMetadata },
-						{ "containerIndex", "0" },
-						{ "binDays", string.Empty },
-						{ "stage", _stageBin },
-					},
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
+			return CreateGetRequest(
+				2,
+				$"alloywastepages/getbin/{initialContainerIds[0]}",
+				CreateStageMetadata(string.Join(",", initialContainerIds), 0, string.Empty, _stageBin)
+			);
+		}
+		// Process container iteration stages (bin → collection → workflow)
+		else if (clientSideResponse.RequestId >= 2)
+		{
+			return ProcessContainerStages(address, clientSideResponse);
 		}
 
+		// Throw exception for invalid request
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Processes the container iteration stages (bin → collection → workflow) for each container.
+	/// </summary>
+	private GetBinDaysResponse ProcessContainerStages(Address address, ClientSideResponse clientSideResponse)
+	{
 		var metadata = clientSideResponse.Options!.Metadata;
 		var containerIdsMetadata = metadata["containerIds"];
 		var containerIds = containerIdsMetadata.Split(
@@ -226,112 +192,44 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 		var containerIndex = int.Parse(metadata["containerIndex"], CultureInfo.InvariantCulture);
 		var binDaysMetadata = metadata["binDays"];
 		var stage = metadata["stage"];
+		var nextRequestId = clientSideResponse.RequestId + 1;
 
+		// Parse bin service name and request collection details
 		if (stage == _stageBin)
 		{
 			using var binJson = JsonDocument.Parse(clientSideResponse.Content);
 			var serviceName = binJson.RootElement.GetProperty("subTitle").GetString()!.Trim();
 
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = clientSideResponse.RequestId + 1,
-				Url = $"{_baseApiUrl}/alloywastepages/getcollection/{containerIds[containerIndex]}",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "containerIds", containerIdsMetadata },
-						{ "containerIndex", containerIndex.ToString(CultureInfo.InvariantCulture) },
-						{ "binDays", binDaysMetadata },
-						{ "stage", _stageCollection },
-						{ "serviceName", serviceName },
-					},
-				},
-			};
+			var stageMetadata = CreateStageMetadata(containerIdsMetadata, containerIndex, binDaysMetadata, _stageCollection);
+			stageMetadata["serviceName"] = serviceName;
 
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
+			return CreateGetRequest(nextRequestId, $"alloywastepages/getcollection/{containerIds[containerIndex]}", stageMetadata);
 		}
+		// Parse collection schedule IDs and request first workflow
 		else if (stage == _stageCollection)
 		{
 			using var collectionJson = JsonDocument.Parse(clientSideResponse.Content);
 			var scheduleIdsElement = collectionJson.RootElement.GetProperty("scheduleCodeWorkflowIDs");
 
-			var scheduleIds = new List<string>();
 			// Iterate through each schedule id, and store it for workflow requests
+			var scheduleIds = new List<string>();
 			foreach (var scheduleId in scheduleIdsElement.EnumerateArray())
 			{
 				scheduleIds.Add(scheduleId.GetString()!);
 			}
 
-			var scheduleIdsMetadata = string.Join(",", scheduleIds);
+			var stageMetadata = CreateStageMetadata(containerIdsMetadata, containerIndex, binDaysMetadata, _stageWorkflow);
+			stageMetadata["serviceName"] = metadata["serviceName"];
+			stageMetadata["scheduleIds"] = string.Join(",", scheduleIds);
+			stageMetadata["scheduleIndex"] = "0";
 
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = clientSideResponse.RequestId + 1,
-				Url = $"{_baseApiUrl}/alloywastepages/getworkflow/{scheduleIds[0]}",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "containerIds", containerIdsMetadata },
-						{ "containerIndex", containerIndex.ToString(CultureInfo.InvariantCulture) },
-						{ "binDays", binDaysMetadata },
-						{ "stage", _stageWorkflow },
-						{ "serviceName", metadata["serviceName"] },
-						{ "scheduleIds", scheduleIdsMetadata },
-						{ "scheduleIndex", "0" },
-					},
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
+			return CreateGetRequest(nextRequestId, $"alloywastepages/getworkflow/{scheduleIds[0]}", stageMetadata);
 		}
+		// Process workflow dates and advance to next schedule, container, or finish
 		else if (stage == _stageWorkflow)
 		{
-			using var workflowJson = JsonDocument.Parse(clientSideResponse.Content);
-			var datesElement = workflowJson.RootElement
-				.GetProperty("trigger")
-				.GetProperty("dates");
-
-			var binDayEntries = new List<string>();
 			var serviceName = metadata["serviceName"];
-			// Iterate through each workflow date, and store a bin day entry
-			foreach (var dateElement in datesElement.EnumerateArray())
-			{
-				binDayEntries.Add($"{dateElement.GetString()!}|{serviceName}");
-			}
-
-			var newEntries = string.Join(';', binDayEntries);
-			var binDaysParts = new List<string>();
-			if (binDaysMetadata.Length > 0)
-			{
-				binDaysParts.Add(binDaysMetadata);
-			}
-			if (newEntries.Length > 0)
-			{
-				binDaysParts.Add(newEntries);
-			}
-			var binDaysBuilder = string.Join(';', binDaysParts);
+			var updatedBinDays = AccumulateBinDays(clientSideResponse.Content, serviceName, binDaysMetadata);
 
 			var scheduleIds = metadata["scheduleIds"].Split(
 				",",
@@ -339,110 +237,125 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 			);
 			var scheduleIndex = int.Parse(metadata["scheduleIndex"], CultureInfo.InvariantCulture) + 1;
 
+			// More schedules to process for this container
 			if (scheduleIndex < scheduleIds.Length)
 			{
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = clientSideResponse.RequestId + 1,
-					Url = $"{_baseApiUrl}/alloywastepages/getworkflow/{scheduleIds[scheduleIndex]}",
-					Method = "GET",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-					},
-					Options = new ClientSideOptions
-					{
-						Metadata =
-						{
-							{ "containerIds", containerIdsMetadata },
-							{ "containerIndex", containerIndex.ToString(CultureInfo.InvariantCulture) },
-							{ "binDays", binDaysBuilder },
-							{ "stage", _stageWorkflow },
-							{ "serviceName", serviceName },
-							{ "scheduleIds", metadata["scheduleIds"] },
-							{ "scheduleIndex", scheduleIndex.ToString(CultureInfo.InvariantCulture) },
-						},
-					},
-				};
+				var stageMetadata = CreateStageMetadata(containerIdsMetadata, containerIndex, updatedBinDays, _stageWorkflow);
+				stageMetadata["serviceName"] = serviceName;
+				stageMetadata["scheduleIds"] = metadata["scheduleIds"];
+				stageMetadata["scheduleIndex"] = scheduleIndex.ToString(CultureInfo.InvariantCulture);
 
-				var workflowStepResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest,
-				};
-
-				return workflowStepResponse;
+				return CreateGetRequest(nextRequestId, $"alloywastepages/getworkflow/{scheduleIds[scheduleIndex]}", stageMetadata);
 			}
 
 			containerIndex++;
 
+			// More containers to process
 			if (containerIndex < containerIds.Length)
 			{
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = clientSideResponse.RequestId + 1,
-					Url = $"{_baseApiUrl}/alloywastepages/getbin/{containerIds[containerIndex]}",
-					Method = "GET",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-					},
-					Options = new ClientSideOptions
-					{
-						Metadata =
-						{
-							{ "containerIds", containerIdsMetadata },
-							{ "containerIndex", containerIndex.ToString(CultureInfo.InvariantCulture) },
-							{ "binDays", binDaysBuilder },
-							{ "stage", _stageBin },
-						},
-					},
-				};
-
-				var nextContainerResponse = new GetBinDaysResponse
-				{
-					NextClientSideRequest = clientSideRequest,
-				};
-
-				return nextContainerResponse;
-			}
-
-			var binDays = new List<BinDay>();
-			var binDayEntriesMetadata = binDaysBuilder.Split(
-				";",
-				StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
-			);
-
-			// Iterate through each bin day entry, and create a new bin day object
-			foreach (var binDayEntry in binDayEntriesMetadata)
-			{
-				var parts = binDayEntry.Split("|", 2);
-				var dateTime = DateTime.Parse(
-					parts[0],
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal
+				return CreateGetRequest(
+					nextRequestId,
+					$"alloywastepages/getbin/{containerIds[containerIndex]}",
+					CreateStageMetadata(containerIdsMetadata, containerIndex, updatedBinDays, _stageBin)
 				);
-
-				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, parts[1]);
-
-				var binDay = new BinDay
-				{
-					Date = DateOnly.FromDateTime(dateTime),
-					Address = address,
-					Bins = matchedBins,
-				};
-
-				binDays.Add(binDay);
 			}
 
-			var completedBinDaysResponse = new GetBinDaysResponse
+			// All containers processed, parse and return final bin days
+			return new GetBinDaysResponse
 			{
-				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+				BinDays = ParseBinDays(updatedBinDays, address),
 			};
-
-			return completedBinDaysResponse;
 		}
 
-		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Creates the base metadata dictionary for container iteration stages.
+	/// </summary>
+	private static Dictionary<string, string> CreateStageMetadata(string containerIds, int containerIndex, string binDays, string stage)
+	{
+		return new()
+		{
+			{ "containerIds", containerIds },
+			{ "containerIndex", containerIndex.ToString(CultureInfo.InvariantCulture) },
+			{ "binDays", binDays },
+			{ "stage", stage },
+		};
+	}
+
+	/// <summary>
+	/// Creates a GET request to the Hackney waste API.
+	/// </summary>
+	private static GetBinDaysResponse CreateGetRequest(int requestId, string endpoint, Dictionary<string, string>? metadata = null)
+	{
+		return new GetBinDaysResponse
+		{
+			NextClientSideRequest = new ClientSideRequest
+			{
+				RequestId = requestId,
+				Url = $"{_baseApiUrl}/{endpoint}",
+				Method = "GET",
+				Options = metadata != null
+					? new ClientSideOptions { Metadata = metadata }
+					: new(),
+			},
+		};
+	}
+
+	/// <summary>
+	/// Extracts dates from a workflow response and appends them to the accumulated bin days metadata.
+	/// </summary>
+	private static string AccumulateBinDays(string workflowContent, string serviceName, string existingBinDays)
+	{
+		using var workflowJson = JsonDocument.Parse(workflowContent);
+		var datesElement = workflowJson.RootElement
+			.GetProperty("trigger")
+			.GetProperty("dates");
+
+		// Iterate through each workflow date, and store a bin day entry
+		var binDayEntries = new List<string>();
+		foreach (var dateElement in datesElement.EnumerateArray())
+		{
+			binDayEntries.Add($"{dateElement.GetString()!}|{serviceName}");
+		}
+
+		var newEntries = string.Join(';', binDayEntries);
+
+		return existingBinDays.Length > 0 && newEntries.Length > 0
+			? $"{existingBinDays};{newEntries}"
+			: $"{existingBinDays}{newEntries}";
+	}
+
+	/// <summary>
+	/// Parses accumulated bin day metadata into BinDay objects.
+	/// </summary>
+	private IReadOnlyCollection<BinDay> ParseBinDays(string binDaysMetadata, Address address)
+	{
+		// Iterate through each bin day entry, and create a new bin day object
+		var binDays = new List<BinDay>();
+		var entries = binDaysMetadata.Split(
+			";",
+			StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+		);
+
+		foreach (var entry in entries)
+		{
+			var parts = entry.Split("|", 2);
+			var dateTime = DateTime.Parse(
+				parts[0],
+				CultureInfo.InvariantCulture,
+				DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal
+			);
+
+			binDays.Add(new BinDay
+			{
+				Date = DateOnly.FromDateTime(dateTime),
+				Address = address,
+				Bins = ProcessingUtilities.GetMatchingBins(_binTypes, parts[1]),
+			});
+		}
+
+		return ProcessingUtilities.ProcessBinDays(binDays);
 	}
 }
