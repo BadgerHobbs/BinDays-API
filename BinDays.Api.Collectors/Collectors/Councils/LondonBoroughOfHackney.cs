@@ -29,9 +29,9 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 	[
 		new()
 		{
-			Name = "Dry Recycling (Sacks)",
+			Name = "Dry Recycling",
 			Colour = BinColour.Green,
-			Type = BinType.Bag,
+			Type = BinType.Sack,
 			Keys = [ "Recycling Sack" ],
 		},
 		new()
