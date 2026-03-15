@@ -159,6 +159,10 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = $"{_baseApiUrl}/alloywastepages/getproperty/{address.Uid}",
 				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -189,6 +193,10 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 				RequestId = 2,
 				Url = $"{_baseApiUrl}/alloywastepages/getbin/{initialContainerIds[0]}",
 				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+				},
 				Options = new ClientSideOptions
 				{
 					Metadata =
@@ -229,6 +237,10 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 				RequestId = clientSideResponse.RequestId + 1,
 				Url = $"{_baseApiUrl}/alloywastepages/getcollection/{containerIds[containerIndex]}",
 				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+				},
 				Options = new ClientSideOptions
 				{
 					Metadata =
@@ -268,6 +280,10 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 				RequestId = clientSideResponse.RequestId + 1,
 				Url = $"{_baseApiUrl}/alloywastepages/getworkflow/{scheduleIds[0]}",
 				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+				},
 				Options = new ClientSideOptions
 				{
 					Metadata =
@@ -305,9 +321,17 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 				binDayEntries.Add($"{dateElement.GetString()!}|{serviceName}");
 			}
 
-			var binDaysBuilder = binDaysMetadata.Length > 0
-				? $"{binDaysMetadata};{string.Join(';', binDayEntries)}"
-				: string.Join(';', binDayEntries);
+			var newEntries = string.Join(';', binDayEntries);
+			var binDaysParts = new List<string>();
+			if (binDaysMetadata.Length > 0)
+			{
+				binDaysParts.Add(binDaysMetadata);
+			}
+			if (newEntries.Length > 0)
+			{
+				binDaysParts.Add(newEntries);
+			}
+			var binDaysBuilder = string.Join(';', binDaysParts);
 
 			var scheduleIds = metadata["scheduleIds"].Split(
 				",",
@@ -322,6 +346,10 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 					RequestId = clientSideResponse.RequestId + 1,
 					Url = $"{_baseApiUrl}/alloywastepages/getworkflow/{scheduleIds[scheduleIndex]}",
 					Method = "GET",
+					Headers = new()
+					{
+						{ "user-agent", Constants.UserAgent },
+					},
 					Options = new ClientSideOptions
 					{
 						Metadata =
@@ -345,7 +373,7 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 				return workflowStepResponse;
 			}
 
-			containerIndex += 1;
+			containerIndex++;
 
 			if (containerIndex < containerIds.Length)
 			{
@@ -354,6 +382,10 @@ internal sealed class LondonBoroughOfHackney : GovUkCollectorBase, ICollector
 					RequestId = clientSideResponse.RequestId + 1,
 					Url = $"{_baseApiUrl}/alloywastepages/getbin/{containerIds[containerIndex]}",
 					Method = "GET",
+					Headers = new()
+					{
+						{ "user-agent", Constants.UserAgent },
+					},
 					Options = new ClientSideOptions
 					{
 						Metadata =
