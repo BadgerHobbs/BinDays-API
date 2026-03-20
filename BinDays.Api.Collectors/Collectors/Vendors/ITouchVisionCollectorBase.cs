@@ -225,7 +225,7 @@ internal abstract class ITouchVisionCollectorBase : GovUkCollectorBase
 	/// <returns>The decrypted plain text string.</returns>
 	private static string Decrypt(string hex)
 	{
-		var encryptedBytes = Convert.FromHexString(hex);
+		var encryptedBytes = Convert.FromHexString(hex.Trim());
 
 		using var aesAlg = Aes.Create();
 		aesAlg.Key = _aesKey;
