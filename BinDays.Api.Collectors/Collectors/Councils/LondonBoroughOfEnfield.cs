@@ -69,9 +69,13 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
-					{ "sec-ch-ua", "\"Not A(Brand\";v=\"99\", \"Mozilla\";v=\"137\", \"Chromium\";v=\"137\"" },
-					{ "sec-ch-ua-mobile", "?0" },
-					{ "sec-ch-ua-platform", "\"Windows\"" },
+					{ "accept-language", "en-GB,en;q=0.5" },
+					{ "accept-encoding", "gzip, deflate, br" },
+					{ "upgrade-insecure-requests", "1" },
+					{ "sec-fetch-dest", "document" },
+					{ "sec-fetch-mode", "navigate" },
+					{ "sec-fetch-site", "none" },
+					{ "sec-fetch-user", "?1" },
 				},
 			};
 
@@ -97,6 +101,8 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "accept", "*/*" },
+					{ "accept-language", "en-GB,en;q=0.5" },
+					{ "accept-encoding", "gzip, deflate, br" },
 					{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
 					{ "sec-fetch-dest", "empty" },
 					{ "sec-fetch-mode", "cors" },
@@ -160,9 +166,13 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
-					{ "sec-ch-ua", "\"Not A(Brand\";v=\"99\", \"Mozilla\";v=\"137\", \"Chromium\";v=\"137\"" },
-					{ "sec-ch-ua-mobile", "?0" },
-					{ "sec-ch-ua-platform", "\"Windows\"" },
+					{ "accept-language", "en-GB,en;q=0.5" },
+					{ "accept-encoding", "gzip, deflate, br" },
+					{ "upgrade-insecure-requests", "1" },
+					{ "sec-fetch-dest", "document" },
+					{ "sec-fetch-mode", "navigate" },
+					{ "sec-fetch-site", "none" },
+					{ "sec-fetch-user", "?1" },
 				},
 			};
 
@@ -189,6 +199,8 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "accept", "*/*" },
+					{ "accept-language", "en-GB,en;q=0.5" },
+					{ "accept-encoding", "gzip, deflate, br" },
 					{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
 					{ "sec-fetch-dest", "empty" },
 					{ "sec-fetch-mode", "cors" },
