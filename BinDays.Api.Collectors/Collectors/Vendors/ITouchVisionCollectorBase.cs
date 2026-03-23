@@ -219,13 +219,30 @@ internal abstract class ITouchVisionCollectorBase : GovUkCollectorBase
 	}
 
 	/// <summary>
-	/// Decrypts a hexadecimal encoded string using AES-256-CBC with custom hex key/IV.
+	/// Decrypts a hexadecimal encoded string using AES-256-CBC with custom hex key/IV, or returns the content unchanged when it is not hex.
 	/// </summary>
-	/// <param name="hex">The hexadecimal encoded string to decrypt.</param>
+	/// <param name="content">The hexadecimal encoded string to decrypt.</param>
 	/// <returns>The decrypted plain text string.</returns>
-	private static string Decrypt(string hex)
+	private static string Decrypt(string content)
 	{
-		var encryptedBytes = Convert.FromHexString(hex);
+		var trimmedContent = content.Trim();
+
+		var isHex = trimmedContent.Length % 2 == 0;
+		for (var index = 0; index < trimmedContent.Length && isHex; index++)
+		{
+			var character = trimmedContent[index];
+
+			isHex = (character >= '0' && character <= '9')
+				|| (character >= 'a' && character <= 'f')
+				|| (character >= 'A' && character <= 'F');
+		}
+
+		if (!isHex)
+		{
+			return trimmedContent;
+		}
+
+		var encryptedBytes = Convert.FromHexString(trimmedContent);
 
 		using var aesAlg = Aes.Create();
 		aesAlg.Key = _aesKey;
