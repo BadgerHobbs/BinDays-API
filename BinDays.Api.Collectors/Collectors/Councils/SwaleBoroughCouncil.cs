@@ -64,7 +64,7 @@ internal sealed class SwaleBoroughCouncil : GovUkCollectorBase, ICollector
 
 		var getAddressesResponse = new GetAddressesResponse
 		{
-			Addresses = [ address ],
+			Addresses = [address],
 		};
 
 		return getAddressesResponse;
