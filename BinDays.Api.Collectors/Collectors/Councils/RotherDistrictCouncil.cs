@@ -56,7 +56,7 @@ internal sealed partial class RotherDistrictCouncil : GovUkCollectorBase, IColle
 	/// <summary>
 	/// Regex to extract bin days from the response HTML.
 	/// </summary>
-	[GeneratedRegex(@"<h3[^>]*>(?<service>[^:<]+):</h3>\s*<span[^>]*>(?<date>[^<]+)</span>", RegexOptions.Singleline)]
+	[GeneratedRegex(@"<h3[^>]*>(?<service>[^:<]+):</h3>\s*<span[^>]*>(?<date>(?:[A-Za-z]+\s+)?\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+(?:\s+\d{4})?)</span>", RegexOptions.Singleline)]
 	private static partial Regex BinDaysRegex();
 
 	/// <summary>
@@ -178,7 +178,7 @@ internal sealed partial class RotherDistrictCouncil : GovUkCollectorBase, IColle
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var data = jsonDoc.RootElement.GetProperty("data").GetString()!;
 
-			var rawBinDays = BinDaysRegex().Matches(data);
+			var rawBinDays = BinDaysRegex().Matches(data)!;
 
 			// Iterate through each bin day, and create a new bin day object
 			var binDays = new List<BinDay>();
