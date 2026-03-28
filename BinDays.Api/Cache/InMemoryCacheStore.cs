@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 internal sealed class InMemoryCacheStore : ICacheStore
 {
 	private readonly ConcurrentDictionary<string, CacheEntry> _entries = new();
+	private static readonly ConcurrentDictionary<string, Regex> _regexCache = new();
 
 	/// <inheritdoc/>
 	public string? GetString(string key)
@@ -55,13 +56,15 @@ internal sealed class InMemoryCacheStore : ICacheStore
 	}
 
 	/// <summary>
-	/// Converts a glob pattern with <c>*</c> wildcards to a compiled <see cref="Regex"/>.
+	/// Converts a glob pattern with <c>*</c> wildcards to a compiled <see cref="Regex"/>,
+	/// caching the result to avoid repeated compilation for the same pattern.
 	/// </summary>
-	private static Regex GlobToRegex(string pattern)
-	{
-		var escaped = Regex.Escape(pattern).Replace("\\*", ".*");
-		return new Regex($"^{escaped}$", RegexOptions.Compiled);
-	}
+	private static Regex GlobToRegex(string pattern) =>
+		_regexCache.GetOrAdd(pattern, static p =>
+		{
+			var escaped = Regex.Escape(p).Replace("\\*", ".*");
+			return new Regex($"^{escaped}$", RegexOptions.Compiled);
+		});
 
 	private sealed record CacheEntry(string Value, DateTimeOffset? AbsoluteExpiration);
 }

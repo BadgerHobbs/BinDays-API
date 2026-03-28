@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 
 /// <summary>
@@ -39,7 +41,16 @@ internal sealed class ApiKeyAuthFilter : IAsyncActionFilter
 		}
 
 		if (!context.HttpContext.Request.Headers.TryGetValue(_apiKeyHeaderName, out var providedKey)
-			|| providedKey != configuredKey)
+			|| providedKey.Count != 1)
+		{
+			context.Result = new UnauthorizedResult();
+			return;
+		}
+
+		var configuredKeyBytes = Encoding.UTF8.GetBytes(configuredKey);
+		var providedKeyBytes = Encoding.UTF8.GetBytes(providedKey.ToString());
+
+		if (!CryptographicOperations.FixedTimeEquals(configuredKeyBytes, providedKeyBytes))
 		{
 			context.Result = new UnauthorizedResult();
 			return;

@@ -3,7 +3,6 @@ namespace BinDays.Api.Cache;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 /// <summary>
 /// Redis-backed cache store that uses native <c>SCAN</c> for key enumeration
@@ -58,7 +57,17 @@ internal sealed class RedisCacheStore : ICacheStore
 	/// <inheritdoc/>
 	public IReadOnlyList<string> FindKeys(string pattern)
 	{
-		var server = _connectionMultiplexer.GetServers().First();
-		return [.. server.Keys(pattern: pattern).Select(k => (string)k!)];
+		var servers = _connectionMultiplexer.GetServers();
+		if (servers.Length == 0)
+		{
+			return [];
+		}
+
+		var keys = new List<string>();
+		foreach (var key in servers[0].Keys(pattern: pattern))
+		{
+			keys.Add((string)key!);
+		}
+		return keys;
 	}
 }
