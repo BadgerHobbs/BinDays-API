@@ -12,7 +12,7 @@ public sealed class CacheControllerTests
 {
 	private static readonly string _apiKey = BinDaysApiFactory.CacheApiKey;
 
-	private static readonly HttpClient _client = BinDaysApiFactory.CreateClient();
+	private readonly HttpClient _client = BinDaysApiFactory.CreateClient();
 
 	[Fact]
 	public async Task GetCache_WithoutApiKey_Returns401()

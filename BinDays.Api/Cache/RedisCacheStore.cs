@@ -10,6 +10,9 @@ using System.Collections.Generic;
 /// </summary>
 internal sealed class RedisCacheStore : ICacheStore
 {
+	/// <summary>
+	/// The Redis connection multiplexer used to access servers and databases.
+	/// </summary>
 	private readonly IConnectionMultiplexer _connectionMultiplexer;
 
 	/// <summary>
@@ -57,16 +60,18 @@ internal sealed class RedisCacheStore : ICacheStore
 	/// <inheritdoc/>
 	public IReadOnlyList<string> FindKeys(string pattern)
 	{
-		var servers = _connectionMultiplexer.GetServers();
-		if (servers.Length == 0)
-		{
-			return [];
-		}
-
 		var keys = new List<string>();
-		foreach (var key in servers[0].Keys(pattern: pattern))
+		foreach (var server in _connectionMultiplexer.GetServers())
 		{
-			keys.Add((string)key!);
+			if (server.IsReplica)
+			{
+				continue;
+			}
+
+			foreach (var key in server.Keys(pattern: pattern))
+			{
+				keys.Add((string)key!);
+			}
 		}
 		return keys;
 	}

@@ -15,7 +15,14 @@ using System.Threading.Tasks;
 /// </summary>
 internal sealed class ApiKeyAuthFilter : IAsyncActionFilter
 {
+	/// <summary>
+	/// The name of the HTTP header used to pass the API key.
+	/// </summary>
 	private const string _apiKeyHeaderName = "X-Api-Key";
+
+	/// <summary>
+	/// The name of the configuration key for the cache management API key.
+	/// </summary>
 	private const string _configKeyName = "CacheApiKey";
 
 	private readonly IConfiguration _configuration;

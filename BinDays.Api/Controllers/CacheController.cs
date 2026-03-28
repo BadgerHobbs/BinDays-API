@@ -17,7 +17,14 @@ using System.Collections.Generic;
 [ServiceFilter(typeof(ApiKeyAuthFilter))]
 public sealed class CacheController : ControllerBase
 {
+	/// <summary>
+	/// The cache store.
+	/// </summary>
 	private readonly ICacheStore _cache;
+
+	/// <summary>
+	/// The logger instance.
+	/// </summary>
 	private readonly ILogger<CacheController> _logger;
 
 	/// <summary>

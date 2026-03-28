@@ -12,7 +12,14 @@ using System.Text.RegularExpressions;
 /// </summary>
 internal sealed class InMemoryCacheStore : ICacheStore
 {
+	/// <summary>
+	/// The underlying store for cache entries.
+	/// </summary>
 	private readonly ConcurrentDictionary<string, CacheEntry> _entries = new();
+
+	/// <summary>
+	/// A cache for compiled glob-to-regex patterns.
+	/// </summary>
 	private static readonly ConcurrentDictionary<string, Regex> _regexCache = new();
 
 	/// <inheritdoc/>
