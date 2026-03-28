@@ -1,5 +1,6 @@
-﻿namespace BinDays.Api.Controllers;
+namespace BinDays.Api.Controllers;
 
+using BinDays.Api.Cache;
 using BinDays.Api.Collectors.Exceptions;
 using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Services;
@@ -7,7 +8,6 @@ using BinDays.Api.Collectors.Utilities;
 using BinDays.Api.Incidents;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -38,18 +38,18 @@ public class CollectorsController : ControllerBase
 	private readonly IIncidentStore _incidentStore;
 
 	/// <summary>
-	/// Distributed cache for storing responses.
+	/// Cache store for storing and retrieving responses.
 	/// </summary>
-	private readonly IDistributedCache _cache;
+	private readonly ICacheStore _cache;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorsController"/> class.
 	/// </summary>
 	/// <param name="collectorService">Service for retrieving collector information.</param>
 	/// <param name="logger">Logger for the controller.</param>
-	/// <param name="cache">Distributed cache for storing responses.</param>
+	/// <param name="cache">Cache store for storing responses.</param>
 	/// <param name="incidentStore">Store for recording failed incidents.</param>
-	public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, IDistributedCache cache, IIncidentStore incidentStore)
+	public CollectorsController(CollectorService collectorService, ILogger<CollectorsController> logger, ICacheStore cache, IIncidentStore incidentStore)
 	{
 		_collectorService = collectorService;
 		_logger = logger;
@@ -62,13 +62,13 @@ public class CollectorsController : ControllerBase
 	/// </summary>
 	/// <param name="postcode">The postcode string to format.</param>
 	/// <returns>The formatted postcode string for cache key usage.</returns>
-	private static string FormatPostcodeForCacheKey(string postcode)
+	internal static string FormatPostcodeForCacheKey(string postcode)
 	{
 		return postcode.ToUpperInvariant().Replace(" ", string.Empty);
 	}
 
 	/// <summary>
-	/// Attempts to retrieve and deserialize an object from the cache. 
+	/// Attempts to retrieve and deserialize an object from the cache.
 	/// Handles deserialization errors by evicting the bad cache entry.
 	/// </summary>
 	/// <typeparam name="T">The type to deserialize into.</typeparam>
@@ -142,8 +142,7 @@ public class CollectorsController : ControllerBase
 			{
 				_logger.LogInformation("Successfully retrieved collector {CollectorName} for postcode: {Postcode}.", result.Collector!.Name, postcode);
 
-				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
-				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), DateTimeOffset.UtcNow.Date.AddDays(90));
 			}
 
 			return Ok(result);
@@ -207,8 +206,7 @@ public class CollectorsController : ControllerBase
 			{
 				_logger.LogInformation("Successfully retrieved {AddressCount} addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", result.Addresses!.Count, govUkId, postcode);
 
-				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
-				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), DateTimeOffset.UtcNow.Date.AddDays(30));
 			}
 
 			return Ok(result);
@@ -273,8 +271,7 @@ public class CollectorsController : ControllerBase
 				var earliestBinDayDate = result.BinDays?.OrderBy(binDay => binDay.Date).FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
 				var cacheExpiration = (earliestBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
 
-				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
-				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
+				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheExpiration);
 			}
 
 			return Ok(result);

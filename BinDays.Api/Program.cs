@@ -1,3 +1,4 @@
+using BinDays.Api.Cache;
 using BinDays.Api.Incidents;
 using StackExchange.Redis;
 
@@ -18,17 +19,16 @@ if (!string.IsNullOrEmpty(redis))
 	var multiplexer = ConnectionMultiplexer.Connect(redis);
 	builder.Services.AddSingleton<IConnectionMultiplexer>(multiplexer);
 	builder.Services.AddSingleton<IIncidentStore, RedisIncidentStore>();
-
-	builder.Services.AddStackExchangeRedisCache(options =>
-	{
-		options.ConnectionMultiplexerFactory = () => Task.FromResult<IConnectionMultiplexer>(multiplexer);
-	});
+	builder.Services.AddSingleton<ICacheStore, RedisCacheStore>();
 }
 else
 {
-	builder.Services.AddDistributedMemoryCache();
 	builder.Services.AddSingleton<IIncidentStore, InMemoryIncidentStore>();
+	builder.Services.AddSingleton<ICacheStore, InMemoryCacheStore>();
 }
+
+// API key auth filter for cache management endpoints
+builder.Services.AddScoped<ApiKeyAuthFilter>();
 
 // Health check for monitoring
 builder.Services.AddHealthChecks();
@@ -45,12 +45,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-	app.UseSwagger();
-	app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors(x => x
 	.AllowAnyOrigin()
