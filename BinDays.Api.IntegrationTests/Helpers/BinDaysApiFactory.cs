@@ -1,6 +1,8 @@
 namespace BinDays.Api.IntegrationTests.Helpers;
 
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 
 /// <summary>
 /// Provides a shared in-memory test server for integration tests.
@@ -8,8 +10,22 @@ using Microsoft.AspNetCore.Mvc.Testing;
 /// </summary>
 internal static class BinDaysApiFactory
 {
+	/// <summary>
+	/// The API key configured for cache management endpoints during integration tests.
+	/// </summary>
+	public const string CacheApiKey = "integration-test-key";
+
 	private static readonly Lazy<WebApplicationFactory<Program>> _factory = new(
-		() => new WebApplicationFactory<Program>()
+		() => new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+		{
+			builder.ConfigureAppConfiguration((_, config) =>
+			{
+				config.AddInMemoryCollection(new Dictionary<string, string?>
+				{
+					["CacheApiKey"] = CacheApiKey,
+				});
+			});
+		})
 	);
 
 	/// <summary>
