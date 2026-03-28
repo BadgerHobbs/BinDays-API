@@ -66,6 +66,7 @@ public sealed class CacheController : ControllerBase
 		var keys = FindMatchingKeys(govUkId, formattedPostcode, uid, types);
 		var entries = new List<object>();
 
+		// Iterate through each matching key and retrieve its value.
 		foreach (var key in keys)
 		{
 			var rawValue = _cache.GetString(key);
@@ -112,6 +113,7 @@ public sealed class CacheController : ControllerBase
 		var keys = FindMatchingKeys(govUkId, formattedPostcode, uid, types);
 		var keysRemoved = 0;
 
+		// Iterate through each matching key and remove it from the cache.
 		foreach (var key in keys)
 		{
 			_cache.Remove(key);
@@ -184,6 +186,7 @@ public sealed class CacheController : ControllerBase
 
 		types = [];
 
+		// Iterate through each type segment and parse it.
 		foreach (var segment in type.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
 		{
 			var mapped = segment.ToLowerInvariant() switch

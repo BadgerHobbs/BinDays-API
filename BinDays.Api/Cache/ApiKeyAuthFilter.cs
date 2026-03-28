@@ -15,16 +15,6 @@ using System.Threading.Tasks;
 /// </summary>
 internal sealed class ApiKeyAuthFilter : IAsyncActionFilter
 {
-	/// <summary>
-	/// The name of the HTTP header used to pass the API key.
-	/// </summary>
-	private const string _apiKeyHeaderName = "X-Api-Key";
-
-	/// <summary>
-	/// The name of the configuration key for the cache management API key.
-	/// </summary>
-	private const string _configKeyName = "CacheApiKey";
-
 	private readonly IConfiguration _configuration;
 
 	/// <summary>
@@ -39,7 +29,7 @@ internal sealed class ApiKeyAuthFilter : IAsyncActionFilter
 	/// <inheritdoc/>
 	public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
 	{
-		var configuredKey = _configuration.GetValue<string>(_configKeyName);
+		var configuredKey = _configuration.GetValue<string>("CacheApiKey");
 
 		if (string.IsNullOrEmpty(configuredKey))
 		{
@@ -47,7 +37,7 @@ internal sealed class ApiKeyAuthFilter : IAsyncActionFilter
 			return;
 		}
 
-		if (!context.HttpContext.Request.Headers.TryGetValue(_apiKeyHeaderName, out var providedKey)
+		if (!context.HttpContext.Request.Headers.TryGetValue("X-Api-Key", out var providedKey)
 			|| providedKey.Count != 1)
 		{
 			context.Result = new UnauthorizedResult();

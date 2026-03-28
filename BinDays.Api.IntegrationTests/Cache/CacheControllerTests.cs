@@ -10,8 +10,14 @@ using Xunit;
 
 public sealed class CacheControllerTests
 {
+	/// <summary>
+	/// The API key configured for cache management endpoints during integration tests.
+	/// </summary>
 	private static readonly string _apiKey = BinDaysApiFactory.CacheApiKey;
 
+	/// <summary>
+	/// The HTTP client for making requests to the test server.
+	/// </summary>
 	private readonly HttpClient _client = BinDaysApiFactory.CreateClient();
 
 	[Fact]

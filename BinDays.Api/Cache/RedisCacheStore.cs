@@ -61,6 +61,8 @@ internal sealed class RedisCacheStore : ICacheStore
 	public IReadOnlyList<string> FindKeys(string pattern)
 	{
 		var keys = new List<string>();
+
+		// Iterate over each primary server to find matching keys.
 		foreach (var server in _connectionMultiplexer.GetServers())
 		{
 			if (server.IsReplica)
@@ -68,6 +70,7 @@ internal sealed class RedisCacheStore : ICacheStore
 				continue;
 			}
 
+			// Add each matching key to the list.
 			foreach (var key in server.Keys(pattern: pattern))
 			{
 				keys.Add((string)key!);
