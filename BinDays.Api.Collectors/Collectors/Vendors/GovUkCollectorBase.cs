@@ -39,10 +39,22 @@ internal abstract partial class GovUkCollectorBase
 	private static partial Regex GovUkIdRegex();
 
 	/// <summary>
+	/// Regex for the gov.uk ID from a rubbish collection day path.
+	/// </summary>
+	[GeneratedRegex(@"\/rubbish-collection-day\/(?<GovUkId>[\w-]+)")]
+	private static partial Regex GovUkPathRegex();
+
+	/// <summary>
 	/// Regex for the collector name from the html.
 	/// </summary>
 	[GeneratedRegex(@"<span class=""local-authority"">(?<CollectorName>.*?)<\/span>")]
 	private static partial Regex CollectorNameRegex();
+
+	/// <summary>
+	/// Regex for the collector name from the heading.
+	/// </summary>
+	[GeneratedRegex(@"<h1[^>]*>\s*(?<CollectorName>[^<]+?)\s*</h1>")]
+	private static partial Regex CollectorNameHeadingRegex();
 
 	/// <summary>
 	/// Regex for detecting an invalid postcode response.
@@ -146,20 +158,23 @@ internal abstract partial class GovUkCollectorBase
 	private static ICollector ExtractCollector(CollectorService collectorService, string postcode, ClientSideResponse clientSideResponse)
 	{
 		// Try to get gov.uk ID from response header
-		var govUkId = clientSideResponse.Headers.GetValueOrDefault("location")?.Split("/").Last().Trim();
+		var locationHeader = clientSideResponse.Headers.GetValueOrDefault("location") ?? string.Empty;
+		var govUkId = GovUkPathRegex().Match(locationHeader).Groups["GovUkId"].Value;
 
-		// If null, try to get gov.uk ID from response html
-		govUkId ??= GovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
-
-		if (govUkId == null)
+		// If empty, try to get gov.uk ID from response html
+		if (string.IsNullOrWhiteSpace(govUkId))
 		{
-			throw new GovUkIdNotFoundException(postcode);
+			govUkId = GovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
 		}
 
-		var collectorName = CollectorNameRegex().Match(clientSideResponse.Content).Groups["CollectorName"].Value;
-		if (string.IsNullOrWhiteSpace(collectorName))
+		if (string.IsNullOrWhiteSpace(govUkId))
 		{
-			throw new InvalidOperationException($"No collector name found in gov.uk response for ID: {govUkId}.");
+			govUkId = GovUkPathRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
+		}
+
+		if (string.IsNullOrWhiteSpace(govUkId))
+		{
+			throw new GovUkIdNotFoundException(postcode);
 		}
 
 		// Get collector with matching gov.uk id
@@ -170,6 +185,17 @@ internal abstract partial class GovUkCollectorBase
 		}
 		catch (SupportedCollectorNotFoundException)
 		{
+			var collectorName = CollectorNameRegex().Match(clientSideResponse.Content).Groups["CollectorName"].Value;
+			if (string.IsNullOrWhiteSpace(collectorName))
+			{
+				collectorName = CollectorNameHeadingRegex().Match(clientSideResponse.Content).Groups["CollectorName"].Value;
+			}
+
+			if (string.IsNullOrWhiteSpace(collectorName))
+			{
+				collectorName = govUkId;
+			}
+
 			throw new UnsupportedCollectorException(govUkId, collectorName);
 		}
 
