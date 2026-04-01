@@ -10,7 +10,7 @@ using System.Text.Json;
 /// <summary>
 /// Collector implementation for Bournemouth, Christchurch and Poole Council.
 /// </summary>
-internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkCollectorBase, ICollector
+internal sealed class BournemouthChristchurchAndPooleCouncil : GovUkCollectorBase, ICollector
 {
 	/// <inheritdoc/>
 	public string Name => "Bournemouth, Christchurch and Poole Council";
@@ -68,8 +68,7 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var encodedPostcode = Uri.EscapeDataString(postcode);
-			var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={encodedPostcode}&Subscription-Key={_apiKey}";
+			var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={postcode}&Subscription-Key={_apiKey}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -91,16 +90,62 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 			// Parse response content as JSON array
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
+			var rootElement = jsonDoc.RootElement;
+			JsonElement resultsElement;
+			if (rootElement.ValueKind == JsonValueKind.Array)
+			{
+				resultsElement = rootElement;
+			}
+			else if (rootElement.TryGetProperty("Results", out var upperCaseResultsElement))
+			{
+				resultsElement = upperCaseResultsElement;
+			}
+			else if (rootElement.TryGetProperty("results", out var lowerCaseResultsElement))
+			{
+				resultsElement = lowerCaseResultsElement;
+			}
+			else
+			{
+				throw new KeyNotFoundException("Results");
+			}
+
 			// Iterate through each address json, and create a new address object
 			var addresses = new List<Address>();
-			var resultsElement = jsonDoc.RootElement.GetProperty("Results");
 			foreach (var addressElement in resultsElement.EnumerateArray())
 			{
+				string property;
+				if (addressElement.TryGetProperty("FULL_ADDRESS", out var fullAddressElement))
+				{
+					property = fullAddressElement.GetString()!.Trim();
+				}
+				else if (addressElement.TryGetProperty("fullAddress", out var fullAddressLowerCaseElement))
+				{
+					property = fullAddressLowerCaseElement.GetString()!.Trim();
+				}
+				else
+				{
+					throw new KeyNotFoundException("FULL_ADDRESS");
+				}
+
+				string uid;
+				if (addressElement.TryGetProperty("UPRN", out var uprnElement))
+				{
+					uid = uprnElement.GetString()!.Trim();
+				}
+				else if (addressElement.TryGetProperty("uprn", out var uprnLowerCaseElement))
+				{
+					uid = uprnLowerCaseElement.GetString()!.Trim();
+				}
+				else
+				{
+					throw new KeyNotFoundException("UPRN");
+				}
+
 				var address = new Address
 				{
-					Property = addressElement.GetProperty("FULL_ADDRESS").GetString()!.Trim(),
+					Property = property,
 					Postcode = postcode,
-					Uid = addressElement.GetProperty("UPRN").GetString()!.Trim(),
+					Uid = uid,
 				};
 
 				addresses.Add(address);
