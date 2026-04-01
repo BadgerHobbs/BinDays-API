@@ -63,13 +63,13 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 	/// <summary>
 	/// Regex for the session token value from an input field.
 	/// </summary>
-	[GeneratedRegex(@"FIND_MY_BIN_BAR.eb\?ebz=([^'""]+)")]
+	[GeneratedRegex(@"FIND_MY_BIN_BAR.eb\?ebz=(?<token>[^'""]+)")]
 	private static partial Regex TokenRegex();
 
 	/// <summary>
 	/// Regex for the addresses from the options elements.
 	/// </summary>
-	[GeneratedRegex(@"<option\s+value=""(?<uid>\d+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
+	[GeneratedRegex(@"<option\s+value=""(?<uid>[^""]+)""[^>]*>\s*(?<address>.*?)\s*</option>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
@@ -135,7 +135,7 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+			var token = TokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
 
 			// Prepare client-side request
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
@@ -150,10 +150,11 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 				{"CTRL:EBTnjgwK:_", "Submit"}
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", Constants.FormUrlEncoded},
-				{"cookie", clientSideResponse.Options.Metadata["cookie"]},
+			Dictionary<string, string> requestHeaders = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "content-type", Constants.FormUrlEncoded },
+				{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -177,27 +178,7 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 		{
 			// Parse the JSON response
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-
-			// Find the first html key that contains <option
-			string? htmlWithOptions = null;
-			if (jsonDoc.RootElement.TryGetProperty("updatedControls", out var updatedControls))
-			{
-				foreach (var control in updatedControls.EnumerateArray())
-				{
-					if (control.TryGetProperty("html", out var htmlProperty) &&
-						htmlProperty.ValueKind == JsonValueKind.String &&
-						htmlProperty.GetString()!.Contains("<option") == true)
-					{
-						htmlWithOptions = htmlProperty.GetString()!.Replace("\\\"", "\"");
-						break;
-					}
-				}
-			}
-
-			if (htmlWithOptions == null)
-			{
-				throw new InvalidOperationException("Could not find bin days HTML");
-			}
+			var htmlWithOptions = GetHtmlContainingMarker(jsonDoc.RootElement, "<option");
 
 			// Get addresses from response
 			var rawAddresses = AddressRegex().Matches(htmlWithOptions)!;
@@ -293,7 +274,7 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var token = TokenRegex().Match(clientSideResponse.Content).Groups[1].Value;
+			var token = TokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
 
 			// Prepare client-side request
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
@@ -307,10 +288,11 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 				{"CTRL:QxB4NyYs:_", "Submit"},
 			});
 
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", Constants.FormUrlEncoded},
-				{"cookie", clientSideResponse.Options.Metadata["cookie"]},
+			Dictionary<string, string> requestHeaders = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "content-type", Constants.FormUrlEncoded },
+				{ "cookie", clientSideResponse.Options.Metadata["cookie"] },
 			};
 
 			var clientSideRequest = new ClientSideRequest
@@ -334,27 +316,7 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 		{
 			// Parse the JSON response
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-
-			// Find the first html key that contains <option
-			string? htmlWithOptions = null;
-			if (jsonDoc.RootElement.TryGetProperty("updatedControls", out var updatedControls))
-			{
-				foreach (var control in updatedControls.EnumerateArray())
-				{
-					if (control.TryGetProperty("html", out var htmlProperty) &&
-						htmlProperty.ValueKind == JsonValueKind.String &&
-						htmlProperty.GetString()?.Contains(">Future collections<") == true)
-					{
-						htmlWithOptions = htmlProperty.GetString()!.Replace("\\\"", "\"");
-						break;
-					}
-				}
-			}
-
-			if (htmlWithOptions == null)
-			{
-				throw new InvalidOperationException("Could not find bin days HTML");
-			}
+			var htmlWithOptions = GetHtmlContainingMarker(jsonDoc.RootElement, "Future collections");
 
 			htmlWithOptions = htmlWithOptions.Replace("\r\n", String.Empty);
 
@@ -391,5 +353,50 @@ internal sealed partial class NewForestDistrictCouncil : GovUkCollectorBase, ICo
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Finds the first HTML content string containing the specified marker from a JSON response.
+	/// </summary>
+	private static string GetHtmlContainingMarker(JsonElement rootElement, string marker)
+	{
+		var elementsToInspect = new Stack<JsonElement>();
+		elementsToInspect.Push(rootElement);
+
+		while (elementsToInspect.Count > 0)
+		{
+			var element = elementsToInspect.Pop();
+			if (element.ValueKind == JsonValueKind.String)
+			{
+				var content = element.GetString();
+				if (!string.IsNullOrWhiteSpace(content) &&
+					content.Contains(marker, StringComparison.OrdinalIgnoreCase))
+				{
+					return content.Replace("\\\"", "\"");
+				}
+
+				continue;
+			}
+
+			if (element.ValueKind == JsonValueKind.Object)
+			{
+				foreach (var property in element.EnumerateObject())
+				{
+					elementsToInspect.Push(property.Value);
+				}
+
+				continue;
+			}
+
+			if (element.ValueKind == JsonValueKind.Array)
+			{
+				foreach (var item in element.EnumerateArray())
+				{
+					elementsToInspect.Push(item);
+				}
+			}
+		}
+
+		throw new InvalidOperationException($"Could not find HTML containing marker: {marker}");
 	}
 }
