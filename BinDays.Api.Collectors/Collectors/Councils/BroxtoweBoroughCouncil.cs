@@ -199,7 +199,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 
 			var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
 			var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-			var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
+			var eventValidation = TryGetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
 
 			var formData = new Dictionary<string, string>
 			{
@@ -208,9 +208,12 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 				{ "__EVENTTARGET", _addressEventTarget },
 				{ "__VIEWSTATE", viewState },
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-				{ "__EVENTVALIDATION", eventValidation },
 				{ "__ASYNCPOST", "true" },
 			};
+			if (!string.IsNullOrWhiteSpace(eventValidation))
+			{
+				formData.Add("__EVENTVALIDATION", eventValidation);
+			}
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -249,15 +252,18 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 
 			var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
 			var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-			var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
+			var eventValidation = TryGetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
 
 			var formData = new Dictionary<string, string>
 			{
 				{ "__EVENTTARGET", "ctl00$ContentPlaceHolder1$btnSubmit" },
 				{ "__VIEWSTATE", viewState },
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-				{ "__EVENTVALIDATION", eventValidation },
 			};
+			if (!string.IsNullOrWhiteSpace(eventValidation))
+			{
+				formData.Add("__EVENTVALIDATION", eventValidation);
+			}
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -340,7 +346,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 
 		var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
 		var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-		var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
+		var eventValidation = TryGetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
 
 		var formData = new Dictionary<string, string>
 		{
@@ -348,10 +354,13 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 			{ "__EVENTTARGET", _searchEventTarget },
 			{ "__VIEWSTATE", viewState },
 			{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-			{ "__EVENTVALIDATION", eventValidation },
 			{ "ctl00$ContentPlaceHolder1$FF5683TB", postcode },
 			{ "__ASYNCPOST", "true" },
 		};
+		if (!string.IsNullOrWhiteSpace(eventValidation))
+		{
+			formData.Add("__EVENTVALIDATION", eventValidation);
+		}
 
 		return new ClientSideRequest
 		{
@@ -378,25 +387,36 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	}
 
 	/// <summary>
-	/// Extracts hidden field values from HTML or AJAX responses.
+	/// Attempts to extract a hidden field value from HTML or AJAX responses.
 	/// </summary>
-	private static string GetHiddenField(string content, string fieldName)
+	private static string? TryGetHiddenField(string content, string fieldName)
 	{
-		// First, try to find the field in the AJAX response format.
 		var ajaxMatch = AjaxHiddenFieldRegex().Matches(content)!.FirstOrDefault(m => m.Groups["name"].Value == fieldName);
 		if (ajaxMatch is not null)
 		{
 			return ajaxMatch.Groups["value"].Value;
 		}
 
-		// If not found, try the standard HTML input format.
 		var htmlMatch = HtmlHiddenFieldRegex().Matches(content)!.FirstOrDefault(m => m.Groups["name"].Value == fieldName);
 		if (htmlMatch is not null)
 		{
 			return htmlMatch.Groups["value"].Value;
 		}
 
-		// If the field is not found in either format, throw an exception.
+		return null;
+	}
+
+	/// <summary>
+	/// Extracts hidden field values from HTML or AJAX responses.
+	/// </summary>
+	private static string GetHiddenField(string content, string fieldName)
+	{
+		var hiddenField = TryGetHiddenField(content, fieldName);
+		if (hiddenField is not null)
+		{
+			return hiddenField;
+		}
+
 		throw new InvalidOperationException($"Hidden field '{fieldName}' not found in response content.");
 	}
 }
