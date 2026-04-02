@@ -68,14 +68,18 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var encodedPostcode = Uri.EscapeDataString(postcode);
-			var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={encodedPostcode}&Subscription-Key={_apiKey}";
+			var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={postcode}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
 				Url = requestUrl,
 				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "Ocp-Apim-Subscription-Key", _apiKey },
+				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -93,14 +97,14 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 
 			// Iterate through each address json, and create a new address object
 			var addresses = new List<Address>();
-			var resultsElement = jsonDoc.RootElement.GetProperty("Results");
+			var resultsElement = GetArrayProperty(jsonDoc.RootElement, "Results", "results", "data");
 			foreach (var addressElement in resultsElement.EnumerateArray())
 			{
 				var address = new Address
 				{
-					Property = addressElement.GetProperty("FULL_ADDRESS").GetString()!.Trim(),
+					Property = GetStringProperty(addressElement, "FULL_ADDRESS", "fullAddress", "addressFull").Trim(),
 					Postcode = postcode,
-					Uid = addressElement.GetProperty("UPRN").GetString()!.Trim(),
+					Uid = GetStringProperty(addressElement, "UPRN", "uprn", "GAZ_ID").Trim(),
 				};
 
 				addresses.Add(address);
@@ -152,28 +156,26 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
 			var binDays = new List<BinDay>();
-			if (jsonDoc.RootElement.TryGetProperty("data", out var resultsElement))
+			var resultsElement = GetArrayProperty(jsonDoc.RootElement, "data", "Data", "result");
+			foreach (var binTypeElement in resultsElement.EnumerateArray())
 			{
-				foreach (var binTypeElement in resultsElement.EnumerateArray())
+				// Determine matching bin types from the description
+				var description = GetStringProperty(binTypeElement, "wasteContainerUsageTypeDescription", "collectionType", "serviceName");
+				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, description);
+
+				var rangeEl = GetArrayProperty(binTypeElement, "scheduleDateRange", "scheduleDates", "dates");
+				foreach (var dateEl in rangeEl.EnumerateArray())
 				{
-					// Determine matching bin types from the description
-					var description = binTypeElement.GetProperty("wasteContainerUsageTypeDescription").GetString()!;
-					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, description);
+					var date = DateUtilities.ParseDateExact(dateEl.GetString()!, "yyyy-MM-dd");
 
-					var rangeEl = binTypeElement.GetProperty("scheduleDateRange");
-					foreach (var dateEl in rangeEl.EnumerateArray())
+					var binDay = new BinDay
 					{
-						var date = DateUtilities.ParseDateExact(dateEl.GetString()!, "yyyy-MM-dd");
+						Date = date,
+						Address = address,
+						Bins = matchedBinTypes,
+					};
 
-						var binDay = new BinDay
-						{
-							Date = date,
-							Address = address,
-							Bins = matchedBinTypes,
-						};
-
-						binDays.Add(binDay);
-					}
+					binDays.Add(binDay);
 				}
 			}
 
@@ -187,5 +189,37 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Gets a required array property by trying multiple possible names.
+	/// </summary>
+	private static JsonElement GetArrayProperty(JsonElement jsonElement, params string[] propertyNames)
+	{
+		foreach (var propertyName in propertyNames)
+		{
+			if (jsonElement.TryGetProperty(propertyName, out var property))
+			{
+				return property;
+			}
+		}
+
+		throw new KeyNotFoundException("Expected array property was not found in the response.");
+	}
+
+	/// <summary>
+	/// Gets a required string property by trying multiple possible names.
+	/// </summary>
+	private static string GetStringProperty(JsonElement jsonElement, params string[] propertyNames)
+	{
+		foreach (var propertyName in propertyNames)
+		{
+			if (jsonElement.TryGetProperty(propertyName, out var property))
+			{
+				return property.GetString()!;
+			}
+		}
+
+		throw new KeyNotFoundException("Expected string property was not found in the response.");
 	}
 }
