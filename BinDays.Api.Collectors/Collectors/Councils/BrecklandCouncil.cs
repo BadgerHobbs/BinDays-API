@@ -5,7 +5,6 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 
@@ -80,9 +79,9 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", Constants.ApplicationJson },
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.ApplicationJson },
 					{ "x-requested-with", Constants.XmlHttpRequest },
-					{ "User-Agent", Constants.UserAgent },
 				},
 				Body = requestBody,
 			};
@@ -98,10 +97,11 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 1)
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			var resultsElement = GetArrayProperty(jsonDoc.RootElement, "result", "Result", "data");
 
 			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
-			foreach (var addressElement in jsonDoc.RootElement.GetProperty("result").EnumerateArray())
+			foreach (var addressElement in resultsElement.EnumerateArray())
 			{
 				var number = addressElement.GetProperty("number").GetString()?.Trim();
 				var name = addressElement.GetProperty("name").GetString()?.Trim();
@@ -160,9 +160,9 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", Constants.ApplicationJson },
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.ApplicationJson },
 					{ "x-requested-with", Constants.XmlHttpRequest },
-					{ "User-Agent", Constants.UserAgent },
 				},
 				Body = requestBody,
 			};
@@ -178,26 +178,25 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 1)
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			var resultsElement = GetArrayProperty(jsonDoc.RootElement, "result", "Result", "data");
 
 			// Iterate through each bin day, and create a new bin day object
 			var binDays = new List<BinDay>();
-			foreach (var binDayElement in jsonDoc.RootElement.GetProperty("result").EnumerateArray())
+			foreach (var binDayElement in resultsElement.EnumerateArray())
 			{
 				var binType = binDayElement.GetProperty("collectiontype").GetString()!.Trim();
 				var collectionDate = binDayElement.GetProperty("nextcollection").GetString()!.Trim();
 
-				var parsedDate = DateTime.ParseExact(
+				var date = DateUtilities.ParseDateExact(
 					collectionDate,
-					"dd/MM/yyyy HH:mm:ss",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.None
+					"dd/MM/yyyy HH:mm:ss"
 				);
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binType);
 
 				var binDay = new BinDay
 				{
-					Date = DateOnly.FromDateTime(parsedDate),
+					Date = date,
 					Address = address,
 					Bins = matchedBins,
 				};
@@ -215,5 +214,21 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Gets a required array property by trying multiple possible names.
+	/// </summary>
+	private static JsonElement GetArrayProperty(JsonElement jsonElement, params string[] propertyNames)
+	{
+		foreach (var propertyName in propertyNames)
+		{
+			if (jsonElement.TryGetProperty(propertyName, out var property))
+			{
+				return property;
+			}
+		}
+
+		throw new KeyNotFoundException("Expected array property was not found in the response.");
 	}
 }
