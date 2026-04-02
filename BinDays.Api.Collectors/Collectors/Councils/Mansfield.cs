@@ -70,6 +70,18 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 	[GeneratedRegex(@"<option\s+value=""(?<uid>\d+)""[^>]*>\s*(?<address>[^<]+?)\s*</option>")]
 	private static partial Regex AddressRegex();
 
+	/// <summary>
+	/// Regex for extracting JSON wrapped in XML/HTML style responses.
+	/// </summary>
+	[GeneratedRegex(@">(?<json>\{.*\})<", RegexOptions.Singleline)]
+	private static partial Regex WrappedJsonRegex();
+
+	/// <summary>
+	/// Regex for extracting a JSON object from mixed content.
+	/// </summary>
+	[GeneratedRegex(@"(?<json>\{.*\})", RegexOptions.Singleline)]
+	private static partial Regex JsonObjectRegex();
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
@@ -174,7 +186,7 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 			var fromDate = DateOnly.FromDateTime(DateTime.Now);
 			var toDate = fromDate.AddDays(364);
 
-			var requestUrl = $"https://portal.mansfield.gov.uk/mdcwhitespacewebservice/WhiteSpaceWS.asmx/GetCollectionByUPRNAndDatePlus?&apiKey=mDc-wN3-B0f-f4P&UPRN={address.Uid}&ColFromDate={fromDate:yyyy-MM-dd}&ColToDate={toDate:yyyy-MM-dd}";
+			var requestUrl = $"https://portal.mansfield.gov.uk/mdcwhitespacewebservice/WhiteSpaceWS.asmx/GetCollectionByUPRNAndDatePlus?apiKey=mDc-wN3-B0f-f4P&UPRN={address.Uid}&ColFromDate={fromDate:yyyy-MM-dd}&ColToDate={toDate:yyyy-MM-dd}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -193,7 +205,8 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			var jsonPayload = ExtractJsonPayload(clientSideResponse.Content);
+			using var jsonDoc = JsonDocument.Parse(jsonPayload);
 			var collections = jsonDoc.RootElement.GetProperty("Collections");
 
 			// Iterate through each bin day, and create a new bin day object
@@ -231,5 +244,31 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Extracts a JSON payload from response content when wrapped with extra markup.
+	/// </summary>
+	private static string ExtractJsonPayload(string content)
+	{
+		var trimmedContent = content.Trim();
+		if (trimmedContent.StartsWith("{", StringComparison.Ordinal))
+		{
+			return trimmedContent;
+		}
+
+		var wrappedJsonMatch = WrappedJsonRegex().Match(trimmedContent);
+		if (wrappedJsonMatch.Success)
+		{
+			return wrappedJsonMatch.Groups["json"].Value;
+		}
+
+		var jsonObjectMatch = JsonObjectRegex().Match(trimmedContent);
+		if (jsonObjectMatch.Success)
+		{
+			return jsonObjectMatch.Groups["json"].Value;
+		}
+
+		return trimmedContent;
 	}
 }
