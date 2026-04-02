@@ -252,7 +252,7 @@ internal sealed partial class Mansfield : GovUkCollectorBase, ICollector
 	private static string ExtractJsonPayload(string content)
 	{
 		var trimmedContent = content.Trim();
-		if (trimmedContent.StartsWith("{", StringComparison.Ordinal))
+		if (trimmedContent.StartsWith('{'))
 		{
 			return trimmedContent;
 		}
