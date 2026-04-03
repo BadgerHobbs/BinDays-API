@@ -68,8 +68,7 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var encodedPostcode = Uri.EscapeDataString(postcode);
-			var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={encodedPostcode}&Subscription-Key={_apiKey}";
+			var requestUrl = $"https://apim-uks-cepprod-int-01.azure-api.net/LLPGSearch?searchText={postcode}&Subscription-Key={_apiKey}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -90,17 +89,25 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 		{
 			// Parse response content as JSON array
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
+			JsonElement resultsElement;
+			if (jsonDoc.RootElement.ValueKind == JsonValueKind.Array)
+			{
+				resultsElement = jsonDoc.RootElement;
+			}
+			else
+			{
+				resultsElement = GetJsonProperty(jsonDoc.RootElement, "Results", "results", "data");
+			}
 
 			// Iterate through each address json, and create a new address object
 			var addresses = new List<Address>();
-			var resultsElement = jsonDoc.RootElement.GetProperty("Results");
 			foreach (var addressElement in resultsElement.EnumerateArray())
 			{
 				var address = new Address
 				{
-					Property = addressElement.GetProperty("FULL_ADDRESS").GetString()!.Trim(),
+					Property = GetJsonStringProperty(addressElement, "FULL_ADDRESS", "fullAddress", "address", "formattedAddress"),
 					Postcode = postcode,
-					Uid = addressElement.GetProperty("UPRN").GetString()!.Trim(),
+					Uid = GetJsonStringProperty(addressElement, "UPRN", "uprn", "id"),
 				};
 
 				addresses.Add(address);
@@ -187,5 +194,43 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Gets the first matching JSON property value from the element.
+	/// </summary>
+	private static JsonElement GetJsonProperty(JsonElement element, params string[] propertyNames)
+	{
+		foreach (var propertyName in propertyNames)
+		{
+			if (element.TryGetProperty(propertyName, out var propertyValue))
+			{
+				return propertyValue;
+			}
+		}
+
+		foreach (var property in element.EnumerateObject())
+		{
+			foreach (var propertyName in propertyNames)
+			{
+				if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+				{
+					return property.Value;
+				}
+			}
+		}
+
+		var expectedProperties = string.Join(", ", propertyNames);
+		throw new InvalidOperationException($"Expected one of the following JSON properties: {expectedProperties}.");
+	}
+
+	/// <summary>
+	/// Gets the first matching JSON property value as a trimmed string.
+	/// </summary>
+	private static string GetJsonStringProperty(JsonElement element, params string[] propertyNames)
+	{
+		var propertyValue = GetJsonProperty(element, propertyNames);
+
+		return propertyValue.ToString().Trim();
 	}
 }
