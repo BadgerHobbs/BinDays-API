@@ -199,18 +199,17 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 
 			var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
 			var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-			var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
 
-			var formData = new Dictionary<string, string>
+			Dictionary<string, string> formData = new()
 			{
 				{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_addressEventTarget}" },
 				{ "ctl00$ContentPlaceHolder1$FF5683DDL", address.Uid! },
 				{ "__EVENTTARGET", _addressEventTarget },
 				{ "__VIEWSTATE", viewState },
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-				{ "__EVENTVALIDATION", eventValidation },
 				{ "__ASYNCPOST", "true" },
 			};
+			AddEventValidationField(formData, clientSideResponse.Content);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -249,15 +248,14 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 
 			var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
 			var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-			var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
 
-			var formData = new Dictionary<string, string>
+			Dictionary<string, string> formData = new()
 			{
 				{ "__EVENTTARGET", "ctl00$ContentPlaceHolder1$btnSubmit" },
 				{ "__VIEWSTATE", viewState },
 				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-				{ "__EVENTVALIDATION", eventValidation },
 			};
+			AddEventValidationField(formData, clientSideResponse.Content);
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -335,23 +333,22 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	/// </summary>
 	private static ClientSideRequest CreatePostcodeSearchRequest(ClientSideResponse clientSideResponse, string postcode)
 	{
-		clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-		var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+		var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+		var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 		var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
 		var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-		var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
 
-		var formData = new Dictionary<string, string>
+		Dictionary<string, string> formData = new()
 		{
 			{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_searchEventTarget}" },
 			{ "__EVENTTARGET", _searchEventTarget },
 			{ "__VIEWSTATE", viewState },
 			{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-			{ "__EVENTVALIDATION", eventValidation },
 			{ "ctl00$ContentPlaceHolder1$FF5683TB", postcode },
 			{ "__ASYNCPOST", "true" },
 		};
+		AddEventValidationField(formData, clientSideResponse.Content);
 
 		return new ClientSideRequest
 		{
@@ -378,9 +375,23 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	}
 
 	/// <summary>
-	/// Extracts hidden field values from HTML or AJAX responses.
+	/// Adds EVENTVALIDATION to form data when present.
 	/// </summary>
-	private static string GetHiddenField(string content, string fieldName)
+	private static void AddEventValidationField(Dictionary<string, string> formData, string content)
+	{
+		var eventValidation = GetOptionalHiddenField(content, "__EVENTVALIDATION");
+		if (string.IsNullOrWhiteSpace(eventValidation))
+		{
+			return;
+		}
+
+		formData.Add("__EVENTVALIDATION", eventValidation);
+	}
+
+	/// <summary>
+	/// Extracts an optional hidden field value from HTML or AJAX responses.
+	/// </summary>
+	private static string? GetOptionalHiddenField(string content, string fieldName)
 	{
 		// First, try to find the field in the AJAX response format.
 		var ajaxMatch = AjaxHiddenFieldRegex().Matches(content)!.FirstOrDefault(m => m.Groups["name"].Value == fieldName);
@@ -396,7 +407,20 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 			return htmlMatch.Groups["value"].Value;
 		}
 
-		// If the field is not found in either format, throw an exception.
+		return null;
+	}
+
+	/// <summary>
+	/// Extracts a required hidden field value from HTML or AJAX responses.
+	/// </summary>
+	private static string GetHiddenField(string content, string fieldName)
+	{
+		var fieldValue = GetOptionalHiddenField(content, fieldName);
+		if (!string.IsNullOrWhiteSpace(fieldValue))
+		{
+			return fieldValue;
+		}
+
 		throw new InvalidOperationException($"Hidden field '{fieldName}' not found in response content.");
 	}
 }
