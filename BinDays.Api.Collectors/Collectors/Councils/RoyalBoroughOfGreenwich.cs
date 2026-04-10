@@ -66,7 +66,7 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 	/// <summary>
 	/// Regex for extracting date ranges from each week table cell.
 	/// </summary>
-	[GeneratedRegex(@"Monday\s+(?<startDay>\d{1,2})\s+(?<startMonth>[A-Za-z]+)(?:\s+(?<startYear>\d{4}))?\s+to\s+Friday\s+(?<endDay>\d{1,2})\s+(?<endMonth>[A-Za-z]+)(?:\s+(?<endYear>\d{4}))?")]
+	[GeneratedRegex(@"Monday\s+(?<startDay>\d{1,2})\s+(?<startMonth>[A-Za-z]+)(?:\s+(?<startYear>\d{4}))?\s+to\s+Friday\s+\d{1,2}\s+(?<endMonth>[A-Za-z]+)(?:\s+(?<endYear>\d{4}))?")]
 	private static partial Regex WeekDateRangeRegex();
 
 	/// <summary>
@@ -86,10 +86,6 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 				RequestId = 1,
 				Url = $"https://www.royalgreenwich.gov.uk/site/custom_scripts/apps/waste-collection/source.php?term={Uri.EscapeDataString(postcode)}",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -176,10 +172,6 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 				RequestId = 2,
 				Url = "https://www.royalgreenwich.gov.uk/recycling-and-rubbish/bins-and-collections/black-top-bin-collections",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 				Options = new ClientSideOptions
 				{
 					Metadata =
@@ -228,7 +220,7 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 				}
 
 				var weekBRange = rawWeekRange.Groups["weekB"].Value.Trim();
-				if (string.IsNullOrWhiteSpace(weekBRange) || weekBRange == "&nbsp;")
+				if (string.IsNullOrWhiteSpace(weekBRange) || weekBRange is "&nbsp;" or "&#160;")
 				{
 					continue;
 				}
