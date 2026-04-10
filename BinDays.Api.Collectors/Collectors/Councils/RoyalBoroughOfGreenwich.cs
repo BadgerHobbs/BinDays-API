@@ -84,8 +84,12 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://www.royalgreenwich.gov.uk/site/custom_scripts/apps/waste-collection/source.php?term={postcode}",
+				Url = $"https://www.royalgreenwich.gov.uk/site/custom_scripts/apps/waste-collection/source.php?term={Uri.EscapeDataString(postcode)}",
 				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -172,6 +176,10 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 				RequestId = 2,
 				Url = "https://www.royalgreenwich.gov.uk/recycling-and-rubbish/bins-and-collections/black-top-bin-collections",
 				Method = "GET",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+				},
 				Options = new ClientSideOptions
 				{
 					Metadata =
@@ -200,11 +208,11 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 				throw new InvalidOperationException($"Unsupported collection frequency: {frequency}.");
 			}
 
-			var rawWeekRanges = WeekRangeRegex().Matches(clientSideResponse.Content)!;
+			var rawWeekRanges = WeekRangeRegex().Matches(clientSideResponse.Content);
 
 			var weeklyCollectionDates = new HashSet<DateOnly>();
 			var generalWasteDates = new HashSet<DateOnly>();
-			var currentYear = 0;
+			var currentYear = DateTime.Now.Year;
 
 			// Iterate through each week range, and calculate collection dates
 			foreach (Match rawWeekRange in rawWeekRanges)
@@ -326,17 +334,6 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 		currentYear = endYearValue;
 
 		var startDate = DateUtilities.ParseDateExact($"{startDay} {startMonth} {startYear}", "d MMMM yyyy");
-		var dayOffset = GetCollectionDayOffset(collectionDay);
-		var collectionDate = startDate.AddDays(dayOffset);
-
-		return collectionDate;
-	}
-
-	/// <summary>
-	/// Converts a collection day value to an offset from Monday.
-	/// </summary>
-	private static int GetCollectionDayOffset(string collectionDay)
-	{
 		var dayOffset = collectionDay switch
 		{
 			"Monday" => 0,
@@ -346,7 +343,8 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 			"Friday" => 4,
 			_ => throw new InvalidOperationException($"Unsupported collection day: {collectionDay}."),
 		};
+		var collectionDate = startDate.AddDays(dayOffset);
 
-		return dayOffset;
+		return collectionDate;
 	}
 }
