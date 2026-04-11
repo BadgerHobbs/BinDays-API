@@ -48,26 +48,12 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 	];
 
 	/// <summary>
-	/// The metadata key for the collection day.
+	/// Regex capturing the Week A and Week B Monday start dates from each schedule row.
+	/// Any trailing year is discarded because the day-of-week prefix lets <see cref="DateUtilities.ParseDateInferringYear"/> resolve it.
+	/// The Week B group is optional to tolerate rows with an empty Week B cell.
 	/// </summary>
-	private const string _collectionDayMetadataKey = "collectionDay";
-
-	/// <summary>
-	/// The metadata key for the collection frequency.
-	/// </summary>
-	private const string _frequencyMetadataKey = "frequency";
-
-	/// <summary>
-	/// Regex for the week A and week B table ranges.
-	/// </summary>
-	[GeneratedRegex(@"<tr><td>\d+<\/td><td>(?<weekA>[^<]+)<\/td><td>(?<weekB>[^<]*)<\/td><\/tr>")]
-	private static partial Regex WeekRangeRegex();
-
-	/// <summary>
-	/// Regex for extracting date ranges from each week table cell.
-	/// </summary>
-	[GeneratedRegex(@"Monday\s+(?<startDay>\d{1,2})\s+(?<startMonth>[A-Za-z]+)(?:\s+(?<startYear>\d{4}))?\s+to\s+Friday\s+\d{1,2}\s+(?<endMonth>[A-Za-z]+)(?:\s+(?<endYear>\d{4}))?")]
-	private static partial Regex WeekDateRangeRegex();
+	[GeneratedRegex(@"<tr><td>\d+<\/td><td>(?<weekA>Monday\s+\d{1,2}\s+[A-Za-z]+)(?:\s+\d{4})?\s+to\s+Friday[^<]*<\/td><td>(?:(?<weekB>Monday\s+\d{1,2}\s+[A-Za-z]+)(?:\s+\d{4})?\s+to\s+Friday)?[^<]*<\/td><\/tr>")]
+	private static partial Regex WeekRowRegex();
 
 	/// <summary>
 	/// Regex for normalizing address whitespace.
@@ -176,8 +162,8 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 				{
 					Metadata =
 					{
-						{ _collectionDayMetadataKey, collectionDay },
-						{ _frequencyMetadataKey, frequency },
+						{ "collectionDay", collectionDay },
+						{ "frequency", frequency },
 					},
 				},
 			};
@@ -192,76 +178,60 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 		// Process collection dates from the week schedule table
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var collectionDay = clientSideResponse.Options.Metadata[_collectionDayMetadataKey];
-			var frequency = clientSideResponse.Options.Metadata[_frequencyMetadataKey];
-			if (!frequency.Equals("Week A", StringComparison.OrdinalIgnoreCase)
-				&& !frequency.Equals("Week B", StringComparison.OrdinalIgnoreCase))
+			var collectionDay = clientSideResponse.Options.Metadata["collectionDay"];
+			var frequency = clientSideResponse.Options.Metadata["frequency"];
+
+			// "Weekly" addresses have every bin collected every week; "Week A" / "Week B" addresses have the general waste
+			// bin collected fortnightly on their assigned week, while recycling and food/garden waste remain weekly.
+			var isWeekly = frequency.Equals("Weekly", StringComparison.OrdinalIgnoreCase);
+			var isWeekA = frequency.Equals("Week A", StringComparison.OrdinalIgnoreCase);
+			var isWeekB = frequency.Equals("Week B", StringComparison.OrdinalIgnoreCase);
+			if (!isWeekly && !isWeekA && !isWeekB)
 			{
 				throw new InvalidOperationException($"Unsupported collection frequency: {frequency}.");
 			}
 
-			var rawWeekRanges = WeekRangeRegex().Matches(clientSideResponse.Content);
-
-			var weeklyCollectionDates = new HashSet<DateOnly>();
-			var generalWasteDates = new HashSet<DateOnly>();
-			var currentYear = DateTime.Now.Year;
-
-			// Iterate through each week range, and calculate collection dates
-			foreach (Match rawWeekRange in rawWeekRanges)
+			var dayOffset = collectionDay switch
 			{
-				var weekARange = rawWeekRange.Groups["weekA"].Value.Trim();
-				var weekACollectionDate = ParseCollectionDateFromRange(weekARange, collectionDay, ref currentYear);
-
-				weeklyCollectionDates.Add(weekACollectionDate);
-
-				if (frequency.Equals("Week A", StringComparison.OrdinalIgnoreCase))
-				{
-					generalWasteDates.Add(weekACollectionDate);
-				}
-
-				var weekBRange = rawWeekRange.Groups["weekB"].Value.Trim();
-				if (string.IsNullOrWhiteSpace(weekBRange) || weekBRange is "&nbsp;" or "&#160;")
-				{
-					continue;
-				}
-
-				var weekBCollectionDate = ParseCollectionDateFromRange(weekBRange, collectionDay, ref currentYear);
-				weeklyCollectionDates.Add(weekBCollectionDate);
-
-				if (frequency.Equals("Week B", StringComparison.OrdinalIgnoreCase))
-				{
-					generalWasteDates.Add(weekBCollectionDate);
-				}
-			}
+				"Monday" => 0,
+				"Tuesday" => 1,
+				"Wednesday" => 2,
+				"Thursday" => 3,
+				"Friday" => 4,
+				_ => throw new InvalidOperationException($"Unsupported collection day: {collectionDay}."),
+			};
 
 			var weeklyBins = ProcessingUtilities.GetMatchingBins(_binTypes, "Weekly Collection");
 			var generalWasteBins = ProcessingUtilities.GetMatchingBins(_binTypes, "General Waste");
+
+			// The general waste bin is added to the weeks that match the address's frequency (every week for "Weekly",
+			// or only the assigned A/B week otherwise).
+			var weekABins = isWeekly || isWeekA ? [.. weeklyBins, .. generalWasteBins] : weeklyBins;
+			var weekBBins = isWeekly || isWeekB ? [.. weeklyBins, .. generalWasteBins] : weeklyBins;
+
 			var binDays = new List<BinDay>();
 
-			// Iterate through each weekly collection date, and add recycling and food/garden bins
-			foreach (var weeklyCollectionDate in weeklyCollectionDates)
+			// Iterate through each schedule row, and add bin days for the Week A and Week B Monday-to-Friday ranges
+			foreach (Match row in WeekRowRegex().Matches(clientSideResponse.Content)!)
 			{
-				var binDay = new BinDay
+				var weekADate = DateUtilities.ParseDateInferringYear(row.Groups["weekA"].Value, "dddd d MMMM").AddDays(dayOffset);
+				binDays.Add(new BinDay
 				{
-					Date = weeklyCollectionDate,
+					Date = weekADate,
 					Address = address,
-					Bins = weeklyBins,
-				};
+					Bins = weekABins,
+				});
 
-				binDays.Add(binDay);
-			}
-
-			// Iterate through each general waste date, and add the general waste bin
-			foreach (var generalWasteDate in generalWasteDates)
-			{
-				var binDay = new BinDay
+				if (row.Groups["weekB"].Success)
 				{
-					Date = generalWasteDate,
-					Address = address,
-					Bins = generalWasteBins,
-				};
-
-				binDays.Add(binDay);
+					var weekBDate = DateUtilities.ParseDateInferringYear(row.Groups["weekB"].Value, "dddd d MMMM").AddDays(dayOffset);
+					binDays.Add(new BinDay
+					{
+						Date = weekBDate,
+						Address = address,
+						Bins = weekBBins,
+					});
+				}
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -274,69 +244,5 @@ internal sealed partial class RoyalBoroughOfGreenwich : GovUkCollectorBase, ICol
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
-	}
-
-	/// <summary>
-	/// Parses a week date range and returns the collection date for the given collection day.
-	/// </summary>
-	private static DateOnly ParseCollectionDateFromRange(string weekRange, string collectionDay, ref int currentYear)
-	{
-		var rangeMatch = WeekDateRangeRegex().Match(weekRange);
-		var startDay = rangeMatch.Groups["startDay"].Value;
-		var startMonth = rangeMatch.Groups["startMonth"].Value;
-		var startYearText = rangeMatch.Groups["startYear"].Value;
-		var endMonth = rangeMatch.Groups["endMonth"].Value;
-		var endYearText = rangeMatch.Groups["endYear"].Value;
-
-		int startYear;
-		if (!string.IsNullOrWhiteSpace(startYearText))
-		{
-			startYear = int.Parse(startYearText);
-		}
-		else if (!string.IsNullOrWhiteSpace(endYearText))
-		{
-			var endYear = int.Parse(endYearText);
-			var startMonthNumber = DateUtilities.ParseDateExact($"1 {startMonth} {endYear}", "d MMMM yyyy").Month;
-			var endMonthNumber = DateUtilities.ParseDateExact($"1 {endMonth} {endYear}", "d MMMM yyyy").Month;
-
-			startYear = startMonthNumber > endMonthNumber
-				? endYear - 1
-				: endYear;
-		}
-		else
-		{
-			startYear = currentYear;
-		}
-
-		int endYearValue;
-		if (!string.IsNullOrWhiteSpace(endYearText))
-		{
-			endYearValue = int.Parse(endYearText);
-		}
-		else
-		{
-			var startMonthNumber = DateUtilities.ParseDateExact($"1 {startMonth} {startYear}", "d MMMM yyyy").Month;
-			var endMonthNumber = DateUtilities.ParseDateExact($"1 {endMonth} {startYear}", "d MMMM yyyy").Month;
-
-			endYearValue = endMonthNumber < startMonthNumber
-				? startYear + 1
-				: startYear;
-		}
-
-		currentYear = endYearValue;
-
-		var startDate = DateUtilities.ParseDateExact($"{startDay} {startMonth} {startYear}", "d MMMM yyyy");
-		var dayOffset = collectionDay switch
-		{
-			"Monday" => 0,
-			"Tuesday" => 1,
-			"Wednesday" => 2,
-			"Thursday" => 3,
-			"Friday" => 4,
-			_ => throw new InvalidOperationException($"Unsupported collection day: {collectionDay}."),
-		};
-		var collectionDate = startDate.AddDays(dayOffset);
-
-		return collectionDate;
 	}
 }

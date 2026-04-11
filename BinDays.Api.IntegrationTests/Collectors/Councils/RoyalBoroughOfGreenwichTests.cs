@@ -19,7 +19,9 @@ public class RoyalBoroughOfGreenwichTests
 	}
 
 	[Theory]
-	[InlineData("SE9 2BP")]
+	[InlineData("SE9 2BP")] // Week A address
+	[InlineData("SE9 6DJ")] // Week B address
+	[InlineData("SE18 1HE")] // Weekly address
 	public async Task GetBinDaysTest(string postcode)
 	{
 		await TestSteps.EndToEnd(
