@@ -54,6 +54,11 @@ internal sealed partial class SalfordCityCouncil : GovUkCollectorBase, ICollecto
 	];
 
 	/// <summary>
+	/// The base URL for Salford's Umbraco API endpoints.
+	/// </summary>
+	private const string _apiBaseUrl = "https://www.salford.gov.uk/umbraco/api/salfordapi";
+
+	/// <summary>
 	/// Regex for ICS events.
 	/// </summary>
 	[GeneratedRegex(@"SUMMARY:(?<summary>.+?)\r?\n.*?DTSTART; ?VALUE ?= ?DATE:(?<date>\d{8})", RegexOptions.Singleline)]
@@ -68,14 +73,18 @@ internal sealed partial class SalfordCityCouncil : GovUkCollectorBase, ICollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = "https://www.salford.gov.uk/umbraco/api/SalfordAPI/AddressSearch",
+				Url = $"{_apiBaseUrl}/AddressSearch",
 				Method = "POST",
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "content-type", Constants.FormUrlEncoded },
+					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
-				Body = $"QueryStr={postcode}",
+				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
+				{
+					{ "QueryStr", postcode },
+				}),
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -126,7 +135,7 @@ internal sealed partial class SalfordCityCouncil : GovUkCollectorBase, ICollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://www.salford.gov.uk/umbraco/api/salfordapi/GetBinCollectionsICS/?UPRN={address.Uid}",
+				Url = $"{_apiBaseUrl}/GetBinCollectionsICS/?UPRN={address.Uid}",
 				Method = "GET",
 			};
 
