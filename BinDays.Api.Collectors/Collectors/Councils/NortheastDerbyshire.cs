@@ -60,7 +60,7 @@ internal sealed class NortheastDerbyshire : GovUkCollectorBase, ICollector
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				Addresses = [ address ],
+				Addresses = [address],
 			};
 
 			return getAddressesResponse;
@@ -110,13 +110,13 @@ internal sealed class NortheastDerbyshire : GovUkCollectorBase, ICollector
 
 			// Iterate through each collection, and create a new bin day object
 			var binDays = new List<BinDay>();
-			foreach (var collection in collections)
+			foreach (var (Date, Service) in collections)
 			{
-				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, collection.Service);
+				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, Service);
 
 				var binDay = new BinDay
 				{
-					Date = DateUtilities.ParseDateExact(collection.Date, "dd/MM/yyyy"),
+					Date = DateUtilities.ParseDateExact(Date, "dd/MM/yyyy"),
 					Address = address,
 					Bins = matchedBinTypes,
 				};
