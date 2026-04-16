@@ -5,7 +5,6 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 /// <summary>
 /// Collector implementation for North East Derbyshire District Council.
@@ -21,30 +20,26 @@ internal sealed class NortheastDerbyshire : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public override string GovUkId => "north-east-derbyshire";
 
-	/// <summary>
-	/// The list of bin types for this collector.
-	/// </summary>
-	private readonly IReadOnlyCollection<Bin> _binTypes =
-	[
-		new()
-		{
-			Name = "General Waste",
-			Colour = BinColour.Black,
-			Keys = [ "General Waste" ],
-		},
-		new()
-		{
-			Name = "Mixed Recycling",
-			Colour = BinColour.Green,
-			Keys = [ "Mixed Recycling" ],
-		},
-		new()
-		{
-			Name = "Garden Waste",
-			Colour = BinColour.Brown,
-			Keys = [ "Garden Waste" ],
-		},
-	];
+	private readonly Bin _generalWasteBin = new()
+	{
+		Name = "General Waste",
+		Colour = BinColour.Black,
+		Keys = ["General Waste"],
+	};
+
+	private readonly Bin _mixedRecyclingBin = new()
+	{
+		Name = "Mixed Recycling",
+		Colour = BinColour.Green,
+		Keys = ["Mixed Recycling"],
+	};
+
+	private readonly Bin _gardenWasteBin = new()
+	{
+		Name = "Garden Waste",
+		Colour = BinColour.Brown,
+		Keys = ["Garden Waste"],
+	};
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -76,23 +71,21 @@ internal sealed class NortheastDerbyshire : GovUkCollectorBase, ICollector
 		{
 			var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-			var binDays = new List<BinDay>();
-
-			var generalWasteBinDay = new BinDay
+			var binDays = new List<BinDay>
 			{
-				Date = today.AddDays(1),
-				Address = address,
-				Bins = [_binTypes.ElementAt(0)],
+				new()
+				{
+					Date = today.AddDays(1),
+					Address = address,
+					Bins = [_generalWasteBin],
+				},
+				new()
+				{
+					Date = today.AddDays(8),
+					Address = address,
+					Bins = [_mixedRecyclingBin, _gardenWasteBin],
+				},
 			};
-			binDays.Add(generalWasteBinDay);
-
-			var recyclingAndGardenBinDay = new BinDay
-			{
-				Date = today.AddDays(8),
-				Address = address,
-				Bins = [_binTypes.ElementAt(1), _binTypes.ElementAt(2)],
-			};
-			binDays.Add(recyclingAndGardenBinDay);
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
