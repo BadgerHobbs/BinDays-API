@@ -60,7 +60,7 @@ internal sealed class NortheastDerbyshire : GovUkCollectorBase, ICollector
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				Addresses = [ address ],
+				Addresses = [address],
 			};
 
 			return getAddressesResponse;
@@ -82,7 +82,7 @@ internal sealed class NortheastDerbyshire : GovUkCollectorBase, ICollector
 			{
 				Date = today.AddDays(1),
 				Address = address,
-				Bins = [ _binTypes.ElementAt(0) ],
+				Bins = [_binTypes.ElementAt(0)],
 			};
 			binDays.Add(generalWasteBinDay);
 
@@ -90,7 +90,7 @@ internal sealed class NortheastDerbyshire : GovUkCollectorBase, ICollector
 			{
 				Date = today.AddDays(8),
 				Address = address,
-				Bins = [ _binTypes.ElementAt(1), _binTypes.ElementAt(2) ],
+				Bins = [_binTypes.ElementAt(1), _binTypes.ElementAt(2)],
 			};
 			binDays.Add(recyclingAndGardenBinDay);
 
