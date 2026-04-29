@@ -145,8 +145,13 @@ internal sealed partial class SouthGloucestershireCouncil : GovUkCollectorBase, 
 			var binDays = new List<BinDay>();
 			foreach (var rawBinDayCollection in rawBinDayCollections)
 			{
-				var serviceName = rawBinDayCollection!["hso_servicename"]!.GetValue<string>();
-				var nextCollection = rawBinDayCollection["hso_nextcollection"]!.GetValue<string>();
+				// Skip entries with no next collection date
+				var nextCollectionNode = rawBinDayCollection!["hso_nextcollection"];
+				if (nextCollectionNode == null)
+					continue;
+
+				var serviceName = rawBinDayCollection["hso_servicename"]!.GetValue<string>();
+				var nextCollection = nextCollectionNode.GetValue<string>();
 
 				// Find matching bin types based on the service name containing a key (case-insensitive)
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, serviceName);
