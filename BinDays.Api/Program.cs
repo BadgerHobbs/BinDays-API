@@ -39,6 +39,10 @@ else
 
 // Health check for monitoring
 builder.Services.AddHealthChecks();
+builder.Services.AddMcpServer()
+	.WithHttpTransport()
+	.WithTools<BinDays.Api.Mcp.CacheControllerMcpTools>()
+	.WithTools<BinDays.Api.Mcp.CollectorsControllerMcpTools>();
 
 // Configure Seq logging (optional)
 builder.Services.AddLogging(loggingBuilder =>
@@ -79,11 +83,29 @@ app.UseCors(x => x
 	.AllowAnyHeader()
 );
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+	app.UseHttpsRedirection();
+}
 
 app.UseAuthorization();
 
+app.Use(async (context, next) =>
+{
+	if (context.Request.Path.StartsWithSegments("/mcp"))
+	{
+		var apiKey = context.RequestServices.GetRequiredService<IConfiguration>().GetValue<string>("CacheApiKey");
+		if (!string.IsNullOrEmpty(apiKey) && context.Request.Headers["X-Api-Key"] != apiKey)
+		{
+			context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+			return;
+		}
+	}
+	await next(context);
+});
+
 app.MapControllers();
+app.MapMcp("/mcp");
 
 app.MapHealthChecks("/status");
 

@@ -14,6 +14,7 @@
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Seq.Extensions.Logging" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
@@ -23,6 +24,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BinDays.Api.Collectors\BinDays.Api.Collectors.csproj" />
+    <ProjectReference 
+      Include="..\BinDays.Api.SourceGenerators\BinDays.Api.SourceGenerators.csproj"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false"
+    />
   </ItemGroup>
 
   <!-- Required for integration tests -->

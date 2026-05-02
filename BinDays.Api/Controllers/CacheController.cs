@@ -13,6 +13,7 @@ using System.Linq;
 /// </summary>
 [ApiController]
 [CacheApiKey]
+[GenerateMcpTools]
 public class CacheController : ControllerBase
 {
 	/// <summary>

@@ -16,6 +16,7 @@ using System.Linq;
 /// API controller for managing collectors.
 /// </summary>
 [ApiController]
+[GenerateMcpTools]
 public class CollectorsController : ControllerBase
 {
 	/// <summary>

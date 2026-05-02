@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bindays": {
+      "type": "http",
+      "url": "http://localhost:5042/mcp"
+    }
+  }
+}
