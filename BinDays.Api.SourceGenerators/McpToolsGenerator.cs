@@ -11,7 +11,7 @@ using System.Xml.Linq;
 
 /// <summary>
 /// Generates an MCP tool class from any controller marked with <c>[GenerateMcpTools]</c>.
-/// Only <c>[HttpGet]</c> and <c>[HttpDelete]</c> actions are included.
+/// Only <c>[HttpGet]</c>, <c>[HttpPost]</c>, and <c>[HttpDelete]</c> actions are included.
 /// </summary>
 [Generator]
 public sealed class McpToolsGenerator : IIncrementalGenerator
@@ -56,7 +56,7 @@ public sealed class McpToolsGenerator : IIncrementalGenerator
 			.OfType<IMethodSymbol>()
 			.Where(m => m.MethodKind == MethodKind.Ordinary
 					 && m.DeclaredAccessibility == Accessibility.Public
-					 && m.GetAttributes().Any(a => a.AttributeClass?.Name is "HttpGetAttribute" or "HttpDeleteAttribute"))
+					 && m.GetAttributes().Any(a => a.AttributeClass?.Name is "HttpGetAttribute" or "HttpPostAttribute" or "HttpDeleteAttribute"))
 			.ToArray();
 
 		var sb = new StringBuilder();
@@ -122,7 +122,7 @@ public sealed class McpToolsGenerator : IIncrementalGenerator
 		sb.AppendLine("    {");
 		sb.AppendLine("        ContentResult { Content: var content } => content ?? string.Empty,");
 		sb.AppendLine("        OkObjectResult { Value: var value } => global::Newtonsoft.Json.JsonConvert.SerializeObject(value),");
-		sb.AppendLine("        NotFoundResult => \"Not found in cache.\",");
+		sb.AppendLine("        NotFoundResult => \"Not found.\",");
 		sb.AppendLine("        NoContentResult => \"Done.\",");
 		sb.AppendLine("        _ => string.Empty,");
 		sb.AppendLine("    };");
@@ -154,7 +154,7 @@ public sealed class McpToolsGenerator : IIncrementalGenerator
 		sb.AppendLine("    {");
 		sb.AppendLine("        if (CreateController() is not { } controller)");
 		sb.AppendLine("        {");
-		sb.AppendLine("            return \"Redis is not configured.\";");
+		sb.AppendLine("            return \"Failed to resolve controller dependencies.\";");
 		sb.AppendLine("        }");
 		sb.AppendLine($"        return Convert(controller.{action.Name}({string.Join(", ", action.Parameters.Select(p => p.Name))}));");
 		sb.AppendLine("    }");
