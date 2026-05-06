@@ -4,208 +4,123 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 
 /// <summary>
-/// Base collector implementation for councils using the Ebase "Binzone" desktop form
-/// (specifically the South Oxfordshire and Vale of White Horse shared service).
+/// Base collector implementation for councils using the South and Vale BinDays API.
 /// </summary>
-internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
+internal abstract class BinzoneCollectorBase : GovUkCollectorBase
 {
 	/// <summary>
-	/// The base URL for the eform system (e.g. "https://eform.southoxon.gov.uk").
+	/// The council code used by the BinDays API ("S" for South Oxfordshire or "V" for Vale).
 	/// </summary>
-	protected abstract string EformBaseUrl { get; }
-
-	/// <summary>
-	/// The service identifier used in the SOVA_TAG query parameter (e.g. "SOUTH" or "VALE").
-	/// </summary>
-	protected abstract string ServiceId { get; }
+	protected abstract string CouncilCode { get; }
 
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
-	private readonly IReadOnlyCollection<Bin> _binTypes = [
+	private readonly IReadOnlyCollection<Bin> _binTypes =
+	[
 		new()
 		{
 			Name = "Rubbish",
 			Colour = BinColour.Black,
-			Keys = [ "grey bin" ],
+			Keys = [ "Non-recyclable refuse waste" ],
 		},
 		new()
 		{
 			Name = "Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "green bin" ],
+			Keys = [ "Recycling" ],
 		},
 		new()
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Green,
-			Keys = [ "food bin" ],
+			Keys = [ "Food waste" ],
 			Type = BinType.Caddy,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "garden waste bin" ],
+			Keys = [ "Garden Waste subscribers" ],
 		},
 		new()
 		{
 			Name = "Small Electrical Items",
 			Colour = BinColour.Grey,
-			Keys = [ "small electrical items" ],
+			Keys = [ "Small electricals" ],
 			Type = BinType.Bag,
 		},
 		new()
 		{
 			Name = "Textiles",
 			Colour = BinColour.Grey,
-			Keys = [ "textiles" ],
+			Keys = [ "Textiles/Clothes" ],
 			Type = BinType.Bag,
 		},
 	];
 
 	/// <summary>
-	/// Regex for the ebz/ebs token value from a URL.
+	/// The base URL for the BinDays property API.
 	/// </summary>
-	[GeneratedRegex("ebz=([^&]+)")]
-	private static partial Regex EbzRegex();
-
-	/// <summary>
-	/// Regex for extracting addresses and their corresponding control IDs from the HTML table.
-	/// </summary>
-	[GeneratedRegex(@"(?s)class=""[^""]*eb-58-fieldHyperlink[^""]*""[^>]*>\s*(?<address>[^<]+)\s*</a>.*?name=""(?<uid>CTRL:63:_:D:\d+)""")]
-	private static partial Regex AddressRegex();
-
-	/// <summary>
-	/// Regex for extracting the HID:inputs value from the form.
-	/// </summary>
-	[GeneratedRegex(@"name=""HID:inputs"" value=""(?<value>[^""]+)""")]
-	private static partial Regex HidInputsRegex();
-
-	/// <summary>
-	/// Regex for extracting date and bin information from the bin details slider.
-	/// Uses [\s\S]+? to match across newlines and include HTML tags (like anchors) within the description.
-	/// </summary>
-	[GeneratedRegex(@"(?:<br>|>)\s*(?<date>[^<>\n-]+?)\s*-<br>\s*(?<bins>[\s\S]+?)</div>")]
-	private static partial Regex BinDetailsRegex();
-
-	/// <summary>
-	/// Regex for removing HTML tags from the bin description.
-	/// </summary>
-	[GeneratedRegex("<.*?>")]
-	private static partial Regex HtmlTagRegex();
+	private const string _propertyApiBaseUrl = "https://forms.southandvale.gov.uk/api/property";
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting the initial session redirect
+		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"{EformBaseUrl}/ebase/ufsmain?formid=BINZONE_DESKTOP&SOVA_TAG={ServiceId}",
+				Url = $"{_propertyApiBaseUrl}/postcode/{postcode}",
 				Method = "GET",
-				Options = new ClientSideOptions
-				{
-					// We need to trap the 302 to get the Location header
-					FollowRedirects = false,
-				},
 			};
 
-			return new GetAddressesResponse { NextClientSideRequest = clientSideRequest };
-		}
-		// Prepare client-side request for initializing the session (GET)
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]
-			);
-
-			var relativeLocation = clientSideResponse.Headers["location"];
-			var fullRedirectUrl = $"{EformBaseUrl}/ebase/{relativeLocation}";
-
-			var clientSideRequest = new ClientSideRequest
+			var getAddressesResponse = new GetAddressesResponse
 			{
-				RequestId = 2,
-				Url = fullRedirectUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "cookie", cookie },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "cookie", cookie },
-						{ "referer", fullRedirectUrl },
-					}
-				}
+				NextClientSideRequest = clientSideRequest,
 			};
 
-			return new GetAddressesResponse { NextClientSideRequest = clientSideRequest };
-		}
-		// Prepare client-side request for performing the search (POST)
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var cookie = clientSideResponse.Options.Metadata["cookie"];
-			var refererUrl = clientSideResponse.Options.Metadata["referer"];
-			var ebs = EbzRegex().Match(refererUrl).Groups[1].Value;
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "formid", "/Forms/BINZONE_DESKTOP" },
-				{ "ebs", ebs },
-				{ "formstack", "BINZONE_DESKTOP:f267e852-5fff-456e-96d7-83cd429c5109" },
-				{ "pageSeq", "1" },
-				{ "pageId", "WHERE_DO_YOU_LIVE" },
-				{ "formStateId", "1" },
-				{ "CTRL:2:_:A", postcode },
-				{ "CTRL:20:_", "Search" },
-				{ "HID:inputs", "ICTRL:2:_:A,ACTRL:20:_,ACTRL:24:_,ICTRL:70:_:A,ICTRL:31:_:A,ICTRL:32:_:A,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:S.h,APAGE:R.h" },
-			});
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
-				Method = "POST",
-				Body = requestBody,
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "cookie", cookie },
-					{ "Content-Type", Constants.FormUrlEncoded },
-				},
-			};
-
-			return new GetAddressesResponse { NextClientSideRequest = clientSideRequest };
+			return getAddressesResponse;
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 1)
 		{
+			using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
+			var setData = jsonDocument.RootElement.GetProperty("setData");
+
 			var addresses = new List<Address>();
-			var matches = AddressRegex().Matches(clientSideResponse.Content);
 
-			foreach (Match match in matches)
+			// Iterate through each address, and create a new address object
+			foreach (var addressItem in setData.EnumerateArray())
 			{
-				var uid = match.Groups["uid"].Value;
-				var addressText = match.Groups["address"].Value.Trim();
+				var council = addressItem.GetProperty("council").GetString()!;
 
-				addresses.Add(new Address
+				if (council != CouncilCode)
 				{
-					Property = addressText,
+					continue;
+				}
+
+				var address = new Address
+				{
+					Property = addressItem.GetProperty("address").GetString()!,
 					Postcode = postcode,
-					Uid = uid,
-				});
+					Uid = addressItem.GetProperty("uprn").GetString()!,
+				};
+
+				addresses.Add(address);
 			}
 
-			return new GetAddressesResponse { Addresses = [.. addresses] };
+			var getAddressesResponse = new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+
+			return getAddressesResponse;
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");
@@ -214,173 +129,73 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting the initial session redirect
+		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"{EformBaseUrl}/ebase/ufsmain?formid=BINZONE_DESKTOP&SOVA_TAG={ServiceId}",
+				Url = $"{_propertyApiBaseUrl}/bins/{address.Uid}",
 				Method = "GET",
-				Options = new ClientSideOptions
-				{
-					FollowRedirects = false,
-				},
 			};
 
-			return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
-		}
-		// Prepare client-side request for initializing the session (GET)
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]
-			);
-
-			var relativeLocation = clientSideResponse.Headers["location"];
-			var fullRedirectUrl = $"{EformBaseUrl}/ebase/{relativeLocation}";
-
-			var clientSideRequest = new ClientSideRequest
+			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				RequestId = 2,
-				Url = fullRedirectUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "cookie", cookie },
-				},
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "cookie", cookie },
-						{ "referer", fullRedirectUrl },
-					}
-				}
+				NextClientSideRequest = clientSideRequest,
 			};
 
-			return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
-		}
-		// Prepare client-side request for performing the search (POST)
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var cookie = clientSideResponse.Options.Metadata["cookie"];
-			var refererUrl = clientSideResponse.Options.Metadata["referer"];
-			var ebs = EbzRegex().Match(refererUrl).Groups[1].Value;
-
-			// Save EBS for next step
-			clientSideResponse.Options.Metadata.Add("ebs", ebs);
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "formid", "/Forms/BINZONE_DESKTOP" },
-				{ "ebs", ebs },
-				{ "formstack", "BINZONE_DESKTOP:f267e852-5fff-456e-96d7-83cd429c5109" },
-				{ "pageSeq", "1" },
-				{ "pageId", "WHERE_DO_YOU_LIVE" },
-				{ "formStateId", "1" },
-				{ "CTRL:2:_:A", address.Postcode! },
-				{ "CTRL:20:_", "Search" },
-				{ "HID:inputs", "ICTRL:2:_:A,ACTRL:20:_,ACTRL:24:_,ICTRL:70:_:A,ICTRL:31:_:A,ICTRL:32:_:A,APAGE:E.h,APAGE:B.h,APAGE:N.h,APAGE:S.h,APAGE:R.h" },
-			});
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
-				Method = "POST",
-				Body = requestBody,
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "cookie", cookie },
-					{ "Content-Type", Constants.FormUrlEncoded },
-				},
-				Options = clientSideResponse.Options,
-			};
-
-			return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
-		}
-		// Prepare client-side request to select the address (POST)
-		else if (clientSideResponse.RequestId == 3)
-		{
-			var cookie = clientSideResponse.Options.Metadata["cookie"];
-			var ebs = clientSideResponse.Options.Metadata["ebs"];
-
-			// Scrape the dynamic HID:inputs value from the response
-			var hidInputs = HidInputsRegex().Match(clientSideResponse.Content).Groups["value"].Value;
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "formid", "/Forms/BINZONE_DESKTOP" },
-				{ "ebs", ebs },
-				{ "formstack", "BINZONE_DESKTOP:f267e852-5fff-456e-96d7-83cd429c5109" },
-				{ "pageSeq", "2" },
-				{ "pageId", "_ADDRESS" },
-				{ "formStateId", "1" },
-				{ $"{address.Uid}.x", "10" },
-				{ $"{address.Uid}.y", "10" },
-				{ "HID:inputs", hidInputs },
-			});
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 4,
-				Url = $"{EformBaseUrl}/ebase/BINZONE_DESKTOP.eb?ebz={ebs}",
-				Method = "POST",
-				Body = requestBody,
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "cookie", cookie },
-					{ "Content-Type", Constants.FormUrlEncoded },
-				},
-			};
-
-			return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
+			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 1)
 		{
-			var matches = BinDetailsRegex().Matches(clientSideResponse.Content);
+			using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
+			var setData = jsonDocument.RootElement.GetProperty("setData");
 			var binDays = new List<BinDay>();
 
-			foreach (Match match in matches)
+			if (setData.GetProperty("site").GetString()! != CouncilCode)
 			{
-				var dateString = match.Groups["date"].Value.Trim();
-				var binString = match.Groups["bins"].Value;
+				throw new InvalidOperationException("Address does not belong to this council.");
+			}
 
-				// Remove HTML tags (e.g. hyperlinks for garden waste)
-				binString = HtmlTagRegex().Replace(binString, "");
-
-				// Skip if empty date or bin
-				if (string.IsNullOrWhiteSpace(dateString) || string.IsNullOrWhiteSpace(binString))
+			// Iterate through each collection week
+			foreach (var week in setData.GetProperty("week").EnumerateArray())
+			{
+				// Iterate through each collection day, and create bin day objects
+				foreach (var day in week.GetProperty("day").EnumerateArray())
 				{
-					continue;
-				}
+					var collectionDate = day.GetProperty("collection_date").GetString()!;
+					var date = DateUtilities.ParseDateExact(collectionDate, "dd/MM/yyyy");
 
-				// Parse the date (e.g. "Thursday 27 November")
-				var date = DateUtilities.ParseDateInferringYear(dateString, "dddd d MMMM");
-
-				// Split bin description by comma or "and" to get individual bins
-				var bins = binString.Split([",", " and "], StringSplitOptions.RemoveEmptyEntries);
-
-				foreach (var binName in bins)
-				{
-					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
-
-					var binDay = new BinDay
+					// Iterate through each bin entry for the collection day
+					foreach (var bin in day.GetProperty("bins").EnumerateArray())
 					{
-						Date = date,
-						Address = address,
-						Bins = matchedBins,
-					};
-					binDays.Add(binDay);
+						var service = bin.GetProperty("bin_type").GetString()!;
+						var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+
+						if (matchedBins.Count == 0)
+						{
+							continue;
+						}
+
+						var binDay = new BinDay
+						{
+							Date = date,
+							Address = address,
+							Bins = matchedBins,
+						};
+
+						binDays.Add(binDay);
+					}
 				}
 			}
 
-			return new GetBinDaysResponse { BinDays = ProcessingUtilities.ProcessBinDays(binDays) };
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+			};
+
+			return getBinDaysResponse;
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");

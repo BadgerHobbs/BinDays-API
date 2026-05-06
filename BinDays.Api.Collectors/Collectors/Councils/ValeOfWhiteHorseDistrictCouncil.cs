@@ -12,14 +12,11 @@ internal sealed class ValeOfWhiteHorseDistrictCouncil : BinzoneCollectorBase, IC
 	public string Name => "Vale of White Horse District Council";
 
 	/// <inheritdoc/>
-	public Uri WebsiteUrl => new("https://www.whitehorsedc.gov.uk/java/support/formcall.jsp?F=BINZONE_DESKTOP");
+	public Uri WebsiteUrl => new("https://www.whitehorsedc.gov.uk/vale-of-white-horse-district-council/recycling-rubbish-and-waste/bindays/");
 
 	/// <inheritdoc/>
 	public override string GovUkId => "vale-of-white-horse";
 
 	/// <inheritdoc/>
-	protected override string EformBaseUrl => "https://eform.whitehorsedc.gov.uk";
-
-	/// <inheritdoc/>
-	protected override string ServiceId => "VALE";
+	protected override string CouncilCode => "V";
 }
