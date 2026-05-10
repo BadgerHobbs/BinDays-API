@@ -21,6 +21,7 @@ public class CityOfEdinburghCouncilTests
 	[Theory]
 	[InlineData("EH17 8PH")]
 	[InlineData("EH1 1RE")]
+	[InlineData("EH16 6HH")]
 	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{
 		await TestSteps.EndToEnd(
