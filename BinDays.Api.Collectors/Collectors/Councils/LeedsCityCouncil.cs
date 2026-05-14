@@ -66,6 +66,7 @@ internal sealed class LeedsCityCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
+					{ "accept", Constants.ApplicationJson },
 					{ "Ocp-Apim-Subscription-Key", _apiSubscriptionKey },
 				},
 			};
@@ -87,12 +88,12 @@ internal sealed class LeedsCityCouncil : GovUkCollectorBase, ICollector
 			var addresses = new List<Address>();
 			foreach (var addressElement in jsonDoc.RootElement.EnumerateArray())
 			{
-				var property = addressElement.GetProperty("displayAddress").GetString();
-				var uprn = addressElement.GetProperty("uprn").GetString();
+				var property = addressElement.GetProperty("displayAddress").GetString()!;
+				var uprn = addressElement.GetProperty("uprn").GetString()!;
 
 				var address = new Address
 				{
-					Property = property?.Trim(),
+					Property = property.Trim(),
 					Postcode = postcode,
 					Uid = uprn,
 				};
@@ -118,7 +119,9 @@ internal sealed class LeedsCityCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var requestUrl = $"https://api.leeds.gov.uk/public/waste/v1/BinsDays?uprn={address.Uid}";
+			var startDate = DateOnly.FromDateTime(DateTime.UtcNow);
+			var endDate = startDate.AddDays(168);
+			var requestUrl = $"https://api.leeds.gov.uk/public/waste/v1/BinsDays?uprn={address.Uid!}&startDate={startDate:yyyy-MM-dd}&endDate={endDate:yyyy-MM-dd}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -128,6 +131,7 @@ internal sealed class LeedsCityCouncil : GovUkCollectorBase, ICollector
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
+					{ "accept", Constants.ApplicationJson },
 					{ "Ocp-Apim-Subscription-Key", _apiSubscriptionKey },
 				},
 			};
