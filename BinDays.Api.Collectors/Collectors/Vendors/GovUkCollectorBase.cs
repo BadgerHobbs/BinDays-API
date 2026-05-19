@@ -146,20 +146,31 @@ internal abstract partial class GovUkCollectorBase
 	private static ICollector ExtractCollector(CollectorService collectorService, string postcode, ClientSideResponse clientSideResponse)
 	{
 		// Try to get gov.uk ID from response header
-		var govUkId = clientSideResponse.Headers.GetValueOrDefault("location")?.Split("/").Last().Trim();
+		var locationHeader = clientSideResponse.Headers.GetValueOrDefault("location");
+		var govUkId = locationHeader?
+			.Split('?', 2)[0]
+			.TrimEnd('/')
+			.Split('/')
+			.Last()
+			.Trim();
 
 		// If null, try to get gov.uk ID from response html
-		govUkId ??= GovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
+		if (string.IsNullOrWhiteSpace(govUkId))
+		{
+			govUkId = GovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
+		}
 
-		if (govUkId == null)
+		if (string.IsNullOrWhiteSpace(govUkId))
 		{
 			throw new GovUkIdNotFoundException(postcode);
 		}
 
-		var collectorName = CollectorNameRegex().Match(clientSideResponse.Content).Groups["CollectorName"].Value;
+		var collectorName = CollectorNameRegex().Match(clientSideResponse.Content).Groups["CollectorName"].Value.Trim();
+
+		// Some GOV.UK responses contain the council ID in a redirect header but omit local-authority markup.
 		if (string.IsNullOrWhiteSpace(collectorName))
 		{
-			throw new InvalidOperationException($"No collector name found in gov.uk response for ID: {govUkId}.");
+			collectorName = govUkId;
 		}
 
 		// Get collector with matching gov.uk id
