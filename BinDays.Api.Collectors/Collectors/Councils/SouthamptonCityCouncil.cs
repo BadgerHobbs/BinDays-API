@@ -203,19 +203,13 @@ internal sealed partial class SouthamptonCityCouncil : GovUkCollectorBase, IColl
 		else if (clientSideResponse.RequestId == 3)
 		{
 			var requestCookies = clientSideResponse.Options.Metadata["cookie"];
-			if (clientSideResponse.Headers.ContainsKey("set-cookie"))
+			if (clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader))
 			{
-				var setCookieHeader = clientSideResponse.Headers["set-cookie"];
 				var responseCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 				requestCookies = $"{requestCookies}; {responseCookies}";
 			}
 
-			var addressLookupRequest = CreateAddressLookupRequest(postcode, clientSideResponse.Content, requestCookies, 4);
-			if (addressLookupRequest == null)
-			{
-				throw new InvalidOperationException("Could not find required '__RequestVerificationToken' for address lookup.");
-			}
-
+			var addressLookupRequest = CreateAddressLookupRequest(postcode, clientSideResponse.Content, requestCookies, 4) ?? throw new InvalidOperationException("Could not find required '__RequestVerificationToken' for address lookup.");
 			var getAddressesResponse = new GetAddressesResponse
 			{
 				NextClientSideRequest = addressLookupRequest,
