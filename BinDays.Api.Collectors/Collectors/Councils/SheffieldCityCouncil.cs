@@ -99,14 +99,17 @@ internal sealed class SheffieldCityCouncil : GovUkCollectorBase, ICollector
 			var addresses = new List<Address>();
 			foreach (var rawAddress in rawAddresses)
 			{
-				var uid = rawAddress.GetProperty("id").GetString()!;
+				var id = rawAddress.GetProperty("id").GetString()!;
 				var property = rawAddress.GetProperty("name").GetString()!.Trim();
+				// Some addresses (e.g. converted properties) use a non-PointAddress type in getCollectionDays
+				var type = rawAddress.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : null;
 
 				var address = new Address
 				{
 					Property = property,
 					Postcode = postcode,
-					Uid = uid,
+					// Uid format: "id" or "id;pointType" for non-PointAddress records
+					Uid = !string.IsNullOrEmpty(type) && type != "PointAddress" ? $"{id};{type}" : id,
 				};
 
 				addresses.Add(address);
@@ -130,10 +133,15 @@ internal sealed class SheffieldCityCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
+			// Uid format: "id" or "id;pointType" for non-PointAddress records
+			var uidParts = address.Uid!.Split(';', 2);
+			var pointId = uidParts[0];
+			var pointType = uidParts.Length == 2 ? uidParts[1] : "PointAddress";
+
 			var requestBody = $$"""
 			{
-				"pointId": "{{address.Uid}}",
-				"pointType": "PointAddress",
+				"pointId": "{{pointId}}",
+				"pointType": "{{pointType}}",
 				"councilId": "{{_councilId}}"
 			}
 			""";
