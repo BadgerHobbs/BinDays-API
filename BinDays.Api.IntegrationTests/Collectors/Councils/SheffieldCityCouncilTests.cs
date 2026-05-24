@@ -20,14 +20,15 @@ public class SheffieldCityCouncilTests
 
 	[Theory]
 	[InlineData("S2 2RE")]
-	[InlineData("S10 1QP")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("S10 1QP", 36)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			addressIndex
 		);
 	}
 }
