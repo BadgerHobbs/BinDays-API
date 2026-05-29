@@ -68,7 +68,7 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 	/// <summary>
 	/// Regex for the addresses from the data.
 	/// </summary>
-	[GeneratedRegex(@"<li>\s*<a href=""/bin-collection/weeks/(?<uid>\d+)"">(?<street>[^<]+)</a>\s*</li>")]
+	[GeneratedRegex(@"<li>\s*<a href=""/bin-collection(?:-better-recycling)?/weeks/(?<uid>\d+)"">(?<street>[^<]+)</a>\s*</li>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
