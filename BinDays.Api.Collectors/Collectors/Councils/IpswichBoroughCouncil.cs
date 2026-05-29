@@ -68,7 +68,7 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 	/// <summary>
 	/// Regex for the addresses from the data.
 	/// </summary>
-	[GeneratedRegex(@"<li>\s*<a href=""/bin-collection(?:-better-recycling)?/weeks/(?<uid>\d+)"">(?<street>[^<]+)</a>\s*</li>")]
+	[GeneratedRegex(@"<li>\s*<a href=""/(?<path>bin-collection(?:-better-recycling)?)/weeks/(?<uid>\d+)"">(?<street>[^<]+)</a>\s*</li>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
@@ -86,15 +86,15 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting addresses
+		var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
+		{
+			{ "street-input", postcode },
+			{ "submit-button", string.Empty },
+		});
+
+		// Prepare client-side request for getting addresses (standard path)
 		if (clientSideResponse == null)
 		{
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "street-input", postcode },
-				{ "submit-button", string.Empty },
-			});
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
@@ -115,34 +115,41 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 
 			return getAddressesResponse;
 		}
-		// Process addresses from response
+		// Process addresses from standard path; fall back to better-recycling path if none found
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
-			// Iterate through each address, and create a new address object
-			var addresses = new List<Address>();
-			foreach (Match rawAddress in rawAddresses)
+			if (rawAddresses.Count == 0)
 			{
-				var street = WebUtility.HtmlDecode(rawAddress.Groups["street"].Value.Trim());
-				var uid = rawAddress.Groups["uid"].Value.Trim();
-
-				var address = new Address
+				var clientSideRequest = new ClientSideRequest
 				{
-					Property = street,
-					Postcode = postcode,
-					Uid = uid,
+					RequestId = 2,
+					Url = $"{_baseUrl}/bin-collection-better-recycling/",
+					Method = "POST",
+					Headers = new()
+					{
+						{ "user-agent", Constants.UserAgent },
+						{ "content-type", Constants.FormUrlEncoded },
+					},
+					Body = requestBody,
 				};
 
-				addresses.Add(address);
+				var getAddressesResponse = new GetAddressesResponse
+				{
+					NextClientSideRequest = clientSideRequest,
+				};
+
+				return getAddressesResponse;
 			}
 
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				Addresses = [.. addresses],
-			};
-
-			return getAddressesResponse;
+			return ParseAddressesResponse(postcode, rawAddresses);
+		}
+		// Process addresses from better-recycling path
+		else if (clientSideResponse.RequestId == 2)
+		{
+			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+			return ParseAddressesResponse(postcode, rawAddresses);
 		}
 
 		// Throw exception for invalid request
@@ -155,10 +162,27 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
+			// Uid format: "path;uid" (e.g., "bin-collection-better-recycling;12345")
+			string path;
+			string uid;
+
+			if (address.Uid!.Contains(';'))
+			{
+				var parts = address.Uid.Split(';', 2);
+				path = parts[0];
+				uid = parts[1];
+			}
+			else
+			{
+				// TODO: Remove once legacy UIDs are no longer in circulation
+				path = "bin-collection-better-recycling";
+				uid = address.Uid;
+			}
+
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"{_baseUrl}/bin-collection-better-recycling/weeks/{address.Uid!}",
+				Url = $"{_baseUrl}/{path}/weeks/{uid}",
 				Method = "GET",
 			};
 
@@ -219,5 +243,36 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Parses address matches into an addresses response, storing the URL path in each UID.
+	/// </summary>
+	private static GetAddressesResponse ParseAddressesResponse(string postcode, MatchCollection rawAddresses)
+	{
+		// Iterate through each address, and create a new address object
+		var addresses = new List<Address>();
+		foreach (Match rawAddress in rawAddresses)
+		{
+			var street = WebUtility.HtmlDecode(rawAddress.Groups["street"].Value.Trim());
+			var path = rawAddress.Groups["path"].Value.Trim();
+			var uid = rawAddress.Groups["uid"].Value.Trim();
+
+			var address = new Address
+			{
+				Property = street,
+				Postcode = postcode,
+				Uid = $"{path};{uid}",
+			};
+
+			addresses.Add(address);
+		}
+
+		var getAddressesResponse = new GetAddressesResponse
+		{
+			Addresses = [.. addresses],
+		};
+
+		return getAddressesResponse;
 	}
 }
