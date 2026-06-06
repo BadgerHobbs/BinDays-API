@@ -5,19 +5,18 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 
 /// <summary>
 /// Collector implementation for Reigate and Banstead Borough Council.
 /// </summary>
-internal sealed partial class ReigateAndBansteadCouncil : GovUkCollectorBase, ICollector
+internal sealed class ReigateAndBansteadCouncil : GovUkCollectorBase, ICollector
 {
 	/// <inheritdoc/>
 	public string Name => "Reigate and Banstead Borough Council";
 
 	/// <inheritdoc/>
-	public Uri WebsiteUrl => new("https://whereilive.reigate-banstead.gov.uk");
+	public Uri WebsiteUrl => new("https://www.reigate-banstead.gov.uk/");
 
 	/// <inheritdoc/>
 	public override string GovUkId => "reigate-and-banstead";
@@ -59,36 +58,16 @@ internal sealed partial class ReigateAndBansteadCouncil : GovUkCollectorBase, IC
 		},
 	];
 
-	/// <summary>
-	/// Regex for the CSRF token from the Laravel search form.
-	/// </summary>
-	[GeneratedRegex(@"<input[^>]*?name=""_token""[^>]*?value=""(?<token>[^""]+)""[^>]*?/?>")]
-	private static partial Regex TokenRegex();
-
-	/// <summary>
-	/// Regex for the addresses from the UPRN select options.
-	/// </summary>
-	[GeneratedRegex(@"<option value=""(?<uprn>\d+)"">(?<address>[^<]+)</option>")]
-	private static partial Regex AddressRegex();
-
-	/// <summary>
-	/// Regex for the bin day service name and date from the waste page.
-	/// </summary>
-	[GeneratedRegex(
-		@"Your next\s+<span[^>]*?class=""govuk-!-font-weight-bold""[^>]*?>\s*(?<service>[^<]+?)\s*</span[^>]*?>\s+is on\s+<br[^>]*?/?>\s+<span[^>]*?class=""govuk-!-font-weight-bold""[^>]*?>\s*(?<date>[^<]+?)\s*</span[^>]*?>",
-		RegexOptions.Singleline)]
-	private static partial Regex BinDayRegex();
-
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting token
+		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = "https://whereilive.reigate-banstead.gov.uk/search",
+				Url = $"https://search.xmap.cloud/4b694cc0-e544-46e0-85a2-c277aa12d08b/addressbase/{postcode}?pc=R",
 				Method = "GET",
 			};
 
@@ -99,56 +78,20 @@ internal sealed partial class ReigateAndBansteadCouncil : GovUkCollectorBase, IC
 
 			return getAddressesResponse;
 		}
-		// Prepare client-side request for getting addresses
+		// Process addresses from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
-			var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
-
-			var token = TokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "_token", token },
-				{ "postcode", postcode },
-				{ "flow", "postcode" },
-			});
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = "https://whereilive.reigate-banstead.gov.uk/search",
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-					{ "cookie", cookie },
-				},
-				Body = requestBody,
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		// Process addresses from response
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
 			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
-			foreach (Match rawAddress in rawAddresses)
+			foreach (var addressElement in jsonDoc.RootElement.GetProperty("data").EnumerateArray())
 			{
 				var address = new Address
 				{
-					Property = WebUtility.HtmlDecode(rawAddress.Groups["address"].Value).Trim(),
+					Property = addressElement.GetProperty("postal_address").GetString()!.Trim(),
 					Postcode = postcode,
-					Uid = rawAddress.Groups["uprn"].Value.Trim(),
+					Uid = addressElement.GetProperty("uprn").GetInt64().ToString(),
 				};
 
 				addresses.Add(address);
@@ -162,7 +105,6 @@ internal sealed partial class ReigateAndBansteadCouncil : GovUkCollectorBase, IC
 			return getAddressesResponse;
 		}
 
-		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
@@ -175,7 +117,7 @@ internal sealed partial class ReigateAndBansteadCouncil : GovUkCollectorBase, IC
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://whereilive.reigate-banstead.gov.uk/waste/{address.Uid!}",
+				Url = $"https://api.hub.xmap.cloud/reigatebanstead/waste/collection/{address.Uid!}",
 				Method = "GET",
 			};
 
@@ -189,14 +131,14 @@ internal sealed partial class ReigateAndBansteadCouncil : GovUkCollectorBase, IC
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var rawBinDays = BinDayRegex().Matches(clientSideResponse.Content)!;
+			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
 			// Iterate through each bin day, and create a new bin day object
 			var binDays = new List<BinDay>();
-			foreach (Match rawBinDay in rawBinDays)
+			foreach (var collectionElement in jsonDoc.RootElement.GetProperty("data").EnumerateArray())
 			{
-				var service = rawBinDay.Groups["service"].Value.Trim();
-				var date = rawBinDay.Groups["date"].Value.Trim();
+				var service = collectionElement.GetProperty("waste_next_collection_type").GetString()!;
+				var dateString = collectionElement.GetProperty("waste_next_collection_day").GetString()!;
 
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
@@ -205,11 +147,11 @@ internal sealed partial class ReigateAndBansteadCouncil : GovUkCollectorBase, IC
 					continue;
 				}
 
-				var collectionDate = DateUtilities.ParseDateInferringYear(date, "dddd dd MMMM");
+				var date = DateUtilities.ParseDateInferringYear(dateString, "dddd d MMMM");
 
 				var binDay = new BinDay
 				{
-					Date = collectionDate,
+					Date = date,
 					Address = address,
 					Bins = matchedBins,
 				};
@@ -225,7 +167,6 @@ internal sealed partial class ReigateAndBansteadCouncil : GovUkCollectorBase, IC
 			return getBinDaysResponse;
 		}
 
-		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }
