@@ -163,7 +163,7 @@ internal sealed partial class NorwichCityCouncil : GovUkCollectorBase, ICollecto
 	{
 		// TODO: Remove once legacy UIDs are no longer in circulation.
 		// Addresses cached before this fix use the old "{track};{pIndex}" format.
-		var pIndex = address.Uid!.Contains(';') ? address.Uid.Split(';', 2)[1] : address.Uid;
+		var pIndex = address.Uid!.Split(';')[^1];
 
 		// Prepare client-side request for getting the postcode form
 		if (clientSideResponse == null)
