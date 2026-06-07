@@ -58,15 +58,15 @@ internal sealed partial class NorwichCityCouncil : GovUkCollectorBase, ICollecto
 	private const string _baseUrl = "https://bnr-wrp.whitespacews.com";
 
 	/// <summary>
-	/// Regex for extracting the address lookup URL.
+	/// Regex for extracting the session track identifier.
 	/// </summary>
-	[GeneratedRegex(@"<form action=""(?<addressLookupUrl>https://bnr-wrp\.whitespacews\.com/mop\.php\?serviceID=A&Track=[^""]+&seq=2)""\s+method=""post""\s+oldTarget=""MoP""\s+align=""left""\s+data-form-title=""Property Lookup Form"">")]
-	private static partial Regex AddressLookupUrlRegex();
+	[GeneratedRegex(@"mop\.php\?serviceID=A&Track=(?<track>[^&""]+)&seq=2")]
+	private static partial Regex TrackRegex();
 
 	/// <summary>
 	/// Regex for extracting addresses from the address list.
 	/// </summary>
-	[GeneratedRegex(@"href=""mop\.php\?Track=(?<track>[^&""]+)&serviceID=A&seq=3&pIndex=(?<pIndex>\d+)""[^>]*>\s*(?<address>[^<]+)\s*</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
+	[GeneratedRegex(@"href=""mop\.php\?Track=[^&""]+&serviceID=A&seq=3&pIndex=(?<pIndex>\d+)""[^>]*>\s*(?<address>[^<]+)\s*</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
@@ -98,7 +98,7 @@ internal sealed partial class NorwichCityCouncil : GovUkCollectorBase, ICollecto
 		// Prepare client-side request for address lookup
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var addressLookupUrl = AddressLookupUrlRegex().Match(clientSideResponse.Content).Groups["addressLookupUrl"].Value;
+			var track = TrackRegex().Match(clientSideResponse.Content).Groups["track"].Value;
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -108,7 +108,7 @@ internal sealed partial class NorwichCityCouncil : GovUkCollectorBase, ICollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = addressLookupUrl,
+				Url = $"{_baseUrl}/mop.php?serviceID=A&Track={track}&seq=2",
 				Method = "POST",
 				Headers = new()
 				{
@@ -134,15 +134,13 @@ internal sealed partial class NorwichCityCouncil : GovUkCollectorBase, ICollecto
 			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
-				var track = rawAddress.Groups["track"].Value;
 				var pIndex = rawAddress.Groups["pIndex"].Value;
 
-				// Uid format: "track;pIndex"
 				var address = new Address
 				{
 					Property = rawAddress.Groups["address"].Value.Trim(),
 					Postcode = postcode,
-					Uid = $"{track};{pIndex}",
+					Uid = pIndex,
 				};
 
 				addresses.Add(address);
@@ -163,17 +161,72 @@ internal sealed partial class NorwichCityCouncil : GovUkCollectorBase, ICollecto
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Uid format: "track;pIndex"
-		var uidParts = address.Uid!.Split(';', 2);
-		var track = uidParts[0];
-		var pIndex = uidParts[1];
+		// TODO: Remove once legacy UIDs are no longer in circulation.
+		// Addresses cached before this fix use the old "{track};{pIndex}" format.
+		var pIndex = address.Uid!.Contains(';') ? address.Uid.Split(';', 2)[1] : address.Uid;
 
-		// Prepare client-side request for getting bin days
+		// Prepare client-side request for getting the postcode form
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
+				Url = $"{_baseUrl}/?serviceID=A&seq=1",
+				Method = "GET",
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return getBinDaysResponse;
+		}
+		// Prepare client-side request for address lookup
+		else if (clientSideResponse.RequestId == 1)
+		{
+			var track = TrackRegex().Match(clientSideResponse.Content).Groups["track"].Value;
+
+			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
+			{
+				{ "address_postcode", address.Postcode! },
+			});
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = $"{_baseUrl}/mop.php?serviceID=A&Track={track}&seq=2",
+				Method = "POST",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.FormUrlEncoded },
+				},
+				Body = requestBody,
+				Options = new ClientSideOptions
+				{
+					Metadata =
+					{
+						{ "track", track },
+					},
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return getBinDaysResponse;
+		}
+		// Prepare client-side request for bin collection details
+		else if (clientSideResponse.RequestId == 2)
+		{
+			var track = clientSideResponse.Options.Metadata["track"];
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 3,
 				Url = $"{_baseUrl}/mop.php?Track={track}&serviceID=A&seq=3&pIndex={pIndex}",
 				Method = "GET",
 			};
@@ -186,7 +239,7 @@ internal sealed partial class NorwichCityCouncil : GovUkCollectorBase, ICollecto
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 1)
+		else if (clientSideResponse.RequestId == 3)
 		{
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
 
