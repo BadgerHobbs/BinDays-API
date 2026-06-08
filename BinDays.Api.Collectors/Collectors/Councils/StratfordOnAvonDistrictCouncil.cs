@@ -59,11 +59,14 @@ internal sealed partial class StratfordOnAvonDistrictCouncil : GovUkCollectorBas
 	/// <summary>
 	/// Regex for the bin collection rows.
 	/// </summary>
-	[GeneratedRegex(
-		@"<tr>\s*<td>(?<date>[^<]+)</td>\s*<td[^>]*>(?<food>.*?)</td>\s*<td[^>]*>(?<recycling>.*?)</td>\s*<td[^>]*>(?<refuse>.*?)</td>",
-		RegexOptions.Singleline
-	)]
+	[GeneratedRegex(@"<tr>\s*<td>(?<date>[^<]+)</td>(?<cells>.*?)</tr>", RegexOptions.Singleline)]
 	private static partial Regex BinRowsRegex();
+
+	/// <summary>
+	/// Regex for cells that contain a check mark, capturing their title.
+	/// </summary>
+	[GeneratedRegex(@"<td[^>]+title=""(?<title>[^""]+)""[^>]*>(?:(?!</?td).)*?check-img", RegexOptions.Singleline)]
+	private static partial Regex CheckedCellRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -201,35 +204,19 @@ internal sealed partial class StratfordOnAvonDistrictCouncil : GovUkCollectorBas
 			var binDays = new List<BinDay>();
 			foreach (Match rawBinRow in rawBinRows)
 			{
-				var dateText = rawBinRow.Groups["date"].Value.Trim();
+				var date = DateUtilities.ParseDateExact(rawBinRow.Groups["date"].Value.Trim(), "dddd, dd/MM/yyyy");
 
-				var date = DateUtilities.ParseDateExact(dateText, "dddd, dd/MM/yyyy");
+				var bins = CheckedCellRegex()
+					.Matches(rawBinRow.Groups["cells"].Value)!
+					.SelectMany(m => ProcessingUtilities.GetMatchingBins(_binTypes, m.Groups["title"].Value))
+					.ToList();
 
-				var bins = new List<Bin>();
-
-				(string Group, string Key)[] binChecks =
-				[
-					("food", "Food waste"),
-					("recycling", "Recycling"),
-					("refuse", "Refuse"),
-				];
-
-				foreach (var binCheck in binChecks)
-				{
-					if (rawBinRow.Groups[binCheck.Group].Value.Contains("check-img", StringComparison.OrdinalIgnoreCase))
-					{
-						bins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, binCheck.Key));
-					}
-				}
-
-				var binDay = new BinDay
+				binDays.Add(new BinDay
 				{
 					Date = date,
 					Address = address,
 					Bins = bins,
-				};
-
-				binDays.Add(binDay);
+				});
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse

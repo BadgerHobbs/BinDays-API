@@ -20,13 +20,15 @@ public class StratfordOnAvonDistrictCouncilTests
 
 	[Theory]
 	[InlineData("CV37 0TH")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("CV37 0TH", 32)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			addressIndex
 		);
 	}
 }
