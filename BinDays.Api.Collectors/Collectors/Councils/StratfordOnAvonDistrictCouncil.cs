@@ -65,7 +65,7 @@ internal sealed partial class StratfordOnAvonDistrictCouncil : GovUkCollectorBas
 	/// <summary>
 	/// Regex for cells that contain a check mark, capturing their title.
 	/// </summary>
-	[GeneratedRegex(@"<td[^>]+title=""(?<title>[^""]+)""[^>]*>.*?check-img", RegexOptions.Singleline)]
+	[GeneratedRegex(@"<td[^>]+title=""(?<title>[^""]+)""[^>]*>(?:(?!</?td).)*?check-img", RegexOptions.Singleline)]
 	private static partial Regex CheckedCellRegex();
 
 	/// <inheritdoc/>
