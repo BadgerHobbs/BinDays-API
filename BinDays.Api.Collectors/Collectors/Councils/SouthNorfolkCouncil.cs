@@ -31,13 +31,33 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 		{
 			Name = "General Waste",
 			Colour = BinColour.Black,
-			Keys = [ "RefuseBin" ],
+			Keys = [ "Ref date", "Ref this" ],
 		},
 		new()
 		{
 			Name = "Mixed Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "RecycleBin" ],
+			Keys = [ "Rec date", "Rec this" ],
+		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Brown,
+			Keys = [ "Grn date", "Grn this" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [
+				"Food date",
+				"Fd date",
+				"Fod date",
+				"Food this",
+				"Fd this",
+				"Fod this"
+			],
+			Type = BinType.Caddy,
 		},
 	];
 
@@ -293,18 +313,21 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 							continue;
 						}
 
-						var binKey = cellContent.Contains("Rec date", StringComparison.OrdinalIgnoreCase) ? "RecycleBin" : "RefuseBin";
-						var date = new DateOnly(firstOfMonth.Year, firstOfMonth.Month, day);
-						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binKey);
+						var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, cellContent);
 
-						var binDay = new BinDay
+						if (matchedBinTypes.Count == 0)
+						{
+							continue;
+						}
+
+						var date = new DateOnly(firstOfMonth.Year, firstOfMonth.Month, day);
+
+						binDays.Add(new BinDay
 						{
 							Date = date,
 							Address = address,
 							Bins = matchedBinTypes,
-						};
-
-						binDays.Add(binDay);
+						});
 					}
 				}
 			}

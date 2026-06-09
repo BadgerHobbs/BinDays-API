@@ -20,13 +20,15 @@ public class SouthNorfolkCouncilTests
 
 	[Theory]
 	[InlineData("NR18 0HQ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NR8 5GS", 16)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			addressIndex
 		);
 	}
 }
