@@ -54,6 +54,13 @@ internal sealed partial class SouthGloucestershireCouncil : GovUkCollectorBase, 
 			Keys = [ "Garden" ],
 			Type = BinType.Bin,
 		},
+		new()
+		{
+			Name = "Hygiene or nappy waste",
+			Colour = BinColour.Purple,
+			Keys = [ "AHP" ],
+			Type = BinType.Bag,
+		},
 	];
 
 	/// <inheritdoc/>
@@ -155,6 +162,11 @@ internal sealed partial class SouthGloucestershireCouncil : GovUkCollectorBase, 
 
 				// Find matching bin types based on the service name containing a key (case-insensitive)
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, serviceName);
+
+				if (matchedBins.Count == 0)
+				{
+					continue;
+				}
 
 				foreach (var collectionDate in collectionDates)
 				{
