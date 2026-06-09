@@ -63,7 +63,7 @@ internal sealed partial class WestSuffolkDistrictCouncil : GovUkCollectorBase, I
 	/// <summary>
 	/// Regex for the bin collection entries from the HTML response.
 	/// </summary>
-	[GeneratedRegex(@"<strong>(?<type>[^:]+):</strong>\s*(?<date>(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) \d+(?:st|nd|rd|th)? (?:January|February|March|April|May|June|July|August|September|October|November|December))", RegexOptions.Singleline)]
+	[GeneratedRegex(@"<strong>(?<type>[^:]+):</strong>\s*(?<date>(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) \d+(?:st|nd|rd|th)?\s+(?:January|February|March|April|May|June|July|August|September|October|November|December))", RegexOptions.Singleline)]
 	private static partial Regex BinDaysRegex();
 
 	/// <summary>
@@ -189,7 +189,7 @@ internal sealed partial class WestSuffolkDistrictCouncil : GovUkCollectorBase, I
 				var rawType = rawBinDay.Groups["type"].Value;
 				var type = string.Join(" ", rawType.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
 
-				var rawDate = rawBinDay.Groups["date"].Value.Trim();
+				var rawDate = string.Join(" ", rawBinDay.Groups["date"].Value.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
 				var dateString = OrdinalSuffixRegex().Replace(rawDate, "");
 				var date = DateUtilities.ParseDateInferringYear(dateString, "dddd d MMMM");
 
