@@ -18,11 +18,30 @@ internal sealed class IntegrationTestClient
 	private readonly HttpClient _apiClient;
 	private readonly string _dartCliPath;
 	private readonly ITestOutputHelper _outputHelper;
+	private readonly CurlImpersonateClient _curlImpersonateClient;
+
+	/// <summary>
+	/// Hosts that are always executed via the Dart/Dio transport, even when impersonation is
+	/// enabled. The gov.uk verification step is never behind a Cloudflare challenge and relies on
+	/// the Dio redirect behaviour, so it must not be routed through curl-impersonate.
+	/// </summary>
+	private static readonly HashSet<string> _dartOnlyHosts = new(StringComparer.OrdinalIgnoreCase)
+	{
+		"www.gov.uk",
+		"gov.uk",
+	};
 
 	private static readonly JsonSerializerOptions _jsonOptions = new()
 	{
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 	};
+
+	/// <summary>
+	/// Gets or sets a value indicating whether council requests are executed via curl-impersonate
+	/// instead of the Dart/Dio transport. Used for councils behind a Cloudflare TLS-fingerprint
+	/// challenge that blocks the test transport but not real devices.
+	/// </summary>
+	public bool UseImpersonate { get; set; }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="IntegrationTestClient"/> class.
@@ -33,6 +52,7 @@ internal sealed class IntegrationTestClient
 		_apiClient = BinDaysApiFactory.CreateClient();
 		_outputHelper = outputHelper;
 		_dartCliPath = ResolveDartCliPath();
+		_curlImpersonateClient = new CurlImpersonateClient(outputHelper);
 	}
 
 	/// <summary>
@@ -123,10 +143,27 @@ internal sealed class IntegrationTestClient
 	}
 
 	/// <summary>
+	/// Sends a single client-side HTTP request. Uses the Dart/Dio CLI by default to match
+	/// production behaviour, or curl-impersonate when <see cref="UseImpersonate"/> is enabled for
+	/// councils behind a Cloudflare TLS-fingerprint challenge (gov.uk requests always use Dart).
+	/// </summary>
+	private async Task<ClientSideResponse> SendClientSideRequestAsync(ClientSideRequest request)
+	{
+		var host = new Uri(request.Url).Host;
+
+		if (UseImpersonate && !_dartOnlyHosts.Contains(host))
+		{
+			return await _curlImpersonateClient.SendAsync(request);
+		}
+
+		return await SendViaDartAsync(request);
+	}
+
+	/// <summary>
 	/// Sends a single client-side HTTP request by spawning the Dart/Dio CLI process.
 	/// The CLI executes the request using the real Dio HTTP client, matching production behaviour.
 	/// </summary>
-	private async Task<ClientSideResponse> SendClientSideRequestAsync(ClientSideRequest request)
+	private async Task<ClientSideResponse> SendViaDartAsync(ClientSideRequest request)
 	{
 		var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
 

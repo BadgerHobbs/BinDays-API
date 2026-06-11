@@ -26,7 +26,8 @@ public class SunderlandCityCouncilTests
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			useImpersonate: true
 		);
 	}
 }

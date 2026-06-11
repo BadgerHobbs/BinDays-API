@@ -406,6 +406,26 @@ Headers = new()
 
 **Headers that are safe to skip**: `dnt`, `pragma`, `cache-control`, `te`, `priority` — these are not primary detection signals and add noise without benefit.
 
+### Cloudflare TLS-fingerprint challenges (`useImpersonate`)
+
+Some councils (e.g. Southampton, Sunderland) sit behind a Cloudflare **managed challenge** that fingerprints the TLS handshake (JA3/JA4) and HTTP/2 settings — not just headers. The mobile app's native HTTP stack on a residential IP usually passes this, but the integration-test transport (Dart/Dio — HTTP/1.1, non-browser JA3) is reliably blocked with a `403` / `cf-mitigated: challenge`, so the test fails even though production works.
+
+**You cannot fix this with headers** — it is a transport-layer fingerprint, not a header problem. Do **not** add browser header sets to the collector to try to beat it (it won't help and it contradicts the minimal-header guidance above).
+
+Instead, opt the council's integration test into the curl-impersonate transport, which replays a real Chrome TLS/HTTP2 fingerprint:
+
+```c#
+await TestSteps.EndToEnd(
+    _client,
+    postcode,
+    _govUkId,
+    _outputHelper,
+    useImpersonate: true
+);
+```
+
+This routes the council's own requests through `curl-impersonate` (the gov.uk verification step stays on the normal transport). The collector implementation itself is unchanged — keep its headers minimal as usual. Only use this when a council is genuinely behind a Cloudflare TLS challenge; the default Dart transport remains correct for everything else.
+
 ---
 
 ## Request Bodies & JSON Payloads

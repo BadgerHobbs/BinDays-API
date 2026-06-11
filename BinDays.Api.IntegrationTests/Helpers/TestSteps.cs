@@ -23,14 +23,18 @@ internal static class TestSteps
 	/// <param name="expectedGovUkId">The expected GOV.UK ID of the collector.</param>
 	/// <param name="outputHelper">The test output helper.</param>
 	/// <param name="addressIndex">Optional zero-based index of the address to select. Defaults to 0 (first address).</param>
+	/// <param name="useImpersonate">When true, council requests are executed via curl-impersonate. Use for councils behind a Cloudflare TLS-fingerprint challenge.</param>
 	/// <returns>A task that represents the asynchronous operation.</returns>
 	public static async Task EndToEnd(
 		IntegrationTestClient client,
 		string postcode,
 		string expectedGovUkId,
 		ITestOutputHelper outputHelper,
-		int addressIndex = 0)
+		int addressIndex = 0,
+		bool useImpersonate = false)
 	{
+		client.UseImpersonate = useImpersonate;
+
 		await EndToEndAsync(
 			client,
 			postcode,
