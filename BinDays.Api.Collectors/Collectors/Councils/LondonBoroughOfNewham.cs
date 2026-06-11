@@ -216,7 +216,7 @@ internal sealed partial class LondonBoroughOfNewham : GovUkCollectorBase, IColle
 						continue;
 					}
 
-					var date = DateUtilities.ParseDateExact(dateText, "M/d/yyyy");
+					var date = DateUtilities.ParseDateExact(dateText, "d/M/yyyy");
 
 					var binDay = new BinDay
 					{

@@ -1390,6 +1390,17 @@ dateString = OrdinalSuffixRegex().Replace(dateString, "");
 var date = DateUtilities.ParseDateExact(dateString, "d MMMM yyyy");
 ```
 
+### ✅ DO: Default to UK (day-first) date format strings
+
+**Reason**: Councils are UK-based and almost always return dates in British day-first format. Using `M/d/yyyy` silently produces wrong dates when the day is ≤ 12, then throws a `FormatException` once a day > 12 is encountered.
+
+```c#
+var date = DateUtilities.ParseDateExact(dateText, "d/M/yyyy");   // ✅ UK format
+var date = DateUtilities.ParseDateExact(dateText, "dd/MM/yyyy"); // ✅ UK format
+```
+
+Only use a US-format string if you have verified the raw API response uses month-first dates. `SouthamptonCityCouncil` is the one known exception.
+
 ### ✅ DO: Use the correct DateUtilities method for the date format
 
 **Reason**: Each method enforces the right format contract at the boundary and redirects misuse with a clear error.
@@ -2255,6 +2266,7 @@ Before submitting a PR, check:
 **Code Style:**
 
 - [ ] All multi-line initializers have trailing commas
+- [ ] Date format strings default to UK day-first (`d/M/yyyy`, `dd/MM/yyyy`, `d MMMM yyyy`, etc.) — only use US month-first if the raw API response is verified to require it
 - [ ] Date parsing uses multi-line format
 - [ ] Closing parenthesis on separate line for multi-line calls
 - [ ] No unused using statements (especially System.Web, System.Linq if not used)
