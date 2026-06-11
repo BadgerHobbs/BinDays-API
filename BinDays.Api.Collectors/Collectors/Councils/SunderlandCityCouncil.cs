@@ -51,23 +51,23 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 	/// The URL for the bin day checker form. The 'ccp=true' parameter pre-acknowledges the
 	/// cookie-consent prompt so the page renders directly instead of redirecting to it.
 	/// </summary>
-	private const string FormUrl = "https://www.sunderland.gov.uk/bindays?ccp=true";
+	private const string _formUrl = "https://www.sunderland.gov.uk/bindays?ccp=true";
 
 	/// <summary>
 	/// The URL for submitting a form page.
 	/// </summary>
-	private const string ProcessSubmissionUrl = "https://www.sunderland.gov.uk/apiserver/formsservice/http/processsubmission";
+	private const string _processSubmissionUrl = "https://www.sunderland.gov.uk/apiserver/formsservice/http/processsubmission";
 
 	/// <summary>
 	/// The value used to trigger the form's "next" action.
 	/// </summary>
-	private const string FormActionTrigger = "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_POSTCODETRIGGER";
+	private const string _formActionTrigger = "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_POSTCODETRIGGER";
 
 	/// <summary>
 	/// The initial form variable state (base64-encoded JSON) submitted with a postcode search.
 	/// The GOSS form requires this to trigger the server-side address lookup.
 	/// </summary>
-	private static readonly string InitialVariables = Convert.ToBase64String(Encoding.UTF8.GetBytes(
+	private static readonly string _initialVariables = Convert.ToBase64String(Encoding.UTF8.GetBytes(
 		"""{"buttonpressed":{"value":false,"scope":"SERVERCLIENTWITHUPDATE"},"CHECKADDRESSLISTFOUNDLOCATION":{"value":"NULL","scope":"SERVERCLIENTWITHUPDATE"},"postcodefoundoptionset":{"value":"","scope":"SERVERCLIENTWITHUPDATE"},"postcodefoundfulldetails":{"value":"","scope":"SERVERCLIENTWITHUPDATE"}}"""));
 
 	/// <summary>
@@ -107,55 +107,6 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 	[GeneratedRegex(@"myaccount-block__title[^>]*>(?<service>[^<]+)</p>.*?(?<date>[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{4})", RegexOptions.Singleline)]
 	private static partial Regex BinDaysRegex();
 
-	/// <summary>
-	/// Builds the form data for an address search page submission.
-	/// </summary>
-	/// <param name="pageSessionId">The page session id from the form.</param>
-	/// <param name="sessionId">The session id from the form.</param>
-	/// <param name="nonce">The nonce from the form.</param>
-	/// <param name="variables">The base64-encoded form variable state.</param>
-	/// <param name="pageInstance">The page instance ("0" for the postcode search, "1" for the address selection).</param>
-	/// <param name="postcode">The postcode being searched.</param>
-	/// <param name="selectedUid">The selected address uid, or empty for the postcode search.</param>
-	/// <param name="selectedAddress">The selected address text, or empty for the postcode search.</param>
-	/// <returns>The URL-encoded form data string.</returns>
-	private static string BuildAddressSearchFormData(
-		string pageSessionId,
-		string sessionId,
-		string nonce,
-		string variables,
-		string pageInstance,
-		string postcode,
-		string selectedUid,
-		string selectedAddress)
-	{
-		return ProcessingUtilities.ConvertDictionaryToFormData(new()
-		{
-			{ "BINCOLLECTIONCHECKERNEWV3_PAGESESSIONID", pageSessionId },
-			{ "BINCOLLECTIONCHECKERNEWV3_SESSIONID", sessionId },
-			{ "BINCOLLECTIONCHECKERNEWV3_NONCE", nonce },
-			{ "BINCOLLECTIONCHECKERNEWV3_VARIABLES", variables },
-			{ "BINCOLLECTIONCHECKERNEWV3_PAGENAME", "ADDRESSSEARCH" },
-			{ "BINCOLLECTIONCHECKERNEWV3_PAGEINSTANCE", pageInstance },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_SCCPOSTCODE", postcode },
-			{ "BINCOLLECTIONCHECKERNEWV3_FORMACTION_NEXT", FormActionTrigger },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_SCCLISTOFADDRESSES", selectedUid },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_POSTCODE", selectedUid.Length > 0 ? postcode : "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_UPRN", selectedUid },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_RESIDUALBIN", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_TRADEBIN", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_RECYCLEBIN", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_GARDENBIN", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_NEXTBIN", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_PDFURL", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_LAT", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_LNG", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_ADDRESSTEXT", selectedAddress },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_DATARETURNED", "" },
-			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_DATARETURNED2", "" },
-		});
-	}
-
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
@@ -165,12 +116,8 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = FormUrl,
+				Url = _formUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -188,12 +135,12 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 			var nonce = NonceRegex().Match(clientSideResponse.Content).Groups["nonce"].Value;
 
-			var requestBody = BuildAddressSearchFormData(pageSessionId, sessionId, nonce, InitialVariables, "0", postcode, "", "");
+			var requestBody = BuildAddressSearchFormData(pageSessionId, sessionId, nonce, _initialVariables, "0", postcode, "", "");
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"{ProcessSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
+				Url = $"{_processSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -222,7 +169,7 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 3,
-				Url = FormUrl,
+				Url = _formUrl,
 				Method = "GET",
 				Headers = new()
 				{
@@ -254,12 +201,12 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 			var nonce = NonceRegex().Match(clientSideResponse.Content).Groups["nonce"].Value;
 
-			var requestBody = BuildAddressSearchFormData(pageSessionId, sessionId, nonce, InitialVariables, "0", postcode, "", "");
+			var requestBody = BuildAddressSearchFormData(pageSessionId, sessionId, nonce, _initialVariables, "0", postcode, "", "");
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 4,
-				Url = $"{ProcessSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
+				Url = $"{_processSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -316,12 +263,8 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = FormUrl,
+				Url = _formUrl,
 				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -339,12 +282,12 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 			var nonce = NonceRegex().Match(clientSideResponse.Content).Groups["nonce"].Value;
 
-			var requestBody = BuildAddressSearchFormData(pageSessionId, sessionId, nonce, InitialVariables, "0", address.Postcode!, "", "");
+			var requestBody = BuildAddressSearchFormData(pageSessionId, sessionId, nonce, _initialVariables, "0", address.Postcode!, "", "");
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"{ProcessSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
+				Url = $"{_processSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -373,7 +316,7 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 3,
-				Url = FormUrl,
+				Url = _formUrl,
 				Method = "GET",
 				Headers = new()
 				{
@@ -405,12 +348,12 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 			var nonce = NonceRegex().Match(clientSideResponse.Content).Groups["nonce"].Value;
 
-			var requestBody = BuildAddressSearchFormData(pageSessionId, sessionId, nonce, InitialVariables, "0", address.Postcode!, "", "");
+			var requestBody = BuildAddressSearchFormData(pageSessionId, sessionId, nonce, _initialVariables, "0", address.Postcode!, "", "");
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 4,
-				Url = $"{ProcessSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
+				Url = $"{_processSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -450,7 +393,7 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 5,
-				Url = $"{ProcessSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
+				Url = $"{_processSubmissionUrl}?pageSessionId={pageSessionId}&fsid={sessionId}&fsn={nonce}",
 				Method = "POST",
 				Headers = new()
 				{
@@ -501,5 +444,54 @@ internal sealed partial class SunderlandCityCouncil : GovUkCollectorBase, IColle
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Builds the form data for an address search page submission.
+	/// </summary>
+	/// <param name="pageSessionId">The page session id from the form.</param>
+	/// <param name="sessionId">The session id from the form.</param>
+	/// <param name="nonce">The nonce from the form.</param>
+	/// <param name="variables">The base64-encoded form variable state.</param>
+	/// <param name="pageInstance">The page instance ("0" for the postcode search, "1" for the address selection).</param>
+	/// <param name="postcode">The postcode being searched.</param>
+	/// <param name="selectedUid">The selected address uid, or empty for the postcode search.</param>
+	/// <param name="selectedAddress">The selected address text, or empty for the postcode search.</param>
+	/// <returns>The URL-encoded form data string.</returns>
+	private static string BuildAddressSearchFormData(
+		string pageSessionId,
+		string sessionId,
+		string nonce,
+		string variables,
+		string pageInstance,
+		string postcode,
+		string selectedUid,
+		string selectedAddress)
+	{
+		return ProcessingUtilities.ConvertDictionaryToFormData(new()
+		{
+			{ "BINCOLLECTIONCHECKERNEWV3_PAGESESSIONID", pageSessionId },
+			{ "BINCOLLECTIONCHECKERNEWV3_SESSIONID", sessionId },
+			{ "BINCOLLECTIONCHECKERNEWV3_NONCE", nonce },
+			{ "BINCOLLECTIONCHECKERNEWV3_VARIABLES", variables },
+			{ "BINCOLLECTIONCHECKERNEWV3_PAGENAME", "ADDRESSSEARCH" },
+			{ "BINCOLLECTIONCHECKERNEWV3_PAGEINSTANCE", pageInstance },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_SCCPOSTCODE", postcode },
+			{ "BINCOLLECTIONCHECKERNEWV3_FORMACTION_NEXT", _formActionTrigger },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_SCCLISTOFADDRESSES", selectedUid },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_POSTCODE", selectedUid.Length > 0 ? postcode : "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_UPRN", selectedUid },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_RESIDUALBIN", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_TRADEBIN", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_RECYCLEBIN", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_GARDENBIN", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_NEXTBIN", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_PDFURL", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_LAT", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_LNG", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_ADDRESSTEXT", selectedAddress },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_DATARETURNED", "" },
+			{ "BINCOLLECTIONCHECKERNEWV3_ADDRESSSEARCH_DATARETURNED2", "" },
+		});
 	}
 }

@@ -153,12 +153,13 @@ internal sealed class CurlImpersonateClient
 			args.Add("--location");
 		}
 
-		// Only set the method explicitly when there is no body. With a body, --data-binary
-		// already implies POST; additionally forcing --request POST makes curl re-issue the
+		// Set the method explicitly, except for a POST with a body. There, --data-binary already
+		// implies POST, and additionally forcing --request POST would make curl re-issue the
 		// request as POST after a 303 redirect (with no body, yielding 411 Length Required),
-		// whereas the correct behaviour — matching browsers and the app's Dio client — is to
-		// GET the redirect target.
-		if (dataFile == null && !string.Equals(request.Method, "GET", StringComparison.OrdinalIgnoreCase))
+		// whereas the correct behaviour — matching browsers and the app's Dio client — is to GET
+		// the redirect target. Other methods (PUT, PATCH, DELETE) still need --request.
+		var isPostWithBody = dataFile != null && string.Equals(request.Method, "POST", StringComparison.OrdinalIgnoreCase);
+		if (!isPostWithBody && !string.Equals(request.Method, "GET", StringComparison.OrdinalIgnoreCase))
 		{
 			args.Add("--request");
 			args.Add(request.Method);
