@@ -349,6 +349,9 @@ internal sealed class CurlImpersonateClient
 	/// </summary>
 	private static (string Asset, string ExeName) ResolveAsset()
 	{
+		// Windows only ships the shared-library bundle, which also contains the executable and its
+		// DLLs. Linux and macOS ship a separate, statically-linked standalone executable bundle
+		// (the 'lib'-prefixed one is the shared library only, with no executable).
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 		{
 			return ($"libcurl-impersonate-v{_version}.x86_64-win32.tar.gz", "curl-impersonate.exe");
@@ -357,10 +360,10 @@ internal sealed class CurlImpersonateClient
 		if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 		{
 			var arch = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "arm64" : "x86_64";
-			return ($"libcurl-impersonate-v{_version}.{arch}-macos.tar.gz", "curl-impersonate");
+			return ($"curl-impersonate-v{_version}.{arch}-macos.tar.gz", "curl-impersonate");
 		}
 
-		return ($"libcurl-impersonate-v{_version}.x86_64-linux-gnu.tar.gz", "curl-impersonate");
+		return ($"curl-impersonate-v{_version}.x86_64-linux-gnu.tar.gz", "curl-impersonate");
 	}
 
 	/// <summary>
