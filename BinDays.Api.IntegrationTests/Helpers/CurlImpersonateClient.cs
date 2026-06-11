@@ -182,10 +182,12 @@ internal sealed class CurlImpersonateClient
 		args.Add("%{response_code}");
 		args.Add(request.Url);
 
-		// On Linux the binary resolves libcurl-impersonate from the extracted lib directory.
+		// The binary resolves libcurl-impersonate from the extracted lib directory; the dynamic
+		// linker variable differs between macOS and Linux.
 		if (libDir != null)
 		{
-			process.StartInfo.Environment["LD_LIBRARY_PATH"] = libDir;
+			var libPathVariable = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "DYLD_LIBRARY_PATH" : "LD_LIBRARY_PATH";
+			process.StartInfo.Environment[libPathVariable] = libDir;
 		}
 
 		process.Start();
@@ -193,10 +195,14 @@ internal sealed class CurlImpersonateClient
 		var stdoutTask = process.StandardOutput.ReadToEndAsync();
 		var stderrTask = process.StandardError.ReadToEndAsync();
 
-		var exited = process.WaitForExit(60_000);
-		if (!exited)
+		using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+		try
 		{
-			process.Kill();
+			await process.WaitForExitAsync(timeout.Token);
+		}
+		catch (OperationCanceledException)
+		{
+			process.Kill(entireProcessTree: true);
 			throw new TimeoutException("curl-impersonate process timed out after 60 seconds.");
 		}
 
@@ -300,6 +306,16 @@ internal sealed class CurlImpersonateClient
 				await DownloadAndExtractAsync(asset, installDir);
 				exePath = FindExecutable(installDir, exeName)
 					?? throw new FileNotFoundException($"'{exeName}' not found after extracting {asset}.");
+
+				// The extracted binary needs the executable bit on Unix-like systems.
+				if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				{
+					File.SetUnixFileMode(
+						exePath,
+						UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
+						| UnixFileMode.GroupRead | UnixFileMode.GroupExecute
+						| UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+				}
 			}
 
 			var libDir = Directory.Exists(Path.Combine(installDir, "lib"))
@@ -372,10 +388,33 @@ internal sealed class CurlImpersonateClient
 				await response.Content.CopyToAsync(fileStream);
 			}
 
+			// Start from a clean directory so a failed run can't leave a partial install that a
+			// later run mistakes for a complete one.
+			if (Directory.Exists(installDir))
+			{
+				Directory.Delete(installDir, recursive: true);
+			}
+
 			Directory.CreateDirectory(installDir);
 			await using var archiveStream = File.OpenRead(archivePath);
 			await using var gzipStream = new GZipStream(archiveStream, CompressionMode.Decompress);
 			await TarFile.ExtractToDirectoryAsync(gzipStream, installDir, overwriteFiles: true);
+		}
+		catch
+		{
+			if (Directory.Exists(installDir))
+			{
+				try
+				{
+					Directory.Delete(installDir, recursive: true);
+				}
+				catch
+				{
+					// Preserve the original failure rather than masking it with cleanup errors.
+				}
+			}
+
+			throw;
 		}
 		finally
 		{
