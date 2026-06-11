@@ -202,7 +202,15 @@ internal sealed class CurlImpersonateClient
 		}
 		catch (OperationCanceledException)
 		{
-			process.Kill(entireProcessTree: true);
+			try
+			{
+				process.Kill(entireProcessTree: true);
+			}
+			catch (InvalidOperationException)
+			{
+				// The process exited at the timeout boundary; don't mask the timeout.
+			}
+
 			throw new TimeoutException("curl-impersonate process timed out after 60 seconds.");
 		}
 
