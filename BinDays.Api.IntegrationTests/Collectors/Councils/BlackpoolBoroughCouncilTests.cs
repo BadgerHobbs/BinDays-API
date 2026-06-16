@@ -19,14 +19,15 @@ public class BlackpoolBoroughCouncilTests
 	}
 
 	[Theory]
-	[InlineData("FY2 0PP")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("FY2 0PP", 23)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			addressIndex
 		);
 	}
 }
