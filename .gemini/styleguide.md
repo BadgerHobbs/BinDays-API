@@ -412,7 +412,7 @@ Some councils (e.g. Southampton, Sunderland) sit behind a Cloudflare **managed c
 
 **You cannot fix this with headers** — it is a transport-layer fingerprint, not a header problem. Do **not** add browser header sets to the collector to try to beat it (it won't help and it contradicts the minimal-header guidance above).
 
-Instead, opt the council's integration test into the curl-impersonate transport, which replays a real Chrome TLS/HTTP2 fingerprint:
+Instead, opt the council's integration test into the impersonation transport, which makes the Dart/Dio client present a real Chrome TLS/HTTP2 fingerprint:
 
 ```c#
 await TestSteps.EndToEnd(
@@ -424,7 +424,7 @@ await TestSteps.EndToEnd(
 );
 ```
 
-This routes the council's own requests through `curl-impersonate` (the gov.uk verification step stays on the normal transport). The collector implementation itself is unchanged — keep its headers minimal as usual. Only use this when a council is genuinely behind a Cloudflare TLS challenge; the default Dart transport remains correct for everything else.
+This routes the council's own requests through the same Dart/Dio client, but with its transport swapped for [`dio_impersonate`](https://github.com/BadgerHobbs/Dio-Impersonate) (a Dio `HttpClientAdapter` backed by `libcurl-impersonate` via FFI) so the TLS/HTTP-2 fingerprint matches a real browser. The gov.uk verification step stays on the plain Dio transport. The C# harness only passes a boolean to the Dart CLI (`BINDAYS_IMPERSONATE`); all impersonation logic lives in the Dart client. The collector implementation itself is unchanged — keep its headers minimal as usual. Only use this when a council is genuinely behind a Cloudflare TLS challenge; the default Dart transport remains correct for everything else.
 
 ---
 

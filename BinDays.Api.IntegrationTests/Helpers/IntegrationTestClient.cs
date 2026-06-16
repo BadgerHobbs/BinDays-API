@@ -18,12 +18,11 @@ internal sealed class IntegrationTestClient
 	private readonly HttpClient _apiClient;
 	private readonly string _dartCliPath;
 	private readonly ITestOutputHelper _outputHelper;
-	private readonly CurlImpersonateClient _curlImpersonateClient;
 
 	/// <summary>
-	/// Hosts that are always executed via the Dart/Dio transport, even when impersonation is
+	/// Hosts that are always executed via the plain Dart/Dio transport, even when impersonation is
 	/// enabled. The gov.uk verification step is never behind a Cloudflare challenge and relies on
-	/// the Dio redirect behaviour, so it must not be routed through curl-impersonate.
+	/// the Dio redirect behaviour, so it must not be impersonated.
 	/// </summary>
 	private static readonly HashSet<string> _dartOnlyHosts = new(StringComparer.OrdinalIgnoreCase)
 	{
@@ -37,9 +36,10 @@ internal sealed class IntegrationTestClient
 	};
 
 	/// <summary>
-	/// Gets or sets a value indicating whether council requests are executed via curl-impersonate
-	/// instead of the Dart/Dio transport. Used for councils behind a Cloudflare TLS-fingerprint
-	/// challenge that blocks the test transport but not real devices.
+	/// Gets or sets a value indicating whether council requests are executed with browser
+	/// impersonation (the dio_impersonate transport) enabled in the Dart/Dio client. Used for
+	/// councils behind a Cloudflare TLS-fingerprint challenge that blocks the plain test transport
+	/// but not real devices.
 	/// </summary>
 	public bool UseImpersonate { get; set; }
 
@@ -52,7 +52,6 @@ internal sealed class IntegrationTestClient
 		_apiClient = BinDaysApiFactory.CreateClient();
 		_outputHelper = outputHelper;
 		_dartCliPath = ResolveDartCliPath();
-		_curlImpersonateClient = new CurlImpersonateClient(outputHelper);
 	}
 
 	/// <summary>
@@ -143,28 +142,17 @@ internal sealed class IntegrationTestClient
 	}
 
 	/// <summary>
-	/// Sends a single client-side HTTP request. Uses the Dart/Dio CLI by default to match
-	/// production behaviour, or curl-impersonate when <see cref="UseImpersonate"/> is enabled for
-	/// councils behind a Cloudflare TLS-fingerprint challenge (gov.uk requests always use Dart).
+	/// Sends a single client-side HTTP request by spawning the Dart/Dio CLI process. The CLI
+	/// executes the request using the real Dio HTTP client, matching production behaviour. When
+	/// <see cref="UseImpersonate"/> is enabled the request is routed through the dio_impersonate
+	/// transport (libcurl-impersonate) so it presents a real browser's TLS/HTTP-2 fingerprint, for
+	/// councils behind a Cloudflare TLS-fingerprint challenge (gov.uk requests always use plain Dio).
 	/// </summary>
 	private async Task<ClientSideResponse> SendClientSideRequestAsync(ClientSideRequest request)
 	{
 		var host = new Uri(request.Url).Host;
+		var impersonate = UseImpersonate && !_dartOnlyHosts.Contains(host);
 
-		if (UseImpersonate && !_dartOnlyHosts.Contains(host))
-		{
-			return await _curlImpersonateClient.SendAsync(request);
-		}
-
-		return await SendViaDartAsync(request);
-	}
-
-	/// <summary>
-	/// Sends a single client-side HTTP request by spawning the Dart/Dio CLI process.
-	/// The CLI executes the request using the real Dio HTTP client, matching production behaviour.
-	/// </summary>
-	private async Task<ClientSideResponse> SendViaDartAsync(ClientSideRequest request)
-	{
 		var requestJson = JsonSerializer.Serialize(request, _jsonOptions);
 
 		using var process = new Process();
@@ -177,6 +165,13 @@ internal sealed class IntegrationTestClient
 			UseShellExecute = false,
 			CreateNoWindow = true,
 		};
+
+		if (impersonate)
+		{
+			// The Dart client owns all impersonation behaviour; the test harness only signals,
+			// per request, whether to enable it (for councils behind a Cloudflare TLS challenge).
+			process.StartInfo.Environment["BINDAYS_IMPERSONATE"] = "true";
+		}
 
 		process.Start();
 

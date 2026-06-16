@@ -48,6 +48,9 @@ msbuild.wrn
 **/DartClient/bin/*.exe
 **/DartClient/.dart_tool/
 
+# libcurl-impersonate native library (provisioned at build time by dio_impersonate:install)
+**/DartClient/.native/
+
 # Agent automation output files
 .agent/playwright/out/
 !.agent/playwright/out/.gitkeep
