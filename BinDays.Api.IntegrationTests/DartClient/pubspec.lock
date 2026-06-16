@@ -39,7 +39,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "7f9448c1ca8e29a907194616facc0a3481892b96"
+      resolved-ref: f0fba9dd45515308ff57193742606d52807a36cf
       url: "https://github.com/BadgerHobbs/Dio-Impersonate.git"
     source: git
     version: "0.1.0"
