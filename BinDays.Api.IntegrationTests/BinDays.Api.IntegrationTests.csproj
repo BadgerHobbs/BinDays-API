@@ -33,7 +33,7 @@
   <!--
     Dart CLI wrapper for integration tests. Compiles DartClient/bin/send_request.dart into a
     native executable that uses the real BinDays-Client Dio HTTP client to execute client-side
-    requests, replacing the .NET HttpClient reimplementation. The dio_impersonate:install step
+    requests, replacing the .NET HttpClient reimplementation. The bindays_client:install step
     provisions the libcurl-impersonate shared library into DartClient/.native/ (gitignored), used
     by the Dart transport for councils behind a Cloudflare TLS-fingerprint challenge; it needs
     network access and the system 'tar' (bsdtar ships with Windows 10 1803+, Linux and macOS).
@@ -47,7 +47,7 @@
 
   <Target Name="CompileDartCli" BeforeTargets="Build" Condition="!Exists('$(DartCliOutput)')">
     <Exec Command="dart pub get" WorkingDirectory="$(DartClientDir)" />
-    <Exec Command="dart run dio_impersonate:install" WorkingDirectory="$(DartClientDir)" />
+    <Exec Command="dart run bindays_client:install" WorkingDirectory="$(DartClientDir)" />
     <Exec Command="dart compile exe bin/send_request.dart -o bin/send_request.exe" WorkingDirectory="$(DartClientDir)" />
   </Target>
 </Project>

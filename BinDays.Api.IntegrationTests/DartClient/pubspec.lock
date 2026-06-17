@@ -13,11 +13,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
-      resolved-ref: "2a3fdb3227cab57fa41c47aad2d39ab1b0f23a2e"
+      ref: "feature/fold-impersonate-into-client"
+      resolved-ref: d8b0844985c1146a49fff44c0cc1a015ae0e3b86
       url: "https://github.com/BadgerHobbs/BinDays-Client.git"
     source: git
-    version: "1.0.0"
+    version: "1.1.0"
   collection:
     dependency: transitive
     description:
@@ -27,22 +27,13 @@ packages:
     source: hosted
     version: "1.19.1"
   dio:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: dio
       sha256: aff32c08f92787a557dd5c0145ac91536481831a01b4648136373cddb0e64f8c
       url: "https://pub.dev"
     source: hosted
     version: "5.9.2"
-  dio_impersonate:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: main
-      resolved-ref: f0fba9dd45515308ff57193742606d52807a36cf
-      url: "https://github.com/BadgerHobbs/Dio-Impersonate.git"
-    source: git
-    version: "0.1.0"
   dio_web_adapter:
     dependency: transitive
     description:
@@ -71,18 +62,18 @@ packages:
     dependency: transitive
     description:
       name: json_annotation
-      sha256: cb09e7dac6210041fad964ed7fbee004f14258b4eca4040f72d1234062ace4c8
+      sha256: "2a743920d81b7910627f68ee2c9ac1fc0bfee32b9fc3403587d7c6791ca12f80"
       url: "https://pub.dev"
     source: hosted
-    version: "4.11.0"
+    version: "4.12.0"
   meta:
     dependency: transitive
     description:
       name: meta
-      sha256: df0c643f44ad098eb37988027a8e2b2b5a031fd3977f06bbfd3a76637e8df739
+      sha256: c82594181e3312f3d0695fc95aaaf7758d75b8d4ae2bbecf223b9fd5109a059d
       url: "https://pub.dev"
     source: hosted
-    version: "1.18.2"
+    version: "1.18.3"
   mime:
     dependency: transitive
     description:

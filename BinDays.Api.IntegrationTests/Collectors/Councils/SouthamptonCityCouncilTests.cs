@@ -27,8 +27,7 @@ public class SouthamptonCityCouncilTests
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper,
-			useImpersonate: true
+			_outputHelper
 		);
 	}
 }

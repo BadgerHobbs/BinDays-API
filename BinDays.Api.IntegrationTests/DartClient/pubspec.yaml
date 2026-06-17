@@ -7,11 +7,11 @@ environment:
   sdk: ^3.7.0
 
 dependencies:
+  # bindays_client bundles the libcurl-impersonate transport, so the CLI shares
+  # one transport with the app. `dart run bindays_client:install` provisions the
+  # desktop native library (see the csproj CompileDartCli target).
   bindays_client:
     git:
       url: https://github.com/BadgerHobbs/BinDays-Client.git
-      ref: main
-  dio_impersonate:
-    git:
-      url: https://github.com/BadgerHobbs/Dio-Impersonate.git
-      ref: main
+      ref: feature/fold-impersonate-into-client
+  dio: ^5.8.0+1
