@@ -33,8 +33,13 @@
   <!--
     Dart CLI wrapper for integration tests. Compiles DartClient/bin/send_request.dart into a
     native executable that uses the real BinDays-Client Dio HTTP client to execute client-side
-    requests, replacing the .NET HttpClient reimplementation. Only runs when the exe is missing;
-    delete DartClient/bin/send_request.exe to force a recompile. Requires the Dart SDK.
+    requests, replacing the .NET HttpClient reimplementation. The bindays_client:install step
+    provisions the libcurl-impersonate shared library into DartClient/.native/ (gitignored), used
+    by the Dart transport for all requests (including those behind a Cloudflare TLS-fingerprint
+    challenge); it needs network access and the system 'tar' (bsdtar ships with Windows 10 1803+,
+    Linux and macOS).
+    Only runs when the exe is missing; delete DartClient/bin/send_request.exe to force a recompile.
+    Requires the Dart SDK.
   -->
   <PropertyGroup>
     <DartClientDir>$(MSBuildProjectDirectory)\DartClient</DartClientDir>
@@ -43,6 +48,7 @@
 
   <Target Name="CompileDartCli" BeforeTargets="Build" Condition="!Exists('$(DartCliOutput)')">
     <Exec Command="dart pub get" WorkingDirectory="$(DartClientDir)" />
+    <Exec Command="dart run bindays_client:install" WorkingDirectory="$(DartClientDir)" />
     <Exec Command="dart compile exe bin/send_request.dart -o bin/send_request.exe" WorkingDirectory="$(DartClientDir)" />
   </Target>
 </Project>

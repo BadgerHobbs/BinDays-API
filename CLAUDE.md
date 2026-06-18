@@ -29,6 +29,7 @@ See `.gemini/styleguide.md` for the full style guide with do's and don'ts.
 
 - .NET SDK 10.0+
 - Dart SDK 3.7+ (for integration tests)
+- Network access and the system `tar` (for the libcurl-impersonate native library download below; `tar` ships with Windows 10 1803+, Linux and macOS)
 
 ## Build and test
 
@@ -39,3 +40,5 @@ dotnet format --severity info
 ```
 
 The first `dotnet build` automatically compiles the Dart CLI wrapper (`BinDays.Api.IntegrationTests/DartClient/`) via an MSBuild target. This requires the Dart SDK to be installed. Delete `DartClient/bin/send_request.exe` to force a recompile.
+
+The same build step also provisions the `libcurl-impersonate` shared library (via `dart run bindays_client:install`) into `BinDays.Api.IntegrationTests/DartClient/.native/` (gitignored). `bindays_client`'s default transport loads it so every client-side request — in the tests and in the app alike — presents a real browser's TLS/HTTP-2 fingerprint, which is required for councils behind a Cloudflare TLS-fingerprint challenge. The transport is always on (no per-test flag); the tests and the app share one code path. Delete `DartClient/bin/send_request.exe` to force a recompile and re-provision.

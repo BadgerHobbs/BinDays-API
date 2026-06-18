@@ -125,7 +125,7 @@ Use the Playwright MCP server to:
 1. Navigate to the **Bin Collection Page** URL from the issue
 2. **Check for anti-bot detection**:
    - **Interactive challenges** (reCaptcha, hCaptcha, image/checkbox puzzles, or Imperva/DataDome interstitials that require user interaction): **STOP IMMEDIATELY** and report that the council cannot be implemented — these have no workaround.
-   - **Cloudflare "managed challenge"** ("Just a moment…" / `cf-mitigated: challenge`) that resolves automatically in the browser is a TLS-fingerprint gate, not an interactive puzzle. The collector can still be implemented — the only impact is that the Dart test transport is blocked. Continue the implementation as normal, but mark the integration test with `useImpersonate: true` (see "Cloudflare TLS-fingerprint challenges" in the style guide) so the test runs through curl-impersonate. Do **not** add browser header sets to the collector to try to beat it.
+   - **Cloudflare "managed challenge"** ("Just a moment…" / `cf-mitigated: challenge`) that resolves automatically in the browser is a TLS-fingerprint gate, not an interactive puzzle. The collector can still be implemented; continue as normal. Browser impersonation is enabled by default for all requests (see "Cloudflare TLS-fingerprint challenges" in the style guide), so no per-test flag is needed. Do **not** add browser header sets to the collector to try to beat it.
 3. Handle any cookie consent dialogs (accept/dismiss)
 4. Fill in the **Example Postcode** from the issue
 5. Submit the form and select an address if prompted

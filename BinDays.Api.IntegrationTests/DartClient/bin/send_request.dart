@@ -11,7 +11,10 @@ Future<void> main() async {
     final json = jsonDecode(input) as Map<String, dynamic>;
     final request = ClientSideRequest.fromJson(json);
 
-    // Dummy base URL — we only use sendClientSideRequest, not the API methods.
+    // Use the same transport the app uses: Client defaults to the
+    // libcurl-impersonate transport (a real browser's TLS/HTTP-2 fingerprint)
+    // for every request, so the tests and the app share one code path. Dummy
+    // base URL — we only use sendClientSideRequest.
     final client = Client(Uri.parse('http://localhost'));
 
     final enableLogging = Platform.environment['BINDAYS_ENABLE_HTTP_LOGGING']?.toLowerCase() == 'true';
