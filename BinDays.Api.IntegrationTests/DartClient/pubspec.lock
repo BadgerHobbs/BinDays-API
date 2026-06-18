@@ -14,7 +14,7 @@ packages:
     description:
       path: "."
       ref: impersonate-transport
-      resolved-ref: "77c92432a4fd9003cd0f383b6df84db0ff393f09"
+      resolved-ref: "3302892faabe4f9a38dbe4f7f5123e7401c8d537"
       url: "https://github.com/BadgerHobbs/BinDays-Client.git"
     source: git
     version: "1.1.0"
