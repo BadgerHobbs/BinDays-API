@@ -13,7 +13,7 @@ dependencies:
   bindays_client:
     git:
       url: https://github.com/BadgerHobbs/BinDays-Client.git
-      ref: impersonate-transport
+      ref: main
   dio: ^5.8.0+1
   # bindays_client uses these transitively (FFI bindings + JSON models). Declare
   # them directly so `dart compile exe` always resolves them: the self-hosted CI

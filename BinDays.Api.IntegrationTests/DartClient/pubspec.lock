@@ -13,8 +13,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: impersonate-transport
-      resolved-ref: "3302892faabe4f9a38dbe4f7f5123e7401c8d537"
+      ref: main
+      resolved-ref: "1b10270261379ba4b74c798c958ae89dd1010e92"
       url: "https://github.com/BadgerHobbs/BinDays-Client.git"
     source: git
     version: "1.1.0"
