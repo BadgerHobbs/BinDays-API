@@ -5,6 +5,7 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 
@@ -55,9 +56,9 @@ internal sealed partial class StokeOnTrent : GovUkCollectorBase, ICollector
 	];
 
 	/// <summary>
-	/// Regex for the addresses from the dropdown options.
+	/// Regex for addresses from the postcode lookup response.
 	/// </summary>
-	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)"">(?<address>[^<]+)</option>")]
+	[GeneratedRegex(@"<Address>\s*<UPRN>(?<uprn>[^<]+)</UPRN>.*?<HouseNo>(?<houseNo>[^<]*)</HouseNo>\s*<Building>(?<building>[^<]*)</Building>\s*<Street>(?<street>[^<]*)</Street>\s*<Locality>(?<locality>[^<]*)</Locality>\s*<Postcode>[^<]*</Postcode>\s*</Address>", RegexOptions.Singleline)]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
@@ -65,6 +66,12 @@ internal sealed partial class StokeOnTrent : GovUkCollectorBase, ICollector
 	/// </summary>
 	[GeneratedRegex(@"<BinRound>\s*<Bin>(?<service>[^<]+)</Bin>\s*<RoundName>[^<]*</RoundName>\s*<DateTime>(?<date>[^<]+)</DateTime>\s*</BinRound>", RegexOptions.Singleline)]
 	private static partial Regex BinRoundsRegex();
+
+	/// <summary>
+	/// Regex for extracting the collection date from the DateTime value.
+	/// </summary>
+	[GeneratedRegex(@"^(?<date>\d{2}/\d{2}/\d{4})")]
+	private static partial Regex CollectionDateRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -75,7 +82,7 @@ internal sealed partial class StokeOnTrent : GovUkCollectorBase, ICollector
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://www.stoke.gov.uk/homepage/121/bin_day_calendar_view?txtPostcode={postcode}",
+				Url = $"https://www.stoke.gov.uk/jadu/custom/webserviceLookUps/BarTecWebServices_llpg_lookup_postcode.php?postcode={postcode}",
 				Method = "GET",
 			};
 
@@ -95,18 +102,25 @@ internal sealed partial class StokeOnTrent : GovUkCollectorBase, ICollector
 			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
-				var uid = rawAddress.Groups["uid"].Value.Trim();
+				var uprn = rawAddress.Groups["uprn"].Value.Trim();
 
-				if (string.IsNullOrWhiteSpace(uid))
+				if (string.IsNullOrWhiteSpace(uprn))
 				{
 					continue;
 				}
 
+				var houseNumber = WebUtility.HtmlDecode(rawAddress.Groups["houseNo"].Value).Trim();
+				var building = WebUtility.HtmlDecode(rawAddress.Groups["building"].Value).Trim();
+				var street = WebUtility.HtmlDecode(rawAddress.Groups["street"].Value).Trim();
+				var locality = WebUtility.HtmlDecode(rawAddress.Groups["locality"].Value).Trim();
+				string[] parts = [houseNumber, building, street, locality, postcode];
+				var property = string.Join(", ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
+
 				var address = new Address
 				{
-					Property = WebUtility.HtmlDecode(rawAddress.Groups["address"].Value).Trim(),
+					Property = property,
 					Postcode = postcode,
-					Uid = uid,
+					Uid = uprn,
 				};
 
 				addresses.Add(address);
@@ -154,7 +168,7 @@ internal sealed partial class StokeOnTrent : GovUkCollectorBase, ICollector
 			foreach (Match rawBinRound in rawBinRounds)
 			{
 				var service = rawBinRound.Groups["service"].Value.Trim();
-				var collectionDate = rawBinRound.Groups["date"].Value.Trim().Split(" ").First();
+				var collectionDate = CollectionDateRegex().Match(rawBinRound.Groups["date"].Value.Trim()).Groups["date"].Value;
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 				var date = DateUtilities.ParseDateExact(collectionDate, "dd/MM/yyyy");
