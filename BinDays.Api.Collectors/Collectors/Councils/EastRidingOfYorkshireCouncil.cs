@@ -6,6 +6,7 @@ using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Xml.Linq;
 
 /// <summary>
 /// Collector implementation for East Riding of Yorkshire Council.
@@ -69,27 +70,56 @@ internal sealed class EastRidingOfYorkshireCouncil : GovUkCollectorBase, ICollec
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
-			var rawAddresses = jsonDocument.RootElement.GetProperty("dataReturned").EnumerateArray();
+			var content = clientSideResponse.Content.TrimStart();
 
 			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
-			foreach (var rawAddress in rawAddresses)
+			if (content.StartsWith('<'))
 			{
-				var uprn = rawAddress.GetProperty("UPRN").GetString()!;
-				var greenDate = rawAddress.GetProperty("GreenDate").GetString()!;
-				var brownDate = rawAddress.GetProperty("BrownDate").GetString()!;
-				var blueDate = rawAddress.GetProperty("BlueDate").GetString()!;
+				var xml = XDocument.Parse(content);
+				var ns = xml.Root!.GetDefaultNamespace();
+				var rawAddresses = xml.Descendants(ns + "collectionDateOutput");
 
-				// Uid format: "uprn;greenDate;brownDate;blueDate"
-				var address = new Address
+				foreach (var rawAddress in rawAddresses)
 				{
-					Property = rawAddress.GetProperty("Address").GetString()!.Trim(),
-					Postcode = postcode,
-					Uid = $"{uprn};{greenDate};{brownDate};{blueDate}",
-				};
+					var uprn = rawAddress.Element(ns + "UPRN")!.Value.Trim();
+					var greenDate = rawAddress.Element(ns + "GreenDate")!.Value.Trim();
+					var brownDate = rawAddress.Element(ns + "BrownDate")!.Value.Trim();
+					var blueDate = rawAddress.Element(ns + "BlueDate")!.Value.Trim();
 
-				addresses.Add(address);
+					// Uid format: "uprn;greenDate;brownDate;blueDate"
+					var address = new Address
+					{
+						Property = rawAddress.Element(ns + "Address")!.Value.Trim(),
+						Postcode = postcode,
+						Uid = $"{uprn};{greenDate};{brownDate};{blueDate}",
+					};
+
+					addresses.Add(address);
+				}
+			}
+			else
+			{
+				using var jsonDocument = JsonDocument.Parse(content);
+				var rawAddresses = jsonDocument.RootElement.GetProperty("dataReturned").EnumerateArray();
+
+				foreach (var rawAddress in rawAddresses)
+				{
+					var uprn = rawAddress.GetProperty("UPRN").GetString()!;
+					var greenDate = rawAddress.GetProperty("GreenDate").GetString()!;
+					var brownDate = rawAddress.GetProperty("BrownDate").GetString()!;
+					var blueDate = rawAddress.GetProperty("BlueDate").GetString()!;
+
+					// Uid format: "uprn;greenDate;brownDate;blueDate"
+					var address = new Address
+					{
+						Property = rawAddress.GetProperty("Address").GetString()!.Trim(),
+						Postcode = postcode,
+						Uid = $"{uprn};{greenDate};{brownDate};{blueDate}",
+					};
+
+					addresses.Add(address);
+				}
 			}
 
 			var getAddressesResponse = new GetAddressesResponse
