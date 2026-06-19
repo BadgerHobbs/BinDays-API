@@ -401,7 +401,7 @@ internal sealed partial class NorthLanarkshireCouncil : GovUkCollectorBase, ICol
 
 		if (textareaMatch.Success)
 		{
-			normalizedContent = textareaMatch.Groups["content"].Value;
+			normalizedContent = System.Net.WebUtility.HtmlDecode(textareaMatch.Groups["content"].Value);
 		}
 
 		return JsonDocument.Parse(normalizedContent);
