@@ -97,6 +97,12 @@ internal sealed partial class NorthLanarkshireCouncil : GovUkCollectorBase, ICol
 	[GeneratedRegex(@"<p>(?<date>\d{1,2}\s+[A-Za-z]+\s+\d{4})</p>")]
 	private static partial Regex BinDateRegex();
 
+	/// <summary>
+	/// Regex for extracting JSON content from textarea-wrapped Drupal AJAX responses.
+	/// </summary>
+	[GeneratedRegex(@"^\s*<textarea>(?<content>[\s\S]*)</textarea>\s*$")]
+	private static partial Regex DrupalAjaxTextareaRegex();
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
@@ -130,10 +136,11 @@ internal sealed partial class NorthLanarkshireCouncil : GovUkCollectorBase, ICol
 		}
 		else if (clientSideResponse.RequestId == 2)
 		{
-			using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
+			using var jsonDocument = ParseDrupalAjaxResponse(clientSideResponse.Content);
 
 			var insertHtml = string.Empty;
 
+			// Iterate through each command, and find the insert command data
 			foreach (var command in jsonDocument.RootElement.EnumerateArray())
 			{
 				if (command.GetProperty("command").GetString() != "insert")
@@ -145,8 +152,9 @@ internal sealed partial class NorthLanarkshireCouncil : GovUkCollectorBase, ICol
 				break;
 			}
 
-			var rawAddresses = AddressRegex().Matches(insertHtml);
+			var rawAddresses = AddressRegex().Matches(insertHtml)!;
 
+			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
@@ -367,8 +375,9 @@ internal sealed partial class NorthLanarkshireCouncil : GovUkCollectorBase, ICol
 	/// </summary>
 	private static string ExtractUpdatedFormBuildId(string content)
 	{
-		using var jsonDocument = JsonDocument.Parse(content);
+		using var jsonDocument = ParseDrupalAjaxResponse(content);
 
+		// Iterate through each command, and find the updated form build ID
 		foreach (var command in jsonDocument.RootElement.EnumerateArray())
 		{
 			if (command.GetProperty("command").GetString() != "update_build_id")
@@ -380,5 +389,21 @@ internal sealed partial class NorthLanarkshireCouncil : GovUkCollectorBase, ICol
 		}
 
 		throw new InvalidOperationException("No update_build_id command found in Drupal AJAX response.");
+	}
+
+	/// <summary>
+	/// Parses a Drupal AJAX response into a JSON document.
+	/// </summary>
+	private static JsonDocument ParseDrupalAjaxResponse(string content)
+	{
+		var normalizedContent = content;
+		var textareaMatch = DrupalAjaxTextareaRegex().Match(content);
+
+		if (textareaMatch.Success)
+		{
+			normalizedContent = textareaMatch.Groups["content"].Value;
+		}
+
+		return JsonDocument.Parse(normalizedContent);
 	}
 }
