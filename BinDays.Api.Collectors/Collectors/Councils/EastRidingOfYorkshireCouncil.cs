@@ -76,7 +76,7 @@ internal sealed class EastRidingOfYorkshireCouncil : GovUkCollectorBase, ICollec
 			var addresses = new List<Address>();
 			if (content.StartsWith('<'))
 			{
-				var xml = XDocument.Parse(clientSideResponse.Content);
+				var xml = XDocument.Parse(content);
 				var ns = xml.Root!.GetDefaultNamespace();
 				var rawAddresses = xml.Descendants(ns + "collectionDateOutput");
 
@@ -100,7 +100,7 @@ internal sealed class EastRidingOfYorkshireCouncil : GovUkCollectorBase, ICollec
 			}
 			else
 			{
-				using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
+				using var jsonDocument = JsonDocument.Parse(content);
 				var rawAddresses = jsonDocument.RootElement.GetProperty("dataReturned").EnumerateArray();
 
 				foreach (var rawAddress in rawAddresses)
