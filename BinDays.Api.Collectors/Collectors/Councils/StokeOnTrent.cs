@@ -113,7 +113,8 @@ internal sealed partial class StokeOnTrent : GovUkCollectorBase, ICollector
 				var building = WebUtility.HtmlDecode(rawAddress.Groups["building"].Value).Trim();
 				var street = WebUtility.HtmlDecode(rawAddress.Groups["street"].Value).Trim();
 				var locality = WebUtility.HtmlDecode(rawAddress.Groups["locality"].Value).Trim();
-				var property = string.Join(", ", new[] { houseNumber, building, street, locality, postcode }.Where(part => !string.IsNullOrWhiteSpace(part)));
+				string[] parts = [houseNumber, building, street, locality, postcode];
+				var property = string.Join(", ", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
 
 				var address = new Address
 				{
