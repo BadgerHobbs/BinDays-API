@@ -55,7 +55,7 @@ internal sealed partial class WestLindseyDistrictCouncil : GovUkCollectorBase, I
 		{
 			Name = "Food Waste",
 			Colour = BinColour.Grey,
-			Keys = [ "ORANGE" ],
+			Keys = [ "ORANGE" ], // Website uses the "wasterORANGE" CSS class for the grey food caddy
 			Type = BinType.Caddy,
 		},
 	];
@@ -66,7 +66,7 @@ internal sealed partial class WestLindseyDistrictCouncil : GovUkCollectorBase, I
 	private const string _clusterServiceUrl = "https://wlnk.statmap.co.uk/map/Cluster.svc";
 
 	/// <summary>
-	/// The encoded script path required by the StatMap endpoints.
+	/// The script path required by the StatMap endpoints, pre-URL-encoded form of \Cluster\Cluster.AuroraScript$.
 	/// </summary>
 	private const string _scriptPath = "%5CCluster%5CCluster.AuroraScript%24";
 
