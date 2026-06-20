@@ -62,27 +62,27 @@ internal sealed partial class EastLindseyDistrictCouncil : GovUkCollectorBase, I
 	private static partial Regex JsonpRegex();
 
 	/// <summary>
-	/// Regex for the page session id from the hidden input.
+	/// Regex for the form prefix and page session id from the hidden input.
 	/// </summary>
-	[GeneratedRegex(@"name=""WASTECOLLECTIONDAYS202627_PAGESESSIONID""\s+value=""(?<pageSessionId>[^""]+)""")]
+	[GeneratedRegex(@"name=""(?<formPrefix>WASTECOLLECTIONDAYS\d+)_PAGESESSIONID""\s+value=""(?<pageSessionId>[^""]+)""")]
 	private static partial Regex PageSessionIdRegex();
 
 	/// <summary>
 	/// Regex for the session id from the hidden input.
 	/// </summary>
-	[GeneratedRegex(@"name=""WASTECOLLECTIONDAYS202627_SESSIONID""\s+value=""(?<sessionId>[^""]+)""")]
+	[GeneratedRegex(@"name=""WASTECOLLECTIONDAYS\d+_SESSIONID""\s+value=""(?<sessionId>[^""]+)""")]
 	private static partial Regex SessionIdRegex();
 
 	/// <summary>
 	/// Regex for the nonce from the hidden input.
 	/// </summary>
-	[GeneratedRegex(@"name=""WASTECOLLECTIONDAYS202627_NONCE""\s+value=""(?<nonce>[^""]+)""")]
+	[GeneratedRegex(@"name=""WASTECOLLECTIONDAYS\d+_NONCE""\s+value=""(?<nonce>[^""]+)""")]
 	private static partial Regex NonceRegex();
 
 	/// <summary>
 	/// Regex for the base64 encoded results data from the results page script.
 	/// </summary>
-	[GeneratedRegex(@"WASTECOLLECTIONDAYS202627_RESULTS_FIELD12Data\s*=\s*JSON\.parse\(helper\.utilDecode\('(?<data>[^']+)'\)\);")]
+	[GeneratedRegex(@"WASTECOLLECTIONDAYS\d+_RESULTS_FIELD12Data\s*=\s*JSON\.parse\(helper\.utilDecode\('(?<data>[^']+)'\)\);")]
 	private static partial Regex ResultsDataRegex();
 
 	/// <summary>
@@ -185,7 +185,9 @@ internal sealed partial class EastLindseyDistrictCouncil : GovUkCollectorBase, I
 		// Submit the selected address and load the results page
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var pageSessionId = PageSessionIdRegex().Match(clientSideResponse.Content).Groups["pageSessionId"].Value;
+			var pageSessionIdMatch = PageSessionIdRegex().Match(clientSideResponse.Content);
+			var formPrefix = pageSessionIdMatch.Groups["formPrefix"].Value;
+			var pageSessionId = pageSessionIdMatch.Groups["pageSessionId"].Value;
 			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 			var nonce = NonceRegex().Match(clientSideResponse.Content).Groups["nonce"].Value;
 
@@ -201,19 +203,19 @@ internal sealed partial class EastLindseyDistrictCouncil : GovUkCollectorBase, I
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
-				{ "WASTECOLLECTIONDAYS202627_PAGESESSIONID", pageSessionId },
-				{ "WASTECOLLECTIONDAYS202627_SESSIONID", sessionId },
-				{ "WASTECOLLECTIONDAYS202627_NONCE", nonce },
-				{ "WASTECOLLECTIONDAYS202627_VARIABLES", variables },
-				{ "WASTECOLLECTIONDAYS202627_PAGENAME", "LOOKUP" },
-				{ "WASTECOLLECTIONDAYS202627_PAGEINSTANCE", "0" },
-				{ "WASTECOLLECTIONDAYS202627_LOOKUP_ADDRESSSOURCE", source },
-				{ "WASTECOLLECTIONDAYS202627_LOOKUP_ADDRESSUPRN", uprn },
-				{ "WASTECOLLECTIONDAYS202627_LOOKUP_ADDRESSLOOKUPPOSTCODE", address.Postcode! },
-				{ "WASTECOLLECTIONDAYS202627_LOOKUP_ADDRESSLOOKUPADDRESS", addressIndex },
-				{ "WASTECOLLECTIONDAYS202627_LOOKUP_CHOSENADDRESS", chosenAddress },
-				{ "WASTECOLLECTIONDAYS202627_LOOKUP_TESTDATELAYOUT", "false" },
-				{ "WASTECOLLECTIONDAYS202627_FORMACTION_NEXT", "WASTECOLLECTIONDAYS202627_LOOKUP_FIELD2" },
+				{ $"{formPrefix}_PAGESESSIONID", pageSessionId },
+				{ $"{formPrefix}_SESSIONID", sessionId },
+				{ $"{formPrefix}_NONCE", nonce },
+				{ $"{formPrefix}_VARIABLES", variables },
+				{ $"{formPrefix}_PAGENAME", "LOOKUP" },
+				{ $"{formPrefix}_PAGEINSTANCE", "0" },
+				{ $"{formPrefix}_LOOKUP_ADDRESSSOURCE", source },
+				{ $"{formPrefix}_LOOKUP_ADDRESSUPRN", uprn },
+				{ $"{formPrefix}_LOOKUP_ADDRESSLOOKUPPOSTCODE", address.Postcode! },
+				{ $"{formPrefix}_LOOKUP_ADDRESSLOOKUPADDRESS", addressIndex },
+				{ $"{formPrefix}_LOOKUP_CHOSENADDRESS", chosenAddress },
+				{ $"{formPrefix}_LOOKUP_TESTDATELAYOUT", "false" },
+				{ $"{formPrefix}_FORMACTION_NEXT", $"{formPrefix}_LOOKUP_FIELD2" },
 			});
 
 			var clientSideRequest = new ClientSideRequest
@@ -246,13 +248,7 @@ internal sealed partial class EastLindseyDistrictCouncil : GovUkCollectorBase, I
 			using var jsonDoc = JsonDocument.Parse(decodedResultsData);
 			var rawResult = jsonDoc.RootElement.GetProperty("result")[0];
 
-			var dateKeys = new[]
-			{
-				"wastenextref",
-				"wastenextrec",
-				"wastenextpur",
-				"greenfirst",
-			};
+			var dateKeys = _binTypes.SelectMany(b => b.Keys);
 
 			// Iterate through each explicit date field, and create a new bin day object
 			var binDays = new List<BinDay>();
@@ -266,11 +262,6 @@ internal sealed partial class EastLindseyDistrictCouncil : GovUkCollectorBase, I
 
 				var cleanedDate = OrdinalSuffixRegex().Replace(rawDate, string.Empty).Trim();
 				var date = DateUtilities.ParseDateExact(cleanedDate, "dddd d MMMM yyyy");
-
-				if (date < DateOnly.FromDateTime(DateTime.UtcNow))
-				{
-					continue;
-				}
 
 				var bins = ProcessingUtilities.GetMatchingBins(_binTypes, dateKey);
 				if (bins.Count == 0)
