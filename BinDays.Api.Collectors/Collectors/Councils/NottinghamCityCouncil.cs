@@ -152,10 +152,13 @@ internal sealed class NottinghamCityCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting bin day events
 		if (clientSideResponse == null)
 		{
+			var after = DateTime.UtcNow.ToString("yyyy-MM-dd");
+			var before = DateTime.UtcNow.AddMonths(3).ToString("yyyy-MM-dd");
+
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"{_apiBaseUrl}/api/places/{address.Uid!}/services/{_serviceId}/events?locale={_locale}",
+				Url = $"{_apiBaseUrl}/api/places/{address.Uid!}/services/{_serviceId}/events?after={after}&before={before}&locale={_locale}",
 				Method = "GET",
 			};
 
