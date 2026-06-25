@@ -21,6 +21,7 @@ public class ValeOfWhiteHorseDistrictCouncilTests
 	[Theory]
 	[InlineData("OX14 3AJ")]
 	[InlineData("OX14 4FQ")]
+	[InlineData("OX14 1JJ")]
 	public async Task GetBinDaysTest(string postcode)
 	{
 		await TestSteps.EndToEnd(

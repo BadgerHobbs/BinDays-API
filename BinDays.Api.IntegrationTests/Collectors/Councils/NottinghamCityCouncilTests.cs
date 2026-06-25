@@ -20,6 +20,7 @@ public class NottinghamCityCouncilTests
 
 	[Theory]
 	[InlineData("NG3 5HJ")]
+	[InlineData("NG7 2NU")]
 	public async Task GetBinDaysTest(string postcode)
 	{
 		await TestSteps.EndToEnd(
