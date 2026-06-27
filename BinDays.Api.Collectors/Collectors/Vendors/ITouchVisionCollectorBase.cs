@@ -155,10 +155,17 @@ internal abstract class ITouchVisionCollectorBase : GovUkCollectorBase
 				var binType = collectionItem.GetProperty("binType").GetString()!;
 				var matchedBins = ProcessingUtilities.GetMatchingBins(binTypes, binType);
 
+				var collectionDay = collectionItem.GetProperty("collectionDay").GetString();
+				string? followingDay = null;
+				if (collectionItem.TryGetProperty("followingDay", out var followingDayElement))
+				{
+					followingDay = followingDayElement.GetString();
+				}
+
 				var dateStrings = new[]
 				{
-					collectionItem.GetProperty("collectionDay").GetString(),
-					collectionItem.GetProperty("followingDay").GetString()
+					collectionDay,
+					followingDay,
 				};
 
 				foreach (var dateString in dateStrings)
