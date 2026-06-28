@@ -63,7 +63,7 @@ internal sealed partial class WestSuffolkDistrictCouncil : GovUkCollectorBase, I
 	/// <summary>
 	/// Regex for the bin collection entries from the HTML response.
 	/// </summary>
-	[GeneratedRegex(@"<strong>(?<type>[^:]+):</strong>\s*(?<date>(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) \d+(?:st|nd|rd|th)?\s+(?:January|February|March|April|May|June|July|August|September|October|November|December))", RegexOptions.Singleline)]
+	[GeneratedRegex(@"<strong>(?<type>[^:]+):</strong>\s*(?<date>(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s+\d+(?:st|nd|rd|th)?\s+(?:January|February|March|April|May|June|July|August|September|October|November|December))", RegexOptions.Singleline)]
 	private static partial Regex BinDaysRegex();
 
 	/// <summary>
