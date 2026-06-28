@@ -19,14 +19,19 @@ public class WestSuffolkDistrictCouncilTests
 	}
 
 	[Theory]
-	[InlineData("IP32 7LW")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("IP32 7LW", 0)]
+	// Address index 2 has no garden waste (Brown) subscription, which reflows the
+	// page text so the Green bin date wraps after the day-of-week. This previously
+	// broke the parsing regex (issue #26).
+	[InlineData("IP32 7LW", 2)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			addressIndex
 		);
 	}
 }
