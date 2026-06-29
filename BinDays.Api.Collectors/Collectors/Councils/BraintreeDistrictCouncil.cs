@@ -65,6 +65,7 @@ internal sealed partial class BraintreeDistrictCouncil : GovUkCollectorBase, ICo
 			[
 				"Food Recycling",
 				"Food Bin",
+				"Food Caddy",
 			],
 			Type = BinType.Caddy,
 		},
@@ -113,7 +114,7 @@ internal sealed partial class BraintreeDistrictCouncil : GovUkCollectorBase, ICo
 	/// <summary>
 	/// Regex for extracting bin services and dates from the date display blocks.
 	/// </summary>
-	[GeneratedRegex(@"<div class=""date_display""[^>]*>\s*<h3[^>]*>\s*(?<service>[^<]+)\s*</h3>\s*<p>\s*(?<date>\d{2}/\d{2}/\d{4})\s*</p>", RegexOptions.Singleline)]
+	[GeneratedRegex(@"<div class=""date_display""[^>]*>\s*(?:<img[^>]*>\s*)?<h3[^>]*>\s*(?<service>.*?)\s*</h3>\s*<p>\s*(?<date>\d{2}/\d{2}/\d{4})\s*</p>", RegexOptions.Singleline)]
 	private static partial Regex BinDaysRegex();
 
 	/// <inheritdoc/>
