@@ -60,7 +60,7 @@ internal sealed partial class BirminghamCityCouncil : GovUkCollectorBase, IColle
 	/// <summary>
 	/// Regex for the bin days from the data table elements.
 	/// </summary>
-	[GeneratedRegex(@"<tbody>\s*<tr>\s*<t.>(?<service>.*?)</t.>\s*<td>(?<date>.*?)</td>\s*</tr>\s*</tbody>")]
+	[GeneratedRegex(@"<tr>\s*<th>(?<service>[^<]+)</th>\s*<td>(?<date>[A-Za-z]{3} \d{2}/\d{2}/\d{4})</td>")]
 	private static partial Regex BinDaysRegex();
 
 	/// <inheritdoc/>
