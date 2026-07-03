@@ -2,8 +2,6 @@ namespace BinDays.Api.Collectors.Collectors.Councils;
 
 using BinDays.Api.Collectors.Collectors.Vendors;
 using BinDays.Api.Collectors.Models;
-using System;
-using System.Collections.Generic;
 
 /// <summary>
 /// Collector implementation for Newport City Council.
@@ -39,21 +37,21 @@ internal sealed class NewportCityCouncil : ITouchVisionCollectorBase, ICollector
 		},
 		new()
 		{
-			Name = "Mixed Recycling (Red)",
+			Name = "Plastics & Metals Recycling",
 			Colour = BinColour.Red,
 			Keys = [ "RECYCLING" ],
 			Type = BinType.Bag,
 		},
 		new()
 		{
-			Name = "Mixed Recycling (Blue)",
+			Name = "Paper & Cardboard Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "RECYCLING" ],
 			Type = BinType.Bag,
 		},
 		new()
 		{
-			Name = "Mixed Recycling (Green)",
+			Name = "Glass & Small Electricals Recycling",
 			Colour = BinColour.Green,
 			Keys = [ "RECYCLING" ],
 			Type = BinType.Box,
