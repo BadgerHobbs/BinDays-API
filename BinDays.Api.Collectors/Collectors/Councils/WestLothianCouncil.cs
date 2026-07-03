@@ -142,13 +142,14 @@ internal sealed partial class WestLothianCouncil : GovUkCollectorBase, ICollecto
 				};
 
 				var property = string.Join(", ", addressParts.Where(part => !string.IsNullOrWhiteSpace(part)));
-				var uprn = addressElement.GetProperty("udprn").GetString()!.Trim();
+				var udprn = addressElement.GetProperty("udprn").GetString()!.Trim();
 
+				// Uid format: "udprn;property"
 				var address = new Address
 				{
 					Property = property,
 					Postcode = postcode,
-					Uid = uprn,
+					Uid = $"{udprn};{property}",
 				};
 
 				addresses.Add(address);
@@ -185,12 +186,17 @@ internal sealed partial class WestLothianCouncil : GovUkCollectorBase, ICollecto
 
 			return getBinDaysResponse;
 		}
-		// Submit the selected address to get collection data.
+		// Submit the selected address to get collection data
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var pageSessionId = PageSessionIdRegex().Match(clientSideResponse.Content).Groups["pageSessionId"].Value;
 			var sessionId = SessionIdRegex().Match(clientSideResponse.Content).Groups["sessionId"].Value;
 			var nonce = NonceRegex().Match(clientSideResponse.Content).Groups["nonce"].Value;
+
+			// Uid format: "udprn;property"
+			var parts = address.Uid!.Split(';');
+			var uprn = parts[0];
+			var property = parts[^1];
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -200,8 +206,8 @@ internal sealed partial class WestLothianCouncil : GovUkCollectorBase, ICollecto
 				{ "WLBINCOLLECTION_VARIABLES", "e30=" },
 				{ "WLBINCOLLECTION_PAGENAME", "PAGE1" },
 				{ "WLBINCOLLECTION_PAGEINSTANCE", "0" },
-				{ "WLBINCOLLECTION_PAGE1_ADDRESSSTRING", address.Property! },
-				{ "WLBINCOLLECTION_PAGE1_UPRN", address.Uid! },
+				{ "WLBINCOLLECTION_PAGE1_ADDRESSSTRING", property },
+				{ "WLBINCOLLECTION_PAGE1_UPRN", uprn },
 				{ "WLBINCOLLECTION_PAGE1_ADDRESSLOOKUPPOSTCODE", address.Postcode! },
 				{ "WLBINCOLLECTION_FORMACTION_NEXT", "WLBINCOLLECTION_PAGE1_NAVBUTTONS" },
 			});
@@ -230,7 +236,7 @@ internal sealed partial class WestLothianCouncil : GovUkCollectorBase, ICollecto
 
 			return getBinDaysResponse;
 		}
-		// Follow cookie-verification redirect and load the final collection page.
+		// Follow cookie-verification redirect and load the final collection page
 		else if (clientSideResponse.RequestId == 2)
 		{
 			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
