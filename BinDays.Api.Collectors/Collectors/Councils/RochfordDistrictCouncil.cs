@@ -29,26 +29,26 @@ internal sealed partial class RochfordDistrictCouncil : GovUkCollectorBase, ICol
 	[
 		new()
 		{
-			Name = "Non-Recyclable Waste",
+			Name = "General Waste",
 			Colour = BinColour.Purple,
 			Keys = [ "Non-recyclables" ],
 		},
 		new()
 		{
 			Name = "Mixed Recycling",
-			Colour = BinColour.Black,
+			Colour = BinColour.Grey,
 			Keys = [ "Recyclables" ],
 		},
 		new()
 		{
 			Name = "Garden Waste",
-			Colour = BinColour.Green,
+			Colour = BinColour.Yellow,
 			Keys = [ "Compost" ],
 		},
 		new()
 		{
 			Name = "Food Waste",
-			Colour = BinColour.Green,
+			Colour = BinColour.Yellow,
 			Keys = [ "Compost" ],
 			Type = BinType.Caddy,
 		},
