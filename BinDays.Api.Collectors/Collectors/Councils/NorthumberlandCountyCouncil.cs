@@ -66,7 +66,7 @@ internal sealed partial class NorthumberlandCountyCouncil : GovUkCollectorBase, 
 	/// <summary>
 	/// Regex for removing ordinal indicators from dates.
 	/// </summary>
-	[GeneratedRegex(@"(st|nd|rd|th)")]
+	[GeneratedRegex(@"(?<=\d)(st|nd|rd|th)")]
 	private static partial Regex OrdinalIndicatorsRegex();
 
 	/// <inheritdoc/>
