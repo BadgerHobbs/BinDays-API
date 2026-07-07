@@ -157,6 +157,25 @@ On the final page showing bin collections:
 
 Collectors must return ONLY the true data provided by the council, not computed projections.
 
+### 2.2.1 Account for ALL Expected UK Bin Types
+
+Under England's **Simpler Recycling** legislation (in force for households from 31 March 2026), councils are required to collect a standard set of waste streams. Use this as a checklist so no bin type is silently missed — a common implementation mistake is to capture only the bins that happen to appear for the test address and omit others the council actually offers.
+
+The expected streams are:
+
+- **General / residual waste** (usually the default `BinType.Bin`)
+- **Food waste** (often a `BinType.Caddy`; collected at least weekly, sometimes co-collected with garden waste or recycling)
+- **Garden waste** (see caveat below)
+- **Dry recyclables** — plastic, metal, glass (may be one commingled bin or several separate boxes)
+- **Paper and card** (may be combined with other dry recyclables or collected separately)
+
+**CRITICAL — do not miss opt-in / chargeable streams (especially Garden Waste):**
+
+- **Garden waste is very frequently a paid, opt-in subscription service.** Because of this, its collections are typically **only shown for properties that have paid** for the service. The test postcode/address you happen to use may not be subscribed, so garden waste dates may not appear on the results page even though the council offers the service.
+- Do **not** conclude a bin type doesn't exist just because it's absent for the test address. Cross-check the issue's "Bin Types & Colours" list and the council website's service pages to confirm the full set of streams the council operates.
+- If the council offers a stream (e.g. garden waste) but the data source only returns it for subscribed properties, the collector's `_binTypes` / `BinTypes` configuration **must still include that bin type** with its correct name, colour, container type, and matching keys, so it is returned whenever a subscribed address is queried. Verify the exact key against the API response for a property that does have the service where possible.
+- The same applies to any other optional/chargeable streams (e.g. bulky waste, clinical waste) the council exposes through the same lookup.
+
 ### 2.3 Close Browser and Save Data
 
 1. **Take a screenshot** of the final bin collections page showing the collection dates:
