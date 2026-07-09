@@ -90,13 +90,8 @@ internal sealed partial class EastDevonDistrictCouncil : GovUkCollectorBase, ICo
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://eastdevon.gov.uk/addressfinder?qtype=bins&term={postcode}",
+				Url = $"https://eastdevon.gov.uk/repositories/hidden-pages/address-finder?qtype=bins&term={postcode}",
 				Method = "GET",
-				Headers = new()
-				{
-					{"User-Agent", Constants.UserAgent},
-					{"x-requested-with", Constants.XmlHttpRequest},
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
