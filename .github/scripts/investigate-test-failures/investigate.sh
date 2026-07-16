@@ -22,13 +22,21 @@ STYLE_GUIDE=$(cat .gemini/styleguide.md)
 PROMPT=$(cat .agent/prompts/investigate-test-failures.md)
 PROMPT="${PROMPT//\$STYLE_GUIDE/$STYLE_GUIDE}"
 
-# Councils that need investigation, from failure-context.json
-readarray -t COUNCILS < <(node -e "
+# Councils that need investigation, from failure-context.json.
+# Captured via command substitution (not process substitution) so a node
+# failure, e.g. missing or malformed JSON, is caught by set -e.
+COUNCILS_TEXT=$(node -e "
   const ctx = require('./failure-context.json');
   for (const f of ctx.failures) {
     if (f.needsInvestigation) console.log(f.councilName);
   }
 ")
+
+if [ -n "$COUNCILS_TEXT" ]; then
+  readarray -t COUNCILS <<< "$COUNCILS_TEXT"
+else
+  COUNCILS=()
+fi
 
 if [ ${#COUNCILS[@]} -eq 0 ]; then
   echo "No councils need investigation; nothing to do."
