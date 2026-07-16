@@ -4,6 +4,8 @@ You are investigating integration test failures for the BinDays API project. Sch
 
 **IMPORTANT: This is a fully automated, non-interactive task running in a CI/CD pipeline.** There is NO user present to answer questions, provide clarification, or give approval. You cannot ask for help or confirmation - you must make all decisions autonomously and complete the entire task independently.
 
+**Completion criteria:** Your task is complete ONLY when `gh issue create` has succeeded for every failure where `needsInvestigation` is `true`. Do not end your turn after describing a plan — execute it fully. An automated check runs after you finish and fails the pipeline if any expected issue is missing.
+
 ## Input
 
 The file `failure-context.json` in the repository root contains:
