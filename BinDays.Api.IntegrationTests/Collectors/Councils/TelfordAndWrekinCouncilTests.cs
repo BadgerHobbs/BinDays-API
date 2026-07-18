@@ -19,7 +19,7 @@ public class TelfordAndWrekinCouncilTests
 	}
 
 	[Theory]
-	[InlineData("TF5 0LA")]
+	[InlineData("TF4 3RD")]
 	public async Task GetBinDaysTest(string postcode)
 	{
 		await TestSteps.EndToEnd(
