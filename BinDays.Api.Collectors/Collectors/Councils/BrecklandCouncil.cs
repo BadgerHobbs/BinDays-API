@@ -30,13 +30,13 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 		new()
 		{
 			Name = "General Waste",
-			Colour = BinColour.Black,
+			Colour = BinColour.Green,
 			Keys = [ "Refuse Collection Service" ],
 		},
 		new()
 		{
 			Name = "Recycling",
-			Colour = BinColour.Green,
+			Colour = BinColour.Black,
 			Keys = [ "Recycling Collection Service" ],
 		},
 		new()
