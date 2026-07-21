@@ -49,9 +49,9 @@ runs:
       shell: bash
       run: |
         if [ -f ".agent/playwright/config.json" ]; then
-          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless --config .agent/playwright/config.json
+          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless --browser firefox --config .agent/playwright/config.json
         else
-          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless
+          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless --browser firefox
         fi
 
     - name: Verify installations

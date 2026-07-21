@@ -43,16 +43,27 @@ if [ ${#COUNCILS[@]} -eq 0 ]; then
   exit 0
 fi
 
-# Populate MISSING_COUNCILS with councils that have no open tracking issue
+# Populate MISSING_COUNCILS with councils that have no open tracking issue.
+# gh issue list can lag behind a just-created issue (read-after-write delay),
+# so a council isn't confirmed missing until it's absent across a few polls.
 check_missing() {
   local open_titles
-  open_titles=$(gh issue list --label collector-broken --state open --limit 100 --json title --jq '.[].title')
 
-  MISSING_COUNCILS=()
-  for council in "${COUNCILS[@]}"; do
-    if ! grep -qxF "Broken collector: ${council}" <<< "$open_titles"; then
-      MISSING_COUNCILS+=("$council")
+  for poll in 1 2 3; do
+    open_titles=$(gh issue list --label collector-broken --state open --limit 100 --json title --jq '.[].title')
+
+    MISSING_COUNCILS=()
+    for council in "${COUNCILS[@]}"; do
+      if ! grep -qxF "Broken collector: ${council}" <<< "$open_titles"; then
+        MISSING_COUNCILS+=("$council")
+      fi
+    done
+
+    if [ ${#MISSING_COUNCILS[@]} -eq 0 ] || [ "$poll" -eq 3 ]; then
+      break
     fi
+
+    sleep 5
   done
 }
 
