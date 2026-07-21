@@ -32,9 +32,23 @@ runs:
 
     - name: Install Playwright browsers
       shell: bash
+      id: playwright-browser
       run: |
         sudo dpkg --configure -a
         npx playwright install firefox --with-deps
+
+        # @playwright/mcp bundles its own playwright-core, which can pin a
+        # different Firefox build than the one just installed above, so it
+        # won't recognise this build as "installed". Resolve the actual
+        # executable and pass it explicitly via --executable-path instead
+        # of letting the MCP server resolve/install its own copy at runtime.
+        FIREFOX_PATH=$(find "$HOME/.cache/ms-playwright" -maxdepth 3 -type f -path "*/firefox/firefox" | sort -V | tail -1)
+        if [ -z "$FIREFOX_PATH" ]; then
+          echo "::error::Could not locate installed Firefox executable under ~/.cache/ms-playwright"
+          exit 1
+        fi
+        echo "Resolved Firefox executable: $FIREFOX_PATH"
+        echo "firefox_path=$FIREFOX_PATH" >> "$GITHUB_OUTPUT"
 
     - name: Configure Playwright MCP
       if: inputs.playwright_config != ''
@@ -47,11 +61,13 @@ runs:
 
     - name: Add Playwright MCP to Codex
       shell: bash
+      env:
+        FIREFOX_PATH: ${{ steps.playwright-browser.outputs.firefox_path }}
       run: |
         if [ -f ".agent/playwright/config.json" ]; then
-          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless --browser firefox --config .agent/playwright/config.json
+          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless --browser firefox --executable-path "$FIREFOX_PATH" --config .agent/playwright/config.json
         else
-          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless --browser firefox
+          codex mcp add playwright -- npx "@playwright/mcp@latest" --headless --browser firefox --executable-path "$FIREFOX_PATH"
         fi
 
     - name: Verify installations
