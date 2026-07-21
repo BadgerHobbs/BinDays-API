@@ -21,9 +21,6 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 	/// <inheritdoc/>
 	public override string GovUkId => "central-bedfordshire";
 
-	/// <inheritdoc/>
-	public override int Version => 2;
-
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
@@ -130,13 +127,17 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
+		// Uid used to be "<uprn>;<address>"; take just the leading UPRN so addresses
+		// cached under that older format still work.
+		var uprn = address.Uid!.Split(';', 2)[0];
+
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"{_scheduleUrl}/view/{address.Uid}",
+				Url = $"{_scheduleUrl}/view/{uprn}",
 				Method = "GET",
 			};
 

@@ -1665,6 +1665,8 @@ var clientSideRequest = new ClientSideRequest
 
 **Reason**: The mobile app caches addresses client-side with no guaranteed expiry. If a collector's UID format changes (e.g. when migrating to a new council API), existing users will submit the old UID format to `GetBinDays` indefinitely — not just until the server-side cache expires.
 
+**Always prefer backwards compatibility over bumping `ICollector.Version`.** `Version` (default `1`, overridable via `public override int Version => N;`) makes `GetBinDays` return `410 Gone` for any client still holding an address fetched under an older version, forcing them to redo the address search. That's a strictly worse experience than a transparent backwards-compatible parse, so treat `Version` as a last resort — only bump it when the old UID genuinely does not contain enough information to resolve the new request (not merely "annoying to parse"). If the old UID still contains the piece of data the new flow needs (e.g. the UPRN is still the leading segment of an old `"<uprn>;<address>"` UID), handling both formats in `GetBinDays` is almost always possible.
+
 **When a UID format change is unavoidable**, add backwards-compatible handling in `GetBinDays` to detect and resolve the old format:
 
 1. Detect the old format by inspecting the UID (e.g. `address.Uid!.Contains(':')` for a colon-delimited legacy ID)
