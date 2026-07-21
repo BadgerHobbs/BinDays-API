@@ -38,7 +38,11 @@ internal sealed partial class StokeOnTrent : GovUkCollectorBase, ICollector
 		{
 			Name = "Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "EMPTY BINS REC 240 STD" ],
+			Keys =
+			[
+				"EMPTY BINS REC 240 STD",
+				"EMPTY BINS MIXED REC 55 BOX",
+			],
 		},
 		new()
 		{
