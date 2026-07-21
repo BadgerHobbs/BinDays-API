@@ -67,7 +67,8 @@ internal static class TestSteps
 				client,
 				expectedGovUkId,
 				postcode,
-				selectedAddress.Uid!
+				selectedAddress.Uid!,
+				collector.Version
 			);
 
 			// Step 4: Output Summary
@@ -156,16 +157,17 @@ internal static class TestSteps
 	}
 
 	/// <summary>
-	/// Executes Step 3: Get Bin Days via POST /{govUkId}/bin-days?postcode=...&amp;uid=...
+	/// Executes Step 3: Get Bin Days via POST /{govUkId}/bin-days?postcode=...&amp;uid=...&amp;version=...
 	/// </summary>
 	private static async Task<IReadOnlyCollection<BinDay>> GetBinDaysAsync(
 		IntegrationTestClient client,
 		string govUkId,
 		string postcode,
-		string uid)
+		string uid,
+		int version)
 	{
 		var response = await client.ExecuteRequestCycleAsync<GetBinDaysResponse>(
-			$"/{govUkId}/bin-days?postcode={postcode}&uid={uid}",
+			$"/{govUkId}/bin-days?postcode={postcode}&uid={uid}&version={version}",
 			resp => resp.NextClientSideRequest
 		);
 

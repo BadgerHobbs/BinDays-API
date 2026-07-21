@@ -25,4 +25,9 @@ internal sealed class TestCollector
 	/// Gets or sets the GOV.UK page URL for the collector.
 	/// </summary>
 	public string? GovUkUrl { get; set; }
+
+	/// <summary>
+	/// Gets or sets the version of the collector, sent back on bin-days requests.
+	/// </summary>
+	public int Version { get; set; } = 1;
 }

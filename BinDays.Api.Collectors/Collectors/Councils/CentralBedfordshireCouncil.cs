@@ -21,6 +21,9 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 	/// <inheritdoc/>
 	public override string GovUkId => "central-bedfordshire";
 
+	/// <inheritdoc/>
+	public override int Version => 2;
+
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
@@ -48,32 +51,34 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 	];
 
 	/// <summary>
-	/// The bin collection page used for all requests.
+	/// The bin collection schedule base URL.
 	/// </summary>
-	private const string _collectionUrl = "https://www.centralbedfordshire.gov.uk/info/163/bins_and_waste_collections_-_check_bin_collection_days";
+	private const string _scheduleUrl = "https://www.centralbedfordshire.gov.uk/waste-and-recycling/waste-collection-schedule";
 
 	/// <summary>
 	/// Regex for extracting addresses from the HTML response.
 	/// </summary>
-	[GeneratedRegex(@"<option value='(?<uid>[^']+)'>(?<address>[^<]+)<\/option>")]
+	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)"">(?<address>[^<]+)<\/option>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
 	/// Regex for extracting bin collection dates and services.
 	/// </summary>
-	[GeneratedRegex(@"<h3>(?<date>[^<]+)<\/h3>(?<bins>.+?)(?=<h3>|<p>)", RegexOptions.Singleline)]
+	[GeneratedRegex(@"<li class=""waste-collection__day[^""]*"">[\s\S]*?datetime=""(?<date>[^""]+)""[\s\S]*?waste-collection__day--type"">\s*(?<service>[^<]+)\s*<[\s\S]*?waste-collection__day--colour")]
 	private static partial Regex BinDaysRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting the collection page and cookies
+		var formattedPostcode = ProcessingUtilities.FormatPostcode(postcode);
+
+		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = _collectionUrl,
+				Url = $"{_scheduleUrl}/find?postcode={Uri.EscapeDataString(formattedPostcode)}",
 				Method = "GET",
 			};
 
@@ -84,35 +89,8 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 
 			return getAddressesResponse;
 		}
-		// Prepare client-side request for getting addresses
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var requestBody = $"postcode={postcode}";
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = _collectionUrl,
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-					{ "cookie", requestCookies },
-				},
-				Body = requestBody,
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 1)
 		{
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
@@ -120,15 +98,18 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
-				var addressText = rawAddress.Groups["address"].Value.Trim();
-				var uprn = rawAddress.Groups["uid"].Value.Trim();
+				var uid = rawAddress.Groups["uid"].Value.Trim();
+
+				if (string.IsNullOrWhiteSpace(uid))
+				{
+					continue;
+				}
 
 				var address = new Address
 				{
-					Property = addressText,
-					Postcode = postcode,
-					// UID format: "<uprn>;<address>"
-					Uid = $"{uprn};{addressText}",
+					Property = rawAddress.Groups["address"].Value.Trim(),
+					Postcode = formattedPostcode,
+					Uid = uid,
 				};
 
 				addresses.Add(address);
@@ -149,13 +130,13 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting the collection page and cookies
+		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = _collectionUrl,
+				Url = $"{_scheduleUrl}/view/{address.Uid}",
 				Method = "GET",
 			};
 
@@ -166,44 +147,8 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 
 			return getBinDaysResponse;
 		}
-		// Prepare client-side request for getting bin days
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var uidParts = address.Uid!.Split(';', 2);
-			var uprn = uidParts[0];
-			var addressText = uidParts[1];
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "address_text", addressText },
-				{ "postcode", address.Postcode! },
-				{ "address", uprn },
-			});
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = _collectionUrl,
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-					{ "cookie", requestCookies },
-				},
-				Body = requestBody,
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 1)
 		{
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
 
@@ -212,18 +157,13 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 			foreach (Match rawBinDay in rawBinDays)
 			{
 				var dateText = rawBinDay.Groups["date"].Value.Trim();
-				var binsText = rawBinDay.Groups["bins"].Value;
+				var service = rawBinDay.Groups["service"].Value.Trim();
 
-				var binServices = binsText.Split("<br>", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-				var matchedBins = new List<Bin>();
-				foreach (var binService in binServices)
-				{
-					matchedBins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, binService));
-				}
+				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 				var binDay = new BinDay
 				{
-					Date = DateUtilities.ParseDateExact(dateText, "dddd, d MMMM yyyy"),
+					Date = DateUtilities.ParseDateExact(dateText, "dd-MM-yyyy"),
 					Address = address,
 					Bins = matchedBins,
 				};
