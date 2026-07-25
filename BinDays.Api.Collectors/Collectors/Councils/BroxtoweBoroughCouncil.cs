@@ -23,6 +23,9 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	/// <inheritdoc/>
 	public override string GovUkId => "broxtowe";
 
+	/// <inheritdoc/>
+	public override int Version => 2;
+
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
