@@ -50,6 +50,8 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 			Name = "Food Waste",
 			Colour = BinColour.Grey,
 			Keys = [
+				"Foo date",
+				"Foo this",
 				"Food date",
 				"Fd date",
 				"Fod date",
