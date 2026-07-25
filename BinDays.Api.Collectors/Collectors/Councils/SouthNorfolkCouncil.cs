@@ -52,12 +52,6 @@ internal sealed partial class SouthNorfolkCouncil : GovUkCollectorBase, ICollect
 			Keys = [
 				"Foo date",
 				"Foo this",
-				"Food date",
-				"Fd date",
-				"Fod date",
-				"Food this",
-				"Fd this",
-				"Fod this"
 			],
 			Type = BinType.Caddy,
 		},
