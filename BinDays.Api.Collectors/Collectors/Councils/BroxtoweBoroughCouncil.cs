@@ -5,8 +5,8 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -22,6 +22,9 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 
 	/// <inheritdoc/>
 	public override string GovUkId => "broxtowe";
+
+	/// <inheritdoc/>
+	public override int Version => 2;
 
 	/// <summary>
 	/// The list of bin types for this collector.
@@ -56,42 +59,10 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 	];
 
 	/// <summary>
-	/// The URL of the web form for bin collection lookups.
+	/// Regex for parsing HTML input values by name.
 	/// </summary>
-	private const string _formUrl = "https://selfservice.broxtowe.gov.uk/renderform.aspx?t=217&k=9D2EF214E144EE796430597FB475C3892C43C528";
-
-	/// <summary>
-	/// The ASP.NET script manager target for AJAX requests.
-	/// </summary>
-	private const string _scriptManagerTarget = "ctl00$ContentPlaceHolder1$APUP_5683";
-
-	/// <summary>
-	/// The event target for postcode search button.
-	/// </summary>
-	private const string _searchEventTarget = "ctl00$ContentPlaceHolder1$FF5683BTN";
-
-	/// <summary>
-	/// The event target for address dropdown selection.
-	/// </summary>
-	private const string _addressEventTarget = "ctl00$ContentPlaceHolder1$FF5683DDL";
-
-	/// <summary>
-	/// Regex for parsing hidden fields from AJAX responses.
-	/// </summary>
-	[GeneratedRegex(@"hiddenField\|(?<name>__VIEWSTATEGENERATOR|__EVENTVALIDATION|__VIEWSTATE)\|(?<value>[^|]+)")]
-	private static partial Regex AjaxHiddenFieldRegex();
-
-	/// <summary>
-	/// Regex for parsing hidden fields from HTML responses.
-	/// </summary>
-	[GeneratedRegex(@"name=""(?<name>__VIEWSTATEGENERATOR|__EVENTVALIDATION|__VIEWSTATE)""[^>]+value=""(?<value>[^""]+)""")]
-	private static partial Regex HtmlHiddenFieldRegex();
-
-	/// <summary>
-	/// Regex for parsing address options.
-	/// </summary>
-	[GeneratedRegex(@"<option value=""(?<uid>[^""]+)"">(?<address>[^<]+)</option>")]
-	private static partial Regex AddressRegex();
+	[GeneratedRegex(@"<input[^>]*name=""(?<name>[^""]+)""[^>]*value=""(?<value>[^""]*)""[^>]*>", RegexOptions.IgnoreCase)]
+	private static partial Regex InputValueRegex();
 
 	/// <summary>
 	/// Regex for parsing bin rows.
@@ -117,7 +88,26 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		// Prepare client-side request for postcode search
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var clientSideRequest = CreatePostcodeSearchRequest(clientSideResponse, postcode);
+			var cookie = GetRequestCookie(clientSideResponse);
+
+			Dictionary<string, string> formData = new()
+			{
+				{ "query", postcode },
+			};
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = "https://selfservice.broxtowe.gov.uk/core/addresslookup",
+				Method = "POST",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.FormUrlEncoded },
+					{ "cookie", cookie },
+				},
+				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
+			};
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -129,20 +119,14 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+			using var document = JsonDocument.Parse(clientSideResponse.Content);
 
 			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
-			foreach (Match rawAddress in rawAddresses)
+			foreach (var rawAddress in document.RootElement.EnumerateArray())
 			{
-				var uid = rawAddress.Groups["uid"].Value;
-
-				if (string.IsNullOrWhiteSpace(uid) || uid == "0")
-				{
-					continue;
-				}
-
-				var property = WebUtility.HtmlDecode(rawAddress.Groups["address"].Value).Trim();
+				var uid = rawAddress.GetProperty("Key").GetString()!;
+				var property = WebUtility.HtmlDecode(rawAddress.GetProperty("Value").GetString()!).Trim();
 
 				var address = new Address
 				{
@@ -180,89 +164,30 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 
 			return getBinDaysResponse;
 		}
-		// Prepare client-side request for postcode search
+		// Prepare client-side request to fetch bin collections
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var clientSideRequest = CreatePostcodeSearchRequest(clientSideResponse, address.Postcode!);
+			var cookie = GetRequestCookie(clientSideResponse);
 
-			var getBinDaysResponse = new GetBinDaysResponse
+			var requestVerificationToken = GetInputValue(clientSideResponse.Content, "__RequestVerificationToken");
+			var formGuid = GetInputValue(clientSideResponse.Content, "FormGuid");
+			var objectTemplateId = GetInputValue(clientSideResponse.Content, "ObjectTemplateID");
+			var currentSectionId = GetInputValue(clientSideResponse.Content, "CurrentSectionID");
+
+			Dictionary<string, string> formData = new()
 			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for selecting the address
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var cookie = clientSideResponse.Options.Metadata["cookie"];
-
-			var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
-			var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-			var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
-
-			var formData = new Dictionary<string, string>
-			{
-				{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_addressEventTarget}" },
-				{ "ctl00$ContentPlaceHolder1$FF5683DDL", address.Uid! },
-				{ "__EVENTTARGET", _addressEventTarget },
-				{ "__VIEWSTATE", viewState },
-				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-				{ "__EVENTVALIDATION", eventValidation },
-				{ "__ASYNCPOST", "true" },
+				{ "__RequestVerificationToken", requestVerificationToken },
+				{ "FormGuid", formGuid },
+				{ "ObjectTemplateID", objectTemplateId },
+				{ "Trigger", "submit" },
+				{ "CurrentSectionID", currentSectionId },
+				{ "FF5683", address.Uid! },
 			};
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 3,
-				Url = _formUrl,
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "x-requested-with", Constants.XmlHttpRequest },
-					{ "x-microsoftajax", "Delta=true" },
-					{ "content-type", Constants.FormUrlEncoded },
-					{ "cookie", cookie },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
-				Options = new ClientSideOptions
-				{
-					Metadata =
-					{
-						{ "cookie", cookie },
-					},
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request to fetch bin collections
-		else if (clientSideResponse.RequestId == 3)
-		{
-			var cookie = clientSideResponse.Options.Metadata["cookie"];
-
-			var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
-			var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-			var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
-
-			var formData = new Dictionary<string, string>
-			{
-				{ "__EVENTTARGET", "ctl00$ContentPlaceHolder1$btnSubmit" },
-				{ "__VIEWSTATE", viewState },
-				{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-				{ "__EVENTVALIDATION", eventValidation },
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 4,
-				Url = _formUrl,
+				RequestId = 2,
+				Url = "https://selfservice.broxtowe.gov.uk/renderform/Form",
 				Method = "POST",
 				Headers = new()
 				{
@@ -281,7 +206,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 2)
 		{
 			var rawBinRows = BinRowRegex().Matches(clientSideResponse.Content)!;
 
@@ -325,78 +250,38 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		return new ClientSideRequest
 		{
 			RequestId = 1,
-			Url = _formUrl,
+			Url = "https://selfservice.broxtowe.gov.uk/renderform?t=217&k=9D2EF214E144EE796430597FB475C3892C43C528",
 			Method = "GET",
 		};
 	}
 
 	/// <summary>
-	/// Creates a client-side request for postcode search.
+	/// Parses the request cookie value from the response headers.
 	/// </summary>
-	private static ClientSideRequest CreatePostcodeSearchRequest(ClientSideResponse clientSideResponse, string postcode)
+	private static string GetRequestCookie(ClientSideResponse clientSideResponse)
 	{
-		clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader);
-		var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader!);
+		var setCookieHeader = clientSideResponse.Headers["set-cookie"];
+		var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
-		var viewState = GetHiddenField(clientSideResponse.Content, "__VIEWSTATE");
-		var viewStateGenerator = GetHiddenField(clientSideResponse.Content, "__VIEWSTATEGENERATOR");
-		var eventValidation = GetHiddenField(clientSideResponse.Content, "__EVENTVALIDATION");
-
-		var formData = new Dictionary<string, string>
-		{
-			{ "ctl00$ScriptManager1", $"{_scriptManagerTarget}|{_searchEventTarget}" },
-			{ "__EVENTTARGET", _searchEventTarget },
-			{ "__VIEWSTATE", viewState },
-			{ "__VIEWSTATEGENERATOR", viewStateGenerator },
-			{ "__EVENTVALIDATION", eventValidation },
-			{ "ctl00$ContentPlaceHolder1$FF5683TB", postcode },
-			{ "__ASYNCPOST", "true" },
-		};
-
-		return new ClientSideRequest
-		{
-			RequestId = 2,
-			Url = _formUrl,
-			Method = "POST",
-			Headers = new()
-			{
-				{ "user-agent", Constants.UserAgent },
-				{ "x-requested-with", Constants.XmlHttpRequest },
-				{ "x-microsoftajax", "Delta=true" },
-				{ "content-type", Constants.FormUrlEncoded },
-				{ "cookie", cookie },
-			},
-			Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
-			Options = new ClientSideOptions
-			{
-				Metadata =
-				{
-					{ "cookie", cookie },
-				},
-			},
-		};
+		return cookie;
 	}
 
 	/// <summary>
-	/// Extracts hidden field values from HTML or AJAX responses.
+	/// Extracts an input value by its name from the HTML response.
 	/// </summary>
-	private static string GetHiddenField(string content, string fieldName)
+	private static string GetInputValue(string content, string inputName)
 	{
-		// First, try to find the field in the AJAX response format.
-		var ajaxMatch = AjaxHiddenFieldRegex().Matches(content)!.FirstOrDefault(m => m.Groups["name"].Value == fieldName);
-		if (ajaxMatch is not null)
+		var rawInputs = InputValueRegex().Matches(content)!;
+		foreach (Match rawInput in rawInputs)
 		{
-			return ajaxMatch.Groups["value"].Value;
+			if (rawInput.Groups["name"].Value != inputName)
+			{
+				continue;
+			}
+
+			return WebUtility.HtmlDecode(rawInput.Groups["value"].Value);
 		}
 
-		// If not found, try the standard HTML input format.
-		var htmlMatch = HtmlHiddenFieldRegex().Matches(content)!.FirstOrDefault(m => m.Groups["name"].Value == fieldName);
-		if (htmlMatch is not null)
-		{
-			return htmlMatch.Groups["value"].Value;
-		}
-
-		// If the field is not found in either format, throw an exception.
-		throw new InvalidOperationException($"Hidden field '{fieldName}' not found in response content.");
+		throw new InvalidOperationException($"Input '{inputName}' not found in response content.");
 	}
 }
