@@ -21,6 +21,7 @@ public class SouthNorfolkCouncilTests
 	[Theory]
 	[InlineData("NR18 0HQ")]
 	[InlineData("NR8 5GS", 16)]
+	[InlineData("IP21 4QU", 14)]
 	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
 	{
 		await TestSteps.EndToEnd(
