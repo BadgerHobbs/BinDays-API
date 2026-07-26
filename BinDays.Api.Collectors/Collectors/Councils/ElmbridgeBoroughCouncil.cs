@@ -57,7 +57,7 @@ internal sealed partial class ElmbridgeBoroughCouncil : GovUkCollectorBase, ICol
 		new()
 		{
 			Name = "Clothes, Textiles and Small Electricals",
-			Colour = BinColour.Grey,
+			Colour = BinColour.Any,
 			Keys = [ "Textiles and Small WEEE" ],
 			Type = BinType.Bag,
 		},

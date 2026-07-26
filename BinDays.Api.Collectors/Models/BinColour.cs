@@ -68,6 +68,19 @@ public sealed class BinColour
 	public static readonly BinColour Grey = new("Grey", "#9E9E9E");
 
 	/// <summary>
+	/// Clear (#9E9E9E). Same swatch as <see cref="Grey"/>, for items explicitly specified
+	/// as going out in a clear/transparent bag (e.g. batteries), rather than an unspecified colour.
+	/// </summary>
+	public static readonly BinColour Clear = new("Clear", "#9E9E9E");
+
+	/// <summary>
+	/// Any (#9E9E9E). Same swatch as <see cref="Grey"/>, for items with no official council
+	/// colour or receptacle (e.g. any bag left out alongside another bin). Combines with
+	/// <see cref="Bin.Type"/> in the app as "Any Bag"/"Any Sack".
+	/// </summary>
+	public static readonly BinColour Any = new("Any", "#9E9E9E");
+
+	/// <summary>
 	/// Yellow (#FFEB3B). Matches Flutter <c>Colors.yellow</c>.
 	/// </summary>
 	public static readonly BinColour Yellow = new("Yellow", "#FFEB3B");
