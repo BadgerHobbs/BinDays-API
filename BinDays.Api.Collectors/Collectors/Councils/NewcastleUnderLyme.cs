@@ -126,7 +126,7 @@ internal sealed partial class NewcastleUnderLyme : GovUkCollectorBase, ICollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://www.newcastle-staffs.gov.uk/homepage/97/check-your-bin-day?uprn={address.Uid!}&submit=",
+				Url = $"https://www.newcastle-staffs.gov.uk/homepage/97/check-your-bin-day?uprn={address.Uid!}",
 				Method = "GET",
 			};
 
@@ -146,7 +146,7 @@ internal sealed partial class NewcastleUnderLyme : GovUkCollectorBase, ICollecto
 			var binDays = new List<BinDay>();
 			foreach (Match rawBinDay in rawBinDays)
 			{
-				var dateString = string.Join(" ", rawBinDay.Groups["date"].Value.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
+				var dateString = rawBinDay.Groups["date"].Value.Trim();
 				var date = DateUtilities.ParseDateInferringYear(dateString, "dddd d MMMM");
 
 				var rawServices = ServiceRegex().Matches(rawBinDay.Groups["services"].Value)!;
@@ -154,7 +154,7 @@ internal sealed partial class NewcastleUnderLyme : GovUkCollectorBase, ICollecto
 				// Iterate through each service, and create a new bin day object
 				foreach (Match rawService in rawServices)
 				{
-					var service = string.Join(" ", rawService.Groups["service"].Value.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries));
+					var service = rawService.Groups["service"].Value.Trim();
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 					var binDay = new BinDay
