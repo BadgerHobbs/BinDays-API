@@ -38,7 +38,7 @@ public sealed class CollectorService
 	/// </summary>
 	/// <param name="govUkId">The gov.uk identifier.</param>
 	/// <returns>True if a collector is registered for the identifier, otherwise false.</returns>
-	public bool IsKnown(string govUkId) => _govUkIds.Contains(govUkId);
+	public bool IsRegistered(string govUkId) => _govUkIds.Contains(govUkId);
 
 	/// <summary>
 	/// Gets the collectors.

@@ -1,10 +1,10 @@
-namespace BinDays.Api.Telemetry;
+﻿namespace BinDays.Api.Telemetry;
 
 using System.Diagnostics.Metrics;
 
 /// <summary>
 /// Application metric instruments for the BinDays API.
-/// Registered as a singleton and injected into controllers.
+/// Registered as a single instance and injected into controllers.
 /// </summary>
 /// <remarks>
 /// The API is stateless and does not contact councils itself. A single user lookup produces
@@ -29,6 +29,24 @@ public sealed class BinDaysMetrics
 	/// collector, bounding the cardinality of user-supplied route values.
 	/// </summary>
 	public const string UnknownGovUkId = "unknown";
+
+	/// <summary>
+	/// The name of the addresses returned instrument, used to configure its histogram
+	/// boundaries.
+	/// </summary>
+	public const string AddressesReturnedInstrument = "bindays.addresses.returned";
+
+	/// <summary>
+	/// The name of the bin days returned instrument, used to configure its histogram
+	/// boundaries.
+	/// </summary>
+	public const string BinDaysReturnedInstrument = "bindays.bin_days.returned";
+
+	/// <summary>
+	/// The upper bound on a client supplied collector version accepted as a label value,
+	/// beyond which the version is reported as other.
+	/// </summary>
+	private const int MaximumLabelledVersion = 20;
 
 	/// <summary>
 	/// The meter owning every instrument on this class.
@@ -73,32 +91,38 @@ public sealed class BinDaysMetrics
 		_lookupSteps = _meter.CreateCounter<long>(
 			"bindays.lookup.steps",
 			unit: "{step}",
-			description: "HTTP requests handled as part of a multi-step lookup.");
+			description: "HTTP requests handled as part of a multi-step lookup."
+		);
 
 		_lookups = _meter.CreateCounter<long>(
 			"bindays.lookups",
 			unit: "{lookup}",
-			description: "Lookups that reached a terminal outcome.");
+			description: "Lookups that reached a terminal outcome."
+		);
 
 		_cacheOperations = _meter.CreateCounter<long>(
 			"bindays.cache.operations",
 			unit: "{operation}",
-			description: "Distributed cache reads by result.");
+			description: "Distributed cache reads by result."
+		);
 
 		_versionMismatches = _meter.CreateCounter<long>(
 			"bindays.collector.version_mismatches",
 			unit: "{request}",
-			description: "Requests rejected because the client collector version is stale.");
+			description: "Requests rejected because the client collector version is stale."
+		);
 
 		_addressesReturned = _meter.CreateHistogram<long>(
-			"bindays.addresses.returned",
+			AddressesReturnedInstrument,
 			unit: "{address}",
-			description: "Addresses returned on a completed address lookup.");
+			description: "Addresses returned on a completed address lookup."
+		);
 
 		_binDaysReturned = _meter.CreateHistogram<long>(
-			"bindays.bin_days.returned",
+			BinDaysReturnedInstrument,
 			unit: "{bin_day}",
-			description: "Bin days returned on a completed bin day lookup.");
+			description: "Bin days returned on a completed bin day lookup."
+		);
 	}
 
 	/// <summary>
@@ -106,11 +130,14 @@ public sealed class BinDaysMetrics
 	/// </summary>
 	/// <param name="endpoint">The endpoint handling the request.</param>
 	/// <param name="isContinuation">Whether the request carries a previous client-side response.</param>
-	public void RecordStep(string endpoint, bool isContinuation) =>
+	public void RecordStep(string endpoint, bool isContinuation)
+	{
 		_lookupSteps.Add(
 			1,
 			new("bindays.endpoint", endpoint),
-			new("bindays.step", isContinuation ? Steps.Continuation : Steps.Initial));
+			new("bindays.step", isContinuation ? Steps.Continuation : Steps.Initial)
+		);
+	}
 
 	/// <summary>
 	/// Records a lookup reaching a terminal outcome.
@@ -118,138 +145,83 @@ public sealed class BinDaysMetrics
 	/// <param name="endpoint">The endpoint handling the request.</param>
 	/// <param name="govUkId">The gov.uk identifier, already bounded via <see cref="UnknownGovUkId"/>.</param>
 	/// <param name="outcome">The terminal outcome.</param>
-	public void RecordLookup(string endpoint, string govUkId, string outcome) =>
+	public void RecordLookup(string endpoint, string govUkId, string outcome)
+	{
 		_lookups.Add(
 			1,
 			new("bindays.endpoint", endpoint),
 			new("bindays.gov_uk_id", govUkId),
-			new("bindays.outcome", outcome));
+			new("bindays.outcome", outcome)
+		);
+	}
 
 	/// <summary>
 	/// Records the result of a distributed cache read.
 	/// </summary>
 	/// <param name="endpoint">The endpoint performing the read.</param>
 	/// <param name="result">The cache result.</param>
-	public void RecordCache(string endpoint, string result) =>
+	public void RecordCache(string endpoint, string result)
+	{
 		_cacheOperations.Add(
 			1,
 			new("bindays.endpoint", endpoint),
-			new("bindays.cache_result", result));
+			new("bindays.cache_result", result)
+		);
+	}
 
 	/// <summary>
 	/// Records a rejected request caused by a stale client collector version.
 	/// </summary>
 	/// <param name="govUkId">The gov.uk identifier, already bounded via <see cref="UnknownGovUkId"/>.</param>
 	/// <param name="clientVersion">The collector version supplied by the client.</param>
-	public void RecordVersionMismatch(string govUkId, int clientVersion) =>
+	public void RecordVersionMismatch(string govUkId, int clientVersion)
+	{
 		_versionMismatches.Add(
 			1,
 			new("bindays.gov_uk_id", govUkId),
-			new("bindays.client_version", ClampVersion(clientVersion)));
+			new("bindays.client_version", ClampVersion(clientVersion))
+		);
+	}
 
 	/// <summary>
 	/// Records the address count of a completed address lookup.
 	/// </summary>
 	/// <param name="govUkId">The gov.uk identifier, already bounded via <see cref="UnknownGovUkId"/>.</param>
 	/// <param name="count">The number of addresses returned.</param>
-	public void RecordAddressesReturned(string govUkId, int count) =>
-		_addressesReturned.Record(count, new KeyValuePair<string, object?>("bindays.gov_uk_id", govUkId));
+	public void RecordAddressesReturned(string govUkId, int count)
+	{
+		_addressesReturned.Record(
+			count,
+			new KeyValuePair<string, object?>("bindays.gov_uk_id", govUkId)
+		);
+	}
 
 	/// <summary>
 	/// Records the bin day count of a completed bin day lookup.
 	/// </summary>
 	/// <param name="govUkId">The gov.uk identifier, already bounded via <see cref="UnknownGovUkId"/>.</param>
 	/// <param name="count">The number of bin days returned.</param>
-	public void RecordBinDaysReturned(string govUkId, int count) =>
-		_binDaysReturned.Record(count, new KeyValuePair<string, object?>("bindays.gov_uk_id", govUkId));
+	public void RecordBinDaysReturned(string govUkId, int count)
+	{
+		_binDaysReturned.Record(
+			count,
+			new KeyValuePair<string, object?>("bindays.gov_uk_id", govUkId)
+		);
+	}
 
 	/// <summary>
-	/// Clamps a client-supplied collector version to a bounded set of label values.
-	/// The version arrives as an unvalidated query parameter.
+	/// Clamps a client-supplied collector version to a bounded set of label values,
+	/// as the version arrives as an unvalidated query parameter.
 	/// </summary>
 	/// <param name="clientVersion">The collector version supplied by the client.</param>
-	/// <returns>The version as a string, or "other" if outside the expected range.</returns>
-	private static string ClampVersion(int clientVersion) =>
-		clientVersion is >= 0 and <= 20 ? clientVersion.ToString() : "other";
-
-	/// <summary>
-	/// Endpoint label values.
-	/// </summary>
-	public static class Endpoints
+	/// <returns>The version as a string, or other if outside the expected range.</returns>
+	private static string ClampVersion(int clientVersion)
 	{
-		/// <summary>The collector lookup endpoint.</summary>
-		public const string Collector = "collector";
+		if (clientVersion is >= 0 and <= MaximumLabelledVersion)
+		{
+			return clientVersion.ToString();
+		}
 
-		/// <summary>The address lookup endpoint.</summary>
-		public const string Addresses = "addresses";
-
-		/// <summary>The bin day lookup endpoint.</summary>
-		public const string BinDays = "bin_days";
-	}
-
-	/// <summary>
-	/// Step label values.
-	/// </summary>
-	public static class Steps
-	{
-		/// <summary>A request beginning a lookup.</summary>
-		public const string Initial = "initial";
-
-		/// <summary>A request continuing a lookup already in progress.</summary>
-		public const string Continuation = "continuation";
-	}
-
-	/// <summary>
-	/// Terminal outcome label values.
-	/// </summary>
-	public static class Outcomes
-	{
-		/// <summary>The lookup completed against the collector.</summary>
-		public const string Success = "success";
-
-		/// <summary>The lookup was served from cache.</summary>
-		public const string CacheHit = "cache_hit";
-
-		/// <summary>The supplied postcode was rejected as invalid.</summary>
-		public const string InvalidPostcode = "invalid_postcode";
-
-		/// <summary>The collector for the postcode is not currently supported.</summary>
-		public const string UnsupportedCollector = "unsupported_collector";
-
-		/// <summary>No gov.uk identifier was found for the postcode.</summary>
-		public const string GovUkIdNotFound = "gov_uk_id_not_found";
-
-		/// <summary>No supported collector was found for the gov.uk identifier.</summary>
-		public const string CollectorNotFound = "collector_not_found";
-
-		/// <summary>The request was rate limited by gov.uk.</summary>
-		public const string RateLimited = "rate_limited";
-
-		/// <summary>No addresses were found for the postcode.</summary>
-		public const string AddressesNotFound = "addresses_not_found";
-
-		/// <summary>No bin days were found for the address.</summary>
-		public const string BinDaysNotFound = "bin_days_not_found";
-
-		/// <summary>The client supplied a stale collector version.</summary>
-		public const string VersionMismatch = "version_mismatch";
-
-		/// <summary>An unexpected error occurred.</summary>
-		public const string Error = "error";
-	}
-
-	/// <summary>
-	/// Cache result label values.
-	/// </summary>
-	public static class CacheResults
-	{
-		/// <summary>The cache held a usable entry.</summary>
-		public const string Hit = "hit";
-
-		/// <summary>The cache held no entry.</summary>
-		public const string Miss = "miss";
-
-		/// <summary>The cache held an entry that could not be deserialised.</summary>
-		public const string Corrupt = "corrupt";
+		return "other";
 	}
 }

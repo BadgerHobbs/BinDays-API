@@ -1,4 +1,4 @@
-namespace BinDays.Api.Controllers;
+﻿namespace BinDays.Api.Controllers;
 
 using BinDays.Api.Collectors.Exceptions;
 using BinDays.Api.Collectors.Models;
@@ -72,8 +72,15 @@ public class CollectorsController : ControllerBase
 	/// </summary>
 	/// <param name="govUkId">The gov.uk identifier.</param>
 	/// <returns>The identifier if a collector is registered for it, otherwise "unknown".</returns>
-	private string SafeGovUkId(string? govUkId) =>
-		govUkId != null && _collectorService.IsKnown(govUkId) ? govUkId : BinDaysMetrics.UnknownGovUkId;
+	private string SafeGovUkId(string? govUkId)
+	{
+		if (govUkId != null && _collectorService.IsRegistered(govUkId))
+		{
+			return govUkId;
+		}
+
+		return BinDaysMetrics.UnknownGovUkId;
+	}
 
 	/// <summary>
 	/// Attempts to retrieve and deserialize an object from the cache.
@@ -90,19 +97,19 @@ public class CollectorsController : ControllerBase
 			try
 			{
 				var cached = JsonConvert.DeserializeObject<T>(cachedResult);
-				_metrics.RecordCache(endpoint, BinDaysMetrics.CacheResults.Hit);
+				_metrics.RecordCache(endpoint, CacheResults.Hit);
 				return cached;
 			}
 			catch (Exception ex)
 			{
 				_logger.LogWarning(ex, "Failed to deserialize cached data for key '{CacheKey}'. Evicting invalid cache entry.", cacheKey);
-				_metrics.RecordCache(endpoint, BinDaysMetrics.CacheResults.Corrupt);
+				_metrics.RecordCache(endpoint, CacheResults.Corrupt);
 				_cache.Remove(cacheKey);
 				return null;
 			}
 		}
 
-		_metrics.RecordCache(endpoint, BinDaysMetrics.CacheResults.Miss);
+		_metrics.RecordCache(endpoint, CacheResults.Miss);
 		return null;
 	}
 
@@ -138,15 +145,15 @@ public class CollectorsController : ControllerBase
 	{
 		postcode = ProcessingUtilities.FormatPostcode(postcode);
 
-		_metrics.RecordStep(BinDaysMetrics.Endpoints.Collector, clientSideResponse != null);
+		_metrics.RecordStep(Endpoints.Collector, clientSideResponse != null);
 
 		var cacheKey = $"collector-{FormatPostcodeForCacheKey(postcode)}";
-		var cachedResponse = TryGetFromCache<GetCollectorResponse>(cacheKey, BinDaysMetrics.Endpoints.Collector);
+		var cachedResponse = TryGetFromCache<GetCollectorResponse>(cacheKey, Endpoints.Collector);
 
 		if (cachedResponse != null)
 		{
 			_logger.LogInformation("Returning cached collector {CollectorName} for postcode: {Postcode}.", cachedResponse.Collector!.Name, postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Collector, SafeGovUkId(cachedResponse.Collector!.GovUkId), BinDaysMetrics.Outcomes.CacheHit);
+			_metrics.RecordLookup(Endpoints.Collector, SafeGovUkId(cachedResponse.Collector!.GovUkId), Outcomes.CacheHit);
 			return Ok(cachedResponse);
 		}
 
@@ -158,7 +165,7 @@ public class CollectorsController : ControllerBase
 			if (result.NextClientSideRequest == null)
 			{
 				_logger.LogInformation("Successfully retrieved collector {CollectorName} for postcode: {Postcode}.", result.Collector!.Name, postcode);
-				_metrics.RecordLookup(BinDaysMetrics.Endpoints.Collector, SafeGovUkId(result.Collector!.GovUkId), BinDaysMetrics.Outcomes.Success);
+				_metrics.RecordLookup(Endpoints.Collector, SafeGovUkId(result.Collector!.GovUkId), Outcomes.Success);
 
 				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(90) };
 				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
@@ -169,37 +176,37 @@ public class CollectorsController : ControllerBase
 		catch (InvalidPostcodeException ex)
 		{
 			_logger.LogWarning(ex, "Invalid postcode provided: {Postcode}.", postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Collector, BinDaysMetrics.UnknownGovUkId, BinDaysMetrics.Outcomes.InvalidPostcode);
+			_metrics.RecordLookup(Endpoints.Collector, BinDaysMetrics.UnknownGovUkId, Outcomes.InvalidPostcode);
 			return BadRequest("The supplied postcode is invalid.");
 		}
 		catch (UnsupportedCollectorException ex)
 		{
 			_logger.LogWarning(ex, "Unsupported collector {CollectorName} for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.CollectorName, ex.GovUkId, postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Collector, SafeGovUkId(ex.GovUkId), BinDaysMetrics.Outcomes.UnsupportedCollector);
+			_metrics.RecordLookup(Endpoints.Collector, SafeGovUkId(ex.GovUkId), Outcomes.UnsupportedCollector);
 			return NotFound($"{ex.CollectorName} is not currently supported.");
 		}
 		catch (GovUkIdNotFoundException ex)
 		{
 			_logger.LogWarning(ex, "No gov.uk ID found for postcode: {Postcode}.", postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Collector, BinDaysMetrics.UnknownGovUkId, BinDaysMetrics.Outcomes.GovUkIdNotFound);
+			_metrics.RecordLookup(Endpoints.Collector, BinDaysMetrics.UnknownGovUkId, Outcomes.GovUkIdNotFound);
 			return NotFound("No collector found for the specified postcode.");
 		}
 		catch (SupportedCollectorNotFoundException ex)
 		{
 			_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.GovUkId, postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Collector, SafeGovUkId(ex.GovUkId), BinDaysMetrics.Outcomes.CollectorNotFound);
+			_metrics.RecordLookup(Endpoints.Collector, SafeGovUkId(ex.GovUkId), Outcomes.CollectorNotFound);
 			return NotFound("No supported collector found for the specified postcode.");
 		}
 		catch (GovUkRateLimitedException ex)
 		{
 			_logger.LogWarning(ex, "Rate limited by gov.uk for postcode: {Postcode}.", postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Collector, BinDaysMetrics.UnknownGovUkId, BinDaysMetrics.Outcomes.RateLimited);
+			_metrics.RecordLookup(Endpoints.Collector, BinDaysMetrics.UnknownGovUkId, Outcomes.RateLimited);
 			return StatusCode(StatusCodes.Status429TooManyRequests, "Temporarily rate-limited by gov.uk. Please try again later.");
 		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "An unexpected error occurred while retrieving collector for postcode: {Postcode}.", postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Collector, BinDaysMetrics.UnknownGovUkId, BinDaysMetrics.Outcomes.Error);
+			_metrics.RecordLookup(Endpoints.Collector, BinDaysMetrics.UnknownGovUkId, Outcomes.Error);
 			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching the collector for the specified postcode. Please try again later.");
 		}
 	}
@@ -218,15 +225,15 @@ public class CollectorsController : ControllerBase
 		postcode = ProcessingUtilities.FormatPostcode(postcode);
 
 		var safeGovUkId = SafeGovUkId(govUkId);
-		_metrics.RecordStep(BinDaysMetrics.Endpoints.Addresses, clientSideResponse != null);
+		_metrics.RecordStep(Endpoints.Addresses, clientSideResponse != null);
 
 		var cacheKey = $"addresses-{govUkId}-{FormatPostcodeForCacheKey(postcode)}";
-		var cachedResponse = TryGetFromCache<GetAddressesResponse>(cacheKey, BinDaysMetrics.Endpoints.Addresses);
+		var cachedResponse = TryGetFromCache<GetAddressesResponse>(cacheKey, Endpoints.Addresses);
 
 		if (cachedResponse != null)
 		{
 			_logger.LogInformation("Returning {AddressCount} cached addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", cachedResponse.Addresses!.Count, govUkId, postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Addresses, safeGovUkId, BinDaysMetrics.Outcomes.CacheHit);
+			_metrics.RecordLookup(Endpoints.Addresses, safeGovUkId, Outcomes.CacheHit);
 			return Ok(cachedResponse);
 		}
 
@@ -240,7 +247,7 @@ public class CollectorsController : ControllerBase
 				_logger.WithJsonData("Addresses", result.Addresses)
 					.LogInformation("Successfully retrieved {AddressCount} addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", result.Addresses!.Count, govUkId, postcode);
 
-				_metrics.RecordLookup(BinDaysMetrics.Endpoints.Addresses, safeGovUkId, BinDaysMetrics.Outcomes.Success);
+				_metrics.RecordLookup(Endpoints.Addresses, safeGovUkId, Outcomes.Success);
 				_metrics.RecordAddressesReturned(safeGovUkId, result.Addresses!.Count);
 
 				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.UtcNow.Date.AddDays(30) };
@@ -252,19 +259,19 @@ public class CollectorsController : ControllerBase
 		catch (SupportedCollectorNotFoundException ex)
 		{
 			_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Addresses, safeGovUkId, BinDaysMetrics.Outcomes.CollectorNotFound);
+			_metrics.RecordLookup(Endpoints.Addresses, safeGovUkId, Outcomes.CollectorNotFound);
 			return NotFound("No supported collector found for the specified gov.uk ID.");
 		}
 		catch (AddressesNotFoundException ex)
 		{
 			_logger.LogWarning(ex, "No addresses found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Addresses, safeGovUkId, BinDaysMetrics.Outcomes.AddressesNotFound);
+			_metrics.RecordLookup(Endpoints.Addresses, safeGovUkId, Outcomes.AddressesNotFound);
 			return NotFound("No addresses found for the specified postcode.");
 		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "An unexpected error occurred while retrieving addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.Addresses, safeGovUkId, BinDaysMetrics.Outcomes.Error);
+			_metrics.RecordLookup(Endpoints.Addresses, safeGovUkId, Outcomes.Error);
 			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching addresses. Please try again later.");
 		}
 	}
@@ -287,7 +294,7 @@ public class CollectorsController : ControllerBase
 		var safeGovUkId = SafeGovUkId(govUkId);
 
 		// Recorded before the version gate, so that rejected requests still count as load.
-		_metrics.RecordStep(BinDaysMetrics.Endpoints.BinDays, clientSideResponse != null);
+		_metrics.RecordStep(Endpoints.BinDays, clientSideResponse != null);
 
 		// Check if the user is sending a request compatible with an old collector version.
 		// Returns 410 (gone) response code to prompt user re-selection.
@@ -298,24 +305,24 @@ public class CollectorsController : ControllerBase
 			{
 				_logger.LogInformation("Collector version mismatch for gov.uk ID: {GovUkId}, client: {ClientVersion}, current: {CurrentVersion}.", govUkId, version, collector.Version);
 				_metrics.RecordVersionMismatch(safeGovUkId, version);
-				_metrics.RecordLookup(BinDaysMetrics.Endpoints.BinDays, safeGovUkId, BinDaysMetrics.Outcomes.VersionMismatch);
+				_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.VersionMismatch);
 				return StatusCode(StatusCodes.Status410Gone, "The collector version is out of date.");
 			}
 		}
 		catch (SupportedCollectorNotFoundException ex)
 		{
 			_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.BinDays, safeGovUkId, BinDaysMetrics.Outcomes.CollectorNotFound);
+			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.CollectorNotFound);
 			return NotFound("No supported collector found for the specified gov.uk ID.");
 		}
 
 		var cacheKey = $"bin-days-{govUkId}-{FormatPostcodeForCacheKey(postcode)}-{uid}";
-		var cachedResponse = TryGetFromCache<GetBinDaysResponse>(cacheKey, BinDaysMetrics.Endpoints.BinDays);
+		var cachedResponse = TryGetFromCache<GetBinDaysResponse>(cacheKey, Endpoints.BinDays);
 
 		if (cachedResponse != null)
 		{
 			_logger.LogInformation("Returning {BinDayCount} cached bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", cachedResponse.BinDays!.Count, govUkId, postcode, uid);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.BinDays, safeGovUkId, BinDaysMetrics.Outcomes.CacheHit);
+			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.CacheHit);
 			return Ok(cachedResponse);
 		}
 
@@ -335,7 +342,7 @@ public class CollectorsController : ControllerBase
 				_logger.WithJsonData("BinDays", result.BinDays)
 					.LogInformation("Successfully retrieved {BinDayCount} bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", result.BinDays!.Count, govUkId, postcode, uid);
 
-				_metrics.RecordLookup(BinDaysMetrics.Endpoints.BinDays, safeGovUkId, BinDaysMetrics.Outcomes.Success);
+				_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.Success);
 				_metrics.RecordBinDaysReturned(safeGovUkId, result.BinDays!.Count);
 
 				// Cache until the day after the earliest bin day, or for 1 day if no bin days are returned.
@@ -351,19 +358,19 @@ public class CollectorsController : ControllerBase
 		catch (SupportedCollectorNotFoundException ex)
 		{
 			_logger.LogWarning(ex, "No supported collector found for gov.uk ID: {GovUkId}.", govUkId);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.BinDays, safeGovUkId, BinDaysMetrics.Outcomes.CollectorNotFound);
+			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.CollectorNotFound);
 			return NotFound("No supported collector found for the specified gov.uk ID.");
 		}
 		catch (BinDaysNotFoundException ex)
 		{
 			_logger.LogWarning(ex, "No bin days found for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.BinDays, safeGovUkId, BinDaysMetrics.Outcomes.BinDaysNotFound);
+			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.BinDaysNotFound);
 			return NotFound("No bin days found for the specified address.");
 		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "An unexpected error occurred while retrieving bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
-			_metrics.RecordLookup(BinDaysMetrics.Endpoints.BinDays, safeGovUkId, BinDaysMetrics.Outcomes.Error);
+			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.Error);
 			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching bin days. Please try again later.");
 		}
 	}
