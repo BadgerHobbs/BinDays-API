@@ -134,6 +134,7 @@ internal sealed partial class ArgyllAndButeCouncil : GovUkCollectorBase, ICollec
 		else if (clientSideResponse.RequestId == 2)
 		{
 			// Process addresses from response
+			var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
 			// Iterate through each address, and create a new address object
@@ -151,7 +152,8 @@ internal sealed partial class ArgyllAndButeCouncil : GovUkCollectorBase, ICollec
 				{
 					Property = rawAddress.Groups["address"].Value.Trim(),
 					Postcode = postcode,
-					Uid = uid,
+					// Uid format: "{uid};{form_build_id}".
+					Uid = $"{uid};{formBuildId}",
 				};
 
 				addresses.Add(address);
@@ -171,119 +173,175 @@ internal sealed partial class ArgyllAndButeCouncil : GovUkCollectorBase, ICollec
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting the form
-		if (clientSideResponse == null)
+		// Uid format is "{uid};{form_build_id}" for addresses returned by GetAddresses.
+		// Fall back to the legacy 3-step flow for older cached UIDs that contain only the uid.
+		var uidParts = address.Uid!.Split(';', 2);
+		var uid = uidParts[0];
+		var embeddedFormBuildId = uidParts.Length == 2 ? uidParts[1] : null;
+
+		if (embeddedFormBuildId != null)
 		{
-			var clientSideRequest = new ClientSideRequest
+			if (clientSideResponse == null)
 			{
-				RequestId = 1,
-				Url = _binCollectionUrl,
-				Method = "GET",
-			};
+				var postcode = address.Postcode!;
 
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		else if (clientSideResponse.RequestId == 1)
-		{
-			// Prepare client-side request for posting the postcode
-			var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
-			var postcode = address.Postcode!;
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = _binCollectionUrl,
-				Method = "POST",
-				Headers = new()
+				var clientSideRequest = new ClientSideRequest
 				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-				{
-					{ "postcode", postcode },
-					{ "form_build_id", formBuildId },
-					{ "form_id", _formId },
-				}),
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		else if (clientSideResponse.RequestId == 2)
-		{
-			// Prepare client-side request for posting the selected address
-			var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
-			var postcode = address.Postcode!;
-			var uid = address.Uid!;
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = _binCollectionUrl,
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-				{
-					{ "postcode", postcode },
-					{ "address", uid },
-					{ "form_build_id", formBuildId },
-					{ "form_id", _formId },
-				}),
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		else if (clientSideResponse.RequestId == 3)
-		{
-			// Process bin days from response
-			var rawBinDays = BinDayRegex().Matches(clientSideResponse.Content)!;
-
-			// Iterate through each bin day, and create a new bin day object
-			var binDays = new List<BinDay>();
-			foreach (Match rawBinDay in rawBinDays)
-			{
-				var service = rawBinDay.Groups["service"].Value.Trim();
-				var collectionDate = rawBinDay.Groups["collectionDate"].Value.Trim();
-
-				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-
-				var binDay = new BinDay
-				{
-					Date = DateUtilities.ParseDateInferringYear(collectionDate, "dddd d MMMM"),
-					Address = address,
-					Bins = matchedBins,
+					RequestId = 1,
+					Url = _binCollectionUrl,
+					Method = "POST",
+					Headers = new()
+					{
+						{ "user-agent", Constants.UserAgent },
+						{ "content-type", Constants.FormUrlEncoded },
+					},
+					Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
+					{
+						{ "postcode", postcode },
+						{ "address", uid },
+						{ "form_build_id", embeddedFormBuildId },
+						{ "form_id", _formId },
+					}),
 				};
 
-				binDays.Add(binDay);
+				var getBinDaysResponse = new GetBinDaysResponse
+				{
+					NextClientSideRequest = clientSideRequest,
+				};
+
+				return getBinDaysResponse;
 			}
-
-			var getBinDaysResponse = new GetBinDaysResponse
+			else if (clientSideResponse.RequestId == 1)
 			{
-				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-			};
+				var getBinDaysResponse = ProcessBinDaysResponse(address, clientSideResponse.Content);
 
-			return getBinDaysResponse;
+				return getBinDaysResponse;
+			}
+		}
+		else
+		{
+			// Prepare client-side request for getting the form
+			if (clientSideResponse == null)
+			{
+				var clientSideRequest = new ClientSideRequest
+				{
+					RequestId = 1,
+					Url = _binCollectionUrl,
+					Method = "GET",
+				};
+
+				var getBinDaysResponse = new GetBinDaysResponse
+				{
+					NextClientSideRequest = clientSideRequest,
+				};
+
+				return getBinDaysResponse;
+			}
+			else if (clientSideResponse.RequestId == 1)
+			{
+				// Prepare client-side request for posting the postcode
+				var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
+				var postcode = address.Postcode!;
+
+				var clientSideRequest = new ClientSideRequest
+				{
+					RequestId = 2,
+					Url = _binCollectionUrl,
+					Method = "POST",
+					Headers = new()
+					{
+						{ "user-agent", Constants.UserAgent },
+						{ "content-type", Constants.FormUrlEncoded },
+					},
+					Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
+					{
+						{ "postcode", postcode },
+						{ "form_build_id", formBuildId },
+						{ "form_id", _formId },
+					}),
+				};
+
+				var getBinDaysResponse = new GetBinDaysResponse
+				{
+					NextClientSideRequest = clientSideRequest,
+				};
+
+				return getBinDaysResponse;
+			}
+			else if (clientSideResponse.RequestId == 2)
+			{
+				// Prepare client-side request for posting the selected address
+				var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
+				var postcode = address.Postcode!;
+
+				var clientSideRequest = new ClientSideRequest
+				{
+					RequestId = 3,
+					Url = _binCollectionUrl,
+					Method = "POST",
+					Headers = new()
+					{
+						{ "user-agent", Constants.UserAgent },
+						{ "content-type", Constants.FormUrlEncoded },
+					},
+					Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
+					{
+						{ "postcode", postcode },
+						{ "address", uid },
+						{ "form_build_id", formBuildId },
+						{ "form_id", _formId },
+					}),
+				};
+
+				var getBinDaysResponse = new GetBinDaysResponse
+				{
+					NextClientSideRequest = clientSideRequest,
+				};
+
+				return getBinDaysResponse;
+			}
+			else if (clientSideResponse.RequestId == 3)
+			{
+				var getBinDaysResponse = ProcessBinDaysResponse(address, clientSideResponse.Content);
+
+				return getBinDaysResponse;
+			}
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Processes bin days from the response content.
+	/// </summary>
+	private GetBinDaysResponse ProcessBinDaysResponse(Address address, string content)
+	{
+		var rawBinDays = BinDayRegex().Matches(content)!;
+
+		// Iterate through each bin day, and create a new bin day object
+		var binDays = new List<BinDay>();
+		foreach (Match rawBinDay in rawBinDays)
+		{
+			var service = rawBinDay.Groups["service"].Value.Trim();
+			var collectionDate = rawBinDay.Groups["collectionDate"].Value.Trim();
+
+			var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+
+			var binDay = new BinDay
+			{
+				Date = DateUtilities.ParseDateInferringYear(collectionDate, "dddd d MMMM"),
+				Address = address,
+				Bins = matchedBins,
+			};
+
+			binDays.Add(binDay);
+		}
+
+		var getBinDaysResponse = new GetBinDaysResponse
+		{
+			BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+		};
+
+		return getBinDaysResponse;
 	}
 }
