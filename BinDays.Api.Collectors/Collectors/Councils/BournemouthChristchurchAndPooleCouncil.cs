@@ -21,6 +21,9 @@ internal sealed partial class BournemouthChristchurchAndPooleCouncil : GovUkColl
 	/// <inheritdoc/>
 	public override string GovUkId => "bournemouth-christchurch-poole";
 
+	/// <inheritdoc/>
+	public override int Version => 2;
+
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>

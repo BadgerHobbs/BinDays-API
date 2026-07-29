@@ -5,6 +5,7 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -134,12 +135,15 @@ internal sealed partial class EastSuffolkCouncil : GovUkCollectorBase, ICollecto
 				.GetProperty("transformed")
 				.GetProperty("rows_data");
 
+			// 'rows_data' is an empty array rather than an object when there are no results.
+			var addressEntries = rowsData.ValueKind == JsonValueKind.Object
+				? rowsData.EnumerateObject().Select(p => p.Value)
+				: rowsData.EnumerateArray();
+
 			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
-			foreach (var row in rowsData.EnumerateObject())
+			foreach (var rowData in addressEntries)
 			{
-				var rowData = row.Value;
-
 				var address = new Address
 				{
 					Property = rowData.GetProperty("display").GetString()!.Trim(),
@@ -272,11 +276,15 @@ internal sealed partial class EastSuffolkCouncil : GovUkCollectorBase, ICollecto
 				.GetProperty("transformed")
 				.GetProperty("rows_data");
 
+			// 'rows_data' is an empty array rather than an object when there are no results.
+			var collectionEntries = rowsData.ValueKind == JsonValueKind.Object
+				? rowsData.EnumerateObject().Select(p => p.Value)
+				: rowsData.EnumerateArray();
+
 			// Iterate through each collection entry, and create a new bin day object
 			var binDays = new List<BinDay>();
-			foreach (var row in rowsData.EnumerateObject())
+			foreach (var rowData in collectionEntries)
 			{
-				var rowData = row.Value;
 				var service = rowData.GetProperty("CollectionType").GetString()!.Trim();
 				var collectionDate = rowData.GetProperty("CollectionDate").GetString()!.Trim();
 

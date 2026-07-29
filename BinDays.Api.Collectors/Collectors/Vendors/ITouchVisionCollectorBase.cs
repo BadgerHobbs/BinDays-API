@@ -145,39 +145,43 @@ internal abstract class ITouchVisionCollectorBase : GovUkCollectorBase
 			var decryptedJson = Decrypt(clientSideResponse.Content);
 			using var jsonDoc = JsonDocument.Parse(decryptedJson);
 
-			var collectionDayArray = jsonDoc.RootElement.GetProperty("collectionDay");
+			var collectionDayProperty = jsonDoc.RootElement.GetProperty("collectionDay");
 			var binDays = new List<BinDay>();
 
 			var binTypes = GetBinTypes(address);
 
-			foreach (var collectionItem in collectionDayArray.EnumerateArray())
+			// The 'collectionDay' field is 'null' rather than an empty array when a UPRN has no scheduled collections.
+			if (collectionDayProperty.ValueKind == JsonValueKind.Array)
 			{
-				var binType = collectionItem.GetProperty("binType").GetString()!;
-				var matchedBins = ProcessingUtilities.GetMatchingBins(binTypes, binType);
-
-				var dateStrings = new List<string?>
+				foreach (var collectionItem in collectionDayProperty.EnumerateArray())
 				{
-					collectionItem.GetProperty("collectionDay").GetString(),
-				};
+					var binType = collectionItem.GetProperty("binType").GetString()!;
+					var matchedBins = ProcessingUtilities.GetMatchingBins(binTypes, binType);
 
-				// The 'followingDay' field is optional and may be absent from the response.
-				if (collectionItem.TryGetProperty("followingDay", out var followingDay))
-				{
-					dateStrings.Add(followingDay.GetString());
-				}
-
-				foreach (var dateString in dateStrings)
-				{
-					if (!string.IsNullOrWhiteSpace(dateString))
+					var dateStrings = new List<string?>
 					{
-						var date = DateUtilities.ParseDateExact(dateString, "dd-MM-yyyy");
+						collectionItem.GetProperty("collectionDay").GetString(),
+					};
 
-						binDays.Add(new BinDay
+					// The 'followingDay' field is optional and may be absent from the response.
+					if (collectionItem.TryGetProperty("followingDay", out var followingDay))
+					{
+						dateStrings.Add(followingDay.GetString());
+					}
+
+					foreach (var dateString in dateStrings)
+					{
+						if (!string.IsNullOrWhiteSpace(dateString))
 						{
-							Date = date,
-							Address = address,
-							Bins = matchedBins
-						});
+							var date = DateUtilities.ParseDateExact(dateString, "dd-MM-yyyy");
+
+							binDays.Add(new BinDay
+							{
+								Date = date,
+								Address = address,
+								Bins = matchedBins
+							});
+						}
 					}
 				}
 			}

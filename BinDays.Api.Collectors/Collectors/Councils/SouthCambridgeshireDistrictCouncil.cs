@@ -65,6 +65,12 @@ internal sealed partial class SouthCambridgeshireDistrictCouncil : GovUkCollecto
 	[GeneratedRegex(@"<th[^>]*scope=""row"">(?<date>[^<]+)", RegexOptions.Singleline)]
 	private static partial Regex BinDayDateRegex();
 
+	/// <summary>
+	/// Regex matching the plain-text response the site returns (400, not JSON) when a postcode has no premises.
+	/// </summary>
+	[GeneratedRegex(@"^No premises found for postcode:")]
+	private static partial Regex NoPremisesFoundRegex();
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
@@ -112,6 +118,16 @@ internal sealed partial class SouthCambridgeshireDistrictCouncil : GovUkCollecto
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 2)
 		{
+			// The site returns a plain-text "No premises found for postcode: ..." body (400, not JSON)
+			// when the postcode has no matches, e.g. it falls outside the council's area.
+			if (clientSideResponse.StatusCode == 400 && NoPremisesFoundRegex().IsMatch(clientSideResponse.Content))
+			{
+				return new GetAddressesResponse
+				{
+					Addresses = [],
+				};
+			}
+
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var addressesHtml = jsonDoc.RootElement.GetProperty("addresses").GetString()!;
 
