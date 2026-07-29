@@ -34,7 +34,7 @@ public sealed class CollectorServiceGetBinDaysTests
 		var collector = new FakeCollector([unmatchedBinDay, matchedBinDay]);
 		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance);
 
-		var result = collectorService.GetBinDays(FakeCollector.GovUkId, address, null);
+		var result = collectorService.GetBinDays(collector.GovUkId, address, null);
 
 		var resultBinDay = Assert.Single(result.BinDays!);
 		Assert.Same(matchedBinDay, resultBinDay);
@@ -49,7 +49,7 @@ public sealed class CollectorServiceGetBinDaysTests
 		var collector = new FakeCollector([unmatchedBinDay]);
 		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance);
 
-		Assert.Throws<AllBinDaysUnmatchedException>(() => collectorService.GetBinDays(FakeCollector.GovUkId, address, null));
+		Assert.Throws<AllBinDaysUnmatchedException>(() => collectorService.GetBinDays(collector.GovUkId, address, null));
 	}
 
 	[Fact]
@@ -60,29 +60,36 @@ public sealed class CollectorServiceGetBinDaysTests
 		var collector = new FakeCollector([]);
 		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance);
 
-		Assert.Throws<BinDaysNotFoundException>(() => collectorService.GetBinDays(FakeCollector.GovUkId, address, null));
+		Assert.Throws<BinDaysNotFoundException>(() => collectorService.GetBinDays(collector.GovUkId, address, null));
 	}
 
 	/// <summary>
 	/// A minimal <see cref="ICollector"/> stub that returns a fixed set of bin days with no
 	/// client-side requests required.
 	/// </summary>
-	private sealed class FakeCollector(IReadOnlyCollection<BinDay> binDays) : ICollector
+	private sealed class FakeCollector : ICollector
 	{
-		public static string Name => "Fake Collector";
+		private readonly IReadOnlyCollection<BinDay> _binDays;
 
-		public static Uri WebsiteUrl => new("https://example.com");
+		public FakeCollector(IReadOnlyCollection<BinDay> binDays)
+		{
+			_binDays = binDays;
+		}
 
-		public static string GovUkId => "fake-collector";
+		public string Name { get; } = "Fake Collector";
 
-		public static Uri GovUkUrl => new("https://www.gov.uk/find-out-when-your-bin-collection-day-is/fake-collector");
+		public Uri WebsiteUrl { get; } = new("https://example.com");
 
-		public static int Version => 1;
+		public string GovUkId { get; } = "fake-collector";
+
+		public Uri GovUkUrl { get; } = new("https://www.gov.uk/find-out-when-your-bin-collection-day-is/fake-collector");
+
+		public int Version { get; } = 1;
 
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse) =>
 			throw new NotImplementedException();
 
 		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse) =>
-			new() { BinDays = binDays };
+			new() { BinDays = _binDays };
 	}
 }
