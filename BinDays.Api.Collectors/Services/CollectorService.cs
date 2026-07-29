@@ -16,6 +16,11 @@ public sealed class CollectorService
 	private readonly IReadOnlyCollection<ICollector> _collectors;
 
 	/// <summary>
+	/// The set of registered gov.uk identifiers, used for membership checks.
+	/// </summary>
+	private readonly HashSet<string> _govUkIds;
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorService"/> class.
 	/// </summary>
 	/// <param name="collectors">The collectors.</param>
@@ -23,7 +28,17 @@ public sealed class CollectorService
 	public CollectorService(IEnumerable<ICollector> collectors)
 	{
 		_collectors = [.. collectors];
+		_govUkIds = [.. _collectors.Select(collector => collector.GovUkId)];
 	}
+
+	/// <summary>
+	/// Determines whether a gov.uk identifier corresponds to a registered collector.
+	/// Used to bound metric label cardinality, as the identifier arrives as a
+	/// user-supplied route parameter and is otherwise unbounded.
+	/// </summary>
+	/// <param name="govUkId">The gov.uk identifier.</param>
+	/// <returns>True if a collector is registered for the identifier, otherwise false.</returns>
+	public bool IsRegistered(string govUkId) => _govUkIds.Contains(govUkId);
 
 	/// <summary>
 	/// Gets the collectors.

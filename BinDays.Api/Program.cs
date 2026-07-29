@@ -1,4 +1,4 @@
-using BinDays.Api.Initialisation;
+﻿using BinDays.Api.Initialisation;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using StackExchange.Redis;
@@ -46,6 +46,9 @@ builder.Services.AddLogging(loggingBuilder =>
 	loggingBuilder.AddSeq(builder.Configuration.GetSection("Seq"));
 });
 
+// Configure metrics, and log export via OTLP if an endpoint is configured
+builder.AddTelemetry();
+
 builder.Services.AddOpenApi(options =>
 {
 	options.AddDocumentTransformer((document, context, ct) =>
@@ -79,12 +82,13 @@ app.UseCors(x => x
 	.AllowAnyHeader()
 );
 
-app.UseHttpsRedirection();
-
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.MapHealthChecks("/status");
+
+// Metrics for monitoring, scraped over the internal container network only
+app.MapPrometheusScrapingEndpoint();
 
 app.Run();

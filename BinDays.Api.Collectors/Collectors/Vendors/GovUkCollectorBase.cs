@@ -166,7 +166,10 @@ internal abstract partial class GovUkCollectorBase
 		// If null, try to get gov.uk ID from response html
 		govUkId ??= GovUkIdRegex().Match(clientSideResponse.Content).Groups["GovUkId"].Value;
 
-		if (govUkId == null)
+		// An unmatched regex yields an empty string rather than null, so a missing ID has to
+		// be checked for emptiness. Checking only for null let an unparseable response fall
+		// through to the collector name check below and surface as a 500 rather than a 404.
+		if (string.IsNullOrWhiteSpace(govUkId))
 		{
 			throw new GovUkIdNotFoundException(postcode);
 		}

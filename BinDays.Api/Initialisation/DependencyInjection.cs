@@ -1,8 +1,9 @@
-namespace BinDays.Api.Initialisation;
+﻿namespace BinDays.Api.Initialisation;
 
 using Autofac;
 using BinDays.Api.Collectors.Collectors;
 using BinDays.Api.Collectors.Services;
+using BinDays.Api.Telemetry;
 
 /// <summary>
 /// Configures dependency injection for the application using Autofac.
@@ -28,5 +29,8 @@ internal static class DependencyInjection
 
 		// Register collector service.
 		builder.RegisterType<CollectorService>();
+
+		// Register metric instruments. Must be a single instance, as each one owns a Meter.
+		builder.RegisterType<BinDaysMetrics>().SingleInstance();
 	}
 }
