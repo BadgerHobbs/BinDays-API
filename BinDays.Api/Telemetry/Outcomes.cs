@@ -57,6 +57,11 @@ public static class Outcomes
 	public const string VersionMismatch = "version_mismatch";
 
 	/// <summary>
+	/// Bin days were found but none matched a bin type, indicating a broken collector.
+	/// </summary>
+	public const string BinDaysUnmatched = "bin_days_unmatched";
+
+	/// <summary>
 	/// An unexpected error occurred.
 	/// </summary>
 	public const string Error = "error";

@@ -41,6 +41,13 @@ internal sealed partial class ScottishBordersCouncil : GovUkCollectorBase, IColl
 			Colour = BinColour.Blue,
 			Keys = [ "Recycling" ],
 		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Brown,
+			Keys = [ "Food" ],
+			Type = BinType.Caddy,
+		},
 	];
 
 	/// <summary>

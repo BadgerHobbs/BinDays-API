@@ -4,6 +4,7 @@ using BinDays.Api.Collectors.Collectors;
 using BinDays.Api.Collectors.Collectors.Vendors;
 using BinDays.Api.Collectors.Exceptions;
 using BinDays.Api.Collectors.Models;
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Service for returning specific or all collectors.
@@ -21,14 +22,21 @@ public sealed class CollectorService
 	private readonly HashSet<string> _govUkIds;
 
 	/// <summary>
+	/// The logger.
+	/// </summary>
+	private readonly ILogger<CollectorService> _logger;
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorService"/> class.
 	/// </summary>
 	/// <param name="collectors">The collectors.</param>
+	/// <param name="logger">The logger.</param>
 	/// <exception cref="ArgumentNullException">Thrown when collectors is null.</exception>
-	public CollectorService(IEnumerable<ICollector> collectors)
+	public CollectorService(IEnumerable<ICollector> collectors, ILogger<CollectorService> logger)
 	{
 		_collectors = [.. collectors];
 		_govUkIds = [.. _collectors.Select(collector => collector.GovUkId)];
+		_logger = logger;
 	}
 
 	/// <summary>
@@ -102,19 +110,48 @@ public sealed class CollectorService
 	/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
 	/// <returns>The response containing either the next client-side request to make or the bin days.</returns>
 	/// <exception cref="BinDaysNotFoundException">Thrown when no bin days are found and no next client-side request.</exception>
+	/// <exception cref="AllBinDaysUnmatchedException">Thrown when bin days are found but none matched a bin type.</exception>
 	public GetBinDaysResponse GetBinDays(string govUkId, Address address, ClientSideResponse? clientSideResponse)
 	{
 		var collector = GetCollector(govUkId);
 		var result = collector.GetBinDays(address, clientSideResponse);
 
-		// Throw exception if no next client-side request and no bin days
-		if (result.NextClientSideRequest == null && result.BinDays?.Count == 0)
+		if (result.BinDays?.Count > 0)
 		{
-			throw new BinDaysNotFoundException(govUkId, address.Postcode!, address.Uid!);
+			// Drop bin days that matched no bin types (e.g. an unrecognised collection service on the
+			// council's site), logging a warning rather than discarding the address's other, valid bin days.
+			var matchedBinDays = new List<BinDay>();
+			foreach (var binDay in result.BinDays)
+			{
+				if (binDay.Bins.Count == 0)
+				{
+					_logger.LogWarning(
+						"Bin day on {Date} for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid} matched no bin types and was dropped.",
+						binDay.Date, govUkId, address.Postcode, address.Uid
+					);
+					continue;
+				}
+
+				matchedBinDays.Add(binDay);
+			}
+
+			// If every bin day matched no bin types, the collector's bin type keys are broken rather
+			// than the address genuinely having no scheduled collections -- fail loudly instead of
+			// reporting "not found".
+			if (matchedBinDays.Count == 0)
+			{
+				throw new AllBinDaysUnmatchedException(govUkId, address.Postcode!, address.Uid!);
+			}
+
+			result = new GetBinDaysResponse
+			{
+				NextClientSideRequest = result.NextClientSideRequest,
+				BinDays = matchedBinDays,
+			};
 		}
 
-		// Validate that all bin days have at lease one bin
-		if (result.BinDays != null && result.BinDays.Any(x => x.Bins.Count == 0))
+		// Throw exception if no next client-side request and no bin days remain
+		if (result.NextClientSideRequest == null && result.BinDays?.Count == 0)
 		{
 			throw new BinDaysNotFoundException(govUkId, address.Postcode!, address.Uid!);
 		}
