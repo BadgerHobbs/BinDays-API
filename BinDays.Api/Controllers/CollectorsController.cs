@@ -367,6 +367,12 @@ public class CollectorsController : ControllerBase
 			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.BinDaysNotFound);
 			return NotFound("No bin days found for the specified address.");
 		}
+		catch (AllBinDaysUnmatchedException ex)
+		{
+			_logger.LogError(ex, "All bin days matched no bin types for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}. The collector's bin type keys are likely out of date.", govUkId, postcode, uid);
+			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.BinDaysUnmatched);
+			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching bin days. Please try again later.");
+		}
 		catch (Exception ex)
 		{
 			_logger.LogError(ex, "An unexpected error occurred while retrieving bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
