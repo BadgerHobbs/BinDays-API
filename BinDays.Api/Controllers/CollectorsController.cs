@@ -182,7 +182,12 @@ public class CollectorsController : ControllerBase
 		catch (UnsupportedCollectorException ex)
 		{
 			_logger.LogWarning(ex, "Unsupported collector {CollectorName} for gov.uk ID: {GovUkId}, postcode: {Postcode}.", ex.CollectorName, ex.GovUkId, postcode);
-			_metrics.RecordLookup(Endpoints.Collector, SafeGovUkId(ex.GovUkId), Outcomes.UnsupportedCollector);
+
+			// Not run through SafeGovUkId: by definition an unsupported collector is never
+			// registered, so that gate would always collapse this to "unknown" and defeat the
+			// point of the label. ex.GovUkId is scraped from gov.uk's own site content rather
+			// than the unvalidated route parameter, so it's already bounded to real council ids.
+			_metrics.RecordLookup(Endpoints.Collector, ex.GovUkId, Outcomes.UnsupportedCollector);
 			return NotFound($"{ex.CollectorName} is not currently supported.");
 		}
 		catch (GovUkIdNotFoundException ex)
