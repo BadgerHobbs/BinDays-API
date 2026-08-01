@@ -65,10 +65,6 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
-				},
 			};
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -91,7 +87,12 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				Method = "GET",
 				Headers = new()
 				{
+					{ "user-agent", Constants.UserAgent },
 					{ "accept", "*/*" },
+					{ "accept-language", "en-GB,en;q=0.5" },
+					{ "sec-fetch-dest", "empty" },
+					{ "sec-fetch-mode", "cors" },
+					{ "sec-fetch-site", "same-origin" },
 					{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
 					{ "cookie", requestCookies },
 				},
@@ -148,10 +149,6 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				RequestId = 1,
 				Url = "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day",
 				Method = "GET",
-				Headers = new()
-				{
-					{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
-				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -175,7 +172,12 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 				Method = "GET",
 				Headers = new()
 				{
+					{ "user-agent", Constants.UserAgent },
 					{ "accept", "*/*" },
+					{ "accept-language", "en-GB,en;q=0.5" },
+					{ "sec-fetch-dest", "empty" },
+					{ "sec-fetch-mode", "cors" },
+					{ "sec-fetch-site", "same-origin" },
 					{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
 					{ "cookie", requestCookies },
 				},
