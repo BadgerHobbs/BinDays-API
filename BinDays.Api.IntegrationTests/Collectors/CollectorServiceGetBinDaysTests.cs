@@ -166,10 +166,10 @@ public sealed class CollectorServiceGetBinDaysTests
 		public List<string> Messages { get; } = [];
 
 		/// <inheritdoc/>
-		IDisposable? ILogger.BeginScope<TState>(TState state) => null;
+		static IDisposable? ILogger.BeginScope<TState>(TState state) => null;
 
 		/// <inheritdoc/>
-		bool ILogger.IsEnabled(LogLevel logLevel) => true;
+		static bool ILogger.IsEnabled(LogLevel logLevel) => true;
 
 		/// <inheritdoc/>
 		void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
