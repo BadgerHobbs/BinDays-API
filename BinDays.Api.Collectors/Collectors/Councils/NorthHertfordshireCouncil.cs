@@ -90,6 +90,13 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 	private static partial Regex SubmissionTokenRegex();
 
 	/// <summary>
+	/// Regex for the dynamically generated form table key that wraps the address dropdown field.
+	/// This value changes on every page load, so it must be extracted rather than hardcoded.
+	/// </summary>
+	[GeneratedRegex(@"\[(?<key>C_[a-f0-9]+)\]\[PCF0021202GBNLM1\]")]
+	private static partial Regex FormTableKeyRegex();
+
+	/// <summary>
 	/// Regex for the address elements.
 	/// </summary>
 	[GeneratedRegex(@"data-id=""(?<id>\d+)""[\s\S]*?aria-label=""(?<address>[^""]+)""")]
@@ -284,6 +291,7 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 			var cleanedContent = clientSideResponse.Content.Replace("\\", "").Replace("&quot;", "\"");
 			var submissionToken = SubmissionTokenRegex().Match(cleanedContent).Groups["token"].Value;
 			var dynamicUrl = AjaxDynamicUrlRegex().Match(cleanedContent).Groups["url"].Value;
+			var formTableKey = FormTableKeyRegex().Match(cleanedContent).Groups["key"].Value;
 			var formData = new Dictionary<string, string>
 			{
 				{"form_check", clientSideResponse.Options.Metadata["form_check_ajax"]},
@@ -291,8 +299,8 @@ internal sealed partial class NorthHertfordshireCouncil : GovUkCollectorBase, IC
 				{"submitted_widget_group_id", "PWG0003519GBNLM1"},
 				{"submitted_widget_group_type", "modify"},
 				{"submission_token", submissionToken},
-				{"payload[PAG0000732GBNLM1][PWG0003519GBNLM1][PCL0006492GBNLM1][formtable][C_68e80da9e52ee][PCF0021202GBNLM1]", address.Uid!},
-				{"payload[PAG0000732GBNLM1][PWG0003519GBNLM1][PCL0006492GBNLM1][formtable][C_68e80da9e52ee][PCF0021201GBNLM1]", "Select address and continue"},
+				{$"payload[PAG0000732GBNLM1][PWG0003519GBNLM1][PCL0006492GBNLM1][formtable][{formTableKey}][PCF0021202GBNLM1]", address.Uid!},
+				{$"payload[PAG0000732GBNLM1][PWG0003519GBNLM1][PCL0006492GBNLM1][formtable][{formTableKey}][PCF0021201GBNLM1]", "Select address and continue"},
 				{"submit_fragment_id", "PCF0021201GBNLM1"},
 				{"_session_storage", "{\"_global\":{\"destination_stack\":[\"w/webpage/find-bin-collection-day-input-address\"]}}"},
 				{"_update_page_content_request", "1"},
