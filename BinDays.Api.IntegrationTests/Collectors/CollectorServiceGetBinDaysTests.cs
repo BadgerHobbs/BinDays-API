@@ -159,10 +159,10 @@ public sealed class CollectorServiceGetBinDaysTests
 		public List<string> Messages { get; } = [];
 
 		/// <inheritdoc/>
-		public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+		public static IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
 		/// <inheritdoc/>
-		public bool IsEnabled(LogLevel logLevel) => true;
+		public static bool IsEnabled(LogLevel logLevel) => true;
 
 		/// <inheritdoc/>
 		public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
