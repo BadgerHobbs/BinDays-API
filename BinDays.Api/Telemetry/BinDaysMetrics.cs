@@ -1,5 +1,6 @@
 ﻿namespace BinDays.Api.Telemetry;
 
+using BinDays.Api.Collectors.Telemetry;
 using System.Diagnostics.Metrics;
 
 /// <summary>
@@ -12,7 +13,7 @@ using System.Diagnostics.Metrics;
 /// Steps and lookups are therefore recorded separately: <see cref="RecordStep"/> fires on every
 /// request, whereas <see cref="RecordLookup"/> fires only once a terminal outcome is reached.
 /// </remarks>
-public sealed class BinDaysMetrics
+public sealed class BinDaysMetrics : ICollectorMetrics
 {
 	/// <summary>
 	/// The OpenTelemetry service name reported for this application.
@@ -84,6 +85,11 @@ public sealed class BinDaysMetrics
 	private readonly Histogram<long> _binDaysReturned;
 
 	/// <summary>
+	/// Counts bin days dropped for matching none of a collector's bin types.
+	/// </summary>
+	private readonly Counter<long> _binDaysUnmatched;
+
+	/// <summary>
 	/// Initialises a new instance of the <see cref="BinDaysMetrics"/> class.
 	/// </summary>
 	public BinDaysMetrics()
@@ -122,6 +128,12 @@ public sealed class BinDaysMetrics
 			BinDaysReturnedInstrument,
 			unit: "{bin_day}",
 			description: "Bin days returned on a completed bin day lookup."
+		);
+
+		_binDaysUnmatched = _meter.CreateCounter<long>(
+			"bindays.bin_days.unmatched",
+			unit: "{bin_day}",
+			description: "Bin days dropped for matching none of a collector's bin types."
 		);
 	}
 
@@ -205,6 +217,21 @@ public sealed class BinDaysMetrics
 	{
 		_binDaysReturned.Record(
 			count,
+			new KeyValuePair<string, object?>("bindays.gov_uk_id", govUkId)
+		);
+	}
+
+	/// <inheritdoc/>
+	/// <remarks>
+	/// Recorded from <c>CollectorService</c> rather than a controller, as the drop happens inside
+	/// the pipeline and nothing downstream can still see it. Not run through the gov.uk identifier
+	/// gate used elsewhere: this only ever fires for a collector that resolved and ran, so the
+	/// value is already bounded to registered identifiers.
+	/// </remarks>
+	public void RecordBinDayUnmatched(string govUkId)
+	{
+		_binDaysUnmatched.Add(
+			1,
 			new KeyValuePair<string, object?>("bindays.gov_uk_id", govUkId)
 		);
 	}

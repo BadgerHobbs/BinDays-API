@@ -3,6 +3,7 @@
 using Autofac;
 using BinDays.Api.Collectors.Collectors;
 using BinDays.Api.Collectors.Services;
+using BinDays.Api.Collectors.Telemetry;
 using BinDays.Api.Telemetry;
 
 /// <summary>
@@ -31,6 +32,11 @@ internal static class DependencyInjection
 		builder.RegisterType<CollectorService>();
 
 		// Register metric instruments. Must be a single instance, as each one owns a Meter.
-		builder.RegisterType<BinDaysMetrics>().SingleInstance();
+		// Exposed as ICollectorMetrics as well as itself, so CollectorService can record from
+		// inside the pipeline without the collectors project depending on this one.
+		builder.RegisterType<BinDaysMetrics>()
+			.AsSelf()
+			.As<ICollectorMetrics>()
+			.SingleInstance();
 	}
 }

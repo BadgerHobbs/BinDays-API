@@ -4,6 +4,7 @@ using BinDays.Api.Collectors.Collectors;
 using BinDays.Api.Collectors.Collectors.Vendors;
 using BinDays.Api.Collectors.Exceptions;
 using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Telemetry;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -27,16 +28,23 @@ public sealed class CollectorService
 	private readonly ILogger<CollectorService> _logger;
 
 	/// <summary>
+	/// The metric instruments recorded from inside the pipeline.
+	/// </summary>
+	private readonly ICollectorMetrics _metrics;
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorService"/> class.
 	/// </summary>
 	/// <param name="collectors">The collectors.</param>
 	/// <param name="logger">The logger.</param>
+	/// <param name="metrics">The metric instruments.</param>
 	/// <exception cref="ArgumentNullException">Thrown when collectors is null.</exception>
-	public CollectorService(IEnumerable<ICollector> collectors, ILogger<CollectorService> logger)
+	public CollectorService(IEnumerable<ICollector> collectors, ILogger<CollectorService> logger, ICollectorMetrics metrics)
 	{
 		_collectors = [.. collectors];
 		_govUkIds = [.. _collectors.Select(collector => collector.GovUkId)];
 		_logger = logger;
+		_metrics = metrics;
 	}
 
 	/// <summary>
@@ -129,6 +137,14 @@ public sealed class CollectorService
 						"Bin day on {Date} for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid} matched no bin types and was dropped.",
 						binDay.Date, govUkId, address.Postcode, address.Uid
 					);
+
+					// Counted as well as logged, because a partial drop is the leading indicator of a
+					// council renaming one of its bin types: the user silently receives a schedule
+					// with a collection missing, and nothing else in the pipeline reports it. Only
+					// once every bin day stops matching does this escalate to the exception below.
+					// Labelled by collector alone -- the unmatched service name is council-supplied
+					// free text, so it would be unbounded as a metric label and stays in the log.
+					_metrics.RecordBinDayUnmatched(govUkId);
 					continue;
 				}
 
