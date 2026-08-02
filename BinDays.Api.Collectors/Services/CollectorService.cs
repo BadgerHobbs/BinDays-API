@@ -36,7 +36,7 @@ public sealed class CollectorService
 	/// The most of a council response logged when bin days are dropped. Enough to carry the
 	/// service labels, without a large schedule payload dominating the log.
 	/// </summary>
-	private const int MaximumLoggedResponseLength = 4000;
+	private const int _maximumLoggedResponseLength = 4000;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorService"/> class.
@@ -117,19 +117,19 @@ public sealed class CollectorService
 	}
 
 	/// <summary>
-	/// Truncates a council response to <see cref="MaximumLoggedResponseLength"/>, marking it when
+	/// Truncates a council response to <see cref="_maximumLoggedResponseLength"/>, marking it when
 	/// shortened so a label missing from the tail is not mistaken for one the council did not send.
 	/// </summary>
 	/// <param name="content">The council response.</param>
 	/// <returns>The response, truncated if it exceeds the limit.</returns>
 	private static string Truncate(string content)
 	{
-		if (content.Length <= MaximumLoggedResponseLength)
+		if (content.Length <= _maximumLoggedResponseLength)
 		{
 			return content;
 		}
 
-		return string.Concat(content.AsSpan(0, MaximumLoggedResponseLength), " ... [truncated]");
+		return string.Concat(content.AsSpan(0, _maximumLoggedResponseLength), " ... [truncated]");
 	}
 
 	/// <summary>

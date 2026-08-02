@@ -151,6 +151,13 @@ public sealed class CollectorServiceGetBinDaysTests
 	/// <summary>
 	/// An <see cref="ILogger{TCategoryName}"/> that captures the messages written to it.
 	/// </summary>
+	/// <remarks>
+	/// Implemented explicitly on purpose. BeginScope and IsEnabled return constants and touch no
+	/// instance state, so as ordinary public members the "mark as static" analyzer suggests making
+	/// them static, which the repository's auto-format workflow then applies. That does not
+	/// compile, as a static member cannot implement an interface, and it has broken the build here
+	/// twice. An explicit implementation cannot be static, so the suggestion is never raised.
+	/// </remarks>
 	private sealed class RecordingLogger<T> : ILogger<T>
 	{
 		/// <summary>
@@ -159,13 +166,13 @@ public sealed class CollectorServiceGetBinDaysTests
 		public List<string> Messages { get; } = [];
 
 		/// <inheritdoc/>
-		public static IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+		IDisposable? ILogger.BeginScope<TState>(TState state) => null;
 
 		/// <inheritdoc/>
-		public static bool IsEnabled(LogLevel logLevel) => true;
+		bool ILogger.IsEnabled(LogLevel logLevel) => true;
 
 		/// <inheritdoc/>
-		public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+		void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
 		{
 			Messages.Add(formatter(state, exception));
 		}
