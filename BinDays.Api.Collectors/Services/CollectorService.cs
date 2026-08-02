@@ -4,6 +4,7 @@ using BinDays.Api.Collectors.Collectors;
 using BinDays.Api.Collectors.Collectors.Vendors;
 using BinDays.Api.Collectors.Exceptions;
 using BinDays.Api.Collectors.Models;
+using BinDays.Api.Collectors.Telemetry;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -27,16 +28,29 @@ public sealed class CollectorService
 	private readonly ILogger<CollectorService> _logger;
 
 	/// <summary>
+	/// The metric instruments recorded from inside the pipeline.
+	/// </summary>
+	private readonly ICollectorMetrics _metrics;
+
+	/// <summary>
+	/// The most of a council response logged when bin days are dropped. Enough to carry the
+	/// service labels, without a large schedule payload dominating the log.
+	/// </summary>
+	private const int MaximumLoggedResponseLength = 4000;
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorService"/> class.
 	/// </summary>
 	/// <param name="collectors">The collectors.</param>
 	/// <param name="logger">The logger.</param>
+	/// <param name="metrics">The metric instruments.</param>
 	/// <exception cref="ArgumentNullException">Thrown when collectors is null.</exception>
-	public CollectorService(IEnumerable<ICollector> collectors, ILogger<CollectorService> logger)
+	public CollectorService(IEnumerable<ICollector> collectors, ILogger<CollectorService> logger, ICollectorMetrics metrics)
 	{
 		_collectors = [.. collectors];
 		_govUkIds = [.. _collectors.Select(collector => collector.GovUkId)];
 		_logger = logger;
+		_metrics = metrics;
 	}
 
 	/// <summary>
@@ -103,6 +117,22 @@ public sealed class CollectorService
 	}
 
 	/// <summary>
+	/// Truncates a council response to <see cref="MaximumLoggedResponseLength"/>, marking it when
+	/// shortened so a label missing from the tail is not mistaken for one the council did not send.
+	/// </summary>
+	/// <param name="content">The council response.</param>
+	/// <returns>The response, truncated if it exceeds the limit.</returns>
+	private static string Truncate(string content)
+	{
+		if (content.Length <= MaximumLoggedResponseLength)
+		{
+			return content;
+		}
+
+		return string.Concat(content.AsSpan(0, MaximumLoggedResponseLength), " ... [truncated]");
+	}
+
+	/// <summary>
 	/// Gets the bin collection days for a given address.
 	/// </summary>
 	/// <param name="govUkId">The gov.uk identifier for the collector.</param>
@@ -121,18 +151,42 @@ public sealed class CollectorService
 			// Drop bin days that matched no bin types (e.g. an unrecognised collection service on the
 			// council's site), logging a warning rather than discarding the address's other, valid bin days.
 			var matchedBinDays = new List<BinDay>();
+			var droppedCount = 0;
 			foreach (var binDay in result.BinDays)
 			{
 				if (binDay.Bins.Count == 0)
 				{
+					droppedCount++;
 					_logger.LogWarning(
 						"Bin day on {Date} for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid} matched no bin types and was dropped.",
 						binDay.Date, govUkId, address.Postcode, address.Uid
 					);
+
+					// Counted as well as logged, because a partial drop is the leading indicator of a
+					// council renaming one of its bin types: the user silently receives a schedule
+					// with a collection missing, and nothing else in the pipeline reports it. Only
+					// once every bin day stops matching does this escalate to the exception below.
+					// Labelled by collector alone -- the unmatched service name is council-supplied
+					// free text, so it would be unbounded as a metric label and stays in the log.
+					_metrics.RecordBinDayUnmatched(govUkId);
 					continue;
 				}
 
 				matchedBinDays.Add(binDay);
+			}
+
+			// The warnings above name the collector and the dates lost, but not the wording the
+			// council actually used, because the service label is compared against the bin type keys
+			// and then discarded before the bin day is built. Without it, knowing a collector is
+			// dropping dates still leaves the request to be replayed by hand to find out what to add
+			// to its keys. The council's response is already here, so log it once per affected
+			// request, truncated, and the new label can be read straight out of it.
+			if (droppedCount > 0 && clientSideResponse?.Content is string content)
+			{
+				_logger.LogWarning(
+					"Dropped {DroppedCount} bin day(s) for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}. Council response follows, for the service wording to add to the collector's bin type keys: {CouncilResponse}",
+					droppedCount, govUkId, address.Postcode, address.Uid, Truncate(content)
+				);
 			}
 
 			// If every bin day matched no bin types, the collector's bin type keys are broken rather
