@@ -41,14 +41,14 @@ internal sealed class DenbighshireCountyCouncil : GovUkCollectorBase, ICollector
 		new()
 		{
 			Name = "Food Waste",
-			Colour = BinColour.Green,
+			Colour = BinColour.Orange,
 			Keys = [ "recyclingDate" ],
 			Type = BinType.Caddy,
 		},
 		new()
 		{
 			Name = "Garden Waste",
-			Colour = BinColour.Brown,
+			Colour = BinColour.Green,
 			Keys = [ "gardenDate" ],
 		},
 		new()
