@@ -152,11 +152,15 @@ public sealed class CollectorServiceGetBinDaysTests
 	/// An <see cref="ILogger{TCategoryName}"/> that captures the messages written to it.
 	/// </summary>
 	/// <remarks>
-	/// Implemented explicitly on purpose. BeginScope and IsEnabled return constants and touch no
-	/// instance state, so as ordinary public members the "mark as static" analyzer suggests making
-	/// them static, which the repository's auto-format workflow then applies. That does not
-	/// compile, as a static member cannot implement an interface, and it has broken the build here
-	/// twice. An explicit implementation cannot be static, so the suggestion is never raised.
+	/// Every member here reads instance state, and that is load bearing rather than incidental.
+	/// A member that returns a constant and touches no instance state raises the "mark as static"
+	/// analyzer suggestion, which this repository's auto-format workflow applies automatically. A
+	/// static member cannot implement an interface, so the result does not compile, and it has
+	/// broken the build twice: once on ordinary members, and again after they were rewritten as
+	/// explicit implementations, where the workflow produced the even more invalid
+	/// "static IDisposable? ILogger.BeginScope". Reading instance state is the only form the
+	/// suggestion is never raised against. Keep it that way, and do not simplify these into
+	/// constant returns.
 	/// </remarks>
 	private sealed class RecordingLogger<T> : ILogger<T>
 	{
@@ -165,14 +169,29 @@ public sealed class CollectorServiceGetBinDaysTests
 		/// </summary>
 		public List<string> Messages { get; } = [];
 
-		/// <inheritdoc/>
-		static IDisposable? ILogger.BeginScope<TState>(TState state) => null;
+		/// <summary>
+		/// Every scope opened, in order. Kept so <see cref="BeginScope"/> has instance state to
+		/// read, and useful in its own right if a scope ever needs asserting on.
+		/// </summary>
+		public List<string> Scopes { get; } = [];
+
+		/// <summary>
+		/// The lowest level this logger reports as enabled.
+		/// </summary>
+		public LogLevel MinimumLevel { get; init; } = LogLevel.Trace;
 
 		/// <inheritdoc/>
-		static bool ILogger.IsEnabled(LogLevel logLevel) => true;
+		public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+		{
+			Scopes.Add(state.ToString() ?? string.Empty);
+			return null;
+		}
 
 		/// <inheritdoc/>
-		void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+		public bool IsEnabled(LogLevel logLevel) => logLevel >= MinimumLevel;
+
+		/// <inheritdoc/>
+		public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
 		{
 			Messages.Add(formatter(state, exception));
 		}
