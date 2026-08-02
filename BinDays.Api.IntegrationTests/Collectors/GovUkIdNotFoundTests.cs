@@ -6,6 +6,7 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Services;
 using BinDays.Api.Collectors.Telemetry;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 /// <summary>
@@ -17,7 +18,7 @@ public sealed class GovUkIdNotFoundTests
 	[Fact]
 	public void GetCollector_WithNoGovUkIdInResponse_ThrowsGovUkIdNotFoundException()
 	{
-		var collectorService = new CollectorService([], NullLogger<CollectorService>.Instance, NullCollectorMetrics.Instance);
+		var collectorService = new CollectorService([], NullLogger<CollectorService>.Instance, Mock.Of<ICollectorMetrics>());
 
 		var clientSideResponse = new ClientSideResponse
 		{
@@ -45,7 +46,7 @@ public sealed class GovUkIdNotFoundTests
 	[Fact]
 	public void GetCollector_WithCollectorNameButNoGovUkId_ThrowsGovUkIdNotFoundException()
 	{
-		var collectorService = new CollectorService([], NullLogger<CollectorService>.Instance, NullCollectorMetrics.Instance);
+		var collectorService = new CollectorService([], NullLogger<CollectorService>.Instance, Mock.Of<ICollectorMetrics>());
 
 		var clientSideResponse = new ClientSideResponse
 		{

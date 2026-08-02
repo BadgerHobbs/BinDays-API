@@ -7,6 +7,7 @@ using BinDays.Api.Collectors.Services;
 using BinDays.Api.Collectors.Telemetry;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,7 +35,7 @@ public sealed class CollectorServiceGetBinDaysTests
 		var unmatchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 8), Address = address, Bins = [] };
 
 		var collector = new FakeCollector([unmatchedBinDay, matchedBinDay]);
-		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, NullCollectorMetrics.Instance);
+		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, Mock.Of<ICollectorMetrics>());
 
 		var result = collectorService.GetBinDays(collector.GovUkId, address, null);
 
@@ -49,7 +50,7 @@ public sealed class CollectorServiceGetBinDaysTests
 		var unmatchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [] };
 
 		var collector = new FakeCollector([unmatchedBinDay]);
-		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, NullCollectorMetrics.Instance);
+		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, Mock.Of<ICollectorMetrics>());
 
 		Assert.Throws<AllBinDaysUnmatchedException>(() => collectorService.GetBinDays(collector.GovUkId, address, null));
 	}
@@ -60,7 +61,7 @@ public sealed class CollectorServiceGetBinDaysTests
 		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
 
 		var collector = new FakeCollector([]);
-		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, NullCollectorMetrics.Instance);
+		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, Mock.Of<ICollectorMetrics>());
 
 		Assert.Throws<BinDaysNotFoundException>(() => collectorService.GetBinDays(collector.GovUkId, address, null));
 	}
@@ -74,12 +75,12 @@ public sealed class CollectorServiceGetBinDaysTests
 		var secondUnmatched = new BinDay { Date = new DateOnly(2026, 1, 15), Address = address, Bins = [] };
 
 		var collector = new FakeCollector([firstUnmatched, matchedBinDay, secondUnmatched]);
-		var metrics = new RecordingCollectorMetrics();
-		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics);
+		var metrics = new Mock<ICollectorMetrics>();
+		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics.Object);
 
 		collectorService.GetBinDays(collector.GovUkId, address, null);
 
-		Assert.Equal([collector.GovUkId, collector.GovUkId], metrics.UnmatchedGovUkIds);
+		metrics.Verify(recorder => recorder.RecordBinDayUnmatched(collector.GovUkId), Times.Exactly(2));
 	}
 
 	[Fact]
@@ -89,12 +90,12 @@ public sealed class CollectorServiceGetBinDaysTests
 		var matchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [_generalWaste] };
 
 		var collector = new FakeCollector([matchedBinDay]);
-		var metrics = new RecordingCollectorMetrics();
-		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics);
+		var metrics = new Mock<ICollectorMetrics>();
+		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics.Object);
 
 		collectorService.GetBinDays(collector.GovUkId, address, null);
 
-		Assert.Empty(metrics.UnmatchedGovUkIds);
+		metrics.Verify(recorder => recorder.RecordBinDayUnmatched(It.IsAny<string>()), Times.Never);
 	}
 
 	[Fact]
@@ -106,8 +107,8 @@ public sealed class CollectorServiceGetBinDaysTests
 		var secondUnmatched = new BinDay { Date = new DateOnly(2026, 1, 15), Address = address, Bins = [] };
 
 		var collector = new FakeCollector([firstUnmatched, matchedBinDay, secondUnmatched]);
-		var logger = new RecordingLogger<CollectorService>();
-		var collectorService = new CollectorService([collector], logger, NullCollectorMetrics.Instance);
+		var (logger, messages) = CreateLoggerMock();
+		var collectorService = new CollectorService([collector], logger.Object, Mock.Of<ICollectorMetrics>());
 		var clientSideResponse = new ClientSideResponse
 		{
 			RequestId = 1,
@@ -120,7 +121,7 @@ public sealed class CollectorServiceGetBinDaysTests
 		collectorService.GetBinDays(collector.GovUkId, address, clientSideResponse);
 
 		// One response log for the request, however many individual bin days were dropped.
-		var responseLogs = logger.Messages.Where(message => message.Contains("Council response follows")).ToList();
+		var responseLogs = messages.Where(message => message.Contains("Council response follows")).ToList();
 		var responseLog = Assert.Single(responseLogs);
 		Assert.Contains("Garden Waste Service", responseLog);
 	}
@@ -132,8 +133,8 @@ public sealed class CollectorServiceGetBinDaysTests
 		var matchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [_generalWaste] };
 
 		var collector = new FakeCollector([matchedBinDay]);
-		var logger = new RecordingLogger<CollectorService>();
-		var collectorService = new CollectorService([collector], logger, NullCollectorMetrics.Instance);
+		var (logger, messages) = CreateLoggerMock();
+		var collectorService = new CollectorService([collector], logger.Object, Mock.Of<ICollectorMetrics>());
 		var clientSideResponse = new ClientSideResponse
 		{
 			RequestId = 1,
@@ -145,73 +146,42 @@ public sealed class CollectorServiceGetBinDaysTests
 
 		collectorService.GetBinDays(collector.GovUkId, address, clientSideResponse);
 
-		Assert.DoesNotContain(logger.Messages, message => message.Contains("Council response follows"));
+		Assert.DoesNotContain(messages, message => message.Contains("Council response follows"));
 	}
 
 	/// <summary>
-	/// An <see cref="ILogger{TCategoryName}"/> that captures the messages written to it.
+	/// Builds an <see cref="ILogger{TCategoryName}"/> mock together with the list its formatted
+	/// messages land in.
 	/// </summary>
 	/// <remarks>
-	/// Every member here reads instance state, and that is load bearing rather than incidental.
-	/// A member that returns a constant and touches no instance state raises the "mark as static"
-	/// analyzer suggestion, which this repository's auto-format workflow applies automatically. A
-	/// static member cannot implement an interface, so the result does not compile, and it has
-	/// broken the build twice: once on ordinary members, and again after they were rewritten as
-	/// explicit implementations, where the workflow produced the even more invalid
-	/// "static IDisposable? ILogger.BeginScope". Reading instance state is the only form the
-	/// suggestion is never raised against. Keep it that way, and do not simplify these into
-	/// constant returns.
+	/// ILogger.Log is generic in its state parameter, which Moq cannot target with a normal typed
+	/// setup; It.IsAnyType plus a reflection-based callback is the documented way around that. The
+	/// formatter delegate is exactly what the real logging extension methods (LogWarning etc.)
+	/// build internally, so invoking it here reconstructs the same message a real logger would
+	/// have written.
 	/// </remarks>
-	private sealed class RecordingLogger<T> : ILogger<T>
+	private static (Mock<ILogger<CollectorService>> Logger, List<string> Messages) CreateLoggerMock()
 	{
-		/// <summary>
-		/// Every formatted message written, in order.
-		/// </summary>
-		public List<string> Messages { get; } = [];
+		var messages = new List<string>();
+		var logger = new Mock<ILogger<CollectorService>>();
 
-		/// <summary>
-		/// Every scope opened, in order. Kept so <see cref="BeginScope"/> has instance state to
-		/// read, and useful in its own right if a scope ever needs asserting on.
-		/// </summary>
-		public List<string> Scopes { get; } = [];
+		logger
+			.Setup(target => target.Log(
+				It.IsAny<LogLevel>(),
+				It.IsAny<EventId>(),
+				It.IsAny<It.IsAnyType>(),
+				It.IsAny<Exception?>(),
+				It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
+			.Callback(new InvocationAction(invocation =>
+			{
+				var state = invocation.Arguments[2];
+				var exception = (Exception?)invocation.Arguments[3];
+				var formatter = invocation.Arguments[4];
+				var invoke = formatter.GetType().GetMethod("Invoke")!;
+				messages.Add((string)invoke.Invoke(formatter, [state, exception])!);
+			}));
 
-		/// <summary>
-		/// The lowest level this logger reports as enabled.
-		/// </summary>
-		public LogLevel MinimumLevel { get; init; } = LogLevel.Trace;
-
-		/// <inheritdoc/>
-		public IDisposable? BeginScope<TState>(TState state) where TState : notnull
-		{
-			Scopes.Add(state.ToString() ?? string.Empty);
-			return null;
-		}
-
-		/// <inheritdoc/>
-		public bool IsEnabled(LogLevel logLevel) => logLevel >= MinimumLevel;
-
-		/// <inheritdoc/>
-		public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-		{
-			Messages.Add(formatter(state, exception));
-		}
-	}
-
-	/// <summary>
-	/// An <see cref="ICollectorMetrics"/> that captures what it was asked to record.
-	/// </summary>
-	private sealed class RecordingCollectorMetrics : ICollectorMetrics
-	{
-		/// <summary>
-		/// The gov.uk identifier of every dropped bin day, in the order recorded.
-		/// </summary>
-		public List<string> UnmatchedGovUkIds { get; } = [];
-
-		/// <inheritdoc/>
-		public void RecordBinDayUnmatched(string govUkId)
-		{
-			UnmatchedGovUkIds.Add(govUkId);
-		}
+		return (logger, messages);
 	}
 
 	/// <summary>
