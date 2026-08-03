@@ -20,13 +20,16 @@ public class SouthRibbleBoroughCouncilTests
 
 	[Theory]
 	[InlineData("PR25 2LA")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("PR25 2LA", "100010640739", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }
