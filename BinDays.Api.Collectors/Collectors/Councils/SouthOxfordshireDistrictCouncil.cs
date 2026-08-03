@@ -19,4 +19,10 @@ internal sealed class SouthOxfordshireDistrictCouncil : BinzoneCollectorBase, IC
 
 	/// <inheritdoc/>
 	protected override string CouncilCode => "S";
+
+	/// <inheritdoc/>
+	protected override string EformBaseUrl => "https://eform.southoxon.gov.uk";
+
+	/// <inheritdoc/>
+	protected override string ServiceId => "SOUTH";
 }
