@@ -20,13 +20,16 @@ public class LondonBoroughOfCroydonTests
 
 	[Theory]
 	[InlineData("CR2 8RW")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("CR2 8RW", "312185", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

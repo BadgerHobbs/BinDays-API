@@ -20,14 +20,17 @@ public class WarringtonBoroughCouncilTests
 
 	[Theory]
 	[InlineData("WA4 6BA", 23)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
+	[InlineData("WA4 6BA", 0, "100010290789", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class WiltshireCouncilTests
 
 	[Theory]
 	[InlineData("BA13 3JR")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("BA13 3JR", "100121107706", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class NewarkAndSherwoodDistrictCouncilTests
 
 	[Theory]
 	[InlineData("NG237NR")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NG237NR", "100031462967", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

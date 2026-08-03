@@ -20,13 +20,16 @@ public class BrecklandCouncilTests
 
 	[Theory]
 	[InlineData("NR172BJ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NR172BJ", "100090766947", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

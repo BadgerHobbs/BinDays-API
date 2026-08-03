@@ -20,8 +20,9 @@ public class SeftonMetropolitanBoroughCouncilTests
 
 	[Theory]
 	[InlineData("L20 6LX")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("L20 6LX", "~~~~83~~SPRINGWELL ROAD~BOOTLE~L20 6LX", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
-		await TestSteps.EndToEnd(_client, postcode, _govUkId, _outputHelper);
+		await TestSteps.EndToEnd(_client, postcode, _govUkId, _outputHelper, pinnedUid: pinnedUid, pinnedVersion: pinnedVersion);
 	}
 }

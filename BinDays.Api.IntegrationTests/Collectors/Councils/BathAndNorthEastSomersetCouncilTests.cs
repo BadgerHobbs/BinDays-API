@@ -20,13 +20,16 @@ public class BathAndNorthEastSomersetCouncilTests
 
 	[Theory]
 	[InlineData("BA2 2DL")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("BA2 2DL", "100120007023", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class RenfrewshireCouncilTests
 
 	[Theory]
 	[InlineData("PA2 6TS")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("PA2 6TS", "123070374", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

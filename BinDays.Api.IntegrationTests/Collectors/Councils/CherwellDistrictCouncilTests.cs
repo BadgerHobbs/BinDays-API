@@ -20,13 +20,16 @@ public class CherwellDistrictCouncilTests
 
 	[Theory]
 	[InlineData("OX26 2TR")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("OX26 2TR", "100120782422", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

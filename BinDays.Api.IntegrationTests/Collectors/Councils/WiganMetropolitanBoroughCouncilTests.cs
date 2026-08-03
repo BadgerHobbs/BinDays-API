@@ -20,13 +20,16 @@ public class WiganMetropolitanBoroughCouncilTests
 
 	[Theory]
 	[InlineData("WN7 2LG")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("WN7 2LG", "UPRN100011715742", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class RotherDistrictCouncilTests
 
 	[Theory]
 	[InlineData("TN33 0RE")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("TN33 0RE", "100060084150", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

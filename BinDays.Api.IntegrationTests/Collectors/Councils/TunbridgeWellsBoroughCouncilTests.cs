@@ -20,13 +20,16 @@ public class TunbridgeWellsBoroughCouncilTests
 
 	[Theory]
 	[InlineData("TN17 1ED")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("TN17 1ED", "100061189079", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

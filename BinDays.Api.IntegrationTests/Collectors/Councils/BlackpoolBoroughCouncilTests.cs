@@ -20,14 +20,17 @@ public class BlackpoolBoroughCouncilTests
 
 	[Theory]
 	[InlineData("FY2 0PP", 23)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
+	[InlineData("FY2 0PP", 0, "100010838697;52 Washington Avenue, Blackpool, FY2 0PP", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

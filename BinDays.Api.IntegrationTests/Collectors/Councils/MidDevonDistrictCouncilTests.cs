@@ -20,13 +20,16 @@ public class MidDevonDistrictCouncilTests
 
 	[Theory]
 	[InlineData("EX17 1JZ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("EX17 1JZ", "200003998507", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

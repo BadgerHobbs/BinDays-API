@@ -20,13 +20,16 @@ public class TeignbridgeDistrictCouncilTests
 
 	[Theory]
 	[InlineData("TQ12 4EL")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("TQ12 4EL", "100040334827", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

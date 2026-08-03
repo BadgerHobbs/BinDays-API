@@ -20,13 +20,16 @@ public class NorthKestevenDistrictCouncilTests
 
 	[Theory]
 	[InlineData("NG34 7FP")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NG34 7FP", "10006500828", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

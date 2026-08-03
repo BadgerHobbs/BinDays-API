@@ -20,13 +20,16 @@ public class FifeCouncilTests
 
 	[Theory]
 	[InlineData("KY16 0DZ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("KY16 0DZ", "1000133597", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

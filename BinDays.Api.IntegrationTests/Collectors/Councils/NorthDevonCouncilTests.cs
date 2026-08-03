@@ -21,14 +21,17 @@ public class NorthDevonCouncilTests
 	[Theory]
 	[InlineData("EX32 8QX")]
 	[InlineData("EX32 8QX", 17)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
+	[InlineData("EX32 8QX", 0, "010012097978", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex: addressIndex
+			addressIndex: addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

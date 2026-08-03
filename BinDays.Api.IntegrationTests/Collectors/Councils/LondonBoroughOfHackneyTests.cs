@@ -20,13 +20,16 @@ public class LondonBoroughOfHackneyTests
 
 	[Theory]
 	[InlineData("E8 3AA")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("E8 3AA", "5f898d4790478c0067f8e024", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

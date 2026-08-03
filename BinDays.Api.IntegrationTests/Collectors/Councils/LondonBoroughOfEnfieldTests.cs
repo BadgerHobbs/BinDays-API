@@ -20,13 +20,16 @@ public class LondonBoroughOfEnfieldTests
 
 	[Theory]
 	[InlineData("N13 4BH")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("N13 4BH", "207094156", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

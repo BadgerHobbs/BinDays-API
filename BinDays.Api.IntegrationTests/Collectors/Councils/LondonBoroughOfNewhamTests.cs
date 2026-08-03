@@ -21,14 +21,17 @@ public class LondonBoroughOfNewhamTests
 	[Theory]
 	[InlineData("E15 1LH", 5)]
 	[InlineData("E15 1LG", 1)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
+	[InlineData("E15 1LH", 0, "000046045316", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

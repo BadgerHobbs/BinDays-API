@@ -23,14 +23,17 @@ public class PlymouthCouncilTests
 	[InlineData("pl67aa")]
 	[InlineData("pl54qg")]
 	[InlineData("pl47eq", 31)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
+	[InlineData("pl36ag", 0, "100040471574", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

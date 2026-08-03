@@ -20,13 +20,16 @@ public class ShropshireCouncilTests
 
 	[Theory]
 	[InlineData("SY3 7TB")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SY3 7TB", "100070061012", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

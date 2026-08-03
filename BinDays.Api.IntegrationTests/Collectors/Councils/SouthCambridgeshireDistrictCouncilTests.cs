@@ -20,13 +20,16 @@ public class SouthCambridgeshireDistrictCouncilTests
 
 	[Theory]
 	[InlineData("CB24 5GD")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("CB24 5GD", "10008078971", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

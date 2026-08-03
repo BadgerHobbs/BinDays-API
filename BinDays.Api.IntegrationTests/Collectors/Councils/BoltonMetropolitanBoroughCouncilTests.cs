@@ -20,13 +20,16 @@ public class BoltonMetropolitanBoroughCouncilTests
 
 	[Theory]
 	[InlineData("BL3 3NY")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("BL3 3NY", "1000437092", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

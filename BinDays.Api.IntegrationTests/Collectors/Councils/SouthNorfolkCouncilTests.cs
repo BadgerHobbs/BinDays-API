@@ -22,14 +22,17 @@ public class SouthNorfolkCouncilTests
 	[InlineData("NR18 0HQ")]
 	[InlineData("NR8 5GS", 16)]
 	[InlineData("IP21 4QU", 14)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
+	[InlineData("NR18 0HQ", 0, "2630147509", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

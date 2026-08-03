@@ -20,13 +20,16 @@ public class HartDistrictCouncilTests
 
 	[Theory]
 	[InlineData("RG27 9RZ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("RG27 9RZ", "200001000023", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

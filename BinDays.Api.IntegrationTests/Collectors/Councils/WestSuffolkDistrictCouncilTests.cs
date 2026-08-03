@@ -24,14 +24,17 @@ public class WestSuffolkDistrictCouncilTests
 	// page text so the Green bin date wraps after the day-of-week. This previously
 	// broke the parsing regex (issue #26).
 	[InlineData("IP32 7LW", 2)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex)
+	[InlineData("IP32 7LW", 0, "10009747643", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

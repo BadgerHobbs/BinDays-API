@@ -20,13 +20,16 @@ public class HuntingdonshireDistrictCouncilTests
 
 	[Theory]
 	[InlineData("PE26 1LZ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("PE26 1LZ", "100091517905", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

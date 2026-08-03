@@ -20,13 +20,16 @@ public class BraintreeDistrictCouncilTests
 
 	[Theory]
 	[InlineData("CM778LS")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("CM778LS", "100090293369", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

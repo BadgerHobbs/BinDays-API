@@ -18,13 +18,16 @@ public class LondonBoroughOfWalthamForestTests
 
 	[Theory]
 	[InlineData("E17 9HN")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("E17 9HN", "100022580826;E05013903", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			"waltham-forest",
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

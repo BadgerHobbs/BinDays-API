@@ -21,13 +21,16 @@ public class NottinghamCityCouncilTests
 	[Theory]
 	[InlineData("NG3 5HJ")]
 	[InlineData("NG7 2NU")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NG3 5HJ", "02872940-DBFF-11EE-80D5-AC388EA0F4B8", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

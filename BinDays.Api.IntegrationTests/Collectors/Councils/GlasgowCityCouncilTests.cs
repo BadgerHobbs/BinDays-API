@@ -20,13 +20,16 @@ public class GlasgowCityCouncilTests
 
 	[Theory]
 	[InlineData("G44 5LA")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("G44 5LA", "ctl00$Application$Addresses$Select0", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

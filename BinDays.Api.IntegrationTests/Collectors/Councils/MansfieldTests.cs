@@ -20,13 +20,16 @@ public class MansfieldTests
 
 	[Theory]
 	[InlineData("NG19 8PL")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NG19 8PL", "100031400677", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class MidlothianCouncilTests
 
 	[Theory]
 	[InlineData("EH19 2JY")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("EH19 2JY", "120013679", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

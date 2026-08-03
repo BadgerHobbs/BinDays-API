@@ -20,13 +20,16 @@ public class AberdeenshireCouncilTests
 
 	[Theory]
 	[InlineData("AB41 9AA")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("AB41 9AA", "000151033152", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

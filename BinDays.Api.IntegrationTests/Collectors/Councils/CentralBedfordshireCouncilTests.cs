@@ -20,13 +20,16 @@ public class CentralBedfordshireCouncilTests
 
 	[Theory]
 	[InlineData("SG5 4SN")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SG5 4SN", "10094348371", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

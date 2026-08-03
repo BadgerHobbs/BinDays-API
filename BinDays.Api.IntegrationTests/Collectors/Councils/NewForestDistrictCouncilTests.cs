@@ -20,13 +20,16 @@ public class NewForestDistrictCouncilTests
 
 	[Theory]
 	[InlineData("BH25 7JS")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("BH25 7JS", "100060492096", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }
