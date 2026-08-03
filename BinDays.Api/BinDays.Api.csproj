@@ -24,6 +24,8 @@
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1" />
     <PackageReference Include="Seq.Extensions.Logging" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <!-- Pin the transitive Microsoft.OpenApi dependency above 2.7.5 to fix CVE-2026-49451 (GHSA-v5pm-xwqc-g5wc). -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.13.16" />
     <PackageReference Include="StackExchange.Redis" Version="2.7.33" />
   </ItemGroup>
