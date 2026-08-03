@@ -41,7 +41,7 @@ internal sealed partial class BroxtoweBoroughCouncil : GovUkCollectorBase, IColl
 		{
 			Name = "Glass Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "GLASS BAG" ],
+			Keys = [ "GLASS BAG", "RED 140L" ],
 			Type = BinType.Bag,
 		},
 		new()
