@@ -81,6 +81,20 @@ internal sealed class IntegrationTestClient
 	}
 
 	/// <summary>
+	/// GETs an API endpoint that requires no client-side request cycle.
+	/// </summary>
+	/// <typeparam name="TResponse">The type of the API response.</typeparam>
+	/// <param name="apiUrl">The API URL to GET.</param>
+	/// <returns>The deserialized response.</returns>
+	public async Task<TResponse> GetAsync<TResponse>(string apiUrl)
+	{
+		using var response = await _apiClient.GetAsync(apiUrl);
+		response.EnsureSuccessStatusCode();
+		var result = await response.Content.ReadFromJsonAsync<TResponse>();
+		return result ?? throw new InvalidOperationException($"API returned null response from {apiUrl}.");
+	}
+
+	/// <summary>
 	/// Executes the full request cycle, following client-side requests, and returns
 	/// the final raw HttpResponseMessage. Used for asserting HTTP status codes.
 	/// </summary>

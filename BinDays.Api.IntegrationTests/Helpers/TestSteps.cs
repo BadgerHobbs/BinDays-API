@@ -2,6 +2,7 @@ namespace BinDays.Api.IntegrationTests.Helpers;
 
 using BinDays.Api.Collectors.Models;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,7 +13,7 @@ using Xunit.Abstractions;
 internal static class TestSteps
 {
 	/// <summary>
-	/// Caches resolved collectors by normalised postcode to avoid repeat gov.uk lookups within a test run.
+	/// Caches resolved collectors by gov.uk ID to avoid repeat <c>/collectors</c> calls within a test run.
 	/// </summary>
 	private static readonly ConcurrentDictionary<string, TestCollector> _collectorCache = new();
 
@@ -79,8 +80,12 @@ internal static class TestSteps
 	{
 		try
 		{
-			// Step 1: Get Collector
-			var collector = await GetCollectorAsync(client, postcode, expectedGovUkId);
+			// Step 1: Get Collector. Resolved via /collectors rather than the postcode-driven
+			// /collector lookup, since the latter makes a real client-side request to gov.uk
+			// and every council test resolving its own postcode against the live site on every
+			// run gets rate-limited. The gov.uk parsing logic itself is covered by
+			// GovUkIdNotFoundTests against mocked responses instead.
+			var collector = await GetCollectorAsync(client, expectedGovUkId);
 
 			// Step 2: Get Addresses. Still fetched for a pinned run — it is cached server-side, and
 			// keeps the real address list in the test summary for diagnosing a failure.
@@ -158,30 +163,28 @@ internal static class TestSteps
 	}
 
 	/// <summary>
-	/// Executes Step 1: Get Collector via POST /collector?postcode=...
+	/// Executes Step 1: Get Collector via GET /collectors, picking out the entry matching
+	/// <paramref name="expectedGovUkId"/>. Avoids the postcode-driven /collector endpoint, which
+	/// makes a real client-side request to gov.uk and would otherwise be exercised once per
+	/// council test.
 	/// </summary>
 	private static async Task<TestCollector> GetCollectorAsync(
 		IntegrationTestClient client,
-		string postcode,
 		string expectedGovUkId)
 	{
-		var cacheKey = postcode.ToUpperInvariant().Replace(" ", "");
-		if (_collectorCache.TryGetValue(cacheKey, out var cached))
+		if (_collectorCache.TryGetValue(expectedGovUkId, out var cached))
 		{
 			return cached;
 		}
 
-		var response = await client.ExecuteRequestCycleAsync<TestGetCollectorResponse>(
-			$"/collector?postcode={postcode}",
-			resp => resp.NextClientSideRequest
-		);
+		var collectors = await client.GetAsync<List<TestCollector>>("/collectors");
+		var collector = collectors.SingleOrDefault(c => c.GovUkId == expectedGovUkId);
 
-		TestValidation.ValidateCollectorResult(response.Collector, expectedGovUkId);
+		TestValidation.ValidateCollectorResult(collector, expectedGovUkId);
 
-		var collector = response.Collector!;
-		_collectorCache[cacheKey] = collector;
+		_collectorCache[expectedGovUkId] = collector!;
 
-		return collector;
+		return collector!;
 	}
 
 	/// <summary>
