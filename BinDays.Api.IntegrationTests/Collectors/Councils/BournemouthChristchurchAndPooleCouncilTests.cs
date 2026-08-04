@@ -20,13 +20,16 @@ public class BournemouthChristchurchAndPooleCouncilTests
 
 	[Theory]
 	[InlineData("BH6 4DE")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("BH6 4DE", "44058", 2)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

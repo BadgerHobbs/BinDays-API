@@ -21,13 +21,16 @@ public class LiverpoolCityCouncilTests
 	[Theory]
 	[InlineData("L15 2HF")]
 	[InlineData("L8 2TG")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("L15 2HF", "38140378", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

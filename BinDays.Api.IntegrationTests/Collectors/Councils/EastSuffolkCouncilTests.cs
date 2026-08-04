@@ -20,14 +20,17 @@ public class EastSuffolkCouncilTests
 
 	[Theory]
 	[InlineData("IP3 8UE", 5)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex)
+	[InlineData("IP3 8UE", 0, "100091393218", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

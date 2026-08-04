@@ -20,13 +20,16 @@ public class TorbayCouncilTests
 
 	[Theory]
 	[InlineData("TQ1 1NX")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("TQ1 1NX", "U100040552634", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

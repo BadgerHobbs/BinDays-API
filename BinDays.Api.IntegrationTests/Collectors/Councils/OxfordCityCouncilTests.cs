@@ -20,13 +20,16 @@ public class OxfordCityCouncilTests
 
 	[Theory]
 	[InlineData("OX4 3AT")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("OX4 3AT", "100120811277", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

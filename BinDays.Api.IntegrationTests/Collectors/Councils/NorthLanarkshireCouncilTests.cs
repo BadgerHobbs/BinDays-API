@@ -20,13 +20,16 @@ public class NorthLanarkshireCouncilTests
 
 	[Theory]
 	[InlineData("ML1 2QE")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("ML1 2QE", "41, ADELE STREET, MOTHERWELL, ML1 2QE", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

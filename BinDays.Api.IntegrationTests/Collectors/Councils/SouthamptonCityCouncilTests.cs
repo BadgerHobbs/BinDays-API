@@ -21,13 +21,16 @@ public class SouthamptonCityCouncilTests
 	[Theory]
 	[InlineData("SO15 5NR")]
 	[InlineData("SO19 7GX")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SO15 5NR", "100060691045", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

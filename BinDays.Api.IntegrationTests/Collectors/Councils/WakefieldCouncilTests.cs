@@ -20,13 +20,16 @@ public class WakefieldCouncilTests
 
 	[Theory]
 	[InlineData("WF5 0AF")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("WF5 0AF", "63183522;1 Sunnydale Gardens Ossett WF5 0AF", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

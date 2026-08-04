@@ -23,13 +23,16 @@ public class BuckinghamshireCouncilTests
 	[InlineData("HP13 5AW")] // Wycombe
 	[InlineData("HP9 1BG")]  // South Bucks
 	[InlineData("HP7 0NQ")]  // Chiltern
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("HP22 5XA", "766352432", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class BaberghDistrictCouncilTests
 
 	[Theory]
 	[InlineData("CO10 0AE")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("CO10 0AE", "200004222888", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

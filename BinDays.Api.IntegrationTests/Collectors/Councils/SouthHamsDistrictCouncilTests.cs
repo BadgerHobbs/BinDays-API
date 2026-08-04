@@ -20,13 +20,16 @@ public class SouthHamsDistrictCouncilTests
 
 	[Theory]
 	[InlineData("PL8 2NG")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("PL8 2NG", "100040292288", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

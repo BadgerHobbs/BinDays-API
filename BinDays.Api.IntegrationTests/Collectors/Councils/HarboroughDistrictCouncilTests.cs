@@ -20,13 +20,16 @@ public class HarboroughDistrictCouncilTests
 
 	[Theory]
 	[InlineData("LE17 5EG")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("LE17 5EG", "200003746518;MAIN STREET, LUTTERWORTH, LEICESTERSHIRE, LE17 5EG", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

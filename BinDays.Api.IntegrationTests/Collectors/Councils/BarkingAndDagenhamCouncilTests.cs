@@ -20,13 +20,16 @@ public class BarkingAndDagenhamCouncilTests
 
 	[Theory]
 	[InlineData("RM10 8DB")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("RM10 8DB", "100007320", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

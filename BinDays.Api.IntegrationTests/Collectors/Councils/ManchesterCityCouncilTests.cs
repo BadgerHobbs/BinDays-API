@@ -20,13 +20,16 @@ public class ManchesterCityCouncilTests
 
 	[Theory]
 	[InlineData("M15 6PN")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("M15 6PN", "1000557967", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

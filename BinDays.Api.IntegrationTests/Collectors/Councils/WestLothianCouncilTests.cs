@@ -20,13 +20,16 @@ public class WestLothianCouncilTests
 
 	[Theory]
 	[InlineData("EH53 0FF")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("EH53 0FF", "135042367;1 Alder Walk, East Calder, Livingston, EH53 0FF", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class WorthingBoroughCouncilTests
 
 	[Theory]
 	[InlineData("BN14 9NS")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("BN14 9NS", "100061893923", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class WaverleyBoroughCouncilTests
 
 	[Theory]
 	[InlineData("GU10 3NQ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("GU10 3NQ", "12", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

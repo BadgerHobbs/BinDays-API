@@ -20,13 +20,16 @@ public class StockportCouncilTests
 
 	[Theory]
 	[InlineData("SK5 6DZ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SK5 6DZ", "101002278607|1 LIVERPOOL CLOSE, NORTH REDDISH, STOCKPORT, STOCKPORT, SK5 6DZ", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

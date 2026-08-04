@@ -20,13 +20,16 @@ public class PembrokeshireCountyCouncilTests
 
 	[Theory]
 	[InlineData("SA71 4EL")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SA71 4EL", "100100300500", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -21,13 +21,17 @@ public class SouthOxfordshireDistrictCouncilTests
 	[Theory]
 	[InlineData("OX11 7NU")]
 	[InlineData("OX9 7DU")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("OX11 7NU", "100120856468", 1)]
+	[InlineData("RG9 2JN", "CTRL:63:_:D:26", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

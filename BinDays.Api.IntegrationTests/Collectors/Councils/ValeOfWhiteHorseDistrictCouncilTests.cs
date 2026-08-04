@@ -22,13 +22,17 @@ public class ValeOfWhiteHorseDistrictCouncilTests
 	[InlineData("OX14 3AJ")]
 	[InlineData("OX14 4FQ")]
 	[InlineData("OX14 1JJ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("OX14 3AJ", "100120932167", 1)]
+	[InlineData("OX14 3AJ", "CTRL:63:_:D:20", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

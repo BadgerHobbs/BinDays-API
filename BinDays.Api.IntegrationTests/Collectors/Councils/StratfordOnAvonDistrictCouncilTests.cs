@@ -21,14 +21,17 @@ public class StratfordOnAvonDistrictCouncilTests
 	[Theory]
 	[InlineData("CV37 0TH")]
 	[InlineData("CV37 0TH", 32)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex = 0)
+	[InlineData("CV37 0TH", 0, "100070221208;1 MEADOW SWEET ROAD;STRATFORD-UPON-AVON;WARWICKSHIRE;", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

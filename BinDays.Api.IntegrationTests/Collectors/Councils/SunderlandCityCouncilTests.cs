@@ -20,13 +20,16 @@ public class SunderlandCityCouncilTests
 
 	[Theory]
 	[InlineData("SR4 7NR")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SR4 7NR", "45061690", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

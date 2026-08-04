@@ -20,14 +20,17 @@ public class NewcastleUnderLymeTests
 
 	[Theory]
 	[InlineData("ST5 7LD", 1)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex)
+	[InlineData("ST5 7LD", 0, "100031722272", 1)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex
+			addressIndex,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class KirkleesCouncilTests
 
 	[Theory]
 	[InlineData("WF4 4AD")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("WF4 4AD", "83159267;1 Park Side, Flockton, Wakefield, WF4 4AD;Park Side;Wakefield", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

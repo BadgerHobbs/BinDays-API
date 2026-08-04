@@ -20,13 +20,16 @@ public class NorthEastLincolnshireCouncilTests
 
 	[Theory]
 	[InlineData("DN33 2JU")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("DN33 2JU", "11014963", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

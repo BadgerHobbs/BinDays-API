@@ -21,13 +21,16 @@ public class EastAyrshireCouncilTests
 	[Theory]
 	[InlineData("KA18 1NE")]
 	[InlineData("KA6 6EX")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("KA18 1NE", "B04221D4-E067-11F0-8D37-CA95FB13CCBF", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

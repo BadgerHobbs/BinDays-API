@@ -20,13 +20,16 @@ public class TendringDistrictCouncilTests
 
 	[Theory]
 	[InlineData("CO15 1BS")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("CO15 1BS", "100090620437", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class SouthTynesideCouncilTests
 
 	[Theory]
 	[InlineData("NE34 0SY")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NE34 0SY", "S100000345869;1 PAGE AVENUE, SOUTH SHIELDS, SOUTH TYNESIDE, TYNE AND WEAR, NE34 0SY", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

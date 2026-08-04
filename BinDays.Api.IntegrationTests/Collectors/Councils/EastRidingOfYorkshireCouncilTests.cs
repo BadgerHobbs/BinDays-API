@@ -20,13 +20,16 @@ public class EastRidingOfYorkshireCouncilTests
 
 	[Theory]
 	[InlineData("HU14 3DT")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("HU19 2AL", "100050105946;2026-07-13T00:00:00;2026-07-07T00:00:00;2026-07-07T00:00:00", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

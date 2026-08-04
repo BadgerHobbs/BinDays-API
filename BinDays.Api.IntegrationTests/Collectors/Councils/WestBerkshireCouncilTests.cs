@@ -20,13 +20,16 @@ public class WestBerkshireCouncilTests
 
 	[Theory]
 	[InlineData("RG7 6NZ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("RG7 6NZ", "100081023847", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

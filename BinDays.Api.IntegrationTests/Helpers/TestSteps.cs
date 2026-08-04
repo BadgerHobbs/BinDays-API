@@ -2,7 +2,9 @@ namespace BinDays.Api.IntegrationTests.Helpers;
 
 using BinDays.Api.Collectors.Models;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
+using Xunit;
 using Xunit.Abstractions;
 
 /// <summary>
@@ -11,7 +13,7 @@ using Xunit.Abstractions;
 internal static class TestSteps
 {
 	/// <summary>
-	/// Caches resolved collectors by normalised postcode to avoid repeat gov.uk lookups within a test run.
+	/// Caches resolved collectors by gov.uk ID to avoid repeat <c>/collectors</c> calls within a test run.
 	/// </summary>
 	private static readonly ConcurrentDictionary<string, TestCollector> _collectorCache = new();
 
@@ -22,27 +24,48 @@ internal static class TestSteps
 	/// <param name="postcode">The postcode to search for.</param>
 	/// <param name="expectedGovUkId">The expected GOV.UK ID of the collector.</param>
 	/// <param name="outputHelper">The test output helper.</param>
-	/// <param name="addressIndex">Optional zero-based index of the address to select. Defaults to 0 (first address).</param>
+	/// <param name="addressIndex">Optional zero-based index of the address to select. Defaults to 0 (first address). Ignored when <paramref name="pinnedUid"/> is provided.</param>
+	/// <param name="pinnedUid">Optional Uid pinned from an earlier search. When provided it is used instead of selecting an address from the freshly fetched list, simulating a user who selected an address a while ago and hasn't reopened the address picker since. Must be provided together with <paramref name="pinnedVersion"/>.</param>
+	/// <param name="pinnedVersion">The collector version at the time <paramref name="pinnedUid"/> was pinned. Must stay a hardcoded literal, never read dynamically from the current collector, so a future version bump is actually exercised by the test. A 410 Gone response fails the test: it means the collector's Version has been bumped since the Uid was pinned, invalidating every saved address for that collector. Must be provided together with <paramref name="pinnedUid"/>.</param>
 	/// <returns>A task that represents the asynchronous operation.</returns>
 	public static async Task EndToEnd(
 		IntegrationTestClient client,
 		string postcode,
 		string expectedGovUkId,
 		ITestOutputHelper outputHelper,
-		int addressIndex = 0)
+		int addressIndex = 0,
+		string? pinnedUid = null,
+		int? pinnedVersion = null)
 	{
+		if (pinnedUid is null ^ pinnedVersion is null)
+		{
+			throw new ArgumentException(
+				$"{nameof(pinnedUid)} and {nameof(pinnedVersion)} must both be provided together, or both omitted."
+			);
+		}
+
+		if (pinnedUid is not null && addressIndex != 0)
+		{
+			throw new ArgumentException(
+				$"{nameof(addressIndex)} is ignored when {nameof(pinnedUid)} is provided, since the pinned Uid " +
+				$"already identifies the address. Pass 0 to avoid implying otherwise."
+			);
+		}
+
 		await EndToEndAsync(
 			client,
 			postcode,
 			expectedGovUkId,
 			outputHelper,
 			addressIndex,
+			pinnedUid,
+			pinnedVersion,
 			maxRetries: 6
 		);
 	}
 
 	/// <summary>
-	/// Executes the end-to-end test cycle, retrying up to <paramref name="retriesRemaining"/> times on failure.
+	/// Executes the end-to-end test cycle, retrying up to <paramref name="maxRetries"/> times on failure.
 	/// </summary>
 	private static async Task EndToEndAsync(
 		IntegrationTestClient client,
@@ -50,25 +73,36 @@ internal static class TestSteps
 		string expectedGovUkId,
 		ITestOutputHelper outputHelper,
 		int addressIndex,
+		string? pinnedUid,
+		int? pinnedVersion,
 		int maxRetries,
 		int attempt = 0)
 	{
 		try
 		{
-			// Step 1: Get Collector
-			var collector = await GetCollectorAsync(client, postcode, expectedGovUkId);
+			// Step 1: Get Collector. Resolved via /collectors rather than the postcode-driven
+			// /collector lookup, since the latter makes a real client-side request to gov.uk
+			// and every council test resolving its own postcode against the live site on every
+			// run gets rate-limited. The gov.uk parsing logic itself is covered by
+			// GovUkIdNotFoundTests against mocked responses instead.
+			var collector = await GetCollectorAsync(client, expectedGovUkId);
 
-			// Step 2: Get Addresses
+			// Step 2: Get Addresses. Still fetched for a pinned run — it is cached server-side, and
+			// keeps the real address list in the test summary for diagnosing a failure.
 			var addresses = await GetAddressesAsync(client, expectedGovUkId, postcode);
-			var selectedAddress = addresses.ElementAt(addressIndex);
 
-			// Step 3: Get Bin Days
+			// A pinned Uid stands in for the address the user selected earlier, instead of
+			// re-picking one from the list that was just fetched.
+			var uid = pinnedUid ?? addresses.ElementAt(addressIndex).Uid!;
+
+			// Step 3: Get Bin Days. A pinned version is sent as-is rather than the collector's
+			// current Version, so a version bump since the Uid was pinned surfaces as a 410.
 			var binDays = await GetBinDaysAsync(
 				client,
 				expectedGovUkId,
 				postcode,
-				selectedAddress.Uid!,
-				collector.Version
+				uid,
+				pinnedVersion ?? collector.Version
 			);
 
 			// Step 4: Output Summary
@@ -77,6 +111,19 @@ internal static class TestSteps
 				collector,
 				addresses,
 				binDays
+			);
+		}
+		catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Gone && pinnedVersion.HasValue)
+		{
+			// 410 Gone means the collector's Version has been bumped since this Uid was pinned, so
+			// every previously-saved address for this collector is now rejected and each affected
+			// user must manually re-select theirs in the app. The API is behaving correctly, but
+			// that is still a real user-facing break, so surface it as a failure rather than a pass.
+			Assert.Fail(
+				$"Pinned version {pinnedVersion} is no longer accepted (410 Gone). The collector's Version has been " +
+				"bumped since this Uid was pinned, so every saved address for this collector is now invalid and " +
+				"affected users must re-select their address in the app. If that break was intended, re-capture this " +
+				"pin against the current version."
 			);
 		}
 		catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests && attempt < maxRetries)
@@ -91,6 +138,8 @@ internal static class TestSteps
 				expectedGovUkId,
 				outputHelper,
 				addressIndex,
+				pinnedUid,
+				pinnedVersion,
 				maxRetries,
 				attempt + 1
 			);
@@ -105,6 +154,8 @@ internal static class TestSteps
 				expectedGovUkId,
 				outputHelper,
 				addressIndex,
+				pinnedUid,
+				pinnedVersion,
 				maxRetries,
 				attempt + 1
 			);
@@ -112,30 +163,28 @@ internal static class TestSteps
 	}
 
 	/// <summary>
-	/// Executes Step 1: Get Collector via POST /collector?postcode=...
+	/// Executes Step 1: Get Collector via GET /collectors, picking out the entry matching
+	/// <paramref name="expectedGovUkId"/>. Avoids the postcode-driven /collector endpoint, which
+	/// makes a real client-side request to gov.uk and would otherwise be exercised once per
+	/// council test.
 	/// </summary>
 	private static async Task<TestCollector> GetCollectorAsync(
 		IntegrationTestClient client,
-		string postcode,
 		string expectedGovUkId)
 	{
-		var cacheKey = postcode.ToUpperInvariant().Replace(" ", "");
-		if (_collectorCache.TryGetValue(cacheKey, out var cached))
+		if (_collectorCache.TryGetValue(expectedGovUkId, out var cached))
 		{
 			return cached;
 		}
 
-		var response = await client.ExecuteRequestCycleAsync<TestGetCollectorResponse>(
-			$"/collector?postcode={postcode}",
-			resp => resp.NextClientSideRequest
-		);
+		var collectors = await client.GetAsync<List<TestCollector>>("/collectors");
+		var collector = collectors.SingleOrDefault(c => c.GovUkId == expectedGovUkId);
 
-		TestValidation.ValidateCollectorResult(response.Collector, expectedGovUkId);
+		TestValidation.ValidateCollectorResult(collector, expectedGovUkId);
 
-		var collector = response.Collector!;
-		_collectorCache[cacheKey] = collector;
+		_collectorCache[expectedGovUkId] = collector!;
 
-		return collector;
+		return collector!;
 	}
 
 	/// <summary>

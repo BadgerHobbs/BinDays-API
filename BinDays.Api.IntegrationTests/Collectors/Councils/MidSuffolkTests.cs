@@ -21,13 +21,16 @@ public class MidSuffolkTests
 	[Theory]
 	[InlineData("IP23 8LA")]
 	[InlineData("IP31 3FG")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("IP23 8LA", "10094150068", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

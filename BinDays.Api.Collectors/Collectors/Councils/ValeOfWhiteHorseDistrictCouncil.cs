@@ -19,4 +19,10 @@ internal sealed class ValeOfWhiteHorseDistrictCouncil : BinzoneCollectorBase, IC
 
 	/// <inheritdoc/>
 	protected override string CouncilCode => "V";
+
+	/// <inheritdoc/>
+	protected override string EformBaseUrl => "https://eform.whitehorsedc.gov.uk";
+
+	/// <inheritdoc/>
+	protected override string ServiceId => "VALE";
 }

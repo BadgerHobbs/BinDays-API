@@ -23,13 +23,16 @@ public class IpswichBoroughCouncilTests
 	[InlineData("IP3 0SP")]
 	[InlineData("IP4 5DG")]
 	[InlineData("IP3 0SJ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("IP2 9PD", "482", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

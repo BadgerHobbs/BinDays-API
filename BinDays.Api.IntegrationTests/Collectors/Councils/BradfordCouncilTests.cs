@@ -20,14 +20,17 @@ public class BradfordCouncilTests
 
 	[Theory]
 	[InlineData("BD5 9ND")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("BD5 9ND", "CTRL:Go9IHRTP:1:B.h", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex: 1
+			addressIndex: 1,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

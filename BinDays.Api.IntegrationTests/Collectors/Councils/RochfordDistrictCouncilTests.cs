@@ -20,13 +20,16 @@ public class RochfordDistrictCouncilTests
 
 	[Theory]
 	[InlineData("SS6 9GU")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SS6 9GU", "E05010844-100090579593;form-dWYGQ45RMYEWtSag-DmxEohEPCgXH7oGnm_MNmw0XZ8", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

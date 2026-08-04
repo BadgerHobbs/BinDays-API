@@ -31,13 +31,16 @@ public class ArgyllAndButeCouncilTests
 	[InlineData("PA73 6LT")]  // Mull and Iona (blue, grey glass, green)
 	[InlineData("PA34 5PX")]  // Oban and Lorn
 	[InlineData("PA77 6XA")]  // Tiree (blue, grey glass, green)
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("PA78 6SY", "000125008375", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

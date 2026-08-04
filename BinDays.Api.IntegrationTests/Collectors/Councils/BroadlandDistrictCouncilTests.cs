@@ -20,13 +20,16 @@ public class BroadlandDistrictCouncilTests
 
 	[Theory]
 	[InlineData("NR8 6BQ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NR8 6BQ", "010014361082;1 Sidney Bunn Way, Drayton, Norfolk, NR8 6BQ;618562.00000;313317.00000;Drayton South;Drayton;Drayton;Sidney Bunn Way;2610", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

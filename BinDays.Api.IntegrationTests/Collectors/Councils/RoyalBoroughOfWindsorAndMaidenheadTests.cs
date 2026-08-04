@@ -20,13 +20,16 @@ public class RoyalBoroughOfWindsorAndMaidenheadTests
 
 	[Theory]
 	[InlineData("SL6 1XG")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SL6 1XG", "100080361115", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

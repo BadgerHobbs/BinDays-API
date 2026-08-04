@@ -20,13 +20,16 @@ public class NewportCityCouncilTests
 
 	[Theory]
 	[InlineData("NP20 6QJ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("NP20 6QJ", "100100646760", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

@@ -20,13 +20,16 @@ public class DudleyMetropolitanBoroughCouncilTests
 
 	[Theory]
 	[InlineData("DY1 2GJ")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("DY1 2GJ", "90001447", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

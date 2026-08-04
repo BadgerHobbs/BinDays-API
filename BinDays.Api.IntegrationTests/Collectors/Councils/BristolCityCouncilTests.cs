@@ -20,13 +20,16 @@ public class BristolCityCouncilTests
 
 	[Theory]
 	[InlineData("BS6 7SR")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("BS6 7SR", "000000355858", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }
