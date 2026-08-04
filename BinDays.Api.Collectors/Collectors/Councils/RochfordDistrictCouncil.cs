@@ -22,6 +22,9 @@ internal sealed partial class RochfordDistrictCouncil : GovUkCollectorBase, ICol
 	/// <inheritdoc/>
 	public override string GovUkId => "rochford";
 
+	/// <inheritdoc/>
+	public override int Version => 2;
+
 	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
@@ -142,7 +145,6 @@ internal sealed partial class RochfordDistrictCouncil : GovUkCollectorBase, ICol
 		else if (clientSideResponse.RequestId == 2)
 		{
 			var insertData = GetInsertData(clientSideResponse.Content);
-			var formBuildId = FormBuildIdRegex().Match(insertData).Groups["formBuildId"].Value;
 			var rawAddresses = AddressRegex().Matches(insertData)!;
 
 			// Iterate through each address, and create a new address object
@@ -160,8 +162,7 @@ internal sealed partial class RochfordDistrictCouncil : GovUkCollectorBase, ICol
 				{
 					Property = rawAddress.Groups["address"].Value.Trim(),
 					Postcode = postcode,
-					// Embed form_build_id in Uid so GetBinDays can skip the GET+postcode steps
-					Uid = $"{uid};{formBuildId}",
+					Uid = uid,
 				};
 
 				addresses.Add(address);
@@ -181,112 +182,74 @@ internal sealed partial class RochfordDistrictCouncil : GovUkCollectorBase, ICol
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Uid is "{uprn};{form_build_id}" when set by GetAddresses (fast path: 1 round trip).
-		// Fall back to 3-step flow for any address without an embedded form_build_id.
-		var uidParts = address.Uid!.Split(';', 2);
-		var uprn = uidParts[0];
-		var embeddedFormBuildId = uidParts.Length == 2 ? uidParts[1] : null;
-
-		if (embeddedFormBuildId != null)
+		// The Uid is a bare UPRN. Every call re-fetches a fresh form_build_id rather than reusing
+		// one embedded in the Uid, since Drupal's form_build_id is a session token that expires
+		// server-side -- a Uid saved by the app and replayed later must keep working indefinitely.
+		if (clientSideResponse == null)
 		{
-			// Fast path: POST UPRN directly using the form_build_id captured during GetAddresses
-			if (clientSideResponse == null)
+			var clientSideRequest = new ClientSideRequest
 			{
-				var clientSideRequest = new ClientSideRequest
-				{
-					RequestId = 1,
-					Url = _binCollectionAjaxUrl,
-					Method = "POST",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-						{ "content-type", Constants.FormUrlEncoded },
-						{ "x-requested-with", Constants.XmlHttpRequest },
-					},
-					Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-					{
-						{ "uprn", uprn },
-						{ "form_build_id", embeddedFormBuildId },
-						{ "form_id", _formId },
-					}),
-				};
+				RequestId = 1,
+				Url = _binCollectionUrl,
+				Method = "GET",
+			};
 
-				return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
-			}
-			else if (clientSideResponse.RequestId == 1)
-			{
-				return ParseBinDaysResponse(address, clientSideResponse.Content);
-			}
+			return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
 		}
-		else
+		else if (clientSideResponse.RequestId == 1)
 		{
-			// Slow path: GET page → POST postcode → POST UPRN
-			if (clientSideResponse == null)
+			var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var clientSideRequest = new ClientSideRequest
+				RequestId = 2,
+				Url = _binCollectionAjaxUrl,
+				Method = "POST",
+				Headers = new()
 				{
-					RequestId = 1,
-					Url = _binCollectionUrl,
-					Method = "GET",
-				};
-
-				return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
-			}
-			else if (clientSideResponse.RequestId == 1)
-			{
-				var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
-
-				var clientSideRequest = new ClientSideRequest
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.FormUrlEncoded },
+					{ "x-requested-with", Constants.XmlHttpRequest },
+				},
+				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
 				{
-					RequestId = 2,
-					Url = _binCollectionAjaxUrl,
-					Method = "POST",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-						{ "content-type", Constants.FormUrlEncoded },
-						{ "x-requested-with", Constants.XmlHttpRequest },
-					},
-					Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-					{
-						{ "postcode", address.Postcode! },
-						{ "form_build_id", formBuildId },
-						{ "form_id", _formId },
-					}),
-				};
+					{ "postcode", address.Postcode! },
+					{ "form_build_id", formBuildId },
+					{ "form_id", _formId },
+				}),
+			};
 
-				return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
-			}
-			else if (clientSideResponse.RequestId == 2)
+			return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
+		}
+		else if (clientSideResponse.RequestId == 2)
+		{
+			var insertData = GetInsertData(clientSideResponse.Content);
+			var formBuildId = FormBuildIdRegex().Match(insertData).Groups["formBuildId"].Value;
+
+			var clientSideRequest = new ClientSideRequest
 			{
-				var insertData = GetInsertData(clientSideResponse.Content);
-				var formBuildId = FormBuildIdRegex().Match(insertData).Groups["formBuildId"].Value;
-
-				var clientSideRequest = new ClientSideRequest
+				RequestId = 3,
+				Url = _binCollectionAjaxUrl,
+				Method = "POST",
+				Headers = new()
 				{
-					RequestId = 3,
-					Url = _binCollectionAjaxUrl,
-					Method = "POST",
-					Headers = new()
-					{
-						{ "user-agent", Constants.UserAgent },
-						{ "content-type", Constants.FormUrlEncoded },
-						{ "x-requested-with", Constants.XmlHttpRequest },
-					},
-					Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-					{
-						{ "uprn", uprn },
-						{ "form_build_id", formBuildId },
-						{ "form_id", _formId },
-					}),
-				};
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.FormUrlEncoded },
+					{ "x-requested-with", Constants.XmlHttpRequest },
+				},
+				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
+				{
+					{ "uprn", address.Uid! },
+					{ "form_build_id", formBuildId },
+					{ "form_id", _formId },
+				}),
+			};
 
-				return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
-			}
-			else if (clientSideResponse.RequestId == 3)
-			{
-				return ParseBinDaysResponse(address, clientSideResponse.Content);
-			}
+			return new GetBinDaysResponse { NextClientSideRequest = clientSideRequest };
+		}
+		else if (clientSideResponse.RequestId == 3)
+		{
+			return ParseBinDaysResponse(address, clientSideResponse.Content);
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");

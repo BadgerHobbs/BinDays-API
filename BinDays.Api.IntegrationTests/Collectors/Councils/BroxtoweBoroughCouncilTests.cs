@@ -19,16 +19,16 @@ public class BroxtoweBoroughCouncilTests
 	}
 
 	[Theory]
-	[InlineData("NG16 2NB")]
-	[InlineData("NG16 2NB", "U100031330592", 2)]
-	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
+	[InlineData("NG16 2NB", 1)]
+	[InlineData("NG16 2NB", 0, "U100031330592", 2)]
+	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex: 1,
+			addressIndex,
 			pinnedUid: pinnedUid,
 			pinnedVersion: pinnedVersion
 		);
