@@ -33,12 +33,6 @@ public sealed class CollectorService
 	private readonly ICollectorMetrics _metrics;
 
 	/// <summary>
-	/// The most of a council response logged when bin days are dropped. Enough to carry the
-	/// service labels, without a large schedule payload dominating the log.
-	/// </summary>
-	private const int _maximumLoggedResponseLength = 4000;
-
-	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorService"/> class.
 	/// </summary>
 	/// <param name="collectors">The collectors.</param>
@@ -98,7 +92,7 @@ public sealed class CollectorService
 	/// Gets the addresses for a given postcode.
 	/// </summary>
 	/// <param name="postcode">The postcode.</param>
-	/// #<param name="govUkId">The gov.uk identifier for the collector.</param>
+	/// <param name="govUkId">The gov.uk identifier for the collector.</param>
 	/// <param name="clientSideResponse">The response from a previous client-side request, if applicable.</param>
 	/// <returns>The response containing either the next client-side request to make or the addresses.</returns>
 	/// <exception cref="AddressesNotFoundException">Thrown when no addresses are found and no next client-side request.</exception>
@@ -114,22 +108,6 @@ public sealed class CollectorService
 		}
 
 		return result;
-	}
-
-	/// <summary>
-	/// Truncates a council response to <see cref="_maximumLoggedResponseLength"/>, marking it when
-	/// shortened so a label missing from the tail is not mistaken for one the council did not send.
-	/// </summary>
-	/// <param name="content">The council response.</param>
-	/// <returns>The response, truncated if it exceeds the limit.</returns>
-	private static string Truncate(string content)
-	{
-		if (content.Length <= _maximumLoggedResponseLength)
-		{
-			return content;
-		}
-
-		return string.Concat(content.AsSpan(0, _maximumLoggedResponseLength), " ... [truncated]");
 	}
 
 	/// <summary>
@@ -162,12 +140,10 @@ public sealed class CollectorService
 						binDay.Date, govUkId, address.Postcode, address.Uid
 					);
 
-					// Counted as well as logged, because a partial drop is the leading indicator of a
-					// council renaming one of its bin types: the user silently receives a schedule
-					// with a collection missing, and nothing else in the pipeline reports it. Only
-					// once every bin day stops matching does this escalate to the exception below.
-					// Labelled by collector alone -- the unmatched service name is council-supplied
-					// free text, so it would be unbounded as a metric label and stays in the log.
+					// Counted as well as logged: a partial drop is the earliest sign of a council
+					// renaming a bin type, and only escalates to the exception below once every bin
+					// day stops matching. Labelled by collector alone, since the unmatched service
+					// name is council-supplied free text and would be unbounded as a metric label.
 					_metrics.RecordBinDayUnmatched(govUkId);
 					continue;
 				}
@@ -175,17 +151,11 @@ public sealed class CollectorService
 				matchedBinDays.Add(binDay);
 			}
 
-			// The warnings above name the collector and the dates lost, but not the wording the
-			// council actually used, because the service label is compared against the bin type keys
-			// and then discarded before the bin day is built. Without it, knowing a collector is
-			// dropping dates still leaves the request to be replayed by hand to find out what to add
-			// to its keys. The council's response is already here, so log it once per affected
-			// request, truncated, and the new label can be read straight out of it.
-			if (droppedCount > 0 && clientSideResponse?.Content is string content)
+			if (droppedCount > 0)
 			{
 				_logger.LogWarning(
-					"Dropped {DroppedCount} bin day(s) for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}. Council response follows, for the service wording to add to the collector's bin type keys: {CouncilResponse}",
-					droppedCount, govUkId, address.Postcode, address.Uid, Truncate(content)
+					"Dropped {DroppedCount} bin day(s) for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.",
+					droppedCount, govUkId, address.Postcode, address.Uid
 				);
 			}
 

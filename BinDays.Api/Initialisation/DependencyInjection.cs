@@ -20,9 +20,6 @@ internal static class DependencyInjection
 		// Register implementations of ICollector
 		var collectorsAssembly = typeof(ICollector).Assembly;
 
-		// Find types that are assignable to ICollector
-		// Exclude the interface itself and any abstract base classes
-		// Register them as ICollector
 		builder.RegisterAssemblyTypes(collectorsAssembly)
 			.AssignableTo<ICollector>()
 			.Where(t => t.IsInterface == false && t.IsAbstract == false)

@@ -269,13 +269,17 @@ public class CollectorsController : ControllerBase
 		}
 		catch (AddressesNotFoundException ex)
 		{
-			_logger.LogWarning(ex, "No addresses found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
+			_logger.WithJsonData("ClientSideResponse", clientSideResponse)
+				.LogWarning(ex, "No addresses found for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
+
 			_metrics.RecordLookup(Endpoints.Addresses, safeGovUkId, Outcomes.AddressesNotFound);
 			return NotFound("No addresses found for the specified postcode.");
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "An unexpected error occurred while retrieving addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
+			_logger.WithJsonData("ClientSideResponse", clientSideResponse)
+				.LogError(ex, "An unexpected error occurred while retrieving addresses for gov.uk ID: {GovUkId}, postcode: {Postcode}.", govUkId, postcode);
+
 			_metrics.RecordLookup(Endpoints.Addresses, safeGovUkId, Outcomes.Error);
 			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching addresses. Please try again later.");
 		}
@@ -368,7 +372,9 @@ public class CollectorsController : ControllerBase
 		}
 		catch (BinDaysNotFoundException ex)
 		{
-			_logger.LogWarning(ex, "No bin days found for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+			_logger.WithJsonData("ClientSideResponse", clientSideResponse)
+				.LogWarning(ex, "No bin days found for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+
 			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.BinDaysNotFound);
 			return NotFound("No bin days found for the specified address.");
 		}
@@ -380,7 +386,9 @@ public class CollectorsController : ControllerBase
 		}
 		catch (Exception ex)
 		{
-			_logger.LogError(ex, "An unexpected error occurred while retrieving bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+			_logger.WithJsonData("ClientSideResponse", clientSideResponse)
+				.LogError(ex, "An unexpected error occurred while retrieving bin days for gov.uk ID: {GovUkId}, postcode: {Postcode}, UID: {Uid}.", govUkId, postcode, uid);
+
 			_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.Error);
 			return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while fetching bin days. Please try again later.");
 		}
