@@ -142,9 +142,6 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Handle initial session setup (steps 1-2)
-		// Note: Session initialization is required for each GetBinDays call as the API
-		// requires fresh session cookies and SID for the multi-step bin collection lookup process
 		var (sessionRequest, shouldContinue) = HandleSessionInitialization(clientSideResponse);
 		if (!shouldContinue)
 		{

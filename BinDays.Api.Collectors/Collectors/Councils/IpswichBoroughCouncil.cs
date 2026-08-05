@@ -79,16 +79,22 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 	private static partial Regex DirectBinDaysRegex();
 
 	/// <summary>
-	/// Regex to extract bin days from the calendar entries.
+	/// Regex to extract each month's block from the "Collections by month" section.
 	/// </summary>
-	[GeneratedRegex(@"<dt class=""ibc-calendar-entry"">[\s\S]*?<div class=""ibc-calendar-entry__date"">(?<day>\d+)<span class=""ibc-visually-hidden"">[^<]+</span></div>\s*<div class=""ibc-calendar-entry__month"">(?<monthYear>[^<]+)</div>[\s\S]*?<dd class=""ibc-calendar-entry__details"">[\s\S]*?<ul>\s*(?<bins>[\s\S]*?)\s*</ul>")]
-	private static partial Regex BinDaysRegex();
+	[GeneratedRegex(@"<h4>(?<monthYear>[^<]+)</h4>\s*<dl class=""ibc-columns ibc-zebra"">(?<body>[\s\S]*?)</dl>")]
+	private static partial Regex MonthBlockRegex();
 
 	/// <summary>
-	/// Regex to extract bin service names from the bin day list items.
+	/// Regex to extract a bin service name and its collection days from a month block.
 	/// </summary>
-	[GeneratedRegex(@"<li class=""[^""]+"">(?<service>[^<]+)</li>")]
-	private static partial Regex BinNameRegex();
+	[GeneratedRegex(@"<dt>(?<service>[^<]+)</dt>\s*<dd>(?<days>[^<]+)</dd>")]
+	private static partial Regex ServiceDaysRegex();
+
+	/// <summary>
+	/// Regex to extract a day-of-month number, ignoring its ordinal suffix (e.g. "6th" -> "6").
+	/// </summary>
+	[GeneratedRegex(@"\d+")]
+	private static partial Regex DayNumberRegex();
 
 	/// <summary>
 	/// Regex to extract street names from the HTML-encoded autocomplete attribute. The &amp;quot;
@@ -168,24 +174,7 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 				}
 			}
 
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "street-name", streetName },
-				{ "submit-button", string.Empty },
-			});
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 4,
-				Url = $"{_baseUrl}/bin-collection/",
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-				},
-				Body = requestBody,
-			};
+			var clientSideRequest = BuildStreetSearchRequest(4, streetName);
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -197,59 +186,119 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 		// Parse addresses from Ipswich response
 		else if (clientSideResponse.RequestId == 4)
 		{
-			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+			var getAddressesResponse = ParseAddressesFromSearchResponse(clientSideResponse, postcode);
 
-			if (rawAddresses.Count > 0)
+			// As with GetBinDays, this is an unproven candidate fix for occasional empty
+			// responses, not a confirmed correction for a known cause (see project memory).
+			if (getAddressesResponse.Addresses?.Count == 0)
 			{
-				// Iterate through each address, and create a new address object
-				var addresses = new List<Address>();
-				foreach (Match rawAddress in rawAddresses)
-				{
-					var street = WebUtility.HtmlDecode(rawAddress.Groups["street"].Value.Trim());
-					var uid = rawAddress.Groups["uid"].Value.Trim();
+				var streetName = clientSideResponse.Options.Metadata["streetName"];
+				var clientSideRequest = BuildStreetSearchRequest(5, streetName);
 
-					addresses.Add(new Address
+				return new GetAddressesResponse
+				{
+					NextClientSideRequest = clientSideRequest,
+				};
+			}
+
+			return getAddressesResponse;
+		}
+		// Parse addresses from the retry response (used when the initial request returned no data)
+		else if (clientSideResponse.RequestId == 5)
+		{
+			return ParseAddressesFromSearchResponse(clientSideResponse, postcode);
+		}
+
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Builds the client-side request that POSTs a street name to the Ipswich bin collection
+	/// search, carrying the street name forward in metadata so a retry can reuse it.
+	/// </summary>
+	/// <param name="requestId">The request id to assign.</param>
+	/// <param name="streetName">The normalized street name to search for.</param>
+	/// <returns>The client-side request.</returns>
+	private static ClientSideRequest BuildStreetSearchRequest(int requestId, string streetName)
+	{
+		var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
+		{
+			{ "street-name", streetName },
+			{ "submit-button", string.Empty },
+		});
+
+		return new ClientSideRequest
+		{
+			RequestId = requestId,
+			Url = $"{_baseUrl}/bin-collection/",
+			Method = "POST",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "content-type", Constants.FormUrlEncoded },
+			},
+			Body = requestBody,
+			Options = new ClientSideOptions
+			{
+				Metadata = { { "streetName", streetName } },
+			},
+		};
+	}
+
+	/// <summary>
+	/// Parses addresses from an Ipswich bin collection street search response.
+	/// </summary>
+	/// <param name="clientSideResponse">The response containing the search results page.</param>
+	/// <param name="postcode">The postcode the addresses belong to.</param>
+	/// <returns>The response containing the parsed addresses.</returns>
+	private static GetAddressesResponse ParseAddressesFromSearchResponse(ClientSideResponse clientSideResponse, string postcode)
+	{
+		var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+
+		if (rawAddresses.Count > 0)
+		{
+			// Iterate through each address, and create a new address object
+			var addresses = new List<Address>();
+			foreach (Match rawAddress in rawAddresses)
+			{
+				var street = WebUtility.HtmlDecode(rawAddress.Groups["street"].Value.Trim());
+				var uid = rawAddress.Groups["uid"].Value.Trim();
+
+				addresses.Add(new Address
+				{
+					Property = street,
+					Postcode = postcode,
+					Uid = uid,
+				});
+			}
+
+			return new GetAddressesResponse
+			{
+				Addresses = [.. addresses],
+			};
+		}
+
+		var directMatch = DirectBinDaysRegex().Match(clientSideResponse.Content);
+		if (directMatch.Success)
+		{
+			var street = WebUtility.HtmlDecode(directMatch.Groups["street"].Value.Trim());
+			var uid = directMatch.Groups["uid"].Value.Trim();
+
+			return new GetAddressesResponse
+			{
+				Addresses =
+				[
+					new Address
 					{
 						Property = street,
 						Postcode = postcode,
 						Uid = uid,
-					});
-				}
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses = [.. addresses],
-				};
-
-				return getAddressesResponse;
-			}
-
-			var directMatch = DirectBinDaysRegex().Match(clientSideResponse.Content);
-			if (directMatch.Success)
-			{
-				var street = WebUtility.HtmlDecode(directMatch.Groups["street"].Value.Trim());
-				var uid = directMatch.Groups["uid"].Value.Trim();
-
-				var getAddressesResponse = new GetAddressesResponse
-				{
-					Addresses =
-					[
-						new Address
-						{
-							Property = street,
-							Postcode = postcode,
-							Uid = uid,
-						},
-					],
-				};
-
-				return getAddressesResponse;
-			}
-
-			return new GetAddressesResponse { Addresses = [] };
+					},
+				],
+			};
 		}
 
-		throw new InvalidOperationException("Invalid client-side request.");
+		return new GetAddressesResponse { Addresses = [] };
 	}
 
 	/// <inheritdoc/>
@@ -260,7 +309,7 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"{_baseUrl}/bin-collection/weeks/{address.Uid!}",
+				Url = $"{_baseUrl}/bin-collection/months/{address.Uid!}",
 				Method = "GET",
 			};
 
@@ -273,29 +322,69 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 		}
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
+			var getBinDaysResponse = ParseBinDaysFromMonths(clientSideResponse, address);
 
-			var binDays = new List<BinDay>();
-			foreach (Match rawBinDay in rawBinDays)
+			// The site occasionally returns a page with an empty schedule for reasons we haven't
+			// confirmed (see project memory); a same-URL retry is an unproven candidate fix, not
+			// a confirmed correction for a known cause.
+			if (getBinDaysResponse.BinDays?.Count == 0)
 			{
-				var day = rawBinDay.Groups["day"].Value.Trim();
-				var monthYear = rawBinDay.Groups["monthYear"].Value.Trim();
-				var date = DateUtilities.ParseDateExact(
-					$"{day} {monthYear}",
-					"d MMMM yyyy"
-				);
-
-				var rawBins = BinNameRegex().Matches(rawBinDay.Groups["bins"].Value)!;
-
-				foreach (Match rawBin in rawBins)
+				var clientSideRequest = new ClientSideRequest
 				{
-					var service = WebUtility.HtmlDecode(rawBin.Groups["service"].Value.Trim());
-					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+					RequestId = 2,
+					Url = $"{_baseUrl}/bin-collection/months/{address.Uid!}",
+					Method = "GET",
+				};
 
-					if (matchedBins.Count == 0)
-					{
-						continue;
-					}
+				return new GetBinDaysResponse
+				{
+					NextClientSideRequest = clientSideRequest,
+				};
+			}
+
+			return getBinDaysResponse;
+		}
+		// Process bin days from the retry response (used when the initial request returned no data)
+		else if (clientSideResponse.RequestId == 2)
+		{
+			return ParseBinDaysFromMonths(clientSideResponse, address);
+		}
+
+		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Parses bin days from an Ipswich "Collections by month" page. Unlike the "Upcoming
+	/// collections" page (which only lists the next 4 dates), this covers several months at
+	/// once, so a single date failing to resolve doesn't zero out the whole response.
+	/// </summary>
+	/// <param name="clientSideResponse">The response containing the months page.</param>
+	/// <param name="address">The address the bin days belong to.</param>
+	/// <returns>The response containing the parsed bin days.</returns>
+	private GetBinDaysResponse ParseBinDaysFromMonths(ClientSideResponse clientSideResponse, Address address)
+	{
+		var binDays = new List<BinDay>();
+
+		foreach (Match monthBlock in MonthBlockRegex().Matches(clientSideResponse.Content)!)
+		{
+			var monthYear = monthBlock.Groups["monthYear"].Value.Trim();
+
+			foreach (Match serviceDays in ServiceDaysRegex().Matches(monthBlock.Groups["body"].Value)!)
+			{
+				var service = WebUtility.HtmlDecode(serviceDays.Groups["service"].Value.Trim());
+				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+
+				if (matchedBins.Count == 0)
+				{
+					continue;
+				}
+
+				foreach (Match dayNumber in DayNumberRegex().Matches(serviceDays.Groups["days"].Value)!)
+				{
+					var date = DateUtilities.ParseDateExact(
+						$"{dayNumber.Value} {monthYear}",
+						"d MMMM yyyy"
+					);
 
 					binDays.Add(new BinDay
 					{
@@ -305,13 +394,11 @@ internal sealed partial class IpswichBoroughCouncil : GovUkCollectorBase, IColle
 					});
 				}
 			}
-
-			return new GetBinDaysResponse
-			{
-				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
-			};
 		}
 
-		throw new InvalidOperationException("Invalid client-side request.");
+		return new GetBinDaysResponse
+		{
+			BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+		};
 	}
 }
