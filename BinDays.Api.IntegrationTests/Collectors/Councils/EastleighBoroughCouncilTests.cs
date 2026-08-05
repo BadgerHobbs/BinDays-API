@@ -20,13 +20,16 @@ public class EastleighBoroughCouncilTests
 
 	[Theory]
 	[InlineData("SO50 7HT")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("SO50 7HT", "10094384835", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }

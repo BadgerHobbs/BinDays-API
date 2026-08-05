@@ -75,7 +75,7 @@ internal sealed partial class EastleighBoroughCouncil : GovUkCollectorBase, ICol
 	/// Regex for bin days from the details list rows.
 	/// </summary>
 	[GeneratedRegex(@"<dt>\s*(?<service>[^<]+?)\s*</dt>\s*<dd>\s*<time datetime=""(?<date>\d{4}-\d{2}-\d{2})""", RegexOptions.Singleline)]
-	private static partial Regex BinDayRegex();
+	private static partial Regex BinDaysRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -141,6 +141,7 @@ internal sealed partial class EastleighBoroughCouncil : GovUkCollectorBase, ICol
 			return getAddressesResponse;
 		}
 
+		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 
@@ -167,7 +168,7 @@ internal sealed partial class EastleighBoroughCouncil : GovUkCollectorBase, ICol
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var rawBinDays = BinDayRegex().Matches(clientSideResponse.Content)!;
+			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
 
 			// Iterate through each bin day, and create a new bin day object
 			var binDays = new List<BinDay>();
@@ -196,6 +197,7 @@ internal sealed partial class EastleighBoroughCouncil : GovUkCollectorBase, ICol
 			return getBinDaysResponse;
 		}
 
+		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
 }
