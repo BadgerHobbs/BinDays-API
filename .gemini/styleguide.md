@@ -2173,6 +2173,23 @@ internal sealed class MyVendorCouncil : ITouchVisionCollectorBase, ICollector
 - **Test Naming**: Test methods should be named descriptively (e.g. `GetBinDaysTest`)
 - **Test File Location**: `BinDays.Api.IntegrationTests/Collectors/Councils/[CollectorName]Tests.cs`
 
+### Pinned UID Test Cases
+
+Every test file **must** include a second `[InlineData]` row that pins a specific address UID (and the collector version at capture time). This exercises the saved-address flow — simulating a user who selected an address previously and is now fetching bin days using that cached UID — and provides a regression guard for UID format changes.
+
+**How to capture the pinned UID:**
+
+1. Run the basic postcode test once to get a list of addresses printed in the test summary.
+2. Pick any address from the list and copy its `Uid` value (e.g. `"10094384835"`).
+3. Note the current collector `Version` (default `1` unless overridden via `public override int Version => N;`).
+4. Add a second `[InlineData]` with those two values hardcoded as literals — never read them dynamically.
+
+**Important rules for the pinned UID row:**
+
+- The version **must** be a hardcoded literal, never read from the collector at runtime. This is intentional: if the collector's `Version` is bumped in future, the test will surface a `410 Gone` failure, signalling that all saved addresses for that collector are now invalid.
+- The pinned UID row does **not** replace the basic postcode row — keep both.
+- If you need to recapture a pin (e.g. after a deliberate version bump), update both the UID string and the version number together.
+
 ### Example Integration Test Template
 
 ```c#
@@ -2198,13 +2215,16 @@ public class MyNewCouncilTests
 
 	[Theory]
 	[InlineData("ABCD EFG")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("ABCD EFG", "12345678", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }
@@ -2222,6 +2242,7 @@ Before submitting a PR, check:
 - [ ] Class name matches filename
 - [ ] `internal sealed` (add `partial` only if using `[GeneratedRegex]`)
 - [ ] Integration test created in `IntegrationTests/Collectors/Councils/`
+- [ ] Integration test includes a pinned UID `[InlineData]` row (hardcoded UID + version literal)
 
 **HTTP & Requests:**
 
