@@ -91,56 +91,8 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 
 			return getAddressesResponse;
 		}
-		// Prepare client-side request for loading the form
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var authToken = clientSideResponse.Headers["authorization"];
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = "https://bolton.form.uk.empro.verintcloudservices.com/api/form/es_bin_collection_dates?preview=false&locale=en",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "authorization", authToken },
-				},
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		// Prepare client-side request for loading the form content
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var authToken = clientSideResponse.Headers["authorization"];
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = "https://bolton.form.uk.empro.verintcloudservices.com/api/content/es_bin_collection_dates?version=2&preview=false&locale=en",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "authorization", authToken },
-				},
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
 		// Prepare client-side request for getting addresses
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 1)
 		{
 			var authToken = clientSideResponse.Headers["authorization"];
 
@@ -155,7 +107,7 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 4,
+				RequestId = 2,
 				Url = "https://bolton.form.uk.empro.verintcloudservices.com/api/widget?action=propertysearch&actionedby=ps_address&loadform=true&access=citizen&locale=en",
 				Method = "POST",
 				Headers = new()
@@ -175,7 +127,7 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 			return getAddressesResponse;
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 2)
 		{
 			using var document = JsonDocument.Parse(clientSideResponse.Content);
 			var addressesJson = document.RootElement.GetProperty("data").EnumerateArray();
@@ -232,7 +184,7 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 
 			return getBinDaysResponse;
 		}
-		// Prepare client-side request for loading the form
+		// Prepare client-side request for loading property details
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var authToken = clientSideResponse.Headers["authorization"];
@@ -240,95 +192,19 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = "https://bolton.form.uk.empro.verintcloudservices.com/api/form/es_bin_collection_dates?preview=false&locale=en",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "authorization", authToken },
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for loading the form content
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var authToken = clientSideResponse.Headers["authorization"];
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = "https://bolton.form.uk.empro.verintcloudservices.com/api/content/es_bin_collection_dates?version=2&preview=false&locale=en",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "authorization", authToken },
-				},
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for refreshing authorization and address context
-		else if (clientSideResponse.RequestId == 3)
-		{
-			var authToken = clientSideResponse.Headers["authorization"];
-
-			var requestBody = $$"""
-			{
-				"name": "es_bin_collection_dates",
-				"data": {
-					"postcode": "{{address.Postcode!}}"
-				}
-			}
-			""";
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 4,
-				Url = "https://bolton.form.uk.empro.verintcloudservices.com/api/widget?action=propertysearch&actionedby=ps_address&loadform=true&access=citizen&locale=en",
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "authorization", authToken },
-					{ "content-type", Constants.ApplicationJson },
-				},
-				Body = requestBody,
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for loading property details
-		else if (clientSideResponse.RequestId == 4)
-		{
-			var authToken = clientSideResponse.Headers["authorization"];
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 5,
 				Url = $"https://bolton.form.uk.empro.verintcloudservices.com/api/setobjectid?objecttype=property&objectid={address.Uid!}&loaddata=true",
 				Method = "POST",
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "authorization", authToken },
+				},
+				Options = new ClientSideOptions
+				{
+					Metadata =
+					{
+						{ "authorization", authToken },
+					},
 				},
 			};
 
@@ -340,9 +216,9 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 			return getBinDaysResponse;
 		}
 		// Prepare client-side request for getting bin collection dates
-		else if (clientSideResponse.RequestId == 5)
+		else if (clientSideResponse.RequestId == 2)
 		{
-			var authToken = clientSideResponse.Headers["authorization"];
+			var authToken = clientSideResponse.Options.Metadata["authorization"];
 
 			using var document = JsonDocument.Parse(clientSideResponse.Content);
 			var uprn = document.RootElement.GetProperty("profileData").GetProperty("property-UPRN").GetString()!;
@@ -363,7 +239,7 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 6,
+				RequestId = 3,
 				Url = "https://bolton.form.uk.empro.verintcloudservices.com/api/custom?action=es_get_bin_collection_dates&actionedby=uprn_changed&loadform=true&access=citizen&locale=en",
 				Method = "POST",
 				Headers = new()
@@ -383,7 +259,7 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 6)
+		else if (clientSideResponse.RequestId == 3)
 		{
 			using var document = JsonDocument.Parse(clientSideResponse.Content);
 			var collectionHtml = document.RootElement.GetProperty("data").GetProperty("collection_dates").GetString()!;
