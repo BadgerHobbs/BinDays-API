@@ -41,21 +41,21 @@ internal sealed partial class BristolCityCouncil : GovUkCollectorBase, ICollecto
 		{
 			Name = "Cans & Plastics Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Green Recycling Box" ],
+			Keys = [ "Green Recycling Box", "Recycling Plastic/Cans" ],
 			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Brown Paper & Cardboard Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "Blue Sack" ],
+			Keys = [ "Blue Sack", "Recycling Card", "Recycling Paper" ],
 			Type = BinType.Bag,
 		},
 		new()
 		{
 			Name = "Paper & Glass Recycling",
 			Colour = BinColour.Black,
-			Keys = [ "Black Recycling Box" ],
+			Keys = [ "Black Recycling Box", "Recycling Mixed Glass" ],
 			Type = BinType.Box,
 		},
 		new()
@@ -182,22 +182,28 @@ internal sealed partial class BristolCityCouncil : GovUkCollectorBase, ICollecto
 				var containerName = rawBinDayCollection!["containerName"]!.GetValue<string>();
 				var collectionArray = rawBinDayCollection["collection"]!.AsArray();
 
-				var collectionDate = collectionArray[0]!["nextCollectionDate"]!.GetValue<string>();
-
 				// Find matching bin types based on the container name containing a key (case-insensitive)
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, containerName);
 
-				// Parse the date string (e.g. "2025-04-15T00:00:00")
-				var date = DateUtilities.ParseDateExact(collectionDate, "yyyy-MM-dd'T'HH:mm:ss");
-
-				var binDay = new BinDay
+				// A container can have multiple active rounds (e.g. an every-other-week round A and
+				// round B), each with its own next collection date -- surface all of them rather than
+				// just the first, otherwise sooner dates from later rounds are silently missed.
+				foreach (var collection in collectionArray)
 				{
-					Date = date,
-					Address = address,
-					Bins = matchedBins,
-				};
+					var collectionDate = collection!["nextCollectionDate"]!.GetValue<string>();
 
-				binDays.Add(binDay);
+					// Parse the date string (e.g. "2025-04-15T00:00:00")
+					var date = DateUtilities.ParseDateExact(collectionDate, "yyyy-MM-dd'T'HH:mm:ss");
+
+					var binDay = new BinDay
+					{
+						Date = date,
+						Address = address,
+						Bins = matchedBins,
+					};
+
+					binDays.Add(binDay);
+				}
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
