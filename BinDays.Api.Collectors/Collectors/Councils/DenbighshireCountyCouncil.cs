@@ -29,14 +29,29 @@ internal sealed class DenbighshireCountyCouncil : GovUkCollectorBase, ICollector
 		new()
 		{
 			Name = "General Waste",
-			Colour = BinColour.Black,
+			Colour = BinColour.Blue,
 			Keys = [ "refuseDate" ],
 		},
 		new()
 		{
-			Name = "Dry Recycling",
+			Name = "Paper & Cardboard",
 			Colour = BinColour.Blue,
 			Keys = [ "recyclingDate" ],
+			Type = BinType.Box,
+		},
+		new()
+		{
+			Name = "Metal, Plastic & Cartons",
+			Colour = BinColour.Red,
+			Keys = [ "recyclingDate" ],
+			Type = BinType.Box,
+		},
+		new()
+		{
+			Name = "Glass",
+			Colour = BinColour.Green,
+			Keys = [ "recyclingDate" ],
+			Type = BinType.Box,
 		},
 		new()
 		{
@@ -89,16 +104,9 @@ internal sealed class DenbighshireCountyCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting a CSRF token
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = $"{_apiBaseUrl}/Csrf/token",
-				Method = "GET",
-			};
-
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest,
+				NextClientSideRequest = CreateCsrfTokenRequest(),
 			};
 
 			return getAddressesResponse;
@@ -165,16 +173,9 @@ internal sealed class DenbighshireCountyCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting a CSRF token
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = $"{_apiBaseUrl}/Csrf/token",
-				Method = "GET",
-			};
-
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest,
+				NextClientSideRequest = CreateCsrfTokenRequest(),
 			};
 
 			return getBinDaysResponse;
@@ -210,8 +211,8 @@ internal sealed class DenbighshireCountyCouncil : GovUkCollectorBase, ICollector
 			using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
 			var collections = jsonDocument.RootElement;
 
-			var collectionFields = new string[]
-			{
+			string[] collectionFields =
+			[
 				"refuseDate",
 				"recyclingDate",
 				"gardenDate",
@@ -219,7 +220,7 @@ internal sealed class DenbighshireCountyCouncil : GovUkCollectorBase, ICollector
 				"tradeDate",
 				"tradeRefuseDate",
 				"tradeRecyclingDate",
-			};
+			];
 
 			// Iterate through each collection field, and create a new bin day object
 			var binDays = new List<BinDay>();
@@ -254,4 +255,14 @@ internal sealed class DenbighshireCountyCouncil : GovUkCollectorBase, ICollector
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
 	}
+
+	/// <summary>
+	/// Creates the client-side request for fetching a CSRF token.
+	/// </summary>
+	private static ClientSideRequest CreateCsrfTokenRequest() => new()
+	{
+		RequestId = 1,
+		Url = $"{_apiBaseUrl}/Csrf/token",
+		Method = "GET",
+	};
 }
