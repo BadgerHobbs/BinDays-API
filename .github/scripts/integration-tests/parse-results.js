@@ -181,6 +181,7 @@ module.exports = async ({ core }) => {
   }
 
   await core.summary.addRaw(summary).write();
+  core.info(summary);
 
   // Write badge JSON (shields.io endpoint format)
   const badge = {

@@ -95,10 +95,6 @@ jobs:
             const script = require('./.github/scripts/integration-tests/parse-results.js');
             await script({ core });
 
-      - name: Print test results summary
-        if: always()
-        run: cat "$GITHUB_STEP_SUMMARY"
-
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
