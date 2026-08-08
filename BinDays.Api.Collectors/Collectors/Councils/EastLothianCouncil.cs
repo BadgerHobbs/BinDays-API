@@ -30,7 +30,6 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 		{
 			Name = "General Waste",
 			Colour = BinColour.Green,
-			Type = BinType.Bin,
 			Keys = [ "Non recyclable waste" ],
 		},
 		new()
@@ -64,12 +63,6 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 	];
 
 	/// <summary>
-	/// Regex for the form build id.
-	/// </summary>
-	[GeneratedRegex(@"name=""form_build_id""\s+value=""(?<formBuildId>[^""]+)""")]
-	private static partial Regex FormBuildIdRegex();
-
-	/// <summary>
 	/// Regex for the addresses from the data.
 	/// </summary>
 	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)"">(?<address>[^<]+)</option>")]
@@ -84,7 +77,7 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = "https://collectiondates.eastlothian.gov.uk/waste-collection-schedule",
+				Url = $"https://collectiondates.eastlothian.gov.uk/waste-collection-schedule/find?postcode={postcode}",
 				Method = "GET",
 			};
 
@@ -96,37 +89,6 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 			return getAddressesResponse;
 		}
 		else if (clientSideResponse.RequestId == 1)
-		{
-			// Prepare client-side request for posting the postcode
-			var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = "https://collectiondates.eastlothian.gov.uk/waste-collection-schedule",
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-				{
-					{ "postcode", postcode },
-					{ "op", "Find" },
-					{ "form_build_id", formBuildId },
-					{ "form_id", "localgov_waste_collection_postcode_form" },
-				}),
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		else if (clientSideResponse.RequestId == 2)
 		{
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
