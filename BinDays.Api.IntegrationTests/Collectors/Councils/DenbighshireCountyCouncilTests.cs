@@ -20,13 +20,16 @@ public class DenbighshireCountyCouncilTests
 
 	[Theory]
 	[InlineData("LL19 8AD")]
-	public async Task GetBinDaysTest(string postcode)
+	[InlineData("LL19 8AD", "100100189198", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
-			_outputHelper
+			_outputHelper,
+			pinnedUid: pinnedUid,
+			pinnedVersion: pinnedVersion
 		);
 	}
 }
