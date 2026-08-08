@@ -170,7 +170,7 @@ internal sealed partial class MidSussexDistrictCouncil : GovUkCollectorBase, ICo
 		{
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
-			string track = string.Empty;
+			var track = string.Empty;
 
 			// Iterate through each address, and find the matching pIndex track value
 			foreach (Match rawAddress in rawAddresses)
