@@ -74,7 +74,7 @@ internal sealed partial class GlasgowCityCouncil : GovUkCollectorBase, ICollecto
 	/// <summary>
 	/// Regex for extracting hidden form fields.
 	/// </summary>
-	[GeneratedRegex(@"<input[^>]*name=""(?<name>__VIEWSTATE|__EVENTVALIDATION)""[^>]*value=""(?<value>[^""]+)""")]
+	[GeneratedRegex(@"<input(?=[^>]*(?:name|id)=[""'](?<name>__VIEWSTATE|__EVENTVALIDATION)[""'])(?=[^>]*value=[""'](?<value>[^""']*)[""'])[^>]*>", RegexOptions.IgnoreCase)]
 	private static partial Regex HiddenFieldRegex();
 
 	/// <summary>
