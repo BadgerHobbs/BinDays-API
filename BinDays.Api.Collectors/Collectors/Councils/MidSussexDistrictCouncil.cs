@@ -137,7 +137,9 @@ internal sealed partial class MidSussexDistrictCouncil : GovUkCollectorBase, ICo
 	{
 		var pIndex = address.Uid!;
 
-		// Prepare client-side request for address lookup
+		// Re-fetching is required: "track" is a session-scoped token minted fresh on
+		// every search, not a stable per-address value. A stale one silently returns empty
+		// content instead of an error, so it can't be cached in Uid for later use.
 		if (clientSideResponse == null)
 		{
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
