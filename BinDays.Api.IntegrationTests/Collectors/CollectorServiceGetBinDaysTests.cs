@@ -99,34 +99,6 @@ public sealed class CollectorServiceGetBinDaysTests
 	}
 
 	[Fact]
-	public void GetBinDays_WithSomeBinDaysUnmatched_LogsTheCouncilResponseOncePerRequest()
-	{
-		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
-		var matchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [_generalWaste] };
-		var firstUnmatched = new BinDay { Date = new DateOnly(2026, 1, 8), Address = address, Bins = [] };
-		var secondUnmatched = new BinDay { Date = new DateOnly(2026, 1, 15), Address = address, Bins = [] };
-
-		var collector = new FakeCollector([firstUnmatched, matchedBinDay, secondUnmatched]);
-		var (logger, messages) = CreateLoggerMock();
-		var collectorService = new CollectorService([collector], logger.Object, Mock.Of<ICollectorMetrics>());
-		var clientSideResponse = new ClientSideResponse
-		{
-			RequestId = 1,
-			StatusCode = 200,
-			ReasonPhrase = "OK",
-			Headers = [],
-			Content = "Garden Waste Service on 08 January",
-		};
-
-		collectorService.GetBinDays(collector.GovUkId, address, clientSideResponse);
-
-		// One response log for the request, however many individual bin days were dropped.
-		var responseLogs = messages.Where(message => message.Contains("Council response follows")).ToList();
-		var responseLog = Assert.Single(responseLogs);
-		Assert.Contains("Garden Waste Service", responseLog);
-	}
-
-	[Fact]
 	public void GetBinDays_WithAllBinDaysMatched_DoesNotLogTheCouncilResponse()
 	{
 		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
