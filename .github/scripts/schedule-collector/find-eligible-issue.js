@@ -47,6 +47,14 @@ module.exports = async ({ github, context, core }) => {
       continue;
     }
 
+    // Skip issues with "unable to support" label (previously determined this collector
+    // cannot be supported, e.g. due to bot protection, data quality, etc.)
+    const hasUnableToSupport = issue.labels.some(label => label.name.toLowerCase() === 'unable to support');
+    if (hasUnableToSupport) {
+      core.info(`  - Skipping: has "unable to support" label`);
+      continue;
+    }
+
     // Check issue was created from the council request template and has required fields filled in
     const body = issue.body || '';
 
