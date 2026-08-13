@@ -6,6 +6,7 @@ using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -32,29 +33,32 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 			Name = "General waste",
 			Colour = BinColour.Black,
 			Keys = [ "General Waste" ],
-			Type = BinType.Bin,
 		},
 		new()
 		{
 			Name = "Recycling",
 			Colour = BinColour.Grey,
 			Keys = [ "Mixed Recycling" ],
-			Type = BinType.Bin,
 		},
 		new()
 		{
 			Name = "Garden waste",
 			Colour = BinColour.Green,
 			Keys = [ "Garden Waste" ],
-			Type = BinType.Bin,
 		},
 	];
 
 	/// <summary>
 	/// Regex for parsing addresses from the search response.
 	/// </summary>
-	[GeneratedRegex(@"<a class=""select-csv-address""[^>]*data-uprn=""(?<uprn>[^""]+)""[^>]*>(?<address>[^<]+)</a>", RegexOptions.IgnoreCase)]
+	[GeneratedRegex(@"<a[^>]*data-uprn=""(?<uprn>[^""]+)""[^>]*(?:data-onelineaddress=""(?<onelineAddress>[^""]*)"")?[^>]*>(?<address>.*?)</a>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
 	private static partial Regex AddressRegex();
+
+	/// <summary>
+	/// Regex for removing HTML tags.
+	/// </summary>
+	[GeneratedRegex(@"<[^>]+>", RegexOptions.Singleline)]
+	private static partial Regex HtmlTagRegex();
 
 	/// <summary>
 	/// Regex for parsing bin day rows from the job list.
@@ -96,7 +100,7 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 				Method = "GET",
 				Headers = new()
 				{
-					{ "User-Agent", Constants.UserAgent },
+					{ "user-agent", Constants.UserAgent },
 					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", requestCookies },
 				},
@@ -118,11 +122,13 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
-				var addressText = rawAddress.Groups["address"].Value.Trim();
+				var onelineAddress = rawAddress.Groups["onelineAddress"].Value.Trim();
+				var inlineAddress = HtmlTagRegex().Replace(rawAddress.Groups["address"].Value, string.Empty).Trim();
+				var property = string.IsNullOrWhiteSpace(onelineAddress) ? inlineAddress : onelineAddress;
 
 				var address = new Address
 				{
-					Property = addressText,
+					Property = WebUtility.HtmlDecode(property),
 					Postcode = postcode,
 					Uid = rawAddress.Groups["uprn"].Value,
 				};
@@ -179,7 +185,7 @@ internal sealed partial class CheshireEastCouncil : GovUkCollectorBase, ICollect
 				Method = "GET",
 				Headers = new()
 				{
-					{ "User-Agent", Constants.UserAgent },
+					{ "user-agent", Constants.UserAgent },
 					{ "x-requested-with", Constants.XmlHttpRequest },
 					{ "cookie", requestCookies },
 				},
