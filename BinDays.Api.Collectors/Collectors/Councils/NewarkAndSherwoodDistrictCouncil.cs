@@ -91,7 +91,7 @@ internal sealed partial class NewarkAndSherwoodDistrictCouncil : GovUkCollectorB
 	/// <summary>
 	/// Regex for the service name and day within a bin day row.
 	/// </summary>
-	[GeneratedRegex(@"&nbsp;(?<service>[^,]+),\s*(?<day>[^<]+)", RegexOptions.Singleline)]
+	[GeneratedRegex(@"(?:&nbsp;|>\s*)(?<service>[^,<]+),\s*(?<day>[^<]+)", RegexOptions.Singleline)]
 	private static partial Regex BinDayContentRegex();
 
 	/// <summary>
