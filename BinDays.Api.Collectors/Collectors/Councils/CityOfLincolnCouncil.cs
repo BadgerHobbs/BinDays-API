@@ -50,7 +50,7 @@ internal sealed partial class CityOfLincolnCouncil : GovUkCollectorBase, ICollec
 		},
 		new()
 		{
-			Name = "Garden Waste (subscription service)",
+			Name = "Garden Waste",
 			Colour = BinColour.Green,
 			Keys = [ "Garden" ],
 		},
