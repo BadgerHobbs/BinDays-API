@@ -88,12 +88,12 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 	/// <summary>
 	/// The Mendix runtime operation id for searching addresses by postcode.
 	/// </summary>
-	private const string _postcodeSearchOperationId = "jjzer6smPUaBpVLzU7R0Tg";
+	private const string _postcodeSearchOperationId = "fyb4rmYj50yyh7ccvFq9DQ";
 
 	/// <summary>
 	/// The Mendix runtime operation id for selecting an address and retrieving its bin collection dates.
 	/// </summary>
-	private const string _selectAddressOperationId = "cl7H5Z5PXk6wTiewsx2JHQ";
+	private const string _selectAddressOperationId = "ueSpXkj+JEegFIWpBS6oQA";
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
