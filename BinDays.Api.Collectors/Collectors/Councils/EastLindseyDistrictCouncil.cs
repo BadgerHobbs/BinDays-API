@@ -49,7 +49,7 @@ internal sealed partial class EastLindseyDistrictCouncil : GovUkCollectorBase, I
 		},
 		new()
 		{
-			Name = "Green Waste (Subscription Required)",
+			Name = "Green Waste",
 			Colour = BinColour.Green,
 			Keys = [ "greenfirst" ],
 		},
