@@ -69,5 +69,12 @@ internal sealed class NewportCityCouncil : ITouchVisionCollectorBase, ICollector
 			Colour = BinColour.Orange,
 			Keys = [ "GARDEN WASTE" ],
 		},
+		new()
+		{
+			Name = "Hygiene Waste (Subscription Required)",
+			Colour = BinColour.Purple,
+			Keys = [ "HYGIENE" ],
+			Type = BinType.Sack,
+		},
 	];
 }
