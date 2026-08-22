@@ -14,7 +14,7 @@ public static partial class ProcessingUtilities
 	/// <summary>
 	/// Regex to parse set-cookies.
 	/// </summary>
-	[GeneratedRegex(@"(?:^|,)\s*([^=;\s]+=[^;]+)")]
+	[GeneratedRegex(@"(?:^|,|\r?\n)\s*(?<cookie>[^=;\s]+=[^;]+)")]
 	private static partial Regex CookieRegex();
 
 	/// <summary>
@@ -160,7 +160,7 @@ public static partial class ProcessingUtilities
 
 		var cookieValues = matches
 			.Cast<Match>()
-			.Select(m => m.Groups[1].Value.Trim())
+			.Select(m => m.Groups["cookie"].Value.Trim())
 			.Where(cv => !string.IsNullOrWhiteSpace(cv))
 			.ToList();
 
