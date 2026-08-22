@@ -18,4 +18,18 @@ public class ProcessingUtilitiesTests
 		var result = ProcessingUtilities.FormatPostcode(input);
 		Assert.Equal(expected, result);
 	}
+
+	[Theory]
+	[InlineData(
+		"dxp-sessionid=abc123; Max-Age=3600; Secure; HttpOnly; Path=/, __cf_bm=def456; HttpOnly; SameSite=None; Secure; Path=/; Domain=www.enfield.gov.uk; Expires=Sat, 22 Aug 2026 10:17:38 GMT",
+		"dxp-sessionid=abc123; __cf_bm=def456")]
+	[InlineData(
+		"dxp-sessionid=abc123; Max-Age=3600; Secure; HttpOnly; Path=/\n__cf_bm=def456; HttpOnly; SameSite=None; Secure; Path=/; Domain=www.enfield.gov.uk; Expires=Sat, 22 Aug 2026 10:17:38 GMT",
+		"dxp-sessionid=abc123; __cf_bm=def456")]
+	public void ParseSetCookieHeaderForRequestCookie_ParsesMultipleCookies(string setCookieHeader, string expected)
+	{
+		var result = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
+
+		Assert.Equal(expected, result);
+	}
 }
