@@ -47,12 +47,6 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 	];
 
 	/// <summary>
-	/// Regex for the form build id.
-	/// </summary>
-	[GeneratedRegex(@"name=""form_build_id""\s+value=""(?<formBuildId>[^""]+)""")]
-	private static partial Regex FormBuildIdRegex();
-
-	/// <summary>
 	/// Regex for the addresses from the data.
 	/// </summary>
 	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)"">(?<address>[^<]+)</option>")]
@@ -72,10 +66,12 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
+			var encodedPostcode = Uri.EscapeDataString(formattedPostcode);
+
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = "https://www.northtyneside.gov.uk/waste-collection-schedule",
+				Url = $"https://www.northtyneside.gov.uk/waste-collection-schedule/find?postcode={encodedPostcode}",
 				Method = "GET",
 			};
 
@@ -87,39 +83,6 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 			return getAddressesResponse;
 		}
 		else if (clientSideResponse.RequestId == 1)
-		{
-			// Prepare client-side request for posting the postcode
-			var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
-
-			var formData = new Dictionary<string, string>
-			{
-				{ "postcode", formattedPostcode },
-				{ "op", "Find" },
-				{ "form_build_id", formBuildId },
-				{ "form_id", "localgov_waste_collection_postcode_form" },
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = "https://www.northtyneside.gov.uk/waste-collection-schedule",
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(formData),
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		else if (clientSideResponse.RequestId == 2)
 		{
 			// Process addresses from response
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
@@ -162,13 +125,10 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var postcode = address.Postcode!;
-			var encodedPostcode = Uri.EscapeDataString(postcode);
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://www.northtyneside.gov.uk/waste-collection-schedule/find?postcode={encodedPostcode}",
+				Url = $"https://www.northtyneside.gov.uk/waste-collection-schedule/view/{address.Uid}",
 				Method = "GET",
 			};
 
@@ -180,39 +140,6 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 			return getBinDaysResponse;
 		}
 		else if (clientSideResponse.RequestId == 1)
-		{
-			// Prepare client-side request for posting the UPRN
-			var formBuildId = FormBuildIdRegex().Match(clientSideResponse.Content).Groups["formBuildId"].Value;
-			var postcode = address.Postcode!;
-			var encodedPostcode = Uri.EscapeDataString(postcode);
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"https://www.northtyneside.gov.uk/waste-collection-schedule/find?postcode={encodedPostcode}",
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-				{
-					{ "uprn", address.Uid! },
-					{ "op", "View collection days" },
-					{ "form_build_id", formBuildId },
-					{ "form_id", "localgov_waste_collection_address_select_form" },
-				}),
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		else if (clientSideResponse.RequestId == 2)
 		{
 			// Process bin days from response
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
