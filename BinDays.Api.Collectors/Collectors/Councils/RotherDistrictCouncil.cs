@@ -45,6 +45,13 @@ internal sealed partial class RotherDistrictCouncil : GovUkCollectorBase, IColle
 			Colour = BinColour.Brown,
 			Keys = [ "Garden" ],
 		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Orange,
+			Keys = [ "Food Waste" ],
+			Type = BinType.Caddy,
+		},
 	];
 
 	/// <summary>
