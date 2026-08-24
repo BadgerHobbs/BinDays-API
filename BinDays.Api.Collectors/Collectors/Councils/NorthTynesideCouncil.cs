@@ -44,6 +44,13 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 			Colour = BinColour.Brown,
 			Keys = [ "Garden" ],
 		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Purple,
+			Keys = [ "Food" ],
+			Type = BinType.Caddy,
+		},
 	];
 
 	/// <summary>
