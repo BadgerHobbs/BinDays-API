@@ -7,11 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 /// <summary>
 /// Collector implementation for Knowsley Metropolitan Borough Council.
 /// </summary>
-internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, ICollector
+internal sealed partial class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, ICollector
 {
 	/// <inheritdoc/>
 	public string Name => "Knowsley Metropolitan Borough Council";
@@ -86,14 +87,24 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 	private const string _addressObjectType = "OnlineServices.OS_vmGeneric_Address";
 
 	/// <summary>
-	/// The Mendix runtime operation id for searching addresses by postcode.
+	/// The URL for the anonymous page definition that lists the "Search for address" and "Choose this
+	/// address" buttons, each embedding the Mendix runtime operation id it currently calls. Mendix mints
+	/// new operation ids on every deployment, so these are read from here rather than hardcoded - the
+	/// page definition is a static, unauthenticated resource independent of any session.
 	/// </summary>
-	private const string _postcodeSearchOperationId = "fyb4rmYj50yyh7ccvFq9DQ";
+	private const string _pageXmlUrl = "https://knowsleytransaction.mendixcloud.com/pages/en_US/OnlineServices/PAGE_OS_BinCollectionInfo_Anon.page.xml";
 
 	/// <summary>
-	/// The Mendix runtime operation id for selecting an address and retrieving its bin collection dates.
+	/// Matches the runtime operation id of the "Search for address" button in the page definition.
 	/// </summary>
-	private const string _selectAddressOperationId = "ueSpXkj+JEegFIWpBS6oQA";
+	[GeneratedRegex(@"""value"":""Search for address"".*?""operationId"":""(?<id>[^""]+)""", RegexOptions.Singleline)]
+	private static partial Regex PostcodeSearchOperationIdRegex();
+
+	/// <summary>
+	/// Matches the runtime operation id of the "Choose this address" button in the page definition.
+	/// </summary>
+	[GeneratedRegex(@"""value"":""Choose this address"".*?""operationId"":""(?<id>[^""]+)""", RegexOptions.Singleline)]
+	private static partial Regex SelectAddressOperationIdRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -103,23 +114,28 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 		{
 			return new GetAddressesResponse { NextClientSideRequest = BuildInitialRequest() };
 		}
-		// Prepare client-side request for the session data
+		// Prepare client-side request for the page definition holding the current runtime operation ids
 		else if (clientSideResponse.RequestId == 1)
+		{
+			return new GetAddressesResponse { NextClientSideRequest = BuildPageXmlRequest(clientSideResponse) };
+		}
+		// Prepare client-side request for the session data
+		else if (clientSideResponse.RequestId == 2)
 		{
 			return new GetAddressesResponse { NextClientSideRequest = BuildSessionDataRequest(clientSideResponse) };
 		}
 		// Prepare client-side request for the deep-link redirect microflow
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 3)
 		{
 			return new GetAddressesResponse { NextClientSideRequest = BuildRedirectActionRequest(clientSideResponse) };
 		}
 		// Prepare client-side request for the postcode search
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 4)
 		{
 			return new GetAddressesResponse { NextClientSideRequest = BuildPostcodeSearchRequest(clientSideResponse, postcode) };
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 5)
 		{
 			var addressEntries = ParseAddressEntries(clientSideResponse);
 
@@ -154,23 +170,28 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 		{
 			return new GetBinDaysResponse { NextClientSideRequest = BuildInitialRequest() };
 		}
-		// Prepare client-side request for the session data
+		// Prepare client-side request for the page definition holding the current runtime operation ids
 		else if (clientSideResponse.RequestId == 1)
+		{
+			return new GetBinDaysResponse { NextClientSideRequest = BuildPageXmlRequest(clientSideResponse) };
+		}
+		// Prepare client-side request for the session data
+		else if (clientSideResponse.RequestId == 2)
 		{
 			return new GetBinDaysResponse { NextClientSideRequest = BuildSessionDataRequest(clientSideResponse) };
 		}
 		// Prepare client-side request for the deep-link redirect microflow
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 3)
 		{
 			return new GetBinDaysResponse { NextClientSideRequest = BuildRedirectActionRequest(clientSideResponse) };
 		}
 		// Prepare client-side request for the postcode search
-		else if (clientSideResponse.RequestId == 3)
+		else if (clientSideResponse.RequestId == 4)
 		{
 			return new GetBinDaysResponse { NextClientSideRequest = BuildPostcodeSearchRequest(clientSideResponse, address.Postcode!) };
 		}
 		// Prepare client-side request for selecting the matching address
-		else if (clientSideResponse.RequestId == 4)
+		else if (clientSideResponse.RequestId == 5)
 		{
 			var addressEntries = ParseAddressEntries(clientSideResponse);
 			var addressEntry = addressEntries.First(entry => entry.Uprn == address.Uid);
@@ -178,7 +199,7 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 			return new GetBinDaysResponse { NextClientSideRequest = BuildSelectAddressRequest(clientSideResponse, addressEntry) };
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 5)
+		else if (clientSideResponse.RequestId == 6)
 		{
 			return ParseBinDaysResponse(clientSideResponse, address);
 		}
@@ -223,25 +244,23 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 	}
 
 	/// <summary>
-	/// Builds the client-side request that fetches the Mendix session data (CSRF token and
-	/// deep-link redirect object) for the session established by <see cref="BuildInitialRequest"/>.
+	/// Builds the client-side request that fetches the anonymous page definition containing the
+	/// current runtime operation ids, using the cookie established by <see cref="BuildInitialRequest"/>.
+	/// This is a static, unauthenticated resource, independent of the Mendix session.
 	/// </summary>
-	private static ClientSideRequest BuildSessionDataRequest(ClientSideResponse clientSideResponse)
+	private static ClientSideRequest BuildPageXmlRequest(ClientSideResponse clientSideResponse)
 	{
 		var cookie = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
 
 		return new ClientSideRequest
 		{
 			RequestId = 2,
-			Url = _xasUrl,
-			Method = "POST",
+			Url = _pageXmlUrl,
+			Method = "GET",
 			Headers = new()
 			{
 				{ "user-agent", Constants.UserAgent },
-				{ "content-type", Constants.ApplicationJson },
-				{ "cookie", cookie },
 			},
-			Body = """{"action":"get_session_data","params":{"version":2}}""",
 			Options = new ClientSideOptions
 			{
 				Metadata = { { "cookie", cookie } },
@@ -250,23 +269,14 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 	}
 
 	/// <summary>
-	/// Builds the client-side request that runs the deep-link redirect microflow, turning the
-	/// redirect object from <see cref="BuildSessionDataRequest"/> into a bin collection enquiry object.
+	/// Builds the client-side request that fetches the Mendix session data (CSRF token and
+	/// deep-link redirect object) for the session established by <see cref="BuildInitialRequest"/>.
 	/// </summary>
-	private static ClientSideRequest BuildRedirectActionRequest(ClientSideResponse clientSideResponse)
+	private static ClientSideRequest BuildSessionDataRequest(ClientSideResponse clientSideResponse)
 	{
-		var cookie = AppendSetCookies(clientSideResponse.Options.Metadata["cookie"], clientSideResponse);
-
-		using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
-		var csrfToken = jsonDocument.RootElement.GetProperty("csrftoken").GetString()!;
-		var redirectObject = jsonDocument.RootElement.GetProperty("objects").EnumerateArray()
-			.First(o => o.GetProperty("objectType").GetString() == _redirectObjectType);
-		var redirectGuid = redirectObject.GetProperty("guid").GetString()!;
-		var redirectHash = redirectObject.GetProperty("hash").GetString()!;
-
-		var requestBody = $$"""
-			{"action":"executeaction","params":{"actionname":"{{_redirectActionName}}","applyto":"selection","guids":["{{redirectGuid}}"]},"objects":[{"attributes":{},"guid":"{{redirectGuid}}","hash":"{{redirectHash}}","objectType":"{{_redirectObjectType}}"}]}
-			""";
+		var cookie = clientSideResponse.Options.Metadata["cookie"];
+		var postcodeSearchOperationId = PostcodeSearchOperationIdRegex().Match(clientSideResponse.Content).Groups["id"].Value;
+		var selectAddressOperationId = SelectAddressOperationIdRegex().Match(clientSideResponse.Content).Groups["id"].Value;
 
 		return new ClientSideRequest
 		{
@@ -278,34 +288,39 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 				{ "user-agent", Constants.UserAgent },
 				{ "content-type", Constants.ApplicationJson },
 				{ "cookie", cookie },
-				{ "x-csrf-token", csrfToken },
 			},
-			Body = requestBody,
+			Body = """{"action":"get_session_data","params":{"version":2}}""",
 			Options = new ClientSideOptions
 			{
-				Metadata = { { "cookie", cookie }, { "csrfToken", csrfToken } },
+				Metadata =
+				{
+					{ "cookie", cookie },
+					{ "postcodeSearchOperationId", postcodeSearchOperationId },
+					{ "selectAddressOperationId", selectAddressOperationId },
+				},
 			},
 		};
 	}
 
 	/// <summary>
-	/// Builds the client-side request that searches for addresses matching a postcode, using the bin
-	/// collection enquiry object from <see cref="BuildRedirectActionRequest"/>.
+	/// Builds the client-side request that runs the deep-link redirect microflow, turning the
+	/// redirect object from <see cref="BuildSessionDataRequest"/> into a bin collection enquiry object.
 	/// </summary>
-	private static ClientSideRequest BuildPostcodeSearchRequest(ClientSideResponse clientSideResponse, string postcode)
+	private static ClientSideRequest BuildRedirectActionRequest(ClientSideResponse clientSideResponse)
 	{
 		var cookie = AppendSetCookies(clientSideResponse.Options.Metadata["cookie"], clientSideResponse);
-		var csrfToken = clientSideResponse.Options.Metadata["csrfToken"];
+		var postcodeSearchOperationId = clientSideResponse.Options.Metadata["postcodeSearchOperationId"];
+		var selectAddressOperationId = clientSideResponse.Options.Metadata["selectAddressOperationId"];
 
 		using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
-		var enquiryObject = jsonDocument.RootElement.GetProperty("objects").EnumerateArray()
-			.First(o => o.GetProperty("objectType").GetString() == _enquiryObjectType);
-		var enquiryGuid = enquiryObject.GetProperty("guid").GetString()!;
-		var enquiryHash = enquiryObject.GetProperty("hash").GetString()!;
-		var enquiryAttributes = enquiryObject.GetProperty("attributes").GetRawText();
+		var csrfToken = jsonDocument.RootElement.GetProperty("csrftoken").GetString()!;
+		var redirectObject = jsonDocument.RootElement.GetProperty("objects").EnumerateArray()
+			.First(o => o.GetProperty("objectType").GetString() == _redirectObjectType);
+		var redirectGuid = redirectObject.GetProperty("guid").GetString()!;
+		var redirectHash = redirectObject.GetProperty("hash").GetString()!;
 
-		var requestBody = $$$$"""
-			{"action":"runtimeOperation","operationId":"{{{{_postcodeSearchOperationId}}}}","params":{"OS_MissedBinEnquiry":{"guid":"{{{{enquiryGuid}}}}"}},"changes":{"{{{{enquiryGuid}}}}":{"EnquiryPostcodeOrStreetName":{"value":"{{{{postcode}}}}"}}},"objects":[{"attributes":{{{{enquiryAttributes}}}},"guid":"{{{{enquiryGuid}}}}","hash":"{{{{enquiryHash}}}}","objectType":"{{{{_enquiryObjectType}}}}"}]}
+		var requestBody = $$"""
+			{"action":"executeaction","params":{"actionname":"{{_redirectActionName}}","applyto":"selection","guids":["{{redirectGuid}}"]},"objects":[{"attributes":{},"guid":"{{redirectGuid}}","hash":"{{redirectHash}}","objectType":"{{_redirectObjectType}}"}]}
 			""";
 
 		return new ClientSideRequest
@@ -327,6 +342,55 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 				{
 					{ "cookie", cookie },
 					{ "csrfToken", csrfToken },
+					{ "postcodeSearchOperationId", postcodeSearchOperationId },
+					{ "selectAddressOperationId", selectAddressOperationId },
+				},
+			},
+		};
+	}
+
+	/// <summary>
+	/// Builds the client-side request that searches for addresses matching a postcode, using the bin
+	/// collection enquiry object from <see cref="BuildRedirectActionRequest"/>.
+	/// </summary>
+	private static ClientSideRequest BuildPostcodeSearchRequest(ClientSideResponse clientSideResponse, string postcode)
+	{
+		var cookie = AppendSetCookies(clientSideResponse.Options.Metadata["cookie"], clientSideResponse);
+		var csrfToken = clientSideResponse.Options.Metadata["csrfToken"];
+		var postcodeSearchOperationId = clientSideResponse.Options.Metadata["postcodeSearchOperationId"];
+		var selectAddressOperationId = clientSideResponse.Options.Metadata["selectAddressOperationId"];
+
+		using var jsonDocument = JsonDocument.Parse(clientSideResponse.Content);
+		var enquiryObject = jsonDocument.RootElement.GetProperty("objects").EnumerateArray()
+			.First(o => o.GetProperty("objectType").GetString() == _enquiryObjectType);
+		var enquiryGuid = enquiryObject.GetProperty("guid").GetString()!;
+		var enquiryHash = enquiryObject.GetProperty("hash").GetString()!;
+		var enquiryAttributes = enquiryObject.GetProperty("attributes").GetRawText();
+
+		var requestBody = $$$$"""
+			{"action":"runtimeOperation","operationId":"{{{{postcodeSearchOperationId}}}}","params":{"OS_MissedBinEnquiry":{"guid":"{{{{enquiryGuid}}}}"}},"changes":{"{{{{enquiryGuid}}}}":{"EnquiryPostcodeOrStreetName":{"value":"{{{{postcode}}}}"}}},"objects":[{"attributes":{{{{enquiryAttributes}}}},"guid":"{{{{enquiryGuid}}}}","hash":"{{{{enquiryHash}}}}","objectType":"{{{{_enquiryObjectType}}}}"}]}
+			""";
+
+		return new ClientSideRequest
+		{
+			RequestId = 5,
+			Url = _xasUrl,
+			Method = "POST",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "content-type", Constants.ApplicationJson },
+				{ "cookie", cookie },
+				{ "x-csrf-token", csrfToken },
+			},
+			Body = requestBody,
+			Options = new ClientSideOptions
+			{
+				Metadata =
+				{
+					{ "cookie", cookie },
+					{ "csrfToken", csrfToken },
+					{ "selectAddressOperationId", selectAddressOperationId },
 					{ "enquiryGuid", enquiryGuid },
 					{ "enquiryHash", enquiryHash },
 					{ "enquiryAttributes", enquiryAttributes },
@@ -345,17 +409,18 @@ internal sealed class KnowsleyMetropolitanBoroughCouncil : GovUkCollectorBase, I
 	{
 		var cookie = AppendSetCookies(clientSideResponse.Options.Metadata["cookie"], clientSideResponse);
 		var csrfToken = clientSideResponse.Options.Metadata["csrfToken"];
+		var selectAddressOperationId = clientSideResponse.Options.Metadata["selectAddressOperationId"];
 		var enquiryGuid = clientSideResponse.Options.Metadata["enquiryGuid"];
 		var enquiryHash = clientSideResponse.Options.Metadata["enquiryHash"];
 		var enquiryAttributes = clientSideResponse.Options.Metadata["enquiryAttributes"];
 
 		var requestBody = $$$$"""
-			{"action":"runtimeOperation","operationId":"{{{{_selectAddressOperationId}}}}","params":{"Generic_Address":{"guid":"{{{{addressEntry.Guid}}}}"}},"changes":{"{{{{addressEntry.Guid}}}}":{{{{addressEntry.ChangesRaw}}}}},"objects":[{"attributes":{{{{enquiryAttributes}}}},"guid":"{{{{enquiryGuid}}}}","hash":"{{{{enquiryHash}}}}","objectType":"{{{{_enquiryObjectType}}}}"},{"attributes":{{{{addressEntry.AttributesRaw}}}},"guid":"{{{{addressEntry.Guid}}}}","hash":"{{{{addressEntry.Hash}}}}","objectType":"{{{{_addressObjectType}}}}"}]}
+			{"action":"runtimeOperation","operationId":"{{{{selectAddressOperationId}}}}","params":{"Generic_Address":{"guid":"{{{{addressEntry.Guid}}}}"}},"changes":{"{{{{addressEntry.Guid}}}}":{{{{addressEntry.ChangesRaw}}}}},"objects":[{"attributes":{{{{enquiryAttributes}}}},"guid":"{{{{enquiryGuid}}}}","hash":"{{{{enquiryHash}}}}","objectType":"{{{{_enquiryObjectType}}}}"},{"attributes":{{{{addressEntry.AttributesRaw}}}},"guid":"{{{{addressEntry.Guid}}}}","hash":"{{{{addressEntry.Hash}}}}","objectType":"{{{{_addressObjectType}}}}"}]}
 			""";
 
 		return new ClientSideRequest
 		{
-			RequestId = 5,
+			RequestId = 6,
 			Url = _xasUrl,
 			Method = "POST",
 			Headers = new()
