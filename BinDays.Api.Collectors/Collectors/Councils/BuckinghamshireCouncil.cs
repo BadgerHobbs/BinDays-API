@@ -27,6 +27,8 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 
 	/// <summary>
 	/// North Buckinghamshire Council (Aylesbury Vale) bin types.
+	/// Properties without room for wheeled bins are collected in sacks, which the council reports
+	/// under a separate service name for the same waste stream.
 	/// </summary>
 	private static readonly IReadOnlyCollection<Bin> _northBinTypes = [
 		new()
@@ -40,7 +42,7 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 		{
 			Name = "Mixed Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "Mixed recycling" ],
+			Keys = [ "Mixed recycling", "Recycling Sacks" ],
 		},
 		new()
 		{
@@ -52,7 +54,7 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 		{
 			Name = "General Waste",
 			Colour = BinColour.Green,
-			Keys = [ "General waste" ],
+			Keys = [ "General waste", "Refuse Sacks" ],
 		},
 	];
 
@@ -246,18 +248,23 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 			using var jsonDoc = JsonDocument.Parse(Decrypt(clientSideResponse.Content));
 			var addressElements = jsonDoc.RootElement.GetProperty("ADDRESS");
 
-			// Iterate through each address, and create a new address object
+			// gdsv5 returns a null ADDRESS rather than an empty array for a postcode it holds no
+			// addresses for, so treat that as an empty result instead of letting enumeration throw.
 			var addresses = new List<Address>();
-			foreach (var addressElement in addressElements.EnumerateArray())
+			if (addressElements.ValueKind == JsonValueKind.Array)
 			{
-				var address = new Address
+				// Iterate through each address, and create a new address object
+				foreach (var addressElement in addressElements.EnumerateArray())
 				{
-					Property = addressElement.GetProperty("FULL_ADDRESS").GetString()?.Trim(),
-					Uid = addressElement.GetProperty("UPRN").GetInt64().ToString(),
-					Postcode = postcode,
-				};
+					var address = new Address
+					{
+						Property = addressElement.GetProperty("FULL_ADDRESS").GetString()?.Trim(),
+						Uid = addressElement.GetProperty("UPRN").GetInt64().ToString(),
+						Postcode = postcode,
+					};
 
-				addresses.Add(address);
+					addresses.Add(address);
+				}
 			}
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -383,6 +390,14 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 			foreach (Match match in CollectionRowRegex().Matches(html))
 			{
 				var service = match.Groups["service"].Value.Trim();
+
+				// Sack properties are also told when replacement sacks are delivered. These are not
+				// collections, and would otherwise match the sack keys of the bins they belong to.
+				if (service.StartsWith("Deliver", StringComparison.OrdinalIgnoreCase))
+				{
+					continue;
+				}
+
 				var matchedBins = ProcessingUtilities.GetMatchingBins(binTypes, service);
 
 				var binDay = new BinDay
