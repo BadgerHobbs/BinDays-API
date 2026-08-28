@@ -60,13 +60,13 @@ internal sealed partial class WestDunbartonshireCouncil : GovUkCollectorBase, IC
 	/// <summary>
 	/// Regex for each collection round from the response data.
 	/// </summary>
-	[GeneratedRegex(@"<div class=""round-info""[\s\S]*?<div class=""round-name"">\s*(?<service>[^<]+)\s*</div>(?<content>[\s\S]*?)</div>\s*</div>", RegexOptions.IgnoreCase)]
+	[GeneratedRegex(@"<div class=""[^""]*round-info[^""]*""[\s\S]*?<div class=""[^""]*round-name[^""]*"">\s*(?<service>[^<]+)\s*</div>(?<content>[\s\S]*?)</div>\s*</div>", RegexOptions.IgnoreCase)]
 	private static partial Regex RoundInfoRegex();
 
 	/// <summary>
 	/// Regex for the collection dates from a collection round.
 	/// </summary>
-	[GeneratedRegex(@"<span class=""date-string"">\s*(?<date>[^<]+)\s*</span>", RegexOptions.IgnoreCase)]
+	[GeneratedRegex(@"<span class=""[^""]*date-string[^""]*"">\s*(?<date>[^<]+)\s*</span>", RegexOptions.IgnoreCase)]
 	private static partial Regex CollectionDateRegex();
 
 	/// <inheritdoc/>
@@ -131,7 +131,7 @@ internal sealed partial class WestDunbartonshireCouncil : GovUkCollectorBase, IC
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"{_binCollectionDayUrl}?uprn={address.Uid!}",
+				Url = $"{_binCollectionDayUrl}?postcode={address.Postcode!}&uprn={address.Uid!}",
 				Method = "GET",
 			};
 
