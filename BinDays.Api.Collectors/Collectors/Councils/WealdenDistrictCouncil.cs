@@ -31,71 +31,49 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 			Name = "General Waste",
 			Colour = BinColour.Black,
 			Keys = [ "Refuse", "Rubbish" ],
-			Type = BinType.Bin,
 		},
 		new()
 		{
 			Name = "Recycling",
 			Colour = BinColour.Green,
 			Keys = [ "Recycling" ],
-			Type = BinType.Bin,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
 			Keys = [ "Garden" ],
-			Type = BinType.Bin,
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Green,
+			Keys = [ "Food" ],
+			Type = BinType.Caddy,
 		},
 	];
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Remove spaces from postcode as the Wealden API requires postcodes without spaces in form data and URL parameters
-		var sanitizedPostcode = postcode.Replace(" ", string.Empty);
-
-		// Prepare client-side request for getting cookies
+		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = "https://www.wealden.gov.uk/recycling-and-waste/bin-search/",
-				Method = "GET",
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		// Prepare client-side request for getting addresses
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]!
-			);
-
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
 				{ "action", "wealden_get_properties_in_postcode" },
-				{ "postcode", sanitizedPostcode },
+				{ "postcode", postcode },
 			});
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 2,
+				RequestId = 1,
 				Url = "https://www.wealden.gov.uk/wp-admin/admin-ajax.php",
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", Constants.FormUrlEncoded },
-					{ "x-requested-with", Constants.XmlHttpRequest },
-					{ "cookie", requestCookies },
-					{ "User-Agent", Constants.UserAgent },
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = requestBody,
 			};
@@ -108,7 +86,7 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 			return getAddressesResponse;
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 1)
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var properties = jsonDoc.RootElement.GetProperty("properties").EnumerateArray();
@@ -142,39 +120,9 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Remove spaces from postcode as the Wealden API requires postcodes without spaces in URL parameters and cookies
-		var sanitizedPostcode = (address.Postcode ?? string.Empty).Replace(" ", string.Empty);
-
-		// Prepare client-side request for getting cookies
+		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var requestUrl = $"https://www.wealden.gov.uk/recycling-and-waste/bin-search/?postcode={sanitizedPostcode}";
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = requestUrl,
-				Method = "GET",
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request for getting bin days
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(
-				clientSideResponse.Headers["set-cookie"]!
-			);
-
-			var cookies = string.IsNullOrWhiteSpace(requestCookies)
-				? $"c_postcode={sanitizedPostcode}"
-				: $"{requestCookies}; c_postcode={sanitizedPostcode}";
-
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
 				{ "action", "wealden_get_collections_for_uprn" },
@@ -183,15 +131,13 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 2,
+				RequestId = 1,
 				Url = "https://www.wealden.gov.uk/wp-admin/admin-ajax.php",
 				Method = "POST",
 				Headers = new()
 				{
-					{ "Content-Type", Constants.FormUrlEncoded },
-					{ "x-requested-with", Constants.XmlHttpRequest },
-					{ "cookie", cookies },
-					{ "User-Agent", Constants.UserAgent },
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.FormUrlEncoded },
 				},
 				Body = requestBody,
 			};
@@ -204,7 +150,7 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 			return getBinDaysResponse;
 		}
 		// Process bin days from response
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 1)
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var collection = jsonDoc.RootElement.GetProperty("collection");
@@ -216,6 +162,7 @@ internal sealed class WealdenDistrictCouncil : GovUkCollectorBase, ICollector
 				{ "refuseCollectionDate", "Refuse" },
 				{ "recyclingCollectionDate", "Recycling" },
 				{ "gardenCollectionDate", "Garden" },
+				{ "foodCollectionDate", "Food" },
 			};
 
 			// Iterate through each bin collection property, and create a new bin day object
