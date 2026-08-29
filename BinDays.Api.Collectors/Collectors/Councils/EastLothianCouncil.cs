@@ -77,7 +77,7 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://collectiondates.eastlothian.gov.uk/waste-collection-schedule/find?postcode={postcode}",
+				Url = $"https://www.eastlothian.gov.uk/waste-collection-schedule/find?postcode={postcode}",
 				Method = "GET",
 			};
 
@@ -133,7 +133,7 @@ internal sealed partial class EastLothianCouncil : GovUkCollectorBase, ICollecto
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://collectiondates.eastlothian.gov.uk/waste-collection-schedule/download/{address.Uid!}",
+				Url = $"https://www.eastlothian.gov.uk/waste-collection-schedule/download/{address.Uid!}",
 				Method = "GET",
 			};
 
