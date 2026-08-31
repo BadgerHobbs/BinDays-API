@@ -269,7 +269,11 @@ internal sealed partial class RochfordDistrictCouncil : GovUkCollectorBase, ICol
 			var service = rawBinDay.Groups["service"].Value.Trim();
 			var dateString = rawBinDay.Groups["date"].Value.Trim();
 
-			var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+			IReadOnlyCollection<Bin> matchedBins = [.. _binTypes.Where(bin =>
+				bin.Keys.Any(key =>
+					service.Equals(key, StringComparison.OrdinalIgnoreCase)
+				)
+			)];
 
 			var binDay = new BinDay
 			{
