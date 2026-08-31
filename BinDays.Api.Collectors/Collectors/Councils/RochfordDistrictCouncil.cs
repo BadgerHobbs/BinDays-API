@@ -269,13 +269,18 @@ internal sealed partial class RochfordDistrictCouncil : GovUkCollectorBase, ICol
 			var service = rawBinDay.Groups["service"].Value.Trim();
 			var dateString = rawBinDay.Groups["date"].Value.Trim();
 
-			var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+			// The council's service names overlap as substrings -- "Non-recyclables" contains
+			// "Recyclables" -- so the shared substring matcher tags every general waste collection
+			// as mixed recycling as well. Match the service name exactly instead.
+			var matchedBins = _binTypes.Where(bin => bin.Keys.Any(key =>
+				string.Equals(key, service, StringComparison.OrdinalIgnoreCase)
+			));
 
 			var binDay = new BinDay
 			{
 				Date = DateUtilities.ParseDateExact(dateString, "yyyy-MM-dd"),
 				Address = address,
-				Bins = matchedBins,
+				Bins = [.. matchedBins],
 			};
 
 			binDays.Add(binDay);

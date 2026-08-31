@@ -277,12 +277,18 @@ internal sealed partial class EastCambridgeshireDistrictCouncil : GovUkCollector
 	/// <summary>
 	/// Builds the Bartec authentication lookup request, stashing the session cookies in metadata for subsequent steps.
 	/// </summary>
+	/// <remarks>
+	/// The council publishes two authentication lookups that resolve to different Bartec credentials.
+	/// Only the one used here (the one the live council page calls) returns bank-holiday-adjusted
+	/// collection dates -- the other returns the unadjusted schedule, which is a day out whenever a
+	/// bank holiday shifts the round. Do not swap it for the other id.
+	/// </remarks>
 	private static ClientSideRequest BuildAuthLookupRequest(string cookies)
 	{
 		return new ClientSideRequest
 		{
 			RequestId = 2,
-			Url = "https://eastcambs-self.achieveservice.com/apibroker/runLookup?id=69d8f92eea3cf",
+			Url = "https://eastcambs-self.achieveservice.com/apibroker/runLookup?id=64f7354c7f8a9",
 			Method = "POST",
 			Headers = new()
 			{
