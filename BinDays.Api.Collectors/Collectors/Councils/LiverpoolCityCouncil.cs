@@ -34,6 +34,13 @@ internal sealed partial class LiverpoolCityCouncil : GovUkCollectorBase, ICollec
 		},
 		new()
 		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Recycling" ],
+			Type = BinType.Caddy,
+		},
+		new()
+		{
 			Name = "Garden Waste",
 			Colour = BinColour.Green,
 			Keys = [ "Green" ],
