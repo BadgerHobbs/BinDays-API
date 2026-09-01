@@ -25,9 +25,33 @@ For each failure where `needsInvestigation` is `true`:
 - Read the failure logs from the JSON entry
 - Read the collector source at `BinDays.Api.Collectors/Collectors/Councils/{councilName}.cs`
 
-### 2. Check the Council Website with Playwright
+### 2. Re-run the Integration Test
 
-Before categorising based on logs alone, use the Playwright MCP browser to manually verify whether the council website is actually working. This is the most reliable signal.
+Council websites go down and come back, and single-origin council servers drop connections under no
+particular pattern. A failure that does not reproduce is almost always upstream flakiness rather than
+a collector regression, so establish this before spending time on anything else:
+
+```bash
+dotnet test BinDays.Api.IntegrationTests --filter "FullyQualifiedName~{councilName}Tests"
+```
+
+Replace `{councilName}` with the name from the failure entry (e.g. `BarnetCouncil`). The first run
+also builds the Dart client, so allow several minutes.
+
+Record the outcome:
+
+- **Test passed on re-run** — the failure did not reproduce. Categorise as **Transient** and skip the
+  Playwright check entirely; a passing end-to-end test is strictly stronger evidence than a manual
+  browse, and there is nothing for a screenshot to show.
+- **Test failed on re-run** — the failure is reproducible. Continue to the Playwright check below, and
+  quote the fresh error rather than the one from the original run, since the original logs can be
+  stale or truncated.
+
+### 3. Check the Council Website with Playwright
+
+Skip this step entirely if the test passed on re-run.
+
+When the failure did reproduce, use the Playwright MCP browser to manually verify whether the council website is actually working, rather than categorising on the logs alone. This is the most reliable signal available once a re-run has confirmed the failure is real.
 
 Extract the council's base URL from the collector source (look for the first `Uri` or URL string). Then:
 
@@ -51,17 +75,27 @@ LATEST=$(ls -t .agent/playwright/out/*.png 2>/dev/null | head -1)
 
 Replace `{councilName}` with the actual council name from the failure entry (e.g. `BarnetCouncil`).
 
-### 3. Categorise the Failure
+### 4. Categorise the Failure
 
-Use **both** the Playwright result and the error logs to determine which category fits:
+Use the re-run result, the Playwright result and the error logs to determine which category fits:
 
+- **Transient** — the test passed on re-run. The failure did not reproduce, so no code fix is needed.
+  Typical causes: a brief council outage, a dropped TCP connection (`CURLcode 7` /
+  `CURLE_COULDNT_CONNECT`, `Connection refused`), a one-off 5xx, or a timeout. Councils served from a
+  single origin IP with no CDN produce these repeatedly.
 - **Website down** — Playwright showed the website is broken/unavailable, OR logs show `HttpRequestException`, SSL errors, timeouts, 5xx status codes. The council website is temporarily unavailable. No code fix needed.
 - **Website changed** — Playwright confirmed the website is working (addresses and bin days are visible), but the test still failed. This means the collector code no longer matches the website's current structure. Errors in logs: `InvalidOperationException`, `NullReferenceException`, `FormatException`, assertion failures (empty collections, regex not matching, unexpected HTML structure).
 - **Data issue** — `BinDaysNotFoundException`, `AddressesNotFoundException` and Playwright shows the website working. The collector may be parsing data incorrectly, or the test address/postcode may no longer be valid.
 
-The Playwright check takes precedence: if the website is clearly working end-to-end, the failure is code-side ("Website changed" or "Data issue") even if the logs look ambiguous.
+Precedence, strongest signal first:
 
-### 4. Create a GitHub Issue
+1. **The re-run takes precedence over everything.** If the test passed, the category is **Transient**,
+   no matter how the original logs read. Do not categorise a non-reproducing failure as
+   "Website changed" — that label sends a human hunting for a regression that is not there.
+2. If the test still fails but the website is clearly working end-to-end, the failure is code-side
+   ("Website changed" or "Data issue") even if the logs look ambiguous.
+
+### 5. Create a GitHub Issue
 
 For every failure, create a GitHub issue with:
 
@@ -74,7 +108,8 @@ For every failure, create a GitHub issue with:
   |-------|-------|
   | Category | {category} |
   | Key error | {key error message} |
-  | Website check | {Working / Broken / Could not determine} |
+  | Test re-run | {Passed / Failed} |
+  | Website check | {Working / Broken / Could not determine / Skipped (test passed on re-run)} |
   | Workflow run | [{runId}]({runUrl}) |
 
   {any additional notes, e.g. pattern across failures, what Playwright found}
@@ -88,7 +123,8 @@ cat > /tmp/issue-body.md << 'EOF'
 |-------|-------|
 | Category | {category} |
 | Key error | {key error message} |
-| Website check | {Working / Broken / Could not determine} |
+| Test re-run | {Passed / Failed} |
+| Website check | {Working / Broken / Could not determine / Skipped (test passed on re-run)} |
 | Workflow run | [{runId}]({runUrl}) |
 
 {any additional notes}
@@ -99,4 +135,9 @@ gh issue create --title "Broken collector: {councilName}" --label "collector-bro
 ## Important Notes
 
 - If **all** failures are in the same category (e.g. all "Website down"), mention this pattern in the first issue body. It may indicate a runner or network problem rather than individual council issues.
+- An issue is still required for every failure where `needsInvestigation` is `true`, including
+  **Transient** ones — the pipeline check does not exempt them. State plainly in the body that the
+  test passed on re-run and that no code fix appears to be needed, so a human can close it without
+  re-investigating. The "Close resolved issues" job will also close it automatically once a
+  scheduled run passes.
 - Include the Playwright finding in the issue body (e.g. "Website manually verified as working" or "Website appears to be down"), so that humans reading the issue have the full context.
