@@ -17,7 +17,7 @@ internal sealed partial class LiverpoolCityCouncil : GovUkCollectorBase, ICollec
 	public string Name => "Liverpool City Council";
 
 	/// <inheritdoc/>
-	public Uri WebsiteUrl => new("https://www.template.gov.uk/");
+	public Uri WebsiteUrl => new("https://liverpool.gov.uk/bins-and-recycling/bin-collections/");
 
 	/// <inheritdoc/>
 	public override string GovUkId => "liverpool";
@@ -43,6 +43,13 @@ internal sealed partial class LiverpoolCityCouncil : GovUkCollectorBase, ICollec
 			Name = "Household Waste",
 			Colour = BinColour.Purple,
 			Keys = [ "Refuse" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Food" ],
+			Type = BinType.Caddy,
 		},
 	];
 
