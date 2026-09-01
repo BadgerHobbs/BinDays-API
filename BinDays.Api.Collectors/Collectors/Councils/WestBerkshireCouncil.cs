@@ -188,7 +188,12 @@ internal sealed partial class WestBerkshireCouncil : GovUkCollectorBase, ICollec
 
 			foreach (var property in properties)
 			{
-				var dateText = result.GetProperty(property).GetString()!.Trim();
+				if (!result.TryGetProperty(property, out var dateProperty))
+				{
+					continue;
+				}
+
+				var dateText = dateProperty.GetString()!.Trim();
 
 				if (string.IsNullOrWhiteSpace(dateText))
 				{
