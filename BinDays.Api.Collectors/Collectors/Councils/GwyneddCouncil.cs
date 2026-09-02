@@ -53,6 +53,13 @@ internal sealed partial class GwyneddCouncil : GovUkCollectorBase, ICollector
 			Colour = BinColour.Brown,
 			Keys = [ "Brown bin (garden waste)" ],
 		},
+		new()
+		{
+			Name = "Nappy Waste",
+			Colour = BinColour.Yellow,
+			Keys = [ "Nappy" ],
+			Type = BinType.Bag,
+		},
 	];
 
 	/// <summary>
