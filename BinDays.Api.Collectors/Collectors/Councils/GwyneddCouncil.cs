@@ -6,6 +6,7 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -69,6 +70,12 @@ internal sealed partial class GwyneddCouncil : GovUkCollectorBase, ICollector
 	private static partial Regex AddressRegex();
 
 	/// <summary>
+	/// Regex for detecting whether another page of address results follows.
+	/// </summary>
+	[GeneratedRegex(@"<a href=""[^""]+"" rel=""next"">")]
+	private static partial Regex NextPageRegex();
+
+	/// <summary>
 	/// Regex for the bin days from the "Where I live" response.
 	/// </summary>
 	[GeneratedRegex(@"<li>\s*(?<service>[^:<]+):\s*(?<date>[A-Za-z]+ \d{2}/\d{2}/\d{4})")]
@@ -94,13 +101,31 @@ internal sealed partial class GwyneddCouncil : GovUkCollectorBase, ICollector
 
 			return getAddressesResponse;
 		}
-		// Process addresses from response
+		// Process addresses from response, following pagination as required
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
 
-			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
+
+			// Restore addresses accumulated from previous pages
+			if (clientSideResponse.Options.Metadata.TryGetValue("addresses", out var accumulatedAddresses))
+			{
+				// Iterate through each accumulated address, and restore it
+				foreach (var entry in accumulatedAddresses.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+				{
+					var parts = entry.Split('|', 2);
+
+					addresses.Add(new Address
+					{
+						Property = parts[0],
+						Postcode = postcode,
+						Uid = parts[1],
+					});
+				}
+			}
+
+			// Iterate through each address, and create a new address object
 			foreach (Match rawAddress in rawAddresses)
 			{
 				var address = new Address
@@ -111,6 +136,43 @@ internal sealed partial class GwyneddCouncil : GovUkCollectorBase, ICollector
 				};
 
 				addresses.Add(address);
+			}
+
+			// Request the next page of results if the response indicates one is available
+			if (NextPageRegex().IsMatch(clientSideResponse.Content))
+			{
+				var currentPage = clientSideResponse.Options.Metadata.TryGetValue("page", out var pageValue)
+					? int.Parse(pageValue, CultureInfo.InvariantCulture)
+					: 1;
+
+				// Iterate through each address, and serialize it to carry forward to the next page
+				var serializedAddresses = new List<string>();
+				foreach (var address in addresses)
+				{
+					serializedAddresses.Add($"{address.Property}|{address.Uid}");
+				}
+
+				var nextPageClientSideRequest = new ClientSideRequest
+				{
+					RequestId = 1,
+					Url = $"https://diogel.gwynedd.llyw.cymru/Daearyddol/en/ChwilioCyfeiriad/Index/LleDwinByw?codPost={postcode}&Tudalen={currentPage + 1}",
+					Method = "GET",
+					Options = new ClientSideOptions
+					{
+						Metadata = new()
+						{
+							{ "page", (currentPage + 1).ToString(CultureInfo.InvariantCulture) },
+							{ "addresses", string.Join("\n", serializedAddresses) },
+						},
+					},
+				};
+
+				var nextPageResponse = new GetAddressesResponse
+				{
+					NextClientSideRequest = nextPageClientSideRequest,
+				};
+
+				return nextPageResponse;
 			}
 
 			if (addresses.Count == 0)
