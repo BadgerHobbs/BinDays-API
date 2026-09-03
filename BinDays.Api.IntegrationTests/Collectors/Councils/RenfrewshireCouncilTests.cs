@@ -19,8 +19,8 @@ public class RenfrewshireCouncilTests
 	}
 
 	[Theory]
-	[InlineData("PA2 6TS")]
-	[InlineData("PA2 6TS", "123070374", 1)]
+	[InlineData("PA8 6BJ")]
+	[InlineData("PA8 6BJ", "123008223", 1)]
 	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
