@@ -6,6 +6,7 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 /// <summary>
@@ -60,16 +61,10 @@ internal sealed partial class RenfrewshireCouncil : GovUkCollectorBase, ICollect
 	private static partial Regex AddressRegex();
 
 	/// <summary>
-	/// Regex for the calendar file path from the response data.
+	/// Regex for the collections JSON from the response data.
 	/// </summary>
-	[GeneratedRegex(@"href=""(?<path>[^""]+\.ics)""")]
-	private static partial Regex CalendarPathRegex();
-
-	/// <summary>
-	/// Regex for the bin days from the calendar file.
-	/// </summary>
-	[GeneratedRegex(@"(?s)BEGIN:VEVENT.*?DTSTART:(?<date>\d{8})T.*?SUMMARY:(?<bin>[^\r\n]+)")]
-	private static partial Regex BinDaysRegex();
+	[GeneratedRegex(@"(?s)<script type=""application/json"" id=""collections-data"">\s*(?<collectionsData>\{.*?\})\s*</script>")]
+	private static partial Regex CollectionsDataRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -148,50 +143,47 @@ internal sealed partial class RenfrewshireCouncil : GovUkCollectorBase, ICollect
 
 			return getBinDaysResponse;
 		}
-		// Prepare client-side request for getting the collection calendar
+		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var rawCalendarPath = CalendarPathRegex().Match(clientSideResponse.Content)!;
+			var rawCollectionsData = CollectionsDataRegex().Match(clientSideResponse.Content)!;
 
-			// Properties on a round with no published calendar have no collections to report
-			if (!rawCalendarPath.Success)
+			// The collections data is only rendered when the property has upcoming collections
+			if (!rawCollectionsData.Success)
 			{
 				throw new BinDaysNotFoundException(GovUkId, address.Postcode!, address.Uid!);
 			}
 
-			var calendarPath = rawCalendarPath.Groups["path"].Value;
+			using var jsonDocument = JsonDocument.Parse(rawCollectionsData.Groups["collectionsData"].Value);
 
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"https://www.renfrewshire.gov.uk{calendarPath}",
-				Method = "GET",
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Process bin days from response
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
-
-			// Iterate through each bin day, and create a new bin day object
+			// Iterate through each collection date, and create a new bin day object
 			var binDays = new List<BinDay>();
-			foreach (Match rawBinDay in rawBinDays)
+			foreach (var rawCollectionDate in jsonDocument.RootElement.EnumerateObject())
 			{
-				var service = rawBinDay.Groups["bin"].Value.Trim();
-				var collectionDate = rawBinDay.Groups["date"].Value;
+				var matchedBins = new List<Bin>();
+
+				// Iterate through each service on this date, and get matching bins
+				foreach (var rawService in rawCollectionDate.Value.EnumerateObject())
+				{
+					if (rawService.Value.ValueKind == JsonValueKind.Null)
+					{
+						continue;
+					}
+
+					var service = rawService.Value.GetProperty("ShortName").GetString()!;
+					matchedBins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, service));
+				}
+
+				if (matchedBins.Count == 0)
+				{
+					continue;
+				}
 
 				var binDay = new BinDay
 				{
-					Date = DateUtilities.ParseDateExact(collectionDate, "yyyyMMdd"),
+					Date = DateUtilities.ParseDateExact(rawCollectionDate.Name, "yyyy-MM-dd"),
 					Address = address,
-					Bins = ProcessingUtilities.GetMatchingBins(_binTypes, service),
+					Bins = [.. matchedBins],
 				};
 
 				binDays.Add(binDay);
