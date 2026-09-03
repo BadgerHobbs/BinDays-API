@@ -1,6 +1,7 @@
 namespace BinDays.Api.Collectors.Collectors.Councils;
 
 using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Exceptions;
 using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
@@ -150,7 +151,15 @@ internal sealed partial class RenfrewshireCouncil : GovUkCollectorBase, ICollect
 		// Prepare client-side request for getting the collection calendar
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var calendarPath = CalendarPathRegex().Match(clientSideResponse.Content)!.Groups["path"].Value;
+			var rawCalendarPath = CalendarPathRegex().Match(clientSideResponse.Content)!;
+
+			// Properties on a round with no published calendar have no collections to report
+			if (!rawCalendarPath.Success)
+			{
+				throw new BinDaysNotFoundException(GovUkId, address.Postcode!, address.Uid!);
+			}
+
+			var calendarPath = rawCalendarPath.Groups["path"].Value;
 
 			var clientSideRequest = new ClientSideRequest
 			{
