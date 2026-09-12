@@ -21,6 +21,7 @@ public class BoltonMetropolitanBoroughCouncilTests
 	[Theory]
 	[InlineData("BL3 3NY", 9)]
 	[InlineData("BL3 3NY", 0, "1000437092", 1)]
+	[InlineData("BL3 2JD", 0)]
 	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
