@@ -37,6 +37,12 @@ internal sealed partial class BoltonMetropolitanBoroughCouncil : GovUkCollectorB
 		},
 		new()
 		{
+			Name = "Garden Waste",
+			Colour = BinColour.Green,
+			Keys = [ "green garden bin" ],
+		},
+		new()
+		{
 			Name = "Paper and Card Recycling",
 			Colour = new("Beige", "#D1AC75"),
 			Keys = [ "beige recycling bin" ],
