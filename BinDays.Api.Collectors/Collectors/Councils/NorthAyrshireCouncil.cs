@@ -152,18 +152,18 @@ internal sealed class NorthAyrshireCouncil : GovUkCollectorBase, ICollector
 
 			// Iterate through each bin day, and create a new bin day object
 			var binDays = new List<BinDay>();
-			foreach (var rawCollection in rawCollections)
+			foreach (var (Service, Date) in rawCollections)
 			{
-				if (string.IsNullOrWhiteSpace(rawCollection.Date))
+				if (string.IsNullOrWhiteSpace(Date))
 				{
 					continue;
 				}
 
-				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, rawCollection.Service);
+				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, Service);
 
 				var binDay = new BinDay
 				{
-					Date = DateUtilities.ParseDateExact(rawCollection.Date, "dd/MM/yyyy"),
+					Date = DateUtilities.ParseDateExact(Date, "dd/MM/yyyy"),
 					Address = address,
 					Bins = matchedBins,
 				};
