@@ -76,10 +76,10 @@ internal sealed partial class DumfriesAndGallowayCouncil : GovUkCollectorBase, I
 	private static partial Regex DtStartRegex();
 
 	/// <summary>
-	/// Regex for the service name from the iCal SUMMARY line.
+	/// Regex for the bin colour and service name from the iCal SUMMARY line.
 	/// </summary>
-	[GeneratedRegex(@" for (?<service>.+)$")]
-	private static partial Regex SummaryServiceRegex();
+	[GeneratedRegex(@"^(?<colour>[^\s]+)\s+lidded bins for (?<service>.+)$")]
+	private static partial Regex SummaryRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -232,12 +232,43 @@ internal sealed partial class DumfriesAndGallowayCouncil : GovUkCollectorBase, I
 					continue;
 				}
 
-				var service = SummaryServiceRegex().Match(summary).Groups["service"].Value;
+				var summaryMatch = SummaryRegex().Match(summary);
+				var service = summaryMatch.Groups["service"].Value;
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 				if (matchedBins.Count == 0)
 				{
 					continue;
+				}
+
+				var colour = summaryMatch.Groups["colour"].Value.ToLowerInvariant() switch
+				{
+					"grey" => BinColour.Grey,
+					"blue" => BinColour.Blue,
+					"red" => BinColour.Red,
+					"brown" => BinColour.Brown,
+					_ => null,
+				};
+
+				if (colour != null)
+				{
+					var binsWithCalendarColour = new List<Bin>();
+
+					// Iterate through each matched bin, and apply the colour from the calendar summary
+					foreach (var matchedBin in matchedBins)
+					{
+						var binWithCalendarColour = new Bin
+						{
+							Name = matchedBin.Name,
+							Colour = colour,
+							Type = matchedBin.Type,
+							Keys = matchedBin.Keys,
+						};
+
+						binsWithCalendarColour.Add(binWithCalendarColour);
+					}
+
+					matchedBins = [.. binsWithCalendarColour];
 				}
 
 				var binDay = new BinDay

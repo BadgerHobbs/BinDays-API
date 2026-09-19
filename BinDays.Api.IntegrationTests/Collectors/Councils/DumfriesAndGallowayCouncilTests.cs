@@ -21,6 +21,7 @@ public class DumfriesAndGallowayCouncilTests
 	[Theory]
 	[InlineData("DG7 1AA", 2)]
 	[InlineData("DG7 1LW")]
+	[InlineData("DG12 6RP")]
 	[InlineData("DG7 1AA", 0, "137038457", 1)]
 	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
