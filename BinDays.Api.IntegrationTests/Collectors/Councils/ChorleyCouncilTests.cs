@@ -21,6 +21,7 @@ public class ChorleyCouncilTests
 	[Theory]
 	[InlineData("PR7 6PT")]
 	[InlineData("PR7 6PT", "100010369451", 1)]
+	[InlineData("PR7 6HP", "100010372171", 1)]
 	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
