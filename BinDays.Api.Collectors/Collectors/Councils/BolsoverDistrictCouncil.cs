@@ -1,6 +1,7 @@
 namespace BinDays.Api.Collectors.Collectors.Councils;
 
 using BinDays.Api.Collectors.Collectors.Vendors;
+using BinDays.Api.Collectors.Exceptions;
 using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
@@ -215,8 +216,16 @@ internal sealed class BolsoverDistrictCouncil : GovUkCollectorBase, ICollector
 		// Prepare client-side request for black bin week lookup
 		else if (clientSideResponse.RequestId == 2)
 		{
+			var rows = ParseLookupRows(clientSideResponse.Content);
+
+			// Rural, newly built and commercial properties have no collection route
+			if (rows.Count == 0)
+			{
+				throw new BinDaysNotFoundException(GovUkId, address.Postcode!, address.Uid!);
+			}
+
 			// Route is prefixed with the collection day (e.g. "ThS" for Thursday)
-			var route = ParseLookupRows(clientSideResponse.Content).Single()["Route"];
+			var route = rows.Single()["Route"];
 			var collectionDay = Enum.GetValues<DayOfWeek>().Single(day => day.ToString().StartsWith(route[..2], StringComparison.Ordinal));
 
 			// Next collection is today if it falls on the collection day, as on the council website
