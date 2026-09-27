@@ -390,6 +390,7 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 			foreach (Match match in CollectionRowRegex().Matches(html))
 			{
 				var service = match.Groups["service"].Value.Trim();
+				var date = match.Groups["date"].Value.Trim();
 
 				// Sack properties are also told when replacement sacks are delivered. These are not
 				// collections, and would otherwise match the sack keys of the bins they belong to.
@@ -398,11 +399,18 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 					continue;
 				}
 
+				// Services with no upcoming collection (seen for Garden Waste) are reported with an
+				// "Invalid DateTime" placeholder instead of a date, which would otherwise fail the lookup.
+				if (date.Equals("Invalid DateTime", StringComparison.OrdinalIgnoreCase))
+				{
+					continue;
+				}
+
 				var matchedBins = ProcessingUtilities.GetMatchingBins(binTypes, service);
 
 				var binDay = new BinDay
 				{
-					Date = DateUtilities.ParseDateInferringYear(match.Groups["date"].Value.Trim(), "dddd d MMMM"),
+					Date = DateUtilities.ParseDateInferringYear(date, "dddd d MMMM"),
 					Address = address,
 					Bins = matchedBins,
 				};
