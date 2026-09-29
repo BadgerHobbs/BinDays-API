@@ -40,6 +40,12 @@ internal sealed partial class WorthingBoroughCouncil : GovUkCollectorBase, IColl
 	private static partial Regex CollectionDateRegex();
 
 	/// <summary>
+	/// Regex for the separators between collection dates (line breaks, or commas on older pages).
+	/// </summary>
+	[GeneratedRegex(@"<br\s*/?>|,")]
+	private static partial Regex CollectionDateSeparatorRegex();
+
+	/// <summary>
 	/// The list of bin types for this collector.
 	/// </summary>
 	private readonly IReadOnlyCollection<Bin> _binTypes = [
@@ -60,6 +66,13 @@ internal sealed partial class WorthingBoroughCouncil : GovUkCollectorBase, IColl
 			Name = "Garden",
 			Colour = BinColour.Green,
 			Keys = [ "Garden" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Orange,
+			Keys = [ "Food" ],
+			Type = BinType.Caddy,
 		},
 	];
 
@@ -154,12 +167,16 @@ internal sealed partial class WorthingBoroughCouncil : GovUkCollectorBase, IColl
 				var collection = rawBinDay.Groups["collection"].Value;
 
 				// Remove the st|nd|rd|th from the date part (e.g. '16th')
-				var collectionDates = CollectionDateRegex()
-					.Replace(rawBinDay.Groups["date"].Value, "")
-					.Split(',');
+				var rawCollectionDates = CollectionDateRegex().Replace(rawBinDay.Groups["date"].Value, "");
+				var collectionDates = CollectionDateSeparatorRegex().Split(rawCollectionDates);
 
 				foreach (var collectionDate in collectionDates)
 				{
+					if (string.IsNullOrWhiteSpace(collectionDate))
+					{
+						continue;
+					}
+
 					// Parse the date (e.g. 'Friday 16 May')
 					var date = DateUtilities.ParseDateInferringYear(collectionDate.Trim(), "dddd d MMMM");
 
