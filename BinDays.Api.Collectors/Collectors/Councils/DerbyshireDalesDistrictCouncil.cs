@@ -37,6 +37,13 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 		new()
 		{
 			Name = "General Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Domestic Waste 360L Container", "Domestic Waste 660L Container", "Domestic Waste 1100L Container" ],
+			Type = BinType.Container,
+		},
+		new()
+		{
+			Name = "General Waste",
 			Colour = BinColour.Black,
 			Keys = [ "Domestic Waste Sacks" ],
 			Type = BinType.Bag,
@@ -47,6 +54,12 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 			Colour = BinColour.Green,
 			Keys = [ "Food Waste 23L Caddy" ],
 			Type = BinType.Caddy,
+		},
+		new()
+		{
+			Name = "Communal Food Waste",
+			Colour = BinColour.Green,
+			Keys = [ "Food 240L Waste Bin" ],
 		},
 		new()
 		{
@@ -74,6 +87,18 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 			Colour = BinColour.Blue,
 			Keys = [ "Recycling Waste Sacks" ],
 			Type = BinType.Bag,
+		},
+		new()
+		{
+			Name = "Communal Paper and Card Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "Communal Paper 240L Waste Bin" ],
+		},
+		new()
+		{
+			Name = "Communal Glass Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "Communal Glass Waste 240L Waste Bin" ],
 		},
 		new()
 		{

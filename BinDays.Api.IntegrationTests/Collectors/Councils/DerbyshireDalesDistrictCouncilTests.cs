@@ -23,6 +23,7 @@ public class DerbyshireDalesDistrictCouncilTests
 	[InlineData("DE4 3PW", "U10070107124", 1)]
 	[InlineData("DE4 2EE", "U10070090284", 1)]
 	[InlineData("S33 9JU", "U10070108829", 1)]
+	[InlineData("DE6 1PF", "U10070109963", 1)]
 	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
