@@ -29,62 +29,51 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 		{
 			Name = "Non-recyclable waste",
 			Colour = BinColour.Green,
-			Keys = [ "Green bin" ],
+			Keys = [ "Green non-recyclable" ],
 		},
 		new()
 		{
-			Name = "Recycling",
+			Name = "Mixed Recycling",
 			Colour = BinColour.Grey,
-			Keys = [ "Grey bin" ],
+			Keys = [ "Grey recycling" ],
+		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Grey food waste" ],
+			Type = BinType.Caddy,
 		},
 		new()
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Brown bin" ],
+			Keys = [ "Brown garden waste" ],
 		},
 	];
 
 	/// <summary>
-	/// Regex for the viewstate token values from input fields.
-	/// </summary>
-	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__VIEWSTATE[""'][^>]*?value=[""'](?<viewState>[^""']*)[""'][^>]*?/?>")]
-	private static partial Regex ViewStateTokenRegex();
-
-	/// <summary>
-	/// Regex for the event validation values from input fields.
-	/// </summary>
-	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__EVENTVALIDATION[""'][^>]*?value=[""'](?<eventValidation>[^""']*)[""'][^>]*?/?>")]
-	private static partial Regex EventValidationRegex();
-
-	/// <summary>
-	/// Regex for the viewstate generator values from input fields.
-	/// </summary>
-	[GeneratedRegex(@"<input[^>]*?(?:name|id)=[""']__VIEWSTATEGENERATOR[""'][^>]*?value=[""'](?<viewStateGenerator>[^""']*)[""'][^>]*?/?>")]
-	private static partial Regex ViewStateGeneratorRegex();
-
-	/// <summary>
 	/// Regex for the addresses from the options elements.
 	/// </summary>
-	[GeneratedRegex(@"<option[^>]*?value=[""'](?<uid>[^""']+)[""'][^>]*>\s*(?<address>[^<]+)\s*</option>")]
+	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)""[^>]*>\s*(?<address>[^<]+)\s*</option>")]
 	private static partial Regex AddressesRegex();
 
 	/// <summary>
 	/// Regex for the bin days from the data elements.
 	/// </summary>
-	[GeneratedRegex(@"(?s)<h2>(?<binName>[^<]+)</h2>.*?<p><strong>(?<date>[^<]+)</strong>")]
+	[GeneratedRegex(@"<li class=""waste-collection__day[^""]*"">[\s\S]*?datetime=""(?<date>[^""]+)""[\s\S]*?waste-collection__day--type"">\s*(?<service>[^<]+)\s*<")]
 	private static partial Regex BinDaysRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting token
+		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = "https://www.wirral.gov.uk/bincal_dev/",
+				Url = $"https://www.wirral.gov.uk/bins-and-recycling/bin-collection-dates/find?postcode={postcode}",
 				Method = "GET",
 			};
 
@@ -95,58 +84,29 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 
 			return getAddressesResponse;
 		}
-		// Prepare client-side request for getting addresses
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewState"].Value;
-			var viewStateGenerator = ViewStateGeneratorRegex().Match(clientSideResponse.Content).Groups["viewStateGenerator"].Value;
-			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["eventValidation"].Value;
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{"__VIEWSTATE", viewState},
-				{"__VIEWSTATEGENERATOR", viewStateGenerator},
-				{"__EVENTVALIDATION", eventValidation},
-				{"ctl00$MainContent$Postcode", postcode},
-				{"ctl00$MainContent$LookupPostcode", "Go"},
-			});
-
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", Constants.FormUrlEncoded},
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = "https://www.wirral.gov.uk/bincal_dev/",
-				Method = "POST",
-				Headers = requestHeaders,
-				Body = requestBody,
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		// Process addresses from response
-		else if (clientSideResponse.RequestId == 2)
-		{
 			var rawAddresses = AddressesRegex().Matches(clientSideResponse.Content)!;
-			var addresses = new List<Address>();
 
 			// Iterate through each address, and create a new address object
+			var addresses = new List<Address>();
 			foreach (Match rawAddress in rawAddresses)
 			{
-				addresses.Add(new Address
+				var uid = rawAddress.Groups["uid"].Value.Trim();
+
+				if (string.IsNullOrWhiteSpace(uid))
+				{
+					continue;
+				}
+
+				var address = new Address
 				{
 					Property = rawAddress.Groups["address"].Value.Trim(),
 					Postcode = postcode,
-					Uid = rawAddress.Groups["uid"].Value,
-				});
+					Uid = uid,
+				};
+
+				addresses.Add(address);
 			}
 
 			var getAddressesResponse = new GetAddressesResponse
@@ -163,13 +123,13 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting token
+		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = "https://www.wirral.gov.uk/bincal_dev/",
+				Url = $"https://www.wirral.gov.uk/bins-and-recycling/bin-collection-dates/view/{address.Uid!}",
 				Method = "GET",
 			};
 
@@ -180,106 +140,30 @@ internal sealed partial class WirralCouncil : GovUkCollectorBase, ICollector
 
 			return getBinDaysResponse;
 		}
-		// Prepare client-side request to get the address selection page
+		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewState"].Value;
-			var viewStateGenerator = ViewStateGeneratorRegex().Match(clientSideResponse.Content).Groups["viewStateGenerator"].Value;
-			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["eventValidation"].Value;
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{"__VIEWSTATE", viewState},
-				{"__VIEWSTATEGENERATOR", viewStateGenerator},
-				{"__EVENTVALIDATION", eventValidation},
-				{"ctl00$MainContent$Postcode", address.Postcode!},
-				{"ctl00$MainContent$LookupPostcode", "Go"},
-			});
-
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", Constants.FormUrlEncoded},
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = "https://www.wirral.gov.uk/bincal_dev/",
-				Method = "POST",
-				Headers = requestHeaders,
-				Body = requestBody,
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Prepare client-side request to get bin collection data
-		else if (clientSideResponse.RequestId == 2)
-		{
-			var viewState = ViewStateTokenRegex().Match(clientSideResponse.Content).Groups["viewState"].Value;
-			var viewStateGenerator = ViewStateGeneratorRegex().Match(clientSideResponse.Content).Groups["viewStateGenerator"].Value;
-			var eventValidation = EventValidationRegex().Match(clientSideResponse.Content).Groups["eventValidation"].Value;
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{"__VIEWSTATE", viewState},
-				{"__VIEWSTATEGENERATOR", viewStateGenerator},
-				{"__EVENTVALIDATION", eventValidation},
-				{"ctl00$MainContent$Postcode", address.Postcode!},
-				{"ctl00$MainContent$addressDropDown", address.Uid!},
-				{"ctl00$MainContent$FindRounds", "Find bin collections"},
-			});
-
-			var requestHeaders = new Dictionary<string, string> {
-				{"user-agent", Constants.UserAgent},
-				{"content-type", Constants.FormUrlEncoded},
-			};
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 3,
-				Url = "https://www.wirral.gov.uk/bincal_dev/",
-				Method = "POST",
-				Headers = requestHeaders,
-				Body = requestBody,
-			};
-
-			var getBinDaysResponse = new GetBinDaysResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getBinDaysResponse;
-		}
-		// Process bin days from response
-		else if (clientSideResponse.RequestId == 3)
-		{
-			// Get bin days from response
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
-			var binDays = new List<BinDay>();
 
 			// Iterate through each bin day, and create a new bin day object
+			var binDays = new List<BinDay>();
 			foreach (Match rawBinDay in rawBinDays)
 			{
-				var binName = rawBinDay.Groups["binName"].Value;
-				var date = rawBinDay.Groups["date"].Value.TrimEnd('.');
+				var service = rawBinDay.Groups["service"].Value.Trim();
+				var dateString = rawBinDay.Groups["date"].Value.Trim();
 
-				// Parse the collection date
-				var collectionDate = DateUtilities.ParseDateExact(date, "dddd dd MMMM yyyy");
+				var date = DateUtilities.ParseDateExact(dateString, "dd-MM-yyyy");
 
-				// Get matching bin types from the type using the keys
-				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, binName);
+				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
-				binDays.Add(new BinDay
+				var binDay = new BinDay
 				{
-					Date = collectionDate,
+					Date = date,
 					Address = address,
-					Bins = matchedBinTypes,
-				});
+					Bins = matchedBins,
+				};
+
+				binDays.Add(binDay);
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
