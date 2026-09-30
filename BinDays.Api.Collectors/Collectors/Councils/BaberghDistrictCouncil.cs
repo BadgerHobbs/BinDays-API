@@ -56,5 +56,11 @@ internal sealed class BaberghDistrictCouncil : PlacecubeCollectorBase, ICollecto
 			Colour = BinColour.Brown,
 			Keys = [ "Garden Waste Collection (Brown Bin)" ],
 		},
+		new()
+		{
+			Name = "Clinical Waste",
+			Colour = BinColour.Yellow,
+			Keys = [ "Clinical Waste" ],
+		},
 	];
 }
