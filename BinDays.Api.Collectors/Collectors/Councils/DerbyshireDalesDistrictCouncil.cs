@@ -31,6 +31,12 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 		new()
 		{
 			Name = "General Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Domestic Waste 140L Bin", "Domestic Waste 240L Waste Bin" ],
+		},
+		new()
+		{
+			Name = "General Waste",
 			Colour = BinColour.Black,
 			Keys = [ "Domestic Waste Sacks" ],
 			Type = BinType.Bag,
@@ -41,6 +47,12 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 			Colour = BinColour.Green,
 			Keys = [ "Food Waste 23L Caddy" ],
 			Type = BinType.Caddy,
+		},
+		new()
+		{
+			Name = "Mixed Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "Recycling 240L Waste Bin" ],
 		},
 		new()
 		{
@@ -58,7 +70,7 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 		},
 		new()
 		{
-			Name = "Mixed Recycling",
+			Name = "Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "Recycling Waste Sacks" ],
 			Type = BinType.Bag,
@@ -67,7 +79,7 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Green,
-			Keys = [ "Green-lid bin" ],
+			Keys = [ "Garden Waste 240L Bin" ],
 		},
 	];
 
@@ -103,29 +115,9 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting form cookies
+		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = _formUrl,
-				Method = "GET",
-			};
-
-			var getAddressesResponse = new GetAddressesResponse
-			{
-				NextClientSideRequest = clientSideRequest,
-			};
-
-			return getAddressesResponse;
-		}
-		// Prepare client-side request for getting addresses
-		else if (clientSideResponse.RequestId == 1)
-		{
-			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
-			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
-
 			Dictionary<string, string> requestFormData = new()
 			{
 				{ "query", postcode },
@@ -133,15 +125,13 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 
 			var clientSideRequest = new ClientSideRequest
 			{
-				RequestId = 2,
+				RequestId = 1,
 				Url = "https://selfserve.derbyshiredales.gov.uk/core/addresslookup",
 				Method = "POST",
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
 					{ "content-type", Constants.FormUrlEncoded },
-					{ "cookie", requestCookies },
-					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(requestFormData),
 			};
@@ -154,7 +144,7 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 			return getAddressesResponse;
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId == 1)
 		{
 			using var document = JsonDocument.Parse(clientSideResponse.Content);
 
@@ -234,7 +224,6 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 					{ "user-agent", Constants.UserAgent },
 					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", requestCookies },
-					{ "x-requested-with", Constants.XmlHttpRequest },
 				},
 				Body = ProcessingUtilities.ConvertDictionaryToFormData(requestFormData),
 			};
