@@ -56,7 +56,7 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 		},
 		new()
 		{
-			Name = "Dry Recycling",
+			Name = "Mixed Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "Recycling Blue Waste Box" ],
 			Type = BinType.Box,
@@ -70,7 +70,7 @@ internal sealed partial class DerbyshireDalesDistrictCouncil : GovUkCollectorBas
 		},
 		new()
 		{
-			Name = "Recycling",
+			Name = "Plastic Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "Recycling Waste Sacks" ],
 			Type = BinType.Bag,
