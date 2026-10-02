@@ -226,10 +226,10 @@ internal sealed partial class TendringDistrictCouncil : GovUkCollectorBase, ICol
 			var binDays = new List<BinDay>();
 			var collectionTypes = new[]
 			{
-				("nextResidualCollection", "previousResidualCollection", "Residual"),
-				("nextGreenCollection", "previousGreenCollection", "Green"),
-				("nextRedCollection", "previousRedCollection", "Red"),
-				("nextFoodCollection", "previousFoodCollection", "Food"),
+				("RefuseNextCol", "RefusePreviousCol", "Residual"),
+				("DMRNextCol", "DMRPreviousCol", "Green"),
+				("PaperNextCol", "PaperPreviousCol", "Red"),
+				("FoodNextCol", "FoodPreviousCol", "Food"),
 			};
 
 			// Iterate through each collection type and its next/previous dates
