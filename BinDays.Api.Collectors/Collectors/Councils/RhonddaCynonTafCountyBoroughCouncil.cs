@@ -17,7 +17,7 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 	public string Name => "Rhondda Cynon Taf County Borough Council";
 
 	/// <inheritdoc/>
-	public Uri WebsiteUrl => new("https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/BinCollectionDays.aspx");
+	public Uri WebsiteUrl => new("https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWasteServices/Findyourrecyclingandwastecollectionday.aspx");
 
 	/// <inheritdoc/>
 	public override string GovUkId => "rhondda-cynon-taff";
@@ -82,7 +82,7 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?&Postcode={postcode}";
+			var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWasteServices/Findyourrecyclingandwastecollectionday.aspx?PropertyNumber=&Postcode={postcode}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -93,7 +93,7 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getAddressesResponse;
@@ -139,8 +139,7 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			// Use live URL as per legacy implementation, not base website URL
-			var requestUrl = $"https://live-rctcbc.cloud.contensis.com/EN/Resident/RecyclingandWaste/RecyclingandWasteCollectionDays.aspx?uprn={address.Uid!}";
+			var requestUrl = $"https://www.rctcbc.gov.uk/EN/Resident/RecyclingandWasteServices/Findyourrecyclingandwastecollectionday.aspx?uprn={address.Uid!}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
@@ -151,7 +150,7 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				NextClientSideRequest = clientSideRequest
+				NextClientSideRequest = clientSideRequest,
 			};
 
 			return getBinDaysResponse;
@@ -160,8 +159,9 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var binDays = new List<BinDay>();
-			var collectionRows = NextCollectionRowRegex().Matches(clientSideResponse.Content);
+			var collectionRows = NextCollectionRowRegex().Matches(clientSideResponse.Content)!;
 
+			// Iterate through each bin day, and create a new bin day object
 			foreach (Match row in collectionRows)
 			{
 				var binTypeText = row.Groups["bintype"].Value.Trim().ToLowerInvariant();
@@ -193,8 +193,9 @@ internal sealed partial class RhonddaCynonTafCountyBoroughCouncil : GovUkCollect
 					{
 						Date = collectionDate,
 						Address = address,
-						Bins = [.. matchedBins]
+						Bins = [.. matchedBins],
 					};
+
 					binDays.Add(binDay);
 				}
 			}
