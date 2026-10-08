@@ -139,7 +139,7 @@ internal sealed partial class TeignbridgeDistrictCouncil : GovUkCollectorBase, I
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var requestUrl = $"https://www.teignbridge.gov.uk/repositories/hidden-pages/bin-finder?uprn={address.Uid}";
+			var requestUrl = $"https://www.teignbridge.gov.uk/umbraco/surface/bincollection/GetCollections?uprn={address.Uid}";
 
 			var clientSideRequest = new ClientSideRequest
 			{
