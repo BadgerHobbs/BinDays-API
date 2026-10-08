@@ -40,8 +40,22 @@ internal sealed partial class AntrimAndNewtownabbeyBoroughCouncil : GovUkCollect
 		},
 		new()
 		{
-			Name = "Recycling",
+			Name = "Paper & Cardboard Recycling",
 			Colour = BinColour.Blue,
+			Keys = [ "Wheelie boxes" ],
+			Type = BinType.Box,
+		},
+		new()
+		{
+			Name = "Plastics, Cartons, Tins & Foil Recycling",
+			Colour = BinColour.Red,
+			Keys = [ "Wheelie boxes" ],
+			Type = BinType.Box,
+		},
+		new()
+		{
+			Name = "Glass Recycling",
+			Colour = BinColour.Green,
 			Keys = [ "Wheelie boxes" ],
 			Type = BinType.Box,
 		},
@@ -108,28 +122,7 @@ internal sealed partial class AntrimAndNewtownabbeyBoroughCouncil : GovUkCollect
 			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
 			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
-			var viewState = ViewStateRegex().Match(clientSideResponse.Content).Groups["viewState"].Value;
-			var csrfToken = CsrfTokenRegex().Match(clientSideResponse.Content).Groups["csrfToken"].Value;
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = _binCheckerUrl,
-				Method = "POST",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
-					{ "cookie", cookies },
-				},
-				Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
-				{
-					{ "__CMSCsrfToken", csrfToken },
-					{ "__VIEWSTATE", viewState },
-					{ "p$lt$ctl07$pageplaceholder$p$lt$ctl02$BinCollectionLookup$txtBinSearch", postcode },
-					{ "p$lt$ctl07$pageplaceholder$p$lt$ctl02$BinCollectionLookup$btnBinSearch", "Go" },
-				}),
-			};
+			var clientSideRequest = CreateSearchRequest(2, postcode, cookies, clientSideResponse.Content);
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -139,9 +132,25 @@ internal sealed partial class AntrimAndNewtownabbeyBoroughCouncil : GovUkCollect
 			return getAddressesResponse;
 		}
 		// Process addresses from response
-		else if (clientSideResponse.RequestId == 2)
+		else if (clientSideResponse.RequestId is 2 or 3)
 		{
 			var rawAddresses = AddressRegex().Matches(clientSideResponse.Content)!;
+
+			// A few addresses are stored with an unspaced postcode (e.g. "BT414SF"), and the council's
+			// search is a plain text match, so retry once without the space when nothing is found
+			if (rawAddresses.Count == 0 && clientSideResponse.RequestId == 2)
+			{
+				var cookies = clientSideResponse.Options.Metadata["cookies"];
+
+				var clientSideRequest = CreateSearchRequest(3, postcode.Replace(" ", ""), cookies, clientSideResponse.Content);
+
+				var retryGetAddressesResponse = new GetAddressesResponse
+				{
+					NextClientSideRequest = clientSideRequest,
+				};
+
+				return retryGetAddressesResponse;
+			}
 
 			// Iterate through each address, and create a new address object
 			var addresses = new List<Address>();
@@ -227,5 +236,43 @@ internal sealed partial class AntrimAndNewtownabbeyBoroughCouncil : GovUkCollect
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Creates the client-side request for searching addresses, using the tokens from the previous page.
+	/// </summary>
+	private static ClientSideRequest CreateSearchRequest(int requestId, string searchText, string cookies, string content)
+	{
+		var viewState = ViewStateRegex().Match(content).Groups["viewState"].Value;
+		var csrfToken = CsrfTokenRegex().Match(content).Groups["csrfToken"].Value;
+
+		var clientSideRequest = new ClientSideRequest
+		{
+			RequestId = requestId,
+			Url = _binCheckerUrl,
+			Method = "POST",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "content-type", Constants.FormUrlEncoded },
+				{ "cookie", cookies },
+			},
+			Body = ProcessingUtilities.ConvertDictionaryToFormData(new()
+			{
+				{ "__CMSCsrfToken", csrfToken },
+				{ "__VIEWSTATE", viewState },
+				{ "p$lt$ctl07$pageplaceholder$p$lt$ctl02$BinCollectionLookup$txtBinSearch", searchText },
+				{ "p$lt$ctl07$pageplaceholder$p$lt$ctl02$BinCollectionLookup$btnBinSearch", "Go" },
+			}),
+			Options = new ClientSideOptions
+			{
+				Metadata =
+				{
+					{ "cookies", cookies },
+				},
+			},
+		};
+
+		return clientSideRequest;
 	}
 }
