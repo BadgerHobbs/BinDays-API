@@ -19,8 +19,8 @@ public class MiddlesbroughBoroughCouncilTests
 	}
 
 	[Theory]
-	[InlineData("TS1 1AA")]
-	[InlineData("TS1 1AA", "3EB7B752-C02F-11F0-A1CC-A853A45D7B8A", 1)]
+	[InlineData("TS5 5AA")]
+	[InlineData("TS5 5AA", "1037BB38-E89B-11EE-B6FA-D1E2942CCDE3", 1)]
 	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
