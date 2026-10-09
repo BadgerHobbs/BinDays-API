@@ -48,7 +48,7 @@ internal sealed partial class CanterburyCityCouncil : GovUkCollectorBase, IColle
 		new()
 		{
 			Name = "Food Waste",
-			Colour = BinColour.Black,
+			Colour = BinColour.Orange,
 			Keys = [ "foodBinDay" ],
 			Type = BinType.Caddy,
 		},
