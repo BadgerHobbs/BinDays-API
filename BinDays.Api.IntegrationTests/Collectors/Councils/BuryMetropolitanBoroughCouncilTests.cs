@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-public class BuryCouncilTests
+public class BuryMetropolitanBoroughCouncilTests
 {
 	private readonly IntegrationTestClient _client;
 	private readonly ITestOutputHelper _outputHelper;
-	private static readonly string _govUkId = new BuryCouncil().GovUkId;
+	private static readonly string _govUkId = new BuryMetropolitanBoroughCouncil().GovUkId;
 
-	public BuryCouncilTests(ITestOutputHelper outputHelper)
+	public BuryMetropolitanBoroughCouncilTests(ITestOutputHelper outputHelper)
 	{
 		_outputHelper = outputHelper;
 		_client = new IntegrationTestClient(outputHelper);

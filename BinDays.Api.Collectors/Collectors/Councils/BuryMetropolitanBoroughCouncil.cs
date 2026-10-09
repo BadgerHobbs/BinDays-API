@@ -10,12 +10,12 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 /// <summary>
-/// Collector implementation for Bury Council.
+/// Collector implementation for Bury Metropolitan Borough Council.
 /// </summary>
-internal sealed partial class BuryCouncil : GovUkCollectorBase, ICollector
+internal sealed partial class BuryMetropolitanBoroughCouncil : GovUkCollectorBase, ICollector
 {
 	/// <inheritdoc/>
-	public string Name => "Bury Council";
+	public string Name => "Bury Metropolitan Borough Council";
 
 	/// <inheritdoc/>
 	public Uri WebsiteUrl => new("https://www.bury.gov.uk/");
