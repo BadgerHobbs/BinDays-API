@@ -30,7 +30,7 @@ internal sealed partial class BridgendCountyBoroughCouncil : GovUkCollectorBase,
 		new()
 		{
 			Name = "General Waste",
-			Colour = BinColour.Any,
+			Colour = BinColour.Black,
 			Keys = [ "Refuse Sacks" ],
 			Type = BinType.Bag,
 		},
