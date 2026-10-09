@@ -42,6 +42,13 @@ internal sealed class NewcastleCityCouncil : RecollectCollectorBase, ICollector
 		},
 		new()
 		{
+			Name = "Glass Recycling",
+			Colour = BinColour.Black,
+			Keys = [ "Recycling" ],
+			Type = BinType.Caddy,
+		},
+		new()
+		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
 			Keys = [ "Garden" ],
