@@ -4,6 +4,7 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 /// <summary>
@@ -61,7 +62,10 @@ internal abstract class RecollectCollectorBase : GovUkCollectorBase, ICollector
 		else if (clientSideResponse.RequestId == 1)
 		{
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-			var qualifierId = jsonDoc.RootElement[0].GetProperty("qualifier_id").GetString()!;
+			// The suggestions can also include individual properties, so use the postcode's qualifier
+			var qualifierId = jsonDoc.RootElement.EnumerateArray()
+				.First(suggestion => suggestion.GetProperty("type").GetString() == "place_qualifier")
+				.GetProperty("qualifier_id").GetString()!;
 
 			var clientSideRequest = new ClientSideRequest
 			{
