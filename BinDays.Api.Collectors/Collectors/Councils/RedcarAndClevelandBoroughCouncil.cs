@@ -31,7 +31,7 @@ internal sealed class RedcarAndClevelandBoroughCouncil : RecollectCollectorBase,
 		new()
 		{
 			Name = "General Waste",
-			Colour = BinColour.Black,
+			Colour = BinColour.Brown,
 			Keys = [ "REFUSE" ],
 		},
 		new()
@@ -43,7 +43,7 @@ internal sealed class RedcarAndClevelandBoroughCouncil : RecollectCollectorBase,
 		new()
 		{
 			Name = "Food Waste",
-			Colour = BinColour.Green,
+			Colour = BinColour.Grey,
 			Keys = [ "FOOD" ],
 			Type = BinType.Caddy,
 		},
