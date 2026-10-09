@@ -39,12 +39,6 @@ internal abstract partial class BromsgroveRedditchCollectorBase : GovUkCollector
 			Colour = BinColour.Green,
 			Keys = [ "Green Bin" ],
 		},
-		new()
-		{
-			Name = "Garden Waste",
-			Colour = BinColour.Brown,
-			Keys = [ "Brown" ],
-		},
 	];
 
 	/// <summary>
