@@ -39,21 +39,21 @@ internal sealed partial class BridgendCountyBoroughCouncil : GovUkCollectorBase,
 			Name = "Cardboard Recycling",
 			Colour = BinColour.Orange,
 			Keys = [ "Recycling collection" ],
-			Type = BinType.Bag,
+			Type = BinType.Sack,
 		},
 		new()
 		{
 			Name = "Plastic, Cans, Aerosols & Foil Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "Recycling collection" ],
-			Type = BinType.Bag,
+			Type = BinType.Sack,
 		},
 		new()
 		{
 			Name = "Paper Recycling",
 			Colour = BinColour.White,
 			Keys = [ "Recycling collection" ],
-			Type = BinType.Bag,
+			Type = BinType.Sack,
 		},
 		new()
 		{
