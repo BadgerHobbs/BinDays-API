@@ -29,7 +29,7 @@ internal sealed class BlackburnWithDarwenBoroughCouncil : GovUkCollectorBase, IC
 		new()
 		{
 			Name = "General Waste",
-			Colour = BinColour.Red,
+			Colour = new("Burgundy", "#B8253F"),
 			Keys = [ "refuse bin" ],
 		},
 		new()
@@ -53,7 +53,7 @@ internal sealed class BlackburnWithDarwenBoroughCouncil : GovUkCollectorBase, IC
 		new()
 		{
 			Name = "Food Waste",
-			Colour = BinColour.Orange,
+			Colour = BinColour.Grey,
 			Keys = [ "Food Waste Caddy" ],
 			Type = BinType.Caddy,
 		},
@@ -113,12 +113,12 @@ internal sealed class BlackburnWithDarwenBoroughCouncil : GovUkCollectorBase, IC
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for getting bin days
+		// The council website requests the calendar a month at a time, starting with the current month
+		var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "Europe/London"));
+
+		// Prepare client-side request for getting the current month's bin days
 		if (clientSideResponse == null)
 		{
-			// The council website requests the calendar for the current month
-			var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "Europe/London"));
-
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
@@ -133,46 +133,40 @@ internal sealed class BlackburnWithDarwenBoroughCouncil : GovUkCollectorBase, IC
 
 			return getBinDaysResponse;
 		}
-		// Process bin days from response
+		// Prepare client-side request for getting the next month's bin days
 		else if (clientSideResponse.RequestId == 1)
 		{
-			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
-			var rawDays = jsonDoc.RootElement.GetProperty("BinCollectionDays");
+			var nextMonth = today.AddMonths(1);
 
-			// Iterate through each day of the month, and create a new bin day object for each collection
-			var binDays = new List<BinDay>();
-			foreach (var rawDay in rawDays.EnumerateArray())
+			var clientSideRequest = new ClientSideRequest
 			{
-				// Skip days without collections
-				if (rawDay.ValueKind == JsonValueKind.Null)
+				RequestId = 2,
+				Url = $"https://mybins.blackburn.gov.uk/api/mybins/getbincollectiondays?uprn={address.Uid}&month={nextMonth.Month}&year={nextMonth.Year}",
+				Method = "GET",
+				Options = new ClientSideOptions
 				{
-					continue;
-				}
-
-				// Iterate through each collection on the day, and create a new bin day object
-				foreach (var rawBinDay in rawDay.EnumerateArray())
-				{
-					var service = rawBinDay.GetProperty("BinType").GetString()!;
-
-					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-
-					// Each collection has its own date, and the bin's next scheduled date (which may be in a later month)
-					foreach (var dateProperty in new[] { "CollectionDate", "NextScheduledCollectionDate" })
+					Metadata =
 					{
-						// Parse the date (e.g. "2026-10-14")
-						var date = DateUtilities.ParseDateExact(rawBinDay.GetProperty(dateProperty).GetString()!, "yyyy-MM-dd");
+						{ "currentMonth", clientSideResponse.Content },
+					},
+				},
+			};
 
-						var binDay = new BinDay
-						{
-							Date = date,
-							Address = address,
-							Bins = matchedBinTypes,
-						};
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
 
-						binDays.Add(binDay);
-					}
-				}
-			}
+			return getBinDaysResponse;
+		}
+		// Process bin days from both responses
+		else if (clientSideResponse.RequestId == 2)
+		{
+			List<BinDay> binDays =
+			[
+				.. ParseBinDays(clientSideResponse.Options.Metadata["currentMonth"], address),
+				.. ParseBinDays(clientSideResponse.Content, address),
+			];
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
@@ -184,5 +178,51 @@ internal sealed class BlackburnWithDarwenBoroughCouncil : GovUkCollectorBase, IC
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Parses the bin days from a month's collection days response.
+	/// </summary>
+	private List<BinDay> ParseBinDays(string content, Address address)
+	{
+		using var jsonDoc = JsonDocument.Parse(content);
+		var rawDays = jsonDoc.RootElement.GetProperty("BinCollectionDays");
+
+		// Iterate through each day of the month, and create a new bin day object for each collection
+		var binDays = new List<BinDay>();
+		foreach (var rawDay in rawDays.EnumerateArray())
+		{
+			// Skip days without collections
+			if (rawDay.ValueKind == JsonValueKind.Null)
+			{
+				continue;
+			}
+
+			// Iterate through each collection on the day, and create a new bin day object
+			foreach (var rawBinDay in rawDay.EnumerateArray())
+			{
+				var service = rawBinDay.GetProperty("BinType").GetString()!;
+
+				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+
+				// Each collection has its own date, and the bin's next scheduled date (which may be in a later month)
+				foreach (var dateProperty in new[] { "CollectionDate", "NextScheduledCollectionDate" })
+				{
+					// Parse the date (e.g. "2026-10-14")
+					var date = DateUtilities.ParseDateExact(rawBinDay.GetProperty(dateProperty).GetString()!, "yyyy-MM-dd");
+
+					var binDay = new BinDay
+					{
+						Date = date,
+						Address = address,
+						Bins = matchedBinTypes,
+					};
+
+					binDays.Add(binDay);
+				}
+			}
+		}
+
+		return binDays;
 	}
 }
