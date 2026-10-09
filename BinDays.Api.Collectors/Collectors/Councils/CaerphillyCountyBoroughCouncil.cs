@@ -50,7 +50,7 @@ internal sealed class CaerphillyCountyBoroughCouncil : RecollectCollectorBase, I
 		new()
 		{
 			Name = "Garden Waste",
-			Colour = BinColour.Any,
+			Colour = BinColour.Green,
 			Keys = [ "FOOD" ],
 			Type = BinType.Sack,
 		},
