@@ -44,6 +44,12 @@ internal sealed partial class CrawleyBoroughCouncil : GovUkCollectorBase, IColle
 			Colour = BinColour.Green,
 			Keys = [ "Garden Waste" ],
 		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Food Waste" ],
+		},
 	];
 
 	/// <summary>
@@ -262,6 +268,8 @@ internal sealed partial class CrawleyBoroughCouncil : GovUkCollectorBase, IColle
 				AddBinDay(binDays, rowData.GetProperty("recycleDateNext").GetString()!, "Recycling", address);
 				AddBinDay(binDays, rowData.GetProperty("greenDateCurrent").GetString()!, "Garden Waste", address);
 				AddBinDay(binDays, rowData.GetProperty("greenDateNext").GetString()!, "Garden Waste", address);
+				AddBinDay(binDays, rowData.GetProperty("foodDateCurrent").GetString()!, "Food Waste", address);
+				AddBinDay(binDays, rowData.GetProperty("foodDateNext").GetString()!, "Food Waste", address);
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse

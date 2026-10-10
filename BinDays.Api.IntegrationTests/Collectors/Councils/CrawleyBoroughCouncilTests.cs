@@ -22,6 +22,7 @@ public class CrawleyBoroughCouncilTests
 	[InlineData("RH106QQ")]
 	[InlineData("RH107LT", 31)]
 	[InlineData("RH106QQ", 0, "100061784290;9700662", 1)]
+	[InlineData("RH118UB", 0, "200001228755;9700466", 1)]
 	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
