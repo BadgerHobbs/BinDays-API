@@ -50,7 +50,7 @@ check_missing() {
   local open_titles
 
   for poll in 1 2 3; do
-    open_titles=$(gh issue list --label collector-broken --state open --limit 100 --json title --jq '.[].title')
+    open_titles=$(gh issue list --label "collector broken" --state open --limit 100 --json title --jq '.[].title')
 
     MISSING_COUNCILS=()
     for council in "${COUNCILS[@]}"; do
