@@ -1,10 +1,10 @@
 /**
- * Close collector-broken issues (and their associated PRs) for councils
+ * Close "collector broken" issues (and their associated PRs) for councils
  * whose tests now pass.
  *
  * Reads the test-results.json artifact (downloaded by a prior workflow step)
  * to identify passing councils, then closes any matching open
- * "collector-broken" issues along with any open pull requests that
+ * "collector broken" issues along with any open pull requests that
  * reference those issues.
  *
  * Required environment variables:
@@ -34,11 +34,11 @@ module.exports = async ({ github, context, core }) => {
     return;
   }
 
-  // List all open issues with the "collector-broken" label
+  // List all open issues with the "collector broken" label
   const { data: openIssues } = await github.rest.issues.listForRepo({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    labels: 'collector-broken',
+    labels: 'collector broken',
     state: 'open',
     per_page: 100,
   });

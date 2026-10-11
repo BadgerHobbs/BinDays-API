@@ -1,5 +1,5 @@
 /**
- * Post screenshot comments on newly-created collector-broken issues.
+ * Post screenshot comments on newly-created "collector broken" issues.
  *
  * Reads screenshot-urls.json (produced by upload-screenshots.sh), finds the
  * corresponding open "Broken collector: {name}" issue for each entry, and
@@ -26,7 +26,7 @@ module.exports = async ({ github, context, core }) => {
   const { data: issues } = await github.rest.issues.listForRepo({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    labels: 'collector-broken',
+    labels: 'collector broken',
     state: 'open',
     per_page: 100,
   });

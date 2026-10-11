@@ -1,8 +1,8 @@
 /**
  * Check for existing open issues to avoid duplicate investigation.
  *
- * Ensures the "collector-broken" label exists, then checks all open issues
- * with that label. Councils that already have an open issue are marked as
+ * Ensures the "collector broken" label and the failure category labels
+ * exist, then checks all open "collector broken" issues. Councils that already have an open issue are marked as
  * not needing investigation. Updates failure-context.json in place.
  *
  * @param {Object} github - GitHub API client
@@ -13,34 +13,43 @@ module.exports = async ({ github, context, core }) => {
   const fs = require('fs');
   const failureContext = JSON.parse(fs.readFileSync('failure-context.json', 'utf8'));
 
-  // Ensure the "collector-broken" label exists
-  try {
-    await github.rest.issues.getLabel({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      name: 'collector-broken',
-    });
-    core.info('Label "collector-broken" already exists');
-  } catch (err) {
-    if (err.status === 404) {
-      await github.rest.issues.createLabel({
+  // Ensure the "collector broken" label and the failure category labels exist.
+  // The category names must match those in .agent/prompts/investigate-test-failures.md.
+  const labels = [
+    { name: 'collector broken', color: 'd73a4a', description: 'Collector integration test is failing' },
+    { name: 'transient', color: 'fbca04', description: 'Failure did not reproduce on re-run' },
+    { name: 'website down', color: 'd93f0b', description: 'Council website is unavailable' },
+    { name: 'website changed', color: '1d76db', description: 'Collector no longer matches the council website' },
+    { name: 'data issue', color: '5319e7', description: 'Collector returned no or incorrect data from a working website' },
+  ];
+
+  for (const label of labels) {
+    try {
+      await github.rest.issues.getLabel({
         owner: context.repo.owner,
         repo: context.repo.repo,
-        name: 'collector-broken',
-        color: 'd73a4a',
-        description: 'Collector integration test is failing',
+        name: label.name,
       });
-      core.info('Created "collector-broken" label');
-    } else {
-      throw err;
+      core.info(`Label "${label.name}" already exists`);
+    } catch (err) {
+      if (err.status === 404) {
+        await github.rest.issues.createLabel({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          ...label,
+        });
+        core.info(`Created "${label.name}" label`);
+      } else {
+        throw err;
+      }
     }
   }
 
-  // List all open issues with the "collector-broken" label
+  // List all open issues with the "collector broken" label
   const { data: existingIssues } = await github.rest.issues.listForRepo({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    labels: 'collector-broken',
+    labels: 'collector broken',
     state: 'open',
     per_page: 100,
   });
