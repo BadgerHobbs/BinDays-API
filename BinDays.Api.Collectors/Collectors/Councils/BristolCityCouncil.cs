@@ -67,7 +67,7 @@ internal sealed partial class BristolCityCouncil : GovUkCollectorBase, ICollecto
 		},
 		new()
 		{
-			Name = "Paper & Glass Recycling",
+			Name = "Glass Recycling",
 			Colour = BinColour.Black,
 			Keys = [ "Black Recycling Box", "Recycling Mixed Glass" ],
 			Type = BinType.Box,
