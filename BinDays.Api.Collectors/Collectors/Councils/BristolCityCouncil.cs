@@ -49,21 +49,21 @@ internal sealed partial class BristolCityCouncil : GovUkCollectorBase, ICollecto
 			Name = "Cans & Plastics Recycling",
 			Colour = BinColour.Red,
 			Keys = [ "Red Bag" ],
-			Type = BinType.Bag,
+			Type = BinType.Sack,
 		},
 		new()
 		{
 			Name = "Paper & Cardboard Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "Blue Bag" ],
-			Type = BinType.Bag,
+			Type = BinType.Sack,
 		},
 		new()
 		{
 			Name = "Brown Paper & Cardboard Recycling",
 			Colour = BinColour.Blue,
 			Keys = [ "Blue Sack", "Recycling Card", "Recycling Paper" ],
-			Type = BinType.Bag,
+			Type = BinType.Sack,
 		},
 		new()
 		{
@@ -77,6 +77,7 @@ internal sealed partial class BristolCityCouncil : GovUkCollectorBase, ICollecto
 			Name = "Food Waste",
 			Colour = BinColour.Brown,
 			Keys = [ "Food Waste Bin" ],
+			Type = BinType.Caddy,
 		},
 		new()
 		{
