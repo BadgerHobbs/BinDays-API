@@ -53,9 +53,16 @@ internal sealed partial class BristolCityCouncil : GovUkCollectorBase, ICollecto
 		},
 		new()
 		{
+			Name = "Paper & Cardboard Recycling",
+			Colour = BinColour.Blue,
+			Keys = [ "Blue Bag" ],
+			Type = BinType.Bag,
+		},
+		new()
+		{
 			Name = "Brown Paper & Cardboard Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "Blue Sack", "Blue Bag", "Recycling Card", "Recycling Paper" ],
+			Keys = [ "Blue Sack", "Recycling Card", "Recycling Paper" ],
 			Type = BinType.Bag,
 		},
 		new()
