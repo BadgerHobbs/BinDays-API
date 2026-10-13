@@ -36,19 +36,13 @@ internal sealed class CheshireWestAndChesterCouncil : GovUkCollectorBase, IColle
 		{
 			Name = "Paper, Card & Cartons Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "Blue" ],
+			Keys = [ "Blue", "Empty Recycling" ],
 		},
 		new()
 		{
 			Name = "Plastic, Cans & Glass Recycling",
 			Colour = BinColour.Red,
-			Keys = [ "Red" ],
-		},
-		new()
-		{
-			Name = "Mixed Recycling",
-			Colour = BinColour.Blue,
-			Keys = [ "Empty Recycling" ],
+			Keys = [ "Red", "Empty Recycling" ],
 		},
 		new()
 		{
