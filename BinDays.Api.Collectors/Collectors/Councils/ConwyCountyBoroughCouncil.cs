@@ -61,7 +61,14 @@ internal sealed partial class ConwyCountyBoroughCouncil : GovUkCollectorBase, IC
 		},
 		new()
 		{
-			Name = "Textiles & Small Electricals",
+			Name = "Textiles",
+			Colour = BinColour.Purple,
+			Keys = [ "Electrical and textile" ],
+			Type = BinType.Bag,
+		},
+		new()
+		{
+			Name = "Small Electricals",
 			Colour = BinColour.Pink,
 			Keys = [ "Electrical and textile" ],
 			Type = BinType.Bag,
