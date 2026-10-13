@@ -76,7 +76,7 @@ internal sealed partial class ConwyCountyBoroughCouncil : GovUkCollectorBase, IC
 		new()
 		{
 			Name = "Coffee Pods",
-			Colour = BinColour.White,
+			Colour = new("Podback", "#FFFFFF"),
 			Keys = [ "Podback" ],
 			Type = BinType.Bag,
 		},
