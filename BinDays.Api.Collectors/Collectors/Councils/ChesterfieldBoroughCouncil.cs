@@ -137,33 +137,41 @@ internal sealed class ChesterfieldBoroughCouncil : GovUkCollectorBase, ICollecto
 			var binDays = new List<BinDay>();
 			foreach (var rawService in rawServices)
 			{
-				// Services without a scheduled collection (e.g. garden waste without a subscription) have no task or next instance
-				if (!rawService.TryGetProperty("firstServiceTask", out var rawTask) || !rawTask.TryGetProperty("nextInstance", out var rawNextInstance))
+				// Services without a scheduled collection (e.g. garden waste without a subscription) have no task
+				if (!rawService.TryGetProperty("firstServiceTask", out var rawTask))
 				{
 					continue;
 				}
 
 				var service = rawService.GetProperty("cbcFriendlyServiceName").GetString()!;
-
-				// Dates are in UTC, as midnight UK time (e.g. "2026-10-18T23:00:00.000Z" for 19 October)
-				var utcDate = DateTime.ParseExact(
-					rawNextInstance.GetProperty("currentScheduledDate").GetString()!,
-					"yyyy-MM-dd'T'HH:mm:ss.fff'Z'",
-					CultureInfo.InvariantCulture,
-					DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal
-				);
-				var date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(utcDate, "Europe/London"));
-
 				var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
-				var binDay = new BinDay
+				// On the day of a collection it is the last collection rather than the next, so both are needed
+				foreach (var instance in new[] { "lastInstance", "nextInstance" })
 				{
-					Date = date,
-					Address = address,
-					Bins = matchedBinTypes,
-				};
+					if (!rawTask.TryGetProperty(instance, out var rawInstance))
+					{
+						continue;
+					}
 
-				binDays.Add(binDay);
+					// Dates are in UTC, and the next collection is midnight UK time (e.g. "2026-10-18T23:00:00.000Z" for 19 October)
+					var utcDate = DateTime.ParseExact(
+						rawInstance.GetProperty("currentScheduledDate").GetString()!,
+						"yyyy-MM-dd'T'HH:mm:ss.fff'Z'",
+						CultureInfo.InvariantCulture,
+						DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal
+					);
+					var date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(utcDate, "Europe/London"));
+
+					var binDay = new BinDay
+					{
+						Date = date,
+						Address = address,
+						Bins = matchedBinTypes,
+					};
+
+					binDays.Add(binDay);
+				}
 			}
 
 			var getBinDaysResponse = new GetBinDaysResponse
