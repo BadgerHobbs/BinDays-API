@@ -30,7 +30,7 @@ internal sealed partial class DurhamCountyCouncil : GovUkCollectorBase, ICollect
 		new()
 		{
 			Name = "General Waste",
-			Colour = BinColour.Grey,
+			Colour = BinColour.Green,
 			Keys = [ "Empty Bin Ref" ],
 		},
 		new()
@@ -41,15 +41,8 @@ internal sealed partial class DurhamCountyCouncil : GovUkCollectorBase, ICollect
 		},
 		new()
 		{
-			Name = "Glass Recycling",
-			Colour = BinColour.Black,
-			Keys = [ "Empty Bin Rec" ],
-			Type = BinType.Box,
-		},
-		new()
-		{
 			Name = "Food Waste",
-			Colour = BinColour.Grey,
+			Colour = BinColour.Black,
 			Keys = [ "Empty Bin Foo" ],
 			Type = BinType.Caddy,
 		},
