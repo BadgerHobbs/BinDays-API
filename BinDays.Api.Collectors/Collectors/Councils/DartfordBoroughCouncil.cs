@@ -52,6 +52,13 @@ internal sealed partial class DartfordBoroughCouncil : GovUkCollectorBase, IColl
 			Keys = [ "Food Waste" ],
 			Type = BinType.Caddy,
 		},
+		new()
+		{
+			Name = "Clinical Waste",
+			Colour = BinColour.Orange,
+			Keys = [ "Clinical" ],
+			Type = BinType.Bag,
+		},
 	];
 
 	/// <summary>
