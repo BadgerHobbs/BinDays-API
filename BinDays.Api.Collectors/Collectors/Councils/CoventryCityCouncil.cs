@@ -49,7 +49,7 @@ internal sealed class CoventryCityCouncil : GovUkCollectorBase, ICollector
 		new()
 		{
 			Name = "Food Waste",
-			Colour = BinColour.Grey,
+			Colour = BinColour.Green,
 			Keys = [ "Bartec_Food_Date" ],
 			Type = BinType.Caddy,
 		},
