@@ -188,7 +188,8 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 		// Prepare client-side request for selecting the address, which redirects to the bin collection details page
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var cookies = clientSideResponse.Options.Metadata["cookies"];
+			var sessionCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
+			var cookies = $"{clientSideResponse.Options.Metadata["cookies"]}; {sessionCookies}";
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -220,6 +221,13 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 3)
 		{
+			// DEBUG (temporary)
+			if (BinDaysRegex().Matches(clientSideResponse.Content).Count == 0)
+			{
+				var i = clientSideResponse.Content.IndexOf("govuk-heading-m");
+				throw new InvalidOperationException($"DEBUG {clientSideResponse.StatusCode} {(i < 0 ? clientSideResponse.Content[..Math.Min(1500, clientSideResponse.Content.Length)] : clientSideResponse.Content.Substring(i, Math.Min(1500, clientSideResponse.Content.Length - i)))}");
+			}
+
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
 
 			// Iterate through each bin day, and create a new bin day object
