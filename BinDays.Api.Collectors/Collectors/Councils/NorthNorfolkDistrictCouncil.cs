@@ -5,6 +5,7 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -188,8 +189,8 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 		// Prepare client-side request for selecting the address, which redirects to the bin collection details page
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var sessionCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-			var cookies = $"{clientSideResponse.Options.Metadata["cookies"]}; {sessionCookies}";
+			var cookies = clientSideResponse.Options.Metadata["cookies"];
+			var dbg = $"S2 {clientSideResponse.StatusCode} loc={(clientSideResponse.Headers.TryGetValue("location", out var l) ? l : "-")} hdrs={string.Join(",", clientSideResponse.Headers.Keys)} cookienames={string.Join(",", cookies.Split("; ").Select(c => c.Split('=')[0]))}";
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
@@ -209,6 +210,7 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 					{ "cookie", cookies },
 				},
 				Body = requestBody,
+				Options = new ClientSideOptions { Metadata = { { "dbg", dbg } } },
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -225,7 +227,7 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 			if (BinDaysRegex().Count(clientSideResponse.Content) == 0)
 			{
 				var i = clientSideResponse.Content.IndexOf("govuk-heading-m");
-				throw new InvalidOperationException($"DEBUG {clientSideResponse.StatusCode} {(i < 0 ? clientSideResponse.Content[..Math.Min(1500, clientSideResponse.Content.Length)] : clientSideResponse.Content.Substring(i, Math.Min(1500, clientSideResponse.Content.Length - i)))}");
+				throw new InvalidOperationException($"DEBUG {clientSideResponse.Options.Metadata["dbg"]} S3 {clientSideResponse.StatusCode} {(i < 0 ? clientSideResponse.Content[..Math.Min(1500, clientSideResponse.Content.Length)] : clientSideResponse.Content.Substring(i, Math.Min(1500, clientSideResponse.Content.Length - i)))}");
 			}
 
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
