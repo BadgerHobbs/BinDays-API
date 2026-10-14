@@ -56,7 +56,7 @@ internal sealed partial class DarlingtonBoroughCouncil : GovUkCollectorBase, ICo
 		new()
 		{
 			Name = "Food Waste",
-			Colour = BinColour.Green,
+			Colour = BinColour.Grey,
 			Keys = [ "Food waste" ],
 			Type = BinType.Caddy,
 		},
