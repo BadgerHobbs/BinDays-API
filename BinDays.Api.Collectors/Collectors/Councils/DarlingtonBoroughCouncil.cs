@@ -37,13 +37,20 @@ internal sealed partial class DarlingtonBoroughCouncil : GovUkCollectorBase, ICo
 		{
 			Name = "Mixed Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Recycling" ],
+			Keys = [ "Recycling: Bin" ],
+		},
+		new()
+		{
+			Name = "Mixed Recycling",
+			Colour = BinColour.Green,
+			Keys = [ "Recycling: Box" ],
+			Type = BinType.Box,
 		},
 		new()
 		{
 			Name = "Glass Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Recycling" ],
+			Keys = [ "Recycling:" ],
 			Type = BinType.Box,
 		},
 		new()
@@ -73,6 +80,13 @@ internal sealed partial class DarlingtonBoroughCouncil : GovUkCollectorBase, ICo
 	/// </summary>
 	[GeneratedRegex(@"collection-result-text"">(?<service>[^<]+)<")]
 	private static partial Regex ServiceRegex();
+
+	/// <summary>
+	/// Regex for the recycling scheme from a collection's list of services, which is "Bin" for homes with
+	/// a recycling bin and "Box" for homes with a recycling box.
+	/// </summary>
+	[GeneratedRegex(@"Scheme:</strong>\s*(?<scheme>\w+)")]
+	private static partial Regex SchemeRegex();
 
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
@@ -162,11 +176,14 @@ internal sealed partial class DarlingtonBoroughCouncil : GovUkCollectorBase, ICo
 			{
 				var date = DateUtilities.ParseDateExact(rawBinDay.Groups["date"].Value, "dddd d MMMM yyyy");
 				var rawServices = ServiceRegex().Matches(rawBinDay.Groups["services"].Value)!;
+				var scheme = SchemeRegex().Match(rawBinDay.Groups["services"].Value).Groups["scheme"].Value;
 
 				// Iterate through each service collected on the date, and create a new bin day object
 				foreach (Match rawService in rawServices)
 				{
-					var service = rawService.Groups["service"].Value;
+					// The recycling container depends on the scheme, so match on the service and scheme together
+					// (e.g. "Recycling: Bin")
+					var service = $"{rawService.Groups["service"].Value}: {scheme}";
 					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 					var binDay = new BinDay
