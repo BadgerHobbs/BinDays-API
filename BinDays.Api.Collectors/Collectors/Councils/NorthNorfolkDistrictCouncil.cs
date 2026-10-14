@@ -61,7 +61,7 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 	/// <summary>
 	/// Regex for the bin names and next collection dates from the bin collection details page.
 	/// </summary>
-	[GeneratedRegex(@"<span style=[^>]+>(?<service>[^<]+)</span></strong>.*?Your next [^<]+ collection is <strong>(?<date>[^<]+)</strong>", RegexOptions.Singleline)]
+	[GeneratedRegex(@"Your next (?<service>[^<]+?) collection is <strong>(?<date>[^<]+)</strong>")]
 	private static partial Regex BinDaysRegex();
 
 	/// <inheritdoc/>
