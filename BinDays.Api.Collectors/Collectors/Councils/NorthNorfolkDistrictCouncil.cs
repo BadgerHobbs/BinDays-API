@@ -222,7 +222,7 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 		else if (clientSideResponse.RequestId == 3)
 		{
 			// DEBUG (temporary)
-			if (BinDaysRegex().Matches(clientSideResponse.Content).Count == 0)
+			if (BinDaysRegex().Count(clientSideResponse.Content) == 0)
 			{
 				var i = clientSideResponse.Content.IndexOf("govuk-heading-m");
 				throw new InvalidOperationException($"DEBUG {clientSideResponse.StatusCode} {(i < 0 ? clientSideResponse.Content[..Math.Min(1500, clientSideResponse.Content.Length)] : clientSideResponse.Content.Substring(i, Math.Min(1500, clientSideResponse.Content.Length - i)))}");
