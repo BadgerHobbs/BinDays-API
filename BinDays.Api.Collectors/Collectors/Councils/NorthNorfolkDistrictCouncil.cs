@@ -5,7 +5,6 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -54,7 +53,7 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 	private const string _baseUrl = "https://forms.north-norfolk.gov.uk/xforms";
 
 	/// <summary>
-	/// Regex for the request verification token from the journey landing page.
+	/// Regex for the request verification token from the address page.
 	/// </summary>
 	[GeneratedRegex(@"name=""__RequestVerificationToken"" type=""hidden"" value=""(?<token>[^""]+)""")]
 	private static partial Regex TokenRegex();
@@ -127,14 +126,18 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 	/// <inheritdoc/>
 	public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
 	{
-		// Prepare client-side request for starting a new bin days journey, which redirects to the journey landing page
+		// Prepare client-side request for starting a new bin days journey, skipping the journey landing page
 		if (clientSideResponse == null)
 		{
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"{_baseUrl}/Launch/New/BinDaysJourney",
+				Url = $"{_baseUrl}/Launch/DoNew/BinDaysJourney",
 				Method = "GET",
+				Options = new ClientSideOptions
+				{
+					FollowRedirects = false,
+				},
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -144,37 +147,26 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 
 			return getBinDaysResponse;
 		}
-		// Prepare client-side request for confirming the journey landing page
+		// Prepare client-side request for getting the address page
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var token = TokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
 			var cookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
-
-			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
-			{
-				{ "Confirm", "true" },
-				{ "__RequestVerificationToken", token },
-			});
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = $"{_baseUrl}/NewJourneyLanding/Show/BinDaysJourney",
-				Method = "POST",
+				Url = $"{_baseUrl}/Address/Show/CollectionAddress",
+				Method = "GET",
 				Headers = new()
 				{
 					{ "user-agent", Constants.UserAgent },
-					{ "content-type", Constants.FormUrlEncoded },
 					{ "cookie", cookies },
 				},
-				Body = requestBody,
 				Options = new ClientSideOptions
 				{
-					FollowRedirects = false,
 					Metadata =
 					{
 						{ "cookies", cookies },
-						{ "token", token },
 					},
 				},
 			};
@@ -189,13 +181,15 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 		// Prepare client-side request for selecting the address, which redirects to the bin collection details page
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var cookies = clientSideResponse.Options.Metadata["cookies"];
-			var dbg = $"S2 {clientSideResponse.StatusCode} loc={(clientSideResponse.Headers.TryGetValue("location", out var l) ? l : "-")} hdrs={string.Join(",", clientSideResponse.Headers.Keys)} cookienames={string.Join(",", cookies.Split("; ").Select(c => c.Split('=')[0]))}";
+			var token = TokenRegex().Match(clientSideResponse.Content).Groups["token"].Value;
+
+			var antiforgeryCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(clientSideResponse.Headers["set-cookie"]);
+			var cookies = $"{clientSideResponse.Options.Metadata["cookies"]}; {antiforgeryCookies}";
 
 			var requestBody = ProcessingUtilities.ConvertDictionaryToFormData(new()
 			{
 				{ "GisUprn", address.Uid! },
-				{ "__RequestVerificationToken", clientSideResponse.Options.Metadata["token"] },
+				{ "__RequestVerificationToken", token },
 			});
 
 			var clientSideRequest = new ClientSideRequest
@@ -210,7 +204,6 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 					{ "cookie", cookies },
 				},
 				Body = requestBody,
-				Options = new ClientSideOptions { Metadata = { { "dbg", dbg } } },
 			};
 
 			var getBinDaysResponse = new GetBinDaysResponse
@@ -227,7 +220,7 @@ internal sealed partial class NorthNorfolkDistrictCouncil : GovUkCollectorBase, 
 			if (BinDaysRegex().Count(clientSideResponse.Content) == 0)
 			{
 				var i = clientSideResponse.Content.IndexOf("govuk-heading-m");
-				throw new InvalidOperationException($"DEBUG {clientSideResponse.Options.Metadata["dbg"]} S3 {clientSideResponse.StatusCode} {(i < 0 ? clientSideResponse.Content[..Math.Min(1500, clientSideResponse.Content.Length)] : clientSideResponse.Content.Substring(i, Math.Min(1500, clientSideResponse.Content.Length - i)))}");
+				throw new InvalidOperationException($"DEBUG S3 {clientSideResponse.StatusCode} {(i < 0 ? clientSideResponse.Content[..Math.Min(1500, clientSideResponse.Content.Length)] : clientSideResponse.Content.Substring(i, Math.Min(1500, clientSideResponse.Content.Length - i)))}");
 			}
 
 			var rawBinDays = BinDaysRegex().Matches(clientSideResponse.Content)!;
