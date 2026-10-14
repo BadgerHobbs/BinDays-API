@@ -30,7 +30,7 @@ internal sealed partial class CumberlandCouncil : GovUkCollectorBase, ICollector
 		new()
 		{
 			Name = "General Waste",
-			Colour = BinColour.Grey,
+			Colour = BinColour.Black,
 			Keys = [ "Domestic Waste" ],
 		},
 		new()
