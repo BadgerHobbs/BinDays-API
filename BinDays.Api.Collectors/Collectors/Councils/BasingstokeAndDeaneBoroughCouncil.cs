@@ -43,7 +43,7 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 		{
 			Name = "Glass Recycling",
 			Colour = BinColour.Green,
-			Keys = [ "Glass" ],
+			Keys = [ "Glass recycling" ],
 			Type = BinType.Box,
 		},
 		new()
@@ -57,7 +57,7 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Garden" ],
+			Keys = [ "Garden waste" ],
 		},
 	];
 
@@ -122,9 +122,9 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 	private static partial Regex HeadingRegex();
 
 	/// <summary>
-	/// Regex for parsing collection dates.
+	/// Regex for parsing collection dates, including rescheduled dates (e.g. "Monday, 28 December 2026 (Christmas and New Year rescheduling)").
 	/// </summary>
-	[GeneratedRegex(@"<li>(?<date>[^<]+)</li>")]
+	[GeneratedRegex(@"<li[^>]*>(?<date>[^<(]+)[^<]*</li>")]
 	private static partial Regex DateRegex();
 
 	/// <inheritdoc/>
@@ -281,7 +281,12 @@ internal sealed partial class BasingstokeAndDeaneBoroughCouncil : GovUkCollector
 				}
 
 				var serviceName = heading.Replace(" collection dates", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
-				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, serviceName);
+				// The council's service names overlap as substrings -- "Food waste" and "Garden waste"
+				// contain "Waste" -- so the shared substring matcher tags every food and garden waste
+				// collection as general waste as well. Match the service name exactly instead.
+				IReadOnlyCollection<Bin> matchedBins = [.. _binTypes.Where(bin => bin.Keys.Any(key =>
+					string.Equals(key, serviceName, StringComparison.OrdinalIgnoreCase)
+				))];
 
 				// Iterate through each date, and create a new bin day object
 				foreach (Match rawDate in rawDates)

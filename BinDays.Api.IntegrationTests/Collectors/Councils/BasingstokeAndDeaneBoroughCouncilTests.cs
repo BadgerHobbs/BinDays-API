@@ -21,6 +21,8 @@ public class BasingstokeAndDeaneBoroughCouncilTests
 	[Theory]
 	[InlineData("RG21 5NQ")]
 	[InlineData("RG21 5NQ", "UPRN:100060238777", 1)]
+	[InlineData("RG21 5LD", "UPRN:100060221514", 1)]
+	[InlineData("RG24 9EU", "UPRN:010008500657", 1)]
 	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
