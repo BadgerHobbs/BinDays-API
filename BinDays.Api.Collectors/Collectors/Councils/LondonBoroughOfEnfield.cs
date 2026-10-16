@@ -131,9 +131,8 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 			{
 				var requestCookies = clientSideResponse.Options.Metadata["cookie"];
 
-				if (clientSideResponse.Headers.ContainsKey("set-cookie"))
+				if (clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader))
 				{
-					var setCookieHeader = clientSideResponse.Headers["set-cookie"];
 					var newRequestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 					requestCookies = string.IsNullOrWhiteSpace(newRequestCookies)
@@ -284,9 +283,8 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 			{
 				var requestCookies = clientSideResponse.Options.Metadata["cookie"];
 
-				if (clientSideResponse.Headers.ContainsKey("set-cookie"))
+				if (clientSideResponse.Headers.TryGetValue("set-cookie", out var setCookieHeader))
 				{
-					var setCookieHeader = clientSideResponse.Headers["set-cookie"];
 					var newRequestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 					requestCookies = string.IsNullOrWhiteSpace(newRequestCookies)
