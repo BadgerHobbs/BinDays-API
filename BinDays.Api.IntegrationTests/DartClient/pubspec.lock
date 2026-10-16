@@ -14,7 +14,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "1b10270261379ba4b74c798c958ae89dd1010e92"
+      resolved-ref: "62c12dad8f2da963ca32aa14d0c133a04dfe7b91"
       url: "https://github.com/BadgerHobbs/BinDays-Client.git"
     source: git
     version: "1.1.0"
