@@ -41,6 +41,12 @@ public class CollectorsController : ControllerBase
 	private readonly BinDaysMetrics _metrics;
 
 	/// <summary>
+	/// The maximum length of time a bin days response is cached for, so that an incomplete
+	/// response (e.g. from a council site that has not yet updated after a collection) is refreshed.
+	/// </summary>
+	private static readonly TimeSpan _maximumBinDaysCacheAge = TimeSpan.FromDays(1);
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorsController"/> class.
 	/// </summary>
 	/// <param name="collectorService">Service for retrieving collector information.</param>
@@ -354,9 +360,14 @@ public class CollectorsController : ControllerBase
 				_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.Success);
 				_metrics.RecordBinDaysReturned(safeGovUkId, result.BinDays!.Count);
 
-				// Cache until the day after the earliest bin day, or for 1 day if no bin days are returned.
+				// Cache until the day after the earliest bin day, or for 1 day if no bin days are returned,
+				// capped at a maximum cache age. Without the cap, a result missing a bin (e.g. a council site
+				// that still lists a collection that has just happened, which is then filtered out as past)
+				// is served until the next remaining collection, hiding that bin for up to several weeks.
 				var earliestBinDayDate = result.BinDays?.OrderBy(binDay => binDay.Date).FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
-				var cacheExpiration = (earliestBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
+				var earliestBinDayExpiration = new DateTimeOffset((earliestBinDayDate ?? DateTime.UtcNow.Date).AddDays(1));
+				var maximumExpiration = DateTimeOffset.UtcNow.Add(_maximumBinDaysCacheAge);
+				var cacheExpiration = earliestBinDayExpiration < maximumExpiration ? earliestBinDayExpiration : maximumExpiration;
 
 				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
 				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
