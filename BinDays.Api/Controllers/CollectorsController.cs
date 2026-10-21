@@ -128,18 +128,18 @@ public class CollectorsController : ControllerBase
 	/// Calculates when a bin days response should expire from the cache.
 	/// </summary>
 	/// <remarks>
-	/// Responses are cached until the day after the earliest bin day, or for 1 day if no bin days are returned.
-	/// A response fetched overnight is also refreshed at <see cref="_overnightRefreshHour"/> UK time. A council site
-	/// that has not yet rolled forward still lists the previous day's collections, which are then filtered out as past,
-	/// so without the refresh those bins would be missing from the cached response until the next remaining collection.
+	/// Responses are cached until the day after the earliest bin day. A response fetched overnight is also refreshed
+	/// at <see cref="_overnightRefreshHour"/> UK time. A council site that has not yet rolled forward still lists the
+	/// previous day's collections, which are then filtered out as past, so without the refresh those bins would be
+	/// missing from the cached response until the next remaining collection.
 	/// </remarks>
 	/// <param name="binDays">The bin days in the response.</param>
 	/// <param name="utcNow">The current time.</param>
 	/// <returns>The absolute expiration for the cache entry.</returns>
-	internal static DateTimeOffset GetBinDaysCacheExpiration(IReadOnlyCollection<BinDay>? binDays, DateTimeOffset utcNow)
+	internal static DateTimeOffset GetBinDaysCacheExpiration(IReadOnlyCollection<BinDay> binDays, DateTimeOffset utcNow)
 	{
-		var earliestBinDayDate = binDays?.OrderBy(binDay => binDay.Date).FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
-		var cacheExpiration = new DateTimeOffset((earliestBinDayDate ?? utcNow.UtcDateTime.Date).AddDays(1), TimeSpan.Zero);
+		var earliestBinDayDate = binDays.Min(binDay => binDay.Date).ToDateTime(TimeOnly.MinValue);
+		var cacheExpiration = new DateTimeOffset(earliestBinDayDate.AddDays(1), TimeSpan.Zero);
 
 		var ukNow = TimeZoneInfo.ConvertTime(utcNow, _ukTimeZone);
 		if (ukNow.Hour < _overnightRefreshHour)
@@ -396,7 +396,7 @@ public class CollectorsController : ControllerBase
 				_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.Success);
 				_metrics.RecordBinDaysReturned(safeGovUkId, result.BinDays!.Count);
 
-				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = GetBinDaysCacheExpiration(result.BinDays, DateTimeOffset.UtcNow) };
+				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = GetBinDaysCacheExpiration(result.BinDays!, DateTimeOffset.UtcNow) };
 				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
 			}
 
