@@ -12,6 +12,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
@@ -39,6 +40,16 @@ public class CollectorsController : ControllerBase
 	/// Metric instruments for the controller.
 	/// </summary>
 	private readonly BinDaysMetrics _metrics;
+
+	/// <summary>
+	/// The UK time zone, used to tell whether a bin days lookup happened overnight.
+	/// </summary>
+	private static readonly TimeZoneInfo _ukTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/London");
+
+	/// <summary>
+	/// The UK hour by which council sites are expected to have rolled forward after the previous day's collections.
+	/// </summary>
+	private const int _overnightRefreshHour = 8;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="CollectorsController"/> class.
@@ -111,6 +122,37 @@ public class CollectorsController : ControllerBase
 
 		_metrics.RecordCache(endpoint, CacheResults.Miss);
 		return null;
+	}
+
+	/// <summary>
+	/// Calculates when a bin days response should expire from the cache.
+	/// </summary>
+	/// <remarks>
+	/// Responses are cached until the day after the earliest bin day, or for 1 day if no bin days are returned.
+	/// A response fetched overnight is also refreshed at <see cref="_overnightRefreshHour"/> UK time. A council site
+	/// that has not yet rolled forward still lists the previous day's collections, which are then filtered out as past,
+	/// so without the refresh those bins would be missing from the cached response until the next remaining collection.
+	/// </remarks>
+	/// <param name="binDays">The bin days in the response.</param>
+	/// <param name="utcNow">The current time.</param>
+	/// <returns>The absolute expiration for the cache entry.</returns>
+	internal static DateTimeOffset GetBinDaysCacheExpiration(IReadOnlyCollection<BinDay>? binDays, DateTimeOffset utcNow)
+	{
+		var earliestBinDayDate = binDays?.OrderBy(binDay => binDay.Date).FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
+		var cacheExpiration = new DateTimeOffset((earliestBinDayDate ?? utcNow.UtcDateTime.Date).AddDays(1), TimeSpan.Zero);
+
+		var ukNow = TimeZoneInfo.ConvertTime(utcNow, _ukTimeZone);
+		if (ukNow.Hour < _overnightRefreshHour)
+		{
+			var overnightRefresh = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(ukNow.Date.AddHours(_overnightRefreshHour), _ukTimeZone));
+
+			if (overnightRefresh < cacheExpiration)
+			{
+				cacheExpiration = overnightRefresh;
+			}
+		}
+
+		return cacheExpiration;
 	}
 
 	/// <summary>
@@ -354,11 +396,7 @@ public class CollectorsController : ControllerBase
 				_metrics.RecordLookup(Endpoints.BinDays, safeGovUkId, Outcomes.Success);
 				_metrics.RecordBinDaysReturned(safeGovUkId, result.BinDays!.Count);
 
-				// Cache until the day after the earliest bin day, or for 1 day if no bin days are returned.
-				var earliestBinDayDate = result.BinDays?.OrderBy(binDay => binDay.Date).FirstOrDefault()?.Date.ToDateTime(TimeOnly.MinValue);
-				var cacheExpiration = (earliestBinDayDate ?? DateTimeOffset.UtcNow.Date).AddDays(1);
-
-				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = cacheExpiration };
+				var cacheEntryOptions = new DistributedCacheEntryOptions { AbsoluteExpiration = GetBinDaysCacheExpiration(result.BinDays, DateTimeOffset.UtcNow) };
 				_cache.SetString(cacheKey, JsonConvert.SerializeObject(result), cacheEntryOptions);
 			}
 
