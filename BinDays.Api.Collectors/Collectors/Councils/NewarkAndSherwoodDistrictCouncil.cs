@@ -210,61 +210,136 @@ internal sealed partial class NewarkAndSherwoodDistrictCouncil : GovUkCollectorB
 
 			return getBinDaysResponse;
 		}
-		// Process bin days from response
+		// Process current calendar and prepare next year's calendar request if available
 		else if (clientSideResponse.RequestId == 1)
 		{
-			var monthTables = BinDaysTableRegex().Matches(clientSideResponse.Content)!;
+			var currentEntries = ParseCalendarEntries(clientSideResponse.Content);
 
-			// Iterate through each month table, and collect bin days
-			var binDays = new List<BinDay>();
-			foreach (Match monthTable in monthTables)
+			// The calendar only covers November to October, so next year's calendar is needed to continue past October
+			if (!clientSideResponse.Content.Contains("HyperLinkNewCalendar", StringComparison.Ordinal))
 			{
-				var month = monthTable.Groups["month"].Value.Trim();
-				var rows = BinDayRowRegex().Matches(monthTable.Groups["rows"].Value)!;
-
-				// Iterate through each bin day row, and create a new bin day object
-				foreach (Match row in rows)
+				var getBinDaysResponse = new GetBinDaysResponse
 				{
-					var attributes = row.Groups["attributes"].Value;
+					BinDays = CreateBinDays(currentEntries, address),
+				};
 
-					if (attributes.Contains("danger", StringComparison.OrdinalIgnoreCase))
-					{
-						continue;
-					}
-
-					var rowContent = row.Groups["content"].Value;
-					var binDayContent = BinDayContentRegex().Match(rowContent);
-
-					var service = binDayContent.Groups["service"].Value.Trim();
-					var day = binDayContent.Groups["day"].Value.Trim();
-
-					day = OrdinalSuffixRegex().Replace(day, string.Empty);
-
-					var dateString = $"{day} {month}";
-
-					var collectionDate = DateUtilities.ParseDateExact(dateString, "dddd d MMMM yyyy");
-
-					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
-
-					var binDay = new BinDay
-					{
-						Date = collectionDate,
-						Address = address,
-						Bins = matchedBinTypes,
-					};
-
-					binDays.Add(binDay);
-				}
+				return getBinDaysResponse;
 			}
+
+			// Encode current calendar entries as "date=service;date=service;..." for next request metadata
+			var metadataParts = new List<string>();
+			foreach (var (date, service) in currentEntries)
+			{
+				metadataParts.Add($"{date}={service}");
+			}
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 2,
+				Url = $"https://app.newark-sherwooddc.gov.uk/bincollection/calendar?pid={address.Uid!}&nc=1",
+				Method = "GET",
+				Options = new ClientSideOptions
+				{
+					Metadata = new()
+					{
+						{ "binDays", string.Join(";", metadataParts) },
+					},
+				},
+			};
+
+			var nextGetBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return nextGetBinDaysResponse;
+		}
+		// Process next year's calendar and combine with current calendar bin days
+		else if (clientSideResponse.RequestId == 2)
+		{
+			// Decode current calendar entries from metadata ("date=service;date=service;...")
+			var entries = new List<(string Date, string Service)>();
+			foreach (var entry in clientSideResponse.Options.Metadata["binDays"].Split(';', StringSplitOptions.RemoveEmptyEntries))
+			{
+				var separatorIdx = entry.IndexOf('=');
+				entries.Add((entry[..separatorIdx], entry[(separatorIdx + 1)..]));
+			}
+
+			entries.AddRange(ParseCalendarEntries(clientSideResponse.Content));
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
-				BinDays = ProcessingUtilities.ProcessBinDays(binDays),
+				BinDays = CreateBinDays(entries, address),
 			};
 
 			return getBinDaysResponse;
 		}
 
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Parses the collection date and service name of each bin day row in a calendar page.
+	/// </summary>
+	private static List<(string Date, string Service)> ParseCalendarEntries(string content)
+	{
+		var monthTables = BinDaysTableRegex().Matches(content)!;
+
+		// Iterate through each month table, and collect calendar entries
+		var entries = new List<(string Date, string Service)>();
+		foreach (Match monthTable in monthTables)
+		{
+			var month = monthTable.Groups["month"].Value.Trim();
+			var rows = BinDayRowRegex().Matches(monthTable.Groups["rows"].Value)!;
+
+			// Iterate through each bin day row, and create a new calendar entry
+			foreach (Match row in rows)
+			{
+				var attributes = row.Groups["attributes"].Value;
+
+				if (attributes.Contains("danger", StringComparison.OrdinalIgnoreCase))
+				{
+					continue;
+				}
+
+				var rowContent = row.Groups["content"].Value;
+				var binDayContent = BinDayContentRegex().Match(rowContent);
+
+				var service = binDayContent.Groups["service"].Value.Trim();
+				var day = binDayContent.Groups["day"].Value.Trim();
+
+				day = OrdinalSuffixRegex().Replace(day, string.Empty);
+
+				entries.Add(($"{day} {month}", service));
+			}
+		}
+
+		return entries;
+	}
+
+	/// <summary>
+	/// Creates the bin days from parsed calendar entries.
+	/// </summary>
+	private IReadOnlyCollection<BinDay> CreateBinDays(List<(string Date, string Service)> entries, Address address)
+	{
+		// Iterate through each calendar entry, and create a new bin day object
+		var binDays = new List<BinDay>();
+		foreach (var (dateString, service) in entries)
+		{
+			var collectionDate = DateUtilities.ParseDateExact(dateString, "dddd d MMMM yyyy");
+
+			var matchedBinTypes = ProcessingUtilities.GetMatchingBins(_binTypes, service);
+
+			var binDay = new BinDay
+			{
+				Date = collectionDate,
+				Address = address,
+				Bins = matchedBinTypes,
+			};
+
+			binDays.Add(binDay);
+		}
+
+		return ProcessingUtilities.ProcessBinDays(binDays);
 	}
 }
