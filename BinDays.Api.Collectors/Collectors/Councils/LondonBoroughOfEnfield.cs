@@ -209,7 +209,7 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		}
 
 		var trimmedContent = clientSideResponse.Content.TrimStart();
-		return trimmedContent.StartsWith("{", StringComparison.Ordinal) || trimmedContent.StartsWith("[", StringComparison.Ordinal);
+		return trimmedContent.StartsWith('{') || trimmedContent.StartsWith('[');
 	}
 
 	/// <summary>
