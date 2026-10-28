@@ -48,7 +48,7 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Garden waste" ],
+			Keys = [ "Garden waste", "Garden Bin" ],
 		},
 		new()
 		{
@@ -79,7 +79,7 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Green,
-			Keys = [ "Garden waste" ],
+			Keys = [ "Garden waste", "Garden Bin" ],
 		},
 		new()
 		{
