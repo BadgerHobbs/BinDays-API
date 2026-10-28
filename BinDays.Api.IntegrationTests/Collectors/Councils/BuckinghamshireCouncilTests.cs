@@ -30,6 +30,9 @@ public class BuckinghamshireCouncilTests
 	// Chiltern property whose Garden Waste is reported with an "Invalid DateTime" placeholder
 	// rather than a date, alongside its other valid collections.
 	[InlineData("HP6 6NE", "100080500391", 1)]
+	// Aylesbury Vale property whose garden collection is reported as "Garden Bin" rather than
+	// the "Garden waste" service name used elsewhere.
+	[InlineData("MK17 9DB", "766270713", 1)]
 	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
