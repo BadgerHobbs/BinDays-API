@@ -33,6 +33,9 @@ public class BuckinghamshireCouncilTests
 	// Aylesbury Vale property whose garden collection is reported as "Garden Bin" rather than
 	// the "Garden waste" service name used elsewhere.
 	[InlineData("MK17 9DB", "766270713", 1)]
+	// Aylesbury Vale property with the application-only clinical waste collection, reported
+	// as "CLINICAL SACKS".
+	[InlineData("HP21 7AF", "766026705", 1)]
 	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
