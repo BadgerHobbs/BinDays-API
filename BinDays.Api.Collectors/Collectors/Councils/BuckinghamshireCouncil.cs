@@ -56,6 +56,13 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 			Colour = BinColour.Green,
 			Keys = [ "General waste", "Refuse Sacks" ],
 		},
+		new()
+		{
+			Name = "Clinical Waste",
+			Colour = BinColour.Orange,
+			Keys = [ "Clinical Sacks" ],
+			Type = BinType.Bag,
+		},
 	];
 
 	/// <summary>
@@ -99,6 +106,13 @@ internal sealed partial class BuckinghamshireCouncil : GovUkCollectorBase, IColl
 			Name = "Textiles, Batteries and Electricals",
 			Colour = BinColour.White,
 			Keys = [ "electricals, batteries and textiles" ],
+			Type = BinType.Bag,
+		},
+		new()
+		{
+			Name = "Clinical Waste",
+			Colour = BinColour.Orange,
+			Keys = [ "Clinical Sacks" ],
 			Type = BinType.Bag,
 		},
 	];
