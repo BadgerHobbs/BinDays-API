@@ -24,6 +24,7 @@ public class StokeOnTrentTests
 	[InlineData("ST6 4BE", 0)]
 	[InlineData("ST3 5UD", 56)]
 	[InlineData("ST3 6HR", 0, "3455095307", 1)]
+	[InlineData("ST4 3LE", 0, "3455068877", 1)]
 	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
