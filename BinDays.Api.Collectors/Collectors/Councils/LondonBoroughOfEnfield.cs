@@ -54,18 +54,18 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		},
 	];
 
+	/// <summary>
+	/// The maximum number of retry attempts for Cloudflare managed challenge responses.
+	/// </summary>
+	private const int _maxCloudflareRetries = 2;
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
 		// Prepare client-side request for getting addresses
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day",
-				Method = "GET",
-			};
+			var clientSideRequest = CreateInitialPageRequest(1, 0);
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -77,26 +77,28 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 1)
 		{
+			var retryAttempt = int.Parse(clientSideResponse.Options.Metadata["retryAttempt"], CultureInfo.InvariantCulture);
+
+			if (!clientSideResponse.IsSuccessStatusCode)
+			{
+				if (retryAttempt >= _maxCloudflareRetries)
+				{
+					throw new InvalidOperationException("Cloudflare challenge prevented retrieving Enfield addresses.");
+				}
+
+				var retryRequest = CreateInitialPageRequest(1, retryAttempt + 1);
+
+				var retryResponse = new GetAddressesResponse
+				{
+					NextClientSideRequest = retryRequest,
+				};
+
+				return retryResponse;
+			}
+
 			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = $"https://www.enfield.gov.uk/_design/integrations/ordnance-survey/places-v2?query={postcode}",
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "accept", "*/*" },
-					{ "accept-language", "en-GB,en;q=0.5" },
-					{ "sec-fetch-dest", "empty" },
-					{ "sec-fetch-mode", "cors" },
-					{ "sec-fetch-site", "same-origin" },
-					{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
-					{ "cookie", requestCookies },
-				},
-			};
+			var clientSideRequest = CreateAddressLookupRequest(postcode, requestCookies, retryAttempt);
 
 			var getAddressesResponse = new GetAddressesResponse
 			{
@@ -107,6 +109,25 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		}
 		else if (clientSideResponse.RequestId == 2)
 		{
+			var retryAttempt = int.Parse(clientSideResponse.Options.Metadata["retryAttempt"], CultureInfo.InvariantCulture);
+
+			if (!clientSideResponse.IsSuccessStatusCode)
+			{
+				if (retryAttempt >= _maxCloudflareRetries)
+				{
+					throw new InvalidOperationException("Cloudflare challenge prevented retrieving Enfield addresses.");
+				}
+
+				var retryRequest = CreateInitialPageRequest(1, retryAttempt + 1);
+
+				var retryResponse = new GetAddressesResponse
+				{
+					NextClientSideRequest = retryRequest,
+				};
+
+				return retryResponse;
+			}
+
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 			var resultsElement = jsonDoc.RootElement.GetProperty("results");
 
@@ -144,12 +165,7 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		// Prepare client-side request for getting bin days
 		if (clientSideResponse == null)
 		{
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 1,
-				Url = "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day",
-				Method = "GET",
-			};
+			var clientSideRequest = CreateInitialPageRequest(1, 0);
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
@@ -161,27 +177,28 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 1)
 		{
+			var retryAttempt = int.Parse(clientSideResponse.Options.Metadata["retryAttempt"], CultureInfo.InvariantCulture);
+
+			if (!clientSideResponse.IsSuccessStatusCode)
+			{
+				if (retryAttempt >= _maxCloudflareRetries)
+				{
+					throw new InvalidOperationException("Cloudflare challenge prevented retrieving Enfield bin days.");
+				}
+
+				var retryRequest = CreateInitialPageRequest(1, retryAttempt + 1);
+
+				var retryResponse = new GetBinDaysResponse
+				{
+					NextClientSideRequest = retryRequest,
+				};
+
+				return retryResponse;
+			}
+
 			var setCookieHeader = clientSideResponse.Headers["set-cookie"];
 			var requestCookies = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
-			var requestUrl = $"https://www.enfield.gov.uk/_design/integrations/bartec/find-my-collection/rest/schedule?uprn={address.Uid!}";
-
-			var clientSideRequest = new ClientSideRequest
-			{
-				RequestId = 2,
-				Url = requestUrl,
-				Method = "GET",
-				Headers = new()
-				{
-					{ "user-agent", Constants.UserAgent },
-					{ "accept", "*/*" },
-					{ "accept-language", "en-GB,en;q=0.5" },
-					{ "sec-fetch-dest", "empty" },
-					{ "sec-fetch-mode", "cors" },
-					{ "sec-fetch-site", "same-origin" },
-					{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
-					{ "cookie", requestCookies },
-				},
-			};
+			var clientSideRequest = CreateScheduleRequest(address.Uid!, requestCookies, retryAttempt);
 
 			var getBinDaysResponse = new GetBinDaysResponse
 			{
@@ -192,6 +209,25 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 		}
 		else if (clientSideResponse.RequestId == 2)
 		{
+			var retryAttempt = int.Parse(clientSideResponse.Options.Metadata["retryAttempt"], CultureInfo.InvariantCulture);
+
+			if (!clientSideResponse.IsSuccessStatusCode)
+			{
+				if (retryAttempt >= _maxCloudflareRetries)
+				{
+					throw new InvalidOperationException("Cloudflare challenge prevented retrieving Enfield bin days.");
+				}
+
+				var retryRequest = CreateInitialPageRequest(1, retryAttempt + 1);
+
+				var retryResponse = new GetBinDaysResponse
+				{
+					NextClientSideRequest = retryRequest,
+				};
+
+				return retryResponse;
+			}
+
 			using var jsonDoc = JsonDocument.Parse(clientSideResponse.Content);
 
 			// Iterate through each bin day, and create a new bin day object
@@ -230,5 +266,109 @@ internal sealed class LondonBoroughOfEnfield : GovUkCollectorBase, ICollector
 
 		// Throw exception for invalid request
 		throw new InvalidOperationException("Invalid client-side request.");
+	}
+
+	/// <summary>
+	/// Creates the initial page navigation request used to bootstrap the Enfield session cookie.
+	/// </summary>
+	/// <param name="requestId">The request identifier.</param>
+	/// <param name="retryAttempt">The Cloudflare retry attempt number.</param>
+	private static ClientSideRequest CreateInitialPageRequest(int requestId, int retryAttempt)
+	{
+		return new ClientSideRequest
+		{
+			RequestId = requestId,
+			Url = "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day",
+			Method = "GET",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" },
+				{ "accept-language", "en-GB,en;q=0.5" },
+				{ "accept-encoding", "gzip, deflate, br" },
+				{ "upgrade-insecure-requests", "1" },
+				{ "sec-fetch-dest", "document" },
+				{ "sec-fetch-mode", "navigate" },
+				{ "sec-fetch-site", "none" },
+				{ "sec-fetch-user", "?1" },
+			},
+			Options = new ClientSideOptions
+			{
+				Metadata =
+				{
+					{ "retryAttempt", retryAttempt.ToString(CultureInfo.InvariantCulture) },
+				},
+			},
+		};
+	}
+
+	/// <summary>
+	/// Creates the request to retrieve addresses from the Enfield address lookup endpoint.
+	/// </summary>
+	/// <param name="postcode">The postcode to search.</param>
+	/// <param name="requestCookies">The request cookie header value.</param>
+	/// <param name="retryAttempt">The Cloudflare retry attempt number.</param>
+	private static ClientSideRequest CreateAddressLookupRequest(string postcode, string requestCookies, int retryAttempt)
+	{
+		return new ClientSideRequest
+		{
+			RequestId = 2,
+			Url = $"https://www.enfield.gov.uk/_design/integrations/ordnance-survey/places-v2?query={postcode}",
+			Method = "GET",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "accept", "*/*" },
+				{ "accept-language", "en-GB,en;q=0.5" },
+				{ "accept-encoding", "gzip, deflate, br" },
+				{ "sec-fetch-dest", "empty" },
+				{ "sec-fetch-mode", "cors" },
+				{ "sec-fetch-site", "same-origin" },
+				{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
+				{ "cookie", requestCookies },
+			},
+			Options = new ClientSideOptions
+			{
+				Metadata =
+				{
+					{ "retryAttempt", retryAttempt.ToString(CultureInfo.InvariantCulture) },
+				},
+			},
+		};
+	}
+
+	/// <summary>
+	/// Creates the request to retrieve bin collection dates for a selected UPRN.
+	/// </summary>
+	/// <param name="uid">The selected address UPRN.</param>
+	/// <param name="requestCookies">The request cookie header value.</param>
+	/// <param name="retryAttempt">The Cloudflare retry attempt number.</param>
+	private static ClientSideRequest CreateScheduleRequest(string uid, string requestCookies, int retryAttempt)
+	{
+		return new ClientSideRequest
+		{
+			RequestId = 2,
+			Url = $"https://www.enfield.gov.uk/_design/integrations/bartec/find-my-collection/rest/schedule?uprn={uid}",
+			Method = "GET",
+			Headers = new()
+			{
+				{ "user-agent", Constants.UserAgent },
+				{ "accept", "*/*" },
+				{ "accept-language", "en-GB,en;q=0.5" },
+				{ "accept-encoding", "gzip, deflate, br" },
+				{ "sec-fetch-dest", "empty" },
+				{ "sec-fetch-mode", "cors" },
+				{ "sec-fetch-site", "same-origin" },
+				{ "referer", "https://www.enfield.gov.uk/services/rubbish-and-recycling/find-my-collection-day" },
+				{ "cookie", requestCookies },
+			},
+			Options = new ClientSideOptions
+			{
+				Metadata =
+				{
+					{ "retryAttempt", retryAttempt.ToString(CultureInfo.InvariantCulture) },
+				},
+			},
+		};
 	}
 }
