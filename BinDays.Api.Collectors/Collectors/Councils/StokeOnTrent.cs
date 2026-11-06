@@ -36,6 +36,7 @@ internal sealed partial class StokeOnTrent : GovUkCollectorBase, ICollector
 			[
 				"EMPTY BINS RESIDUAL BIN",
 				"EMPTY BINS RES 240 STD",
+				"EMPTY BINS RES 360 STD",
 			],
 		},
 		new()

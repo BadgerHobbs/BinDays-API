@@ -165,7 +165,15 @@ internal abstract class RecollectCollectorBase : GovUkCollectorBase, ICollector
 				// Iterate through each collection on the date, and create a new bin day object
 				foreach (var rawFlag in rawBinDay.GetProperty("flags").EnumerateArray())
 				{
-					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(BinTypes, rawFlag.GetProperty("name").GetString()!);
+					var service = rawFlag.GetProperty("name").GetString()!;
+
+					// Skip bank holiday notices (e.g. "No collections will take place today"), which are not collections
+					if (service == "holiday")
+					{
+						continue;
+					}
+
+					var matchedBinTypes = ProcessingUtilities.GetMatchingBins(BinTypes, service);
 
 					var binDay = new BinDay
 					{
