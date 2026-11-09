@@ -44,12 +44,11 @@ internal sealed class BrecklandCouncil : GovUkCollectorBase, ICollector
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
 			Keys = [ "Garden Waste Collection Service", "Garden Waste Service" ],
-			Type = BinType.Sack,
 		},
 		new()
 		{
 			Name = "Food Waste",
-			Colour = BinColour.Grey,
+			Colour = BinColour.Blue,
 			Keys = [ "Food Waste Collection Service", "Food Waste Service" ],
 			Type = BinType.Caddy,
 		},
