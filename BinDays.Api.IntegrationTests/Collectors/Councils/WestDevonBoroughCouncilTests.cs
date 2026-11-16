@@ -19,16 +19,15 @@ public class WestDevonBoroughCouncilTests
 	}
 
 	[Theory]
-	[InlineData("EX20 1ZF", 1)]
-	[InlineData("EX20 1ZF", 0, "10013759778", 1)]
-	public async Task GetBinDaysTest(string postcode, int addressIndex = 0, string? pinnedUid = null, int? pinnedVersion = null)
+	[InlineData("EX20 1ZF")]
+	[InlineData("EX20 1ZF", "10013759777", 1)]
+	public async Task GetBinDaysTest(string postcode, string? pinnedUid = null, int? pinnedVersion = null)
 	{
 		await TestSteps.EndToEnd(
 			_client,
 			postcode,
 			_govUkId,
 			_outputHelper,
-			addressIndex: addressIndex,
 			pinnedUid: pinnedUid,
 			pinnedVersion: pinnedVersion
 		);

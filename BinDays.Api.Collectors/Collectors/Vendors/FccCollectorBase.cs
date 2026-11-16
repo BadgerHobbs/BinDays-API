@@ -47,6 +47,11 @@ internal abstract partial class FccCollectorBase : GovUkCollectorBase
 	[GeneratedRegex(@"Your next scheduled collection is\s*<b>\s*(.*?)\s*</b>")]
 	private static partial Regex DateRegex();
 
+	/// <summary>
+	/// Parses a JSON response, skipping any PHP error output the server prints before the JSON body.
+	/// </summary>
+	private static JsonObject ParseJsonResponse(string content) => JsonSerializer.Deserialize<JsonObject>(content[content.IndexOf('{')..])!;
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
@@ -111,7 +116,7 @@ internal abstract partial class FccCollectorBase : GovUkCollectorBase
 		// Process addresses from response
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var responseJson = JsonSerializer.Deserialize<JsonObject>(clientSideResponse.Content)!;
+			var responseJson = ParseJsonResponse(clientSideResponse.Content);
 			var addressesJson = responseJson["addresses"]!.AsObject();
 			var addresses = new List<Address>();
 
@@ -205,7 +210,7 @@ internal abstract partial class FccCollectorBase : GovUkCollectorBase
 		// Process bin days from response
 		else if (clientSideResponse.RequestId == 2)
 		{
-			var responseJson = JsonSerializer.Deserialize<JsonObject>(clientSideResponse.Content)!;
+			var responseJson = ParseJsonResponse(clientSideResponse.Content);
 			var binDaysJson = responseJson["binCollections"]!["tile"]!.AsArray();
 			var binDays = new List<BinDay>();
 
