@@ -82,7 +82,7 @@ internal sealed partial class NorthLanarkshireCouncil : GovUkCollectorBase, ICol
 	/// <summary>
 	/// Regex for the addresses from the HTML response.
 	/// </summary>
-	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)"">(?<address>[^<]+)</option>")]
+	[GeneratedRegex(@"<option\s+value=""(?<uid>[^""]*)""[^>]*>\s*(?<address>[^<]+)\s*</option>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
