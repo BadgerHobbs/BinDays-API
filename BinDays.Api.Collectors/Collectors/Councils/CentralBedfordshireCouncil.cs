@@ -55,7 +55,7 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 	/// <summary>
 	/// Regex for extracting addresses from the HTML response.
 	/// </summary>
-	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)"">(?<address>[^<]+)<\/option>")]
+	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)""[^>]*>(?<address>[^<]+)<\/option>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
