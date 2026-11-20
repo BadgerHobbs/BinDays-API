@@ -84,11 +84,6 @@ public static partial class ProcessingUtilities
 	/// <summary>
 	/// Merges a collection of BinDay objects, combining those with the same date.
 	/// </summary>
-	/// <remarks>
-	/// Bin days that matched no bin types are passed through unmerged, so an unrecognised service
-	/// that shares a date with a recognised one still reaches the unmatched bin day check in
-	/// <c>CollectorService</c>, rather than silently disappearing into the merged bin day.
-	/// </remarks>
 	/// <param name="binDays">The collection of BinDay objects to merge.</param>
 	/// <returns>A read-only collection of merged BinDay objects.</returns>
 	public static IReadOnlyCollection<BinDay> MergeBinDays(IEnumerable<BinDay> binDays)
@@ -101,31 +96,23 @@ public static partial class ProcessingUtilities
 		// Iterate through each group of BinDay objects with the same date.
 		foreach (var group in groupedBinDays)
 		{
-			var matchedBinDays = group.Where(bd => bd.Bins.Count > 0).ToList();
+			// Initialize a list to store the merged Bins for the current date.
+			var mergedBins = new List<Bin>();
 
-			if (matchedBinDays.Count > 0)
+			// Add all Bins from the current BinDay to the mergedBins list.
+			foreach (var binDay in group)
 			{
-				// Initialize a list to store the merged Bins for the current date.
-				var mergedBins = new List<Bin>();
-
-				// Add all Bins from the current BinDay to the mergedBins list.
-				foreach (var binDay in matchedBinDays)
-				{
-					mergedBins.AddRange(binDay.Bins);
-				}
-
-				// Create a new BinDay object with the merged Bins, the common date, and the address from the first BinDay in the group.
-				var mergedBinDay = new BinDay
-				{
-					Date = group.Key,
-					Address = matchedBinDays[0].Address,
-					Bins = [.. mergedBins.DistinctBy(b => b.Name)],
-				};
-				mergedBinDays.Add(mergedBinDay);
+				mergedBins.AddRange(binDay.Bins);
 			}
 
-			// Keep each unmatched bin day separate, so each one is counted as dropped.
-			mergedBinDays.AddRange(group.Where(bd => bd.Bins.Count == 0));
+			// Create a new BinDay object with the merged Bins, the common date, and the address from the first BinDay in the group.
+			var mergedBinDay = new BinDay
+			{
+				Date = group.Key,
+				Address = group.First().Address,
+				Bins = [.. mergedBins.DistinctBy(b => b.Name)]
+			};
+			mergedBinDays.Add(mergedBinDay);
 		}
 
 		return [.. mergedBinDays];
@@ -214,12 +201,25 @@ public static partial class ProcessingUtilities
 	/// <param name="bins">The collection of all possible Bin objects.</param>
 	/// <param name="service">The service string to match against the bin keys.</param>
 	/// <returns>A read-only collection of Bin objects that match the given service.</returns>
+	/// <remarks>
+	/// A service that matches nothing is recorded with <see cref="UnmatchedServiceTracker"/>, so
+	/// the lookup can report it however the collector goes on to handle it. Only pass this the
+	/// council's collection services: filter out entries that are known not to be collections
+	/// (holiday notices, events) beforehand, or they will be reported as unmatched.
+	/// </remarks>
 	public static IReadOnlyCollection<Bin> GetMatchingBins(IReadOnlyCollection<Bin> bins, string service)
 	{
-		return [.. bins.Where(bin =>
+		IReadOnlyCollection<Bin> matchingBins = [.. bins.Where(bin =>
 			bin.Keys.Any(key =>
 				service.Contains(key, StringComparison.OrdinalIgnoreCase)
 			)
 		)];
+
+		if (matchingBins.Count == 0)
+		{
+			UnmatchedServiceTracker.Record(service);
+		}
+
+		return matchingBins;
 	}
 }

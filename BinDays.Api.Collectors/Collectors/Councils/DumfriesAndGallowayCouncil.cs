@@ -232,7 +232,14 @@ internal sealed partial class DumfriesAndGallowayCouncil : GovUkCollectorBase, I
 					continue;
 				}
 
-				var service = SummaryServiceRegex().Match(summary).Groups["service"].Value;
+				// Skip events whose summary doesn't name a collection service (e.g. notices)
+				var serviceMatch = SummaryServiceRegex().Match(summary);
+				if (!serviceMatch.Success)
+				{
+					continue;
+				}
+
+				var service = serviceMatch.Groups["service"].Value;
 				var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 				if (matchedBins.Count == 0)

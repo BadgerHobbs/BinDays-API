@@ -12,8 +12,10 @@ namespace BinDays.Api.Collectors.Telemetry;
 public interface ICollectorMetrics
 {
 	/// <summary>
-	/// Records a single bin day dropped because it matched none of the collector's bin types.
+	/// Records collection service entries dropped because they matched none of the collector's
+	/// bin types.
 	/// </summary>
-	/// <param name="govUkId">The gov.uk identifier of the collector that produced it.</param>
-	void RecordBinDayUnmatched(string govUkId);
+	/// <param name="govUkId">The gov.uk identifier of the collector that produced them.</param>
+	/// <param name="count">The number of entries dropped, one per occurrence of a service.</param>
+	void RecordBinDaysUnmatched(string govUkId, int count);
 }

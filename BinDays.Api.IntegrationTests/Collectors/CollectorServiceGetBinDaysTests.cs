@@ -15,8 +15,8 @@ using System.Linq;
 using Xunit;
 
 /// <summary>
-/// Tests that <see cref="CollectorService.GetBinDays"/> separates bin days that matched no bin
-/// type from those that did, rather than treating a partial or total mismatch the same as a
+/// Tests that <see cref="CollectorService.GetBinDays"/> reports every council service that matched
+/// no bin type, however the collector handles it, and separates a partial or total mismatch from a
 /// genuine absence of scheduled collections.
 /// </summary>
 public sealed class CollectorServiceGetBinDaysTests
@@ -28,105 +28,116 @@ public sealed class CollectorServiceGetBinDaysTests
 		Keys = ["General"],
 	};
 
-	[Fact]
-	public void GetBinDays_WithSomeBinDaysUnmatched_DropsThemAndReturnsTheRest()
+	private static readonly Address _address = new() { Postcode = "AB1 2CD", Uid = "1" };
+
+	private static readonly DateOnly _firstDate = new(2026, 1, 1);
+
+	private static readonly DateOnly _secondDate = new(2026, 1, 8);
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void GetBinDays_WithUnmatchedServiceOnItsOwnDate_DropsItAndReturnsTheRest(bool skipUnmatched)
 	{
-		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
-		var matchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [_generalWaste] };
-		var unmatchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 8), Address = address, Bins = [] };
+		var collector = new FakeCollector([(_firstDate, "General waste"), (_secondDate, "Plastic bags")], skipUnmatched);
+		var metrics = new Mock<ICollectorMetrics>();
+		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics.Object);
 
-		var collector = new FakeCollector([unmatchedBinDay, matchedBinDay]);
-		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, Mock.Of<ICollectorMetrics>());
-
-		var result = collectorService.GetBinDays(collector.GovUkId, address, null);
+		var result = collectorService.GetBinDays(collector.GovUkId, _address, null);
 
 		var resultBinDay = Assert.Single(result.BinDays!);
-		Assert.Same(matchedBinDay, resultBinDay);
+		Assert.Equal(_firstDate, resultBinDay.Date);
+		metrics.Verify(recorder => recorder.RecordBinDaysUnmatched(collector.GovUkId, 1), Times.Once);
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void GetBinDays_WithUnmatchedServiceOnAMatchedDate_StillReportsIt(bool skipUnmatched)
+	{
+		var collector = new FakeCollector([(_firstDate, "General waste"), (_firstDate, "Plastic bags")], skipUnmatched);
+		var metrics = new Mock<ICollectorMetrics>();
+		var (logger, messages) = CreateLoggerMock();
+		var collectorService = new CollectorService([collector], logger.Object, metrics.Object);
+
+		var result = collectorService.GetBinDays(collector.GovUkId, _address, null);
+
+		var resultBinDay = Assert.Single(result.BinDays!);
+		Assert.Equal([_generalWaste], resultBinDay.Bins);
+		metrics.Verify(recorder => recorder.RecordBinDaysUnmatched(collector.GovUkId, 1), Times.Once);
+		Assert.Contains(messages, message => message.StartsWith("Service \"Plastic bags\" for gov.uk ID: fake-collector"));
 	}
 
 	[Fact]
-	public void GetBinDays_WithAllBinDaysUnmatched_ThrowsAllBinDaysUnmatchedException()
+	public void GetBinDays_WithAServiceUnmatchedOnSeveralDates_LogsItOnceAndCountsEachOccurrence()
 	{
-		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
-		var unmatchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [] };
+		var collector = new FakeCollector([
+			(_firstDate, "General waste"),
+			(_firstDate, "Plastic bags"),
+			(_secondDate, "Plastic bags"),
+			(_secondDate, "Textiles"),
+		]);
+		var metrics = new Mock<ICollectorMetrics>();
+		var (logger, messages) = CreateLoggerMock();
+		var collectorService = new CollectorService([collector], logger.Object, metrics.Object);
 
-		var collector = new FakeCollector([unmatchedBinDay]);
+		collectorService.GetBinDays(collector.GovUkId, _address, null);
+
+		metrics.Verify(recorder => recorder.RecordBinDaysUnmatched(collector.GovUkId, 3), Times.Once);
+		Assert.Single(messages, message => message.StartsWith("Service \"Plastic bags\"") && message.EndsWith("(2 occurrence(s))."));
+		Assert.Single(messages, message => message.StartsWith("Service \"Textiles\"") && message.EndsWith("(1 occurrence(s))."));
+	}
+
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void GetBinDays_WithAllServicesUnmatched_ThrowsAllBinDaysUnmatchedException(bool skipUnmatched)
+	{
+		var collector = new FakeCollector([(_firstDate, "Plastic bags")], skipUnmatched);
 		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, Mock.Of<ICollectorMetrics>());
 
-		Assert.Throws<AllBinDaysUnmatchedException>(() => collectorService.GetBinDays(collector.GovUkId, address, null));
+		Assert.Throws<AllBinDaysUnmatchedException>(() => collectorService.GetBinDays(collector.GovUkId, _address, null));
 	}
 
 	[Fact]
 	public void GetBinDays_WithNoBinDays_ThrowsBinDaysNotFoundException()
 	{
-		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
-
 		var collector = new FakeCollector([]);
 		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, Mock.Of<ICollectorMetrics>());
 
-		Assert.Throws<BinDaysNotFoundException>(() => collectorService.GetBinDays(collector.GovUkId, address, null));
+		Assert.Throws<BinDaysNotFoundException>(() => collectorService.GetBinDays(collector.GovUkId, _address, null));
 	}
 
 	[Fact]
-	public void GetBinDays_WithSomeBinDaysUnmatched_RecordsOneMetricPerDroppedBinDay()
+	public void GetBinDays_WithAllServicesMatched_RecordsNoMetric()
 	{
-		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
-		var matchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [_generalWaste] };
-		var firstUnmatched = new BinDay { Date = new DateOnly(2026, 1, 8), Address = address, Bins = [] };
-		var secondUnmatched = new BinDay { Date = new DateOnly(2026, 1, 15), Address = address, Bins = [] };
-
-		var collector = new FakeCollector([firstUnmatched, matchedBinDay, secondUnmatched]);
+		var collector = new FakeCollector([(_firstDate, "General waste")]);
 		var metrics = new Mock<ICollectorMetrics>();
 		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics.Object);
 
-		collectorService.GetBinDays(collector.GovUkId, address, null);
+		collectorService.GetBinDays(collector.GovUkId, _address, null);
 
-		metrics.Verify(recorder => recorder.RecordBinDayUnmatched(collector.GovUkId), Times.Exactly(2));
+		metrics.Verify(recorder => recorder.RecordBinDaysUnmatched(It.IsAny<string>(), It.IsAny<int>()), Times.Never);
 	}
 
 	[Fact]
-	public void GetBinDays_WithUnmatchedBinDayMergedOnAMatchedDate_StillRecordsIt()
+	public void GetBinDays_AfterALookupWithUnmatchedServices_StartsTheNextLookupClean()
 	{
-		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
-		var date = new DateOnly(2026, 1, 1);
-		var binDays = ProcessingUtilities.MergeBinDays([
-			new BinDay { Date = date, Address = address, Bins = [_generalWaste] },
-			new BinDay { Date = date, Address = address, Bins = [] },
-		]);
-
-		var collector = new FakeCollector(binDays);
+		var unmatchedCollector = new FakeCollector([(_firstDate, "General waste"), (_firstDate, "Plastic bags")], govUkId: "unmatched-collector");
+		var matchedCollector = new FakeCollector([(_firstDate, "General waste")], govUkId: "matched-collector");
 		var metrics = new Mock<ICollectorMetrics>();
-		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics.Object);
+		var collectorService = new CollectorService([unmatchedCollector, matchedCollector], NullLogger<CollectorService>.Instance, metrics.Object);
 
-		var result = collectorService.GetBinDays(collector.GovUkId, address, null);
+		collectorService.GetBinDays(unmatchedCollector.GovUkId, _address, null);
+		collectorService.GetBinDays(matchedCollector.GovUkId, _address, null);
 
-		var resultBinDay = Assert.Single(result.BinDays!);
-		Assert.Equal([_generalWaste], resultBinDay.Bins);
-		metrics.Verify(recorder => recorder.RecordBinDayUnmatched(collector.GovUkId), Times.Once);
+		metrics.Verify(recorder => recorder.RecordBinDaysUnmatched(matchedCollector.GovUkId, It.IsAny<int>()), Times.Never);
 	}
 
 	[Fact]
-	public void GetBinDays_WithAllBinDaysMatched_RecordsNoMetric()
+	public void GetBinDays_WithAllServicesMatched_DoesNotLogTheCouncilResponse()
 	{
-		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
-		var matchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [_generalWaste] };
-
-		var collector = new FakeCollector([matchedBinDay]);
-		var metrics = new Mock<ICollectorMetrics>();
-		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics.Object);
-
-		collectorService.GetBinDays(collector.GovUkId, address, null);
-
-		metrics.Verify(recorder => recorder.RecordBinDayUnmatched(It.IsAny<string>()), Times.Never);
-	}
-
-	[Fact]
-	public void GetBinDays_WithAllBinDaysMatched_DoesNotLogTheCouncilResponse()
-	{
-		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
-		var matchedBinDay = new BinDay { Date = new DateOnly(2026, 1, 1), Address = address, Bins = [_generalWaste] };
-
-		var collector = new FakeCollector([matchedBinDay]);
+		var collector = new FakeCollector([(_firstDate, "General waste")]);
 		var (logger, messages) = CreateLoggerMock();
 		var collectorService = new CollectorService([collector], logger.Object, Mock.Of<ICollectorMetrics>());
 		var clientSideResponse = new ClientSideResponse
@@ -138,7 +149,7 @@ public sealed class CollectorServiceGetBinDaysTests
 			Content = "General Waste on 01 January",
 		};
 
-		collectorService.GetBinDays(collector.GovUkId, address, clientSideResponse);
+		collectorService.GetBinDays(collector.GovUkId, _address, clientSideResponse);
 
 		Assert.DoesNotContain(messages, message => message.Contains("Council response follows"));
 	}
@@ -179,23 +190,35 @@ public sealed class CollectorServiceGetBinDaysTests
 	}
 
 	/// <summary>
-	/// A minimal <see cref="ICollector"/> stub that returns a fixed set of bin days with no
-	/// client-side requests required.
+	/// A minimal <see cref="ICollector"/> stub that maps a fixed list of council services to bin
+	/// days the way real collectors do, with no client-side requests required.
 	/// </summary>
+	/// <remarks>
+	/// Real collectors handle a service that matches no bin type in one of two ways: some keep an
+	/// empty bin day, which <see cref="ProcessingUtilities.MergeBinDays"/> then absorbs into any
+	/// matched bin day on the same date, and others skip it outright. Both are covered here.
+	/// </remarks>
 	private sealed class FakeCollector : ICollector
 	{
-		private readonly IReadOnlyCollection<BinDay> _binDays;
+		private readonly IReadOnlyCollection<(DateOnly Date, string Service)> _services;
 
-		public FakeCollector(IReadOnlyCollection<BinDay> binDays)
+		private readonly bool _skipUnmatched;
+
+		public FakeCollector(
+			IReadOnlyCollection<(DateOnly Date, string Service)> services,
+			bool skipUnmatched = false,
+			string govUkId = "fake-collector")
 		{
-			_binDays = binDays;
+			_services = services;
+			_skipUnmatched = skipUnmatched;
+			GovUkId = govUkId;
 		}
 
 		public string Name { get; } = "Fake Collector";
 
 		public Uri WebsiteUrl { get; } = new("https://example.com");
 
-		public string GovUkId { get; } = "fake-collector";
+		public string GovUkId { get; }
 
 		public Uri GovUkUrl { get; } = new("https://www.gov.uk/find-out-when-your-bin-collection-day-is/fake-collector");
 
@@ -204,7 +227,22 @@ public sealed class CollectorServiceGetBinDaysTests
 		public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse) =>
 			throw new NotImplementedException();
 
-		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse) =>
-			new() { BinDays = _binDays };
+		public GetBinDaysResponse GetBinDays(Address address, ClientSideResponse? clientSideResponse)
+		{
+			var binDays = new List<BinDay>();
+			foreach (var (date, service) in _services)
+			{
+				var matchedBins = ProcessingUtilities.GetMatchingBins([_generalWaste], service);
+
+				if (_skipUnmatched && matchedBins.Count == 0)
+				{
+					continue;
+				}
+
+				binDays.Add(new BinDay { Date = date, Address = address, Bins = matchedBins });
+			}
+
+			return new() { BinDays = ProcessingUtilities.MergeBinDays(binDays) };
+		}
 	}
 }

@@ -545,6 +545,12 @@ internal sealed partial class NorthDevonCouncil : GovUkCollectorBase, ICollector
 					continue;
 				}
 
+				// Skip clinical waste collections, which are arranged per household rather than scheduled bins
+				if (serviceDetail.Contains("Clinical Waste", StringComparison.OrdinalIgnoreCase))
+				{
+					continue;
+				}
+
 				var collectionDate = DateUtilities.ParseDateExact(match.Groups["date"].Value, "dd/MM/yyyy");
 
 				var binsForDate = binDaysByDate.GetValueOrDefault(collectionDate, []);
