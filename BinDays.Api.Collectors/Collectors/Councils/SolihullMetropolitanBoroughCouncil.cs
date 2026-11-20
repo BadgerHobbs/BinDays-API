@@ -50,6 +50,13 @@ internal sealed partial class SolihullMetropolitanBoroughCouncil : GovUkCollecto
 			Colour = BinColour.Black,
 			Keys = [ "Black Wheelie Bin" ],
 		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Domestic Food Caddy" ],
+			Type = BinType.Caddy,
+		},
 	];
 
 	/// <summary>
