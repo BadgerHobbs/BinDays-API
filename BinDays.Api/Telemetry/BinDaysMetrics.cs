@@ -133,7 +133,7 @@ public sealed class BinDaysMetrics : ICollectorMetrics
 		_binDaysUnmatched = _meter.CreateCounter<long>(
 			"bindays.bin_days.unmatched",
 			unit: "{bin_day}",
-			description: "Bin days dropped for matching none of a collector's bin types."
+			description: "Collection service entries dropped for matching none of a collector's bin types."
 		);
 	}
 
@@ -228,10 +228,10 @@ public sealed class BinDaysMetrics : ICollectorMetrics
 	/// gate used elsewhere: this only ever fires for a collector that resolved and ran, so the
 	/// value is already bounded to registered identifiers.
 	/// </remarks>
-	public void RecordBinDayUnmatched(string govUkId)
+	public void RecordBinDaysUnmatched(string govUkId, int count)
 	{
 		_binDaysUnmatched.Add(
-			1,
+			count,
 			new KeyValuePair<string, object?>("bindays.gov_uk_id", govUkId)
 		);
 	}

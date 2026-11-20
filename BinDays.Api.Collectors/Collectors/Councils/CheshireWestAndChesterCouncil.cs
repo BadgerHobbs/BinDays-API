@@ -247,7 +247,8 @@ internal sealed class CheshireWestAndChesterCouncil : GovUkCollectorBase, IColle
 					}
 				}
 
-				if (!isForContainer)
+				// Skip missed collection enquiries on the property's own round, which aren't scheduled collections
+				if (!isForContainer || service.StartsWith("MISSED", StringComparison.OrdinalIgnoreCase))
 				{
 					continue;
 				}

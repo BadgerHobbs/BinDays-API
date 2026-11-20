@@ -200,6 +200,12 @@ internal sealed class BassetlawDistrictCouncil : GovUkCollectorBase, ICollector
 				// Iterate through each event flag, and map it to bins
 				foreach (var rawFlag in rawEvent.GetProperty("flags").EnumerateArray())
 				{
+					// Skip non-collection flags (e.g. holiday notices), which have no event type
+					if (!rawFlag.TryGetProperty("event_type", out var eventType) || eventType.GetString() != "pickup")
+					{
+						continue;
+					}
+
 					var flagName = rawFlag.GetProperty("name").GetString()!;
 					matchingBins.AddRange(ProcessingUtilities.GetMatchingBins(_binTypes, flagName));
 				}

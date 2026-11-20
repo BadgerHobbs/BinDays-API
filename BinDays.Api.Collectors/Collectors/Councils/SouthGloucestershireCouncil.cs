@@ -63,6 +63,17 @@ internal sealed partial class SouthGloucestershireCouncil : GovUkCollectorBase, 
 		},
 	];
 
+	/// <summary>
+	/// Services on the account that are booked or requested rather than scheduled bin collections.
+	/// </summary>
+	private static readonly HashSet<string> _nonCollectionServices = new(StringComparer.OrdinalIgnoreCase)
+	{
+		"Bin Maintenance",
+		"Bulky",
+		"Clinical",
+		"Medical",
+	};
+
 	/// <inheritdoc/>
 	public GetAddressesResponse GetAddresses(string postcode, ClientSideResponse? clientSideResponse)
 	{
@@ -153,6 +164,12 @@ internal sealed partial class SouthGloucestershireCouncil : GovUkCollectorBase, 
 			foreach (var rawBinDayCollection in rawBinDayCollections)
 			{
 				var serviceName = rawBinDayCollection!["hso_servicename"]!.GetValue<string>();
+
+				// Skip services that are booked or requested rather than scheduled bin collections
+				if (_nonCollectionServices.Contains(serviceName))
+				{
+					continue;
+				}
 
 				var collectionDates = new List<string?>()
 				{

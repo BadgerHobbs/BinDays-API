@@ -409,6 +409,13 @@ internal abstract partial class BinzoneCollectorBase : GovUkCollectorBase
 				foreach (var bin in day.GetProperty("bins").EnumerateArray())
 				{
 					var service = bin.GetProperty("bin_type").GetString()!;
+
+					// Skip bulky waste, which is a one-off booked collection rather than a scheduled bin
+					if (service.Contains("Bulky", StringComparison.OrdinalIgnoreCase))
+					{
+						continue;
+					}
+
 					var matchedBins = ProcessingUtilities.GetMatchingBins(_binTypes, service);
 
 					if (matchedBins.Count == 0)

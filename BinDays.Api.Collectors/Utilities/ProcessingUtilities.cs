@@ -201,12 +201,25 @@ public static partial class ProcessingUtilities
 	/// <param name="bins">The collection of all possible Bin objects.</param>
 	/// <param name="service">The service string to match against the bin keys.</param>
 	/// <returns>A read-only collection of Bin objects that match the given service.</returns>
+	/// <remarks>
+	/// A service that matches nothing is recorded with <see cref="UnmatchedServiceTracker"/>, so
+	/// the lookup can report it however the collector goes on to handle it. Only pass this the
+	/// council's collection services: filter out entries that are known not to be collections
+	/// (holiday notices, events) beforehand, or they will be reported as unmatched.
+	/// </remarks>
 	public static IReadOnlyCollection<Bin> GetMatchingBins(IReadOnlyCollection<Bin> bins, string service)
 	{
-		return [.. bins.Where(bin =>
+		IReadOnlyCollection<Bin> matchingBins = [.. bins.Where(bin =>
 			bin.Keys.Any(key =>
 				service.Contains(key, StringComparison.OrdinalIgnoreCase)
 			)
 		)];
+
+		if (matchingBins.Count == 0)
+		{
+			UnmatchedServiceTracker.Record(service);
+		}
+
+		return matchingBins;
 	}
 }
