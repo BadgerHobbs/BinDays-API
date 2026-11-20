@@ -51,6 +51,13 @@ internal sealed partial class BostonBoroughCouncil : GovUkCollectorBase, ICollec
 			Colour = BinColour.Brown,
 			Keys = [ "Brown Garden Waste Bin" ],
 		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Black,
+			Keys = [ "Outdoor Food Waste Caddy" ],
+			Type = BinType.Caddy,
+		},
 	];
 
 	/// <summary>
