@@ -5,6 +5,7 @@ using BinDays.Api.Collectors.Exceptions;
 using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Services;
 using BinDays.Api.Collectors.Telemetry;
+using BinDays.Api.Collectors.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -81,6 +82,27 @@ public sealed class CollectorServiceGetBinDaysTests
 		collectorService.GetBinDays(collector.GovUkId, address, null);
 
 		metrics.Verify(recorder => recorder.RecordBinDayUnmatched(collector.GovUkId), Times.Exactly(2));
+	}
+
+	[Fact]
+	public void GetBinDays_WithUnmatchedBinDayMergedOnAMatchedDate_StillRecordsIt()
+	{
+		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
+		var date = new DateOnly(2026, 1, 1);
+		var binDays = ProcessingUtilities.MergeBinDays([
+			new BinDay { Date = date, Address = address, Bins = [_generalWaste] },
+			new BinDay { Date = date, Address = address, Bins = [] },
+		]);
+
+		var collector = new FakeCollector(binDays);
+		var metrics = new Mock<ICollectorMetrics>();
+		var collectorService = new CollectorService([collector], NullLogger<CollectorService>.Instance, metrics.Object);
+
+		var result = collectorService.GetBinDays(collector.GovUkId, address, null);
+
+		var resultBinDay = Assert.Single(result.BinDays!);
+		Assert.Equal([_generalWaste], resultBinDay.Bins);
+		metrics.Verify(recorder => recorder.RecordBinDayUnmatched(collector.GovUkId), Times.Once);
 	}
 
 	[Fact]

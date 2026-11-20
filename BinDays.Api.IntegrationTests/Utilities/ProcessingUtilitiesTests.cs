@@ -1,6 +1,8 @@
 namespace BinDays.Api.IntegrationTests.Utilities;
 
+using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
+using System;
 using Xunit;
 
 public class ProcessingUtilitiesTests
@@ -31,5 +33,42 @@ public class ProcessingUtilitiesTests
 		var result = ProcessingUtilities.ParseSetCookieHeaderForRequestCookie(setCookieHeader);
 
 		Assert.Equal(expected, result);
+	}
+
+	[Fact]
+	public void MergeBinDays_WithMatchedBinDaysOnTheSameDate_MergesTheirBins()
+	{
+		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
+		var date = new DateOnly(2026, 1, 1);
+		var generalWaste = new Bin { Name = "General Waste", Colour = BinColour.Black, Keys = ["General"] };
+		var recycling = new Bin { Name = "Recycling", Colour = BinColour.Blue, Keys = ["Recycling"] };
+
+		var result = ProcessingUtilities.MergeBinDays([
+			new BinDay { Date = date, Address = address, Bins = [generalWaste] },
+			new BinDay { Date = date, Address = address, Bins = [recycling] },
+		]);
+
+		var mergedBinDay = Assert.Single(result);
+		Assert.Equal([generalWaste, recycling], mergedBinDay.Bins);
+	}
+
+	[Fact]
+	public void MergeBinDays_WithUnmatchedBinDayOnAMatchedDate_KeepsItSeparate()
+	{
+		var address = new Address { Postcode = "AB1 2CD", Uid = "1" };
+		var date = new DateOnly(2026, 1, 1);
+		var generalWaste = new Bin { Name = "General Waste", Colour = BinColour.Black, Keys = ["General"] };
+		var unmatchedBinDay = new BinDay { Date = date, Address = address, Bins = [] };
+
+		var result = ProcessingUtilities.MergeBinDays([
+			unmatchedBinDay,
+			new BinDay { Date = date, Address = address, Bins = [generalWaste] },
+		]);
+
+		Assert.Collection(
+			result,
+			binDay => Assert.Equal([generalWaste], binDay.Bins),
+			binDay => Assert.Same(unmatchedBinDay, binDay)
+		);
 	}
 }

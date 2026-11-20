@@ -84,6 +84,11 @@ public static partial class ProcessingUtilities
 	/// <summary>
 	/// Merges a collection of BinDay objects, combining those with the same date.
 	/// </summary>
+	/// <remarks>
+	/// Bin days that matched no bin types are passed through unmerged, so an unrecognised service
+	/// that shares a date with a recognised one still reaches the unmatched bin day check in
+	/// <c>CollectorService</c>, rather than silently disappearing into the merged bin day.
+	/// </remarks>
 	/// <param name="binDays">The collection of BinDay objects to merge.</param>
 	/// <returns>A read-only collection of merged BinDay objects.</returns>
 	public static IReadOnlyCollection<BinDay> MergeBinDays(IEnumerable<BinDay> binDays)
@@ -96,23 +101,31 @@ public static partial class ProcessingUtilities
 		// Iterate through each group of BinDay objects with the same date.
 		foreach (var group in groupedBinDays)
 		{
-			// Initialize a list to store the merged Bins for the current date.
-			var mergedBins = new List<Bin>();
+			var matchedBinDays = group.Where(bd => bd.Bins.Count > 0).ToList();
 
-			// Add all Bins from the current BinDay to the mergedBins list.
-			foreach (var binDay in group)
+			if (matchedBinDays.Count > 0)
 			{
-				mergedBins.AddRange(binDay.Bins);
+				// Initialize a list to store the merged Bins for the current date.
+				var mergedBins = new List<Bin>();
+
+				// Add all Bins from the current BinDay to the mergedBins list.
+				foreach (var binDay in matchedBinDays)
+				{
+					mergedBins.AddRange(binDay.Bins);
+				}
+
+				// Create a new BinDay object with the merged Bins, the common date, and the address from the first BinDay in the group.
+				var mergedBinDay = new BinDay
+				{
+					Date = group.Key,
+					Address = matchedBinDays[0].Address,
+					Bins = [.. mergedBins.DistinctBy(b => b.Name)],
+				};
+				mergedBinDays.Add(mergedBinDay);
 			}
 
-			// Create a new BinDay object with the merged Bins, the common date, and the address from the first BinDay in the group.
-			var mergedBinDay = new BinDay
-			{
-				Date = group.Key,
-				Address = group.First().Address,
-				Bins = [.. mergedBins.DistinctBy(b => b.Name)]
-			};
-			mergedBinDays.Add(mergedBinDay);
+			// Keep each unmatched bin day separate, so each one is counted as dropped.
+			mergedBinDays.AddRange(group.Where(bd => bd.Bins.Count == 0));
 		}
 
 		return [.. mergedBinDays];
