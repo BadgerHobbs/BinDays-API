@@ -60,6 +60,13 @@ internal sealed partial class CheltenhamBoroughCouncil : GovUkCollectorBase, ICo
 			Keys = [ "Food caddy" ],
 			Type = BinType.Caddy,
 		},
+		new()
+		{
+			Name = "Plastic Bags & Wrapping",
+			Colour = BinColour.LightBlue,
+			Keys = [ "Plastic bags and wrapping" ],
+			Type = BinType.Bag,
+		},
 	];
 
 	/// <summary>
