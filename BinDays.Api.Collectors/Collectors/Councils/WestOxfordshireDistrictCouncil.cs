@@ -34,7 +34,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		{
 			Name = "Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "240 Litre Recycling", "360 Litre Recycling", "Black Recycling Box" ],
+			Keys = [ "360 Litre Recycling", "Black Recycling Box" ],
 		},
 		new()
 		{
