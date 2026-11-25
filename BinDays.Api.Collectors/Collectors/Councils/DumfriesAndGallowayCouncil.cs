@@ -66,7 +66,7 @@ internal sealed partial class DumfriesAndGallowayCouncil : GovUkCollectorBase, I
 	/// <summary>
 	/// Regex for the addresses from the response data.
 	/// </summary>
-	[GeneratedRegex(@"<option value=""(?<uid>\d+)"">(?<address>[^<]+)</option>")]
+	[GeneratedRegex(@"<option\s+value=""(?<uid>\d+)""[^>]*>(?<address>[^<]+)</option>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
