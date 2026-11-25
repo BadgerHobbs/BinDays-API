@@ -137,7 +137,7 @@ internal sealed partial class CherwellDistrictCouncil : GovUkCollectorBase, ICol
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 1,
-				Url = $"https://www.cherwell.gov.uk/homepage/129/bin-collection-search?uprn={address.Uid!}",
+				Url = $"https://forms.cherwell.gov.uk/myaccount?uprn={address.Uid!}",
 				Method = "GET",
 			};
 
