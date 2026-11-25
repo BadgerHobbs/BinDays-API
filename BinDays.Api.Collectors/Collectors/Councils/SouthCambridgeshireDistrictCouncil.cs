@@ -45,6 +45,13 @@ internal sealed partial class SouthCambridgeshireDistrictCouncil : GovUkCollecto
 			Colour = BinColour.Green,
 			Keys = [ "Green bin" ],
 		},
+		new()
+		{
+			Name = "Food Waste",
+			Colour = BinColour.Grey,
+			Keys = [ "Food caddy" ],
+			Type = BinType.Caddy,
+		},
 	];
 
 	/// <summary>
