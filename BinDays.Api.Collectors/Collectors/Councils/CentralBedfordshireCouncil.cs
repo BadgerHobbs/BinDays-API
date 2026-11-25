@@ -45,6 +45,12 @@ internal sealed partial class CentralBedfordshireCouncil : GovUkCollectorBase, I
 			Keys = [ "Food waste" ],
 			Type = BinType.Caddy,
 		},
+		new()
+		{
+			Name = "Garden Waste",
+			Colour = BinColour.Green,
+			Keys = [ "Garden waste" ],
+		},
 	];
 
 	/// <summary>

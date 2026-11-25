@@ -43,7 +43,7 @@ internal sealed class CannockChaseDistrictCouncil : GovUkCollectorBase, ICollect
 		{
 			Name = "Garden Waste",
 			Colour = BinColour.Brown,
-			Keys = [ "Garden Waste Collection Service" ],
+			Keys = [ "Garden Waste Collection Service", "Garden Collection Service" ],
 		},
 		new()
 		{
