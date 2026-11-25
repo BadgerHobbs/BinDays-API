@@ -80,6 +80,13 @@ internal sealed partial class ConwyCountyBoroughCouncil : GovUkCollectorBase, IC
 			Keys = [ "Podback" ],
 			Type = BinType.Bag,
 		},
+		new()
+		{
+			Name = "Nappies & Incontinence Products",
+			Colour = BinColour.Blue,
+			Keys = [ "Nappy incontinence" ],
+			Type = BinType.Caddy,
+		},
 	];
 
 	/// <summary>
