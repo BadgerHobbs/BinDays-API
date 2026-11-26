@@ -103,10 +103,10 @@ Every issue must say plainly whether anything can be done in BinDays. Pick exact
 |----------|---------|---------|
 | Transient | **Council issue** | Nothing to fix. The issue closes itself once a scheduled run passes. |
 | Website down | **Council issue** | Nothing to fix. Wait for the council website to recover. |
-| Website changed | **Action needed** | Update the collector to match the council website. |
-| Collector bug | **Action needed** | Fix the collector's parsing, or update the test address. |
+| Website changed | **Action required** | Update the collector to match the council website. |
+| Collector bug | **Action required** | Fix the collector's parsing, or update the test address. |
 
-If the test still fails and you could not determine whether the website works, choose **Action needed**. Only call
+If the test still fails and you could not determine whether the website works, choose **Action required**. Only call
 something a council issue when you have evidence that the council side is at fault, because a council issue tells
 humans they can ignore it.
 
@@ -120,7 +120,7 @@ For every failure, create a GitHub issue with:
   | Verdict | Label |
   |---------|-------|
   | Council issue | `council issue` |
-  | Action needed | `action needed` |
+  | Action required | `action required` |
 
   | Category | Label |
   |----------|-------|
@@ -131,12 +131,12 @@ For every failure, create a GitHub issue with:
 
   These labels already exist in the repository — use them exactly as written and do not create new ones.
 - **Body:** use a markdown table for the key details, followed by any extra notes. The first row states the verdict
-  and, for **Action needed**, the specific thing to do. Use this format:
+  and, for **Action required**, the specific thing to do. Use this format:
 
   ```markdown
   | Field | Value |
   |-------|-------|
-  | Action needed | {"No — council issue, nothing to fix in BinDays" / "Yes — {what to change, e.g. update the address regex in {councilName}.cs}"} |
+  | Action required | {"No — council issue, nothing to fix in BinDays" / "Yes — {what to change, e.g. update the address regex in {councilName}.cs}"} |
   | Category | {category} |
   | Key error | {key error message} |
   | Test re-run | {Passed / Failed} |
@@ -152,7 +152,7 @@ Use the `gh` CLI to create issues. Write the body to a temp file and use `--body
 cat > /tmp/issue-body.md << 'EOF'
 | Field | Value |
 |-------|-------|
-| Action needed | {No — council issue, nothing to fix in BinDays / Yes — what to change} |
+| Action required | {No — council issue, nothing to fix in BinDays / Yes — what to change} |
 | Category | {category} |
 | Key error | {key error message} |
 | Test re-run | {Passed / Failed} |

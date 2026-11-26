@@ -18,13 +18,13 @@ module.exports = async ({ github, context, core }) => {
   const labels = [
     { name: 'collector broken', color: 'd73a4a', description: 'Collector integration test is failing' },
     // Verdict: every issue gets exactly one, so it is clear at a glance whether anything needs doing.
-    { name: 'action needed', color: 'b60205', description: 'Fix needed in BinDays: the collector or its test' },
+    { name: 'action required', color: 'b60205', description: 'Fix required in BinDays: the collector or its test' },
     { name: 'council issue', color: 'c5def5', description: 'Council-side problem, nothing to fix in BinDays' },
     // Category: what kind of failure it is.
     { name: 'transient', color: 'fbca04', description: 'Did not reproduce on re-run (council issue)' },
     { name: 'website down', color: 'd93f0b', description: 'Council website is unavailable (council issue)' },
-    { name: 'website changed', color: '1d76db', description: 'Collector no longer matches the council website (action needed)' },
-    { name: 'collector bug', color: '5319e7', description: 'Council website shows the data but the collector does not (action needed)' },
+    { name: 'website changed', color: '1d76db', description: 'Collector no longer matches the council website (action required)' },
+    { name: 'collector bug', color: '5319e7', description: 'Council website shows the data but the collector does not (action required)' },
   ];
 
   for (const label of labels) {
