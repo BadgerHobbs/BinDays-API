@@ -5,6 +5,7 @@ using BinDays.Api.Collectors.Models;
 using BinDays.Api.Collectors.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -34,7 +35,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 		{
 			Name = "Recycling",
 			Colour = BinColour.Blue,
-			Keys = [ "360 Litre Recycling", "Black Recycling Box" ],
+			Keys = [ "240 Litre Recycling", "360 Litre Recycling", "Black Recycling Box" ],
 		},
 		new()
 		{
@@ -185,30 +186,34 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 
 			return getBinDaysResponse;
 		}
+		// Prepare client-side request for getting the property's UPRN, which the collection flow now requires
 		else if (clientSideResponse.RequestId == 1)
 		{
 			var (requestCookies, fwuid, appId) = ExtractSessionTokens(clientSideResponse);
 
-			var startFlowMessage = """
+			var recordMessage = JsonSerializer.Serialize(new
+			{
+				actions = new[]
 				{
-					"actions": [
+					new
+					{
+						descriptor = "aura://RecordUiController/ACTION$getRecordWithFields",
+						@params = new
 						{
-							"descriptor": "aura://FlowRuntimeConnectController/ACTION$startFlow",
-							"params": {
-								"flowDevName": "WebFormAlloyWasteCollectionEnquiry",
-								"arguments": "[{\"name\":\"vClientCode\",\"type\":\"String\",\"value\":\"WOD\"}]"
-							}
-						}
-					]
-				}
-				""";
+							recordId = address.Uid,
+							fields = Array.Empty<string>(),
+							optionalFields = new[] { "Property__c.UPRN__c" },
+						},
+					},
+				},
+			});
 
-			var messageBody = BuildAuraFormData(startFlowMessage, fwuid, appId);
+			var messageBody = BuildAuraFormData(recordMessage, fwuid, appId);
 
 			var clientSideRequest = new ClientSideRequest
 			{
 				RequestId = 2,
-				Url = "https://community.westoxon.gov.uk/s/sfsites/aura?r=4&aura.FlowRuntimeConnect.startFlow=1",
+				Url = "https://community.westoxon.gov.uk/s/sfsites/aura?r=4&aura.RecordUi.getRecordWithFields=1",
 				Method = "POST",
 				Headers = new()
 				{
@@ -235,17 +240,83 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 
 			return getBinDaysResponse;
 		}
+		// Prepare client-side request for starting the collection flow for the UPRN
 		else if (clientSideResponse.RequestId == 2)
 		{
-			return CreateNavigateResponse(3, "NEXT", clientSideResponse, address);
+			using var document = JsonDocument.Parse(clientSideResponse.Content);
+			var uprn = document.RootElement.GetProperty("actions")[0]
+				.GetProperty("returnValue")
+				.GetProperty("fields")
+				.GetProperty("UPRN__c")
+				.GetProperty("value")
+				// UPRN__c is a number field, so Salesforce can serialise it with a fraction or exponent (e.g. 1.0E11)
+				.GetDouble();
+
+			var fwuid = clientSideResponse.Options.Metadata["fwuid"];
+			var appId = clientSideResponse.Options.Metadata["appId"];
+			var requestCookies = clientSideResponse.Options.Metadata["cookie"];
+
+			var flowArguments = JsonSerializer.Serialize(new[]
+			{
+				new { name = "vClientCode", type = "String", value = "WOD" },
+				new { name = "vUPRN", type = "String", value = uprn.ToString("0", CultureInfo.InvariantCulture) },
+			});
+
+			var startFlowMessage = JsonSerializer.Serialize(new
+			{
+				actions = new[]
+				{
+					new
+					{
+						descriptor = "aura://FlowRuntimeConnectController/ACTION$startFlow",
+						@params = new
+						{
+							flowDevName = "WebFormAlloyWasteCollectionEnquiry",
+							arguments = flowArguments,
+						},
+					},
+				},
+			});
+
+			var messageBody = BuildAuraFormData(startFlowMessage, fwuid, appId);
+
+			var clientSideRequest = new ClientSideRequest
+			{
+				RequestId = 3,
+				Url = "https://community.westoxon.gov.uk/s/sfsites/aura?r=5&aura.FlowRuntimeConnect.startFlow=1",
+				Method = "POST",
+				Headers = new()
+				{
+					{ "user-agent", Constants.UserAgent },
+					{ "content-type", Constants.FormUrlEncoded },
+					{ "cookie", requestCookies },
+				},
+				Body = messageBody,
+				Options = new ClientSideOptions
+				{
+					Metadata =
+					{
+						{ "fwuid", fwuid },
+						{ "appId", appId },
+						{ "cookie", requestCookies },
+					},
+				},
+			};
+
+			var getBinDaysResponse = new GetBinDaysResponse
+			{
+				NextClientSideRequest = clientSideRequest,
+			};
+
+			return getBinDaysResponse;
 		}
 		else if (clientSideResponse.RequestId == 3)
 		{
-			return CreateNavigateResponse(4, "CONTINUE_AFTER_COMMIT", clientSideResponse, address);
+			return CreateNavigateResponse(4, clientSideResponse);
 		}
 		else if (clientSideResponse.RequestId == 4)
 		{
-			return CreateNavigateResponse(5, "CONTINUE_AFTER_COMMIT", clientSideResponse, address);
+			return CreateNavigateResponse(5, clientSideResponse);
 		}
 		else if (clientSideResponse.RequestId == 5)
 		{
@@ -327,24 +398,19 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	}
 
 	/// <summary>
-	/// Extracts the serialized state from the response and creates a navigateFlow response.
+	/// Extracts the serialized state from the response and creates a navigateFlow response
+	/// that continues the flow past its next commit step.
 	/// </summary>
-	private static GetBinDaysResponse CreateNavigateResponse(
-		int requestId,
-		string action,
-		ClientSideResponse clientSideResponse,
-		Address address)
+	private static GetBinDaysResponse CreateNavigateResponse(int requestId, ClientSideResponse clientSideResponse)
 	{
 		var serializedState = GetSerializedState(clientSideResponse.Content);
 
 		var clientSideRequest = CreateNavigateRequest(
 			requestId,
-			action,
 			serializedState,
 			clientSideResponse.Options.Metadata["fwuid"],
 			clientSideResponse.Options.Metadata["appId"],
-			clientSideResponse.Options.Metadata["cookie"],
-			address
+			clientSideResponse.Options.Metadata["cookie"]
 		);
 
 		var getBinDaysResponse = new GetBinDaysResponse
@@ -397,26 +463,15 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	}
 
 	/// <summary>
-	/// Creates a navigateFlow request with the provided action and state.
+	/// Creates a navigateFlow request that continues the flow from the provided state.
 	/// </summary>
 	private static ClientSideRequest CreateNavigateRequest(
 		int requestId,
-		string action,
 		string serializedState,
 		string fwuid,
 		string appId,
-		string cookie,
-		Address address)
+		string cookie)
 	{
-		var fields = action == "NEXT"
-			?
-			[
-				new { field = "Property.recordId", value = address.Uid, isVisible = true },
-				new { field = "Property.recordIds", value = new[] { address.Uid }, isVisible = true },
-				new { field = "Property.recordName", value = address.Property, isVisible = true },
-			]
-			: Array.Empty<object>();
-
 		var navigateMessage = JsonSerializer.Serialize(new
 		{
 			actions = new[]
@@ -428,9 +483,9 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 					{
 						request = new
 						{
-							action,
+							action = "CONTINUE_AFTER_COMMIT",
 							serializedState,
-							fields,
+							fields = Array.Empty<object>(),
 						},
 					},
 				},
