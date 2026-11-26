@@ -56,7 +56,7 @@ internal sealed partial class NorthTynesideCouncil : GovUkCollectorBase, ICollec
 	/// <summary>
 	/// Regex for the addresses from the data.
 	/// </summary>
-	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)"">(?<address>[^<]+)</option>")]
+	[GeneratedRegex(@"<option value=""(?<uid>[^""]*)""[^>]*>(?<address>[^<]+)</option>")]
 	private static partial Regex AddressRegex();
 
 	/// <summary>
