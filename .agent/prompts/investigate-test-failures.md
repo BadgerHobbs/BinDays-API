@@ -115,19 +115,13 @@ humans they can ignore it.
 For every failure, create a GitHub issue with:
 
 - **Title:** `Broken collector: {councilName}` (this exact format is required for deduplication — do not deviate)
-- **Labels:** `collector broken`, plus exactly one verdict label and exactly one category label:
+- **Labels:** `collector broken`, plus exactly one verdict label. Do not add a category label: the category goes in
+  the body's **Category** row.
 
   | Verdict | Label |
   |---------|-------|
   | Council issue | `council issue` |
   | Action required | `action required` |
-
-  | Category | Label |
-  |----------|-------|
-  | Transient | `transient` |
-  | Website down | `website down` |
-  | Website changed | `website changed` |
-  | Collector bug | `collector bug` |
 
   These labels already exist in the repository — use them exactly as written and do not create new ones.
 - **Body:** use a markdown table for the key details, followed by any extra notes. The first row states the verdict
@@ -161,7 +155,7 @@ cat > /tmp/issue-body.md << 'EOF'
 
 {any additional notes}
 EOF
-gh issue create --title "Broken collector: {councilName}" --label "collector broken" --label "{verdict label}" --label "{category label}" --body-file /tmp/issue-body.md
+gh issue create --title "Broken collector: {councilName}" --label "collector broken" --label "{verdict label}" --body-file /tmp/issue-body.md
 ```
 
 The `collector broken` label is required on every issue — the pipeline check and the automatic closing of resolved issues both find issues by it.
