@@ -85,7 +85,7 @@ Use the re-run result, the Playwright result and the error logs to determine whi
   single origin IP with no CDN produce these repeatedly.
 - **Website down** — Playwright showed the website is broken/unavailable, OR logs show `HttpRequestException`, SSL errors, timeouts, 5xx status codes. The council website is temporarily unavailable. No code fix needed.
 - **Website changed** — Playwright confirmed the website is working (addresses and bin days are visible), but the test still failed. This means the collector code no longer matches the website's current structure. Errors in logs: `InvalidOperationException`, `NullReferenceException`, `FormatException`, assertion failures (empty collections, regex not matching, unexpected HTML structure).
-- **Data issue** — `BinDaysNotFoundException`, `AddressesNotFoundException` and Playwright shows the website working. The collector may be parsing data incorrectly, or the test address/postcode may no longer be valid.
+- **Collector bug** — `BinDaysNotFoundException` or `AddressesNotFoundException`, while Playwright shows the website returning addresses and bin days for the same postcode. The collector is parsing the response incorrectly (for example a regex that no longer matches the markup). If the council website also has no record of the test address, the test postcode or UID needs updating instead: this is still a **Collector bug**, so say which in the body.
 
 Precedence, strongest signal first:
 
@@ -93,28 +93,50 @@ Precedence, strongest signal first:
    no matter how the original logs read. Do not categorise a non-reproducing failure as
    "Website changed" — that label sends a human hunting for a regression that is not there.
 2. If the test still fails but the website is clearly working end-to-end, the failure is code-side
-   ("Website changed" or "Data issue") even if the logs look ambiguous.
+   ("Website changed" or "Collector bug") even if the logs look ambiguous.
+
+### 4b. Decide the Verdict
+
+Every issue must say plainly whether anything can be done in BinDays. Pick exactly one verdict:
+
+| Category | Verdict | Meaning |
+|----------|---------|---------|
+| Transient | **Council issue** | Nothing to fix. The issue closes itself once a scheduled run passes. |
+| Website down | **Council issue** | Nothing to fix. Wait for the council website to recover. |
+| Website changed | **Action required** | Update the collector to match the council website. |
+| Collector bug | **Action required** | Fix the collector's parsing, or update the test address. |
+
+If the test still fails and you could not determine whether the website works, choose **Action required**. Only call
+something a council issue when you have evidence that the council side is at fault, because a council issue tells
+humans they can ignore it.
 
 ### 5. Create a GitHub Issue
 
 For every failure, create a GitHub issue with:
 
 - **Title:** `Broken collector: {councilName}` (this exact format is required for deduplication — do not deviate)
-- **Labels:** `collector broken`, plus exactly one category label matching the category you chose:
+- **Labels:** `collector broken`, plus exactly one verdict label and exactly one category label:
+
+  | Verdict | Label |
+  |---------|-------|
+  | Council issue | `council issue` |
+  | Action required | `action required` |
 
   | Category | Label |
   |----------|-------|
   | Transient | `transient` |
   | Website down | `website down` |
   | Website changed | `website changed` |
-  | Data issue | `data issue` |
+  | Collector bug | `collector bug` |
 
   These labels already exist in the repository — use them exactly as written and do not create new ones.
-- **Body:** use a markdown table for the key details, followed by any extra notes. Use this format:
+- **Body:** use a markdown table for the key details, followed by any extra notes. The first row states the verdict
+  and, for **Action required**, the specific thing to do. Use this format:
 
   ```markdown
   | Field | Value |
   |-------|-------|
+  | Action required | {"No — council issue, nothing to fix in BinDays" / "Yes — {what to change, e.g. update the address regex in {councilName}.cs}"} |
   | Category | {category} |
   | Key error | {key error message} |
   | Test re-run | {Passed / Failed} |
@@ -130,6 +152,7 @@ Use the `gh` CLI to create issues. Write the body to a temp file and use `--body
 cat > /tmp/issue-body.md << 'EOF'
 | Field | Value |
 |-------|-------|
+| Action required | {No — council issue, nothing to fix in BinDays / Yes — what to change} |
 | Category | {category} |
 | Key error | {key error message} |
 | Test re-run | {Passed / Failed} |
@@ -138,7 +161,7 @@ cat > /tmp/issue-body.md << 'EOF'
 
 {any additional notes}
 EOF
-gh issue create --title "Broken collector: {councilName}" --label "collector broken" --label "{category label}" --body-file /tmp/issue-body.md
+gh issue create --title "Broken collector: {councilName}" --label "collector broken" --label "{verdict label}" --label "{category label}" --body-file /tmp/issue-body.md
 ```
 
 The `collector broken` label is required on every issue — the pipeline check and the automatic closing of resolved issues both find issues by it.
@@ -147,8 +170,8 @@ The `collector broken` label is required on every issue — the pipeline check a
 
 - If **all** failures are in the same category (e.g. all "Website down"), mention this pattern in the first issue body. It may indicate a runner or network problem rather than individual council issues.
 - An issue is still required for every failure where `needsInvestigation` is `true`, including
-  **Transient** ones — the pipeline check does not exempt them. State plainly in the body that the
-  test passed on re-run and that no code fix appears to be needed, so a human can close it without
-  re-investigating. The "Close resolved issues" job will also close it automatically once a
+  **Transient** ones — the pipeline check does not exempt them. Label them `council issue` and state
+  plainly in the body that the test passed on re-run and that no code fix is needed, so a human can
+  close it without re-investigating. The "Close resolved issues" job will also close it automatically once a
   scheduled run passes.
 - Include the Playwright finding in the issue body (e.g. "Website manually verified as working" or "Website appears to be down"), so that humans reading the issue have the full context.
