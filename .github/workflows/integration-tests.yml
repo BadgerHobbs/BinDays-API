@@ -5,8 +5,11 @@ env:
 
 on:
   schedule:
-    # Runs at 08:00 UTC every day to test collectors
-    - cron: "0 8 * * *"
+    # Fallback only. The daily run is triggered at 08:00 UTC through workflow_dispatch by an external
+    # scheduler (.github/scripts/integration-tests/dispatch-daily-run.sh), because GitHub has been
+    # starting scheduled runs 4-11 hours late. This fires afterwards, off the busy top of the hour, and
+    # skips itself if the dispatched run already happened today (see check-daily-run.js).
+    - cron: "47 9 * * *"
   workflow_dispatch:
   push:
     branches:
@@ -20,12 +23,34 @@ on:
       - BinDays.Api.Collectors/**
 
 permissions:
+  actions: read
   checks: write
   contents: read
 
 jobs:
+  check_daily_run:
+    name: Check Daily Run
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+
+      - name: Skip scheduled run if today's dispatched run happened
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('./.github/scripts/integration-tests/check-daily-run.js');
+            await script({ github, context, core });
+
   run_tests:
     name: Integration Tests
+    needs: check_daily_run
+    if: needs.check_daily_run.outputs.skip != 'true'
     runs-on: self-hosted
 
     steps:

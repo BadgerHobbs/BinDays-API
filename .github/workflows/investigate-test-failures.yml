@@ -175,6 +175,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download test results artifact
+        # A scheduled fallback run that skipped itself (see check-daily-run.js) uploads no results;
+        # the close step then finds no test-results.json and does nothing.
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: test-results
