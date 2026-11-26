@@ -52,6 +52,11 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 	];
 
 	/// <summary>
+	/// The Property record fields requested to look up the property's UPRN.
+	/// </summary>
+	private static readonly string[] _uprnFields = ["Property__c.UPRN__c"];
+
+	/// <summary>
 	/// Regex for extracting the Salesforce framework UID from the page content.
 	/// </summary>
 	[GeneratedRegex(@"""fwuid"":""(?<fwuid>[^""]+)""")]
@@ -202,7 +207,7 @@ internal sealed partial class WestOxfordshireDistrictCouncil : GovUkCollectorBas
 						{
 							recordId = address.Uid,
 							fields = Array.Empty<string>(),
-							optionalFields = new[] { "Property__c.UPRN__c" },
+							optionalFields = _uprnFields,
 						},
 					},
 				},
